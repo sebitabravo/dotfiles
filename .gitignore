@@ -1,0 +1,26 @@
+# Ignorar backups
+*.backup.*
+
+# Ignorar archivos de macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ignorar archivos temporales
+*.tmp
+*.swp
+*.swo
+*~
+
+# No versionar claves privadas SSH
+**/.ssh/id_*
+**/.ssh/*.pem
+**/.ssh/*.key
+
+# No versionar información sensible
+.env
+.env.local
+secrets/
+
+# Archivos específicos de usuario que no deben compartirse
+.vscode/
