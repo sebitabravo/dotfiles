@@ -118,19 +118,25 @@ eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/sebita/.docker/completions $fpath)
+fpath=($HOME/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
-export PATH=$PATH:/Users/sebita/.spicetify
+export PATH=$PATH:$HOME/.spicetify
 
 PATH=~/.console-ninja/.bin:$PATH
-export PATH="/Users/sebita/Library/Python/3.9/bin:$PATH"
+export PATH="$HOME/Library/Python/3.13/bin:$PATH"
 
 # Claude Code and VS Code paths
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/usr/local/bin:$PATH"
+
+# Android SDK
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$ANDROID_HOME/emulator
 
 # Claude Code Monitor
 alias claude-monitor="claude-monitor --plan pro --timezone America/Santiago"

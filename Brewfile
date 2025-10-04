@@ -22,6 +22,7 @@ brew "imagemagick"
 brew "ffmpeg"
 brew "gemini-cli"
 brew "powerlevel10k"
+brew "spicetify-cli"
 
 # ============================================================================
 # Applications (Casks)

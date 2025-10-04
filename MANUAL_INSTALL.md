@@ -26,7 +26,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **HEIC Converter** - Convertir imágenes HEIC
 - [ ] **LocalSend** - Compartir archivos localmente
 - [ ] **PPTControl Desktop** - Control remoto para PowerPoint
-- [ ] **AIDente** - Gestión de batería
 - [ ] **DaVinci Resolve** - Edición de video profesional
 
 ### Comunicación
@@ -45,16 +44,23 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
+- [ ] **Elgato Stream Deck** - <https://www.elgato.com/en/gaming/downloads>
+- [ ] **Elgato Wave Link** - <https://www.elgato.com/en/gaming/downloads>
+- [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos>
 
 ### Gaming
 
 - [ ] **League of Legends** - <https://www.leagueoflegends.com/>
+- [ ] **Steam** - <https://store.steampowered.com/about/>
+- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
 
 ### Herramientas Especiales
 
 - [ ] **SysDVR-Client** - <https://github.com/exelix11/SysDVR>
-- [ ] **Unity Hub** - <https://unity.com/download>
-- [ ] **PSeInt** - <http://pseint.sourceforge.net/>
+- [ ] **AIDente** - <https://aidente.com/>
+- [ ] **Parsec** - <https://parsecgaming.com/downloads/>
+- [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
+- [ ] **Cisco packet tracer** - <https://www.netacad.com/courses/packet-tracer>
 
 ### AI Tools
 
@@ -63,6 +69,44 @@ Estas apps se instalan desde la App Store de macOS:
 ### Web Apps
 
 - [ ] **Photopea** - <https://www.photopea.com/> (Editor de imágenes en línea)
+
+### Terminal & Development
+
+- [ ] **Warp Terminal** - <https://www.warp.dev/>
+- [ ] **Visual Studio Code** - <https://code.visualstudio.com/>
+- [ ] **Docker** - <https://www.docker.com/products/docker-desktop/>
+- [ ] **Android Studio** - <https://developer.android.com/studio>
+- [ ] **Unity Hub** - <https://unity.com/download>
+- [ ] **PSeInt** - <http://pseint.sourceforge.net/>
+- [ ] **TablePlus** - <https://tableplus.com/>
+- [ ] **Cyberduck** - <https://cyberduck.io/>
+- [ ] **Figma** - <https://www.figma.com/downloads/>
+- [ ] **UTM** - <https://mac.getutm.app/>
+- [ ] **RStudio** - <https://posit.co/download/rstudio-desktop/>
+- [ ] **Arduino IDE** - <https://www.arduino.cc/en/software>
+- [ ] **MAMP** - <https://www.mamp.info/en/downloads/>
+
+### Browsers
+
+- [ ] **Brave** - <https://brave.com/>
+- [ ] **Zen Browser** - <https://zen-browser.app/>
+
+### Productivity
+
+- [ ] **Raycast** - <https://www.raycast.com/>
+- [ ] **Notion** - <https://www.notion.so/desktop>
+- [ ] **Google Drive** - <https://www.google.com/drive/download/>
+- [ ] **Dropbox** - <https://www.dropbox.com/install>
+- [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app>
+- [ ] **Telegram** - <https://desktop.telegram.org/>
+- [ ] **Discord** - <https://discord.com/download>
+
+### Media & Content
+
+- [ ] **OBS Studio** - <https://obsproject.com/download>
+- [ ] **VLC Media Player** - <https://www.videolan.org/vlc/download-macosx.html>
+- [ ] **Spotify** - <https://www.spotify.com/download/mac/>
+- [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
 
 ---
 
@@ -79,8 +123,9 @@ fnm default 20
 ### Python (con pyenv)
 
 ```bash
-pyenv install 3.11.1
-pyenv global 3.11.1
+pyenv install 3.11.1 # Versión desarrollo
+pyenv install 3.13.7 # Ultima versión
+pyenv global 3.13.7
 ```
 
 ### Spicetify (Spotify Customization)
@@ -90,10 +135,6 @@ Después de instalar Spotify via Homebrew:
 ```bash
 # Hacer backup y aplicar
 spicetify backup apply
-
-# Instalar temas y extensiones (opcional)
-spicetify config current_theme Sleek
-spicetify apply
 ```
 
 ### OBS Studio Plugins
@@ -107,7 +148,7 @@ Descargar e instalar manualmente desde OBS Forums:
 
 ### Discord (Vencord Mod)
 
-Después de instalar Discord via Homebrew:
+Después de instalar Discord:
 
 ```bash
 sh -c "$(curl -sS https://raw.githubusercontent.com/Vendicated/VencordInstaller/main/install.sh)"
@@ -117,7 +158,7 @@ sh -c "$(curl -sS https://raw.githubusercontent.com/Vendicated/VencordInstaller/
 
 ### Oh My Zsh con Warp
 
-Warp ya viene con Oh My Zsh integrado. Si prefieres configurar Oh My Zsh manualmente:
+Configurar Oh My Zsh manualmente:
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -129,45 +170,9 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 
 Las siguientes apps ya están incluidas en el `Brewfile` y se instalan automáticamente:
 
-### Terminal & Development
+### Development
 
-- Warp, Visual Studio Code, Docker, Android Studio, Claude Code
-
-### Browsers
-
-- Google Chrome, Brave, Zen Browser
-
-### Development Tools
-
-- TablePlus, Cyberduck, Figma, Raycast
-
-### Productivity
-
-- Notion, Google Drive, Dropbox, Microsoft Teams
-
-### Media & Content
-
-- OBS Studio, VLC, Spotify, Audacity
-
-### Utilities
-
-- AppCleaner, The Unarchiver, UTM, Parsec, DisplayLink
-
-### Communication
-
-- Discord, Telegram
-
-### Gaming
-
-- Steam, Epic Games
-
-### Streaming Hardware
-
-- Elgato Stream Deck, Elgato Wave Link
-
-### Data Science
-
-- RStudio
+- Claude Code, Gemini Cli
 
 ---
 
