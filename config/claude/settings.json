@@ -1,17 +1,40 @@
 {
-  "cleanupPeriodDays": 7,
+  "cleanupPeriodDays": 3,
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Edit",
       "Read",
       "Grep",
-      "Glob"
+      "Glob",
+      "Write"
     ],
     "ask": [
+      "Copy",
+      "Move",
+      "Delete",
+      "Shell",
+      "Git",
+      "Edit",
       "Bash",
       "WebFetch",
-      "Task"
+      "Task",
+      "Http",
+      "Https"
+    ],
+    "deny": [
+      "Ssh",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./config/credentials.json)",
+      "Read(**/node_modules/**)",
+      "Read(**/.DS_Store)",
+      "Read(**/Thumbs.db)",
+      "Read(**/.svn/**)",
+      "Read(**/.hg/**)",
+      "Read(**/CVS/**)",
+      "Read(**/.git/objects/**)",
+      "Read(**/.git/hooks/**)"
     ]
   },
   "statusLine": {
@@ -19,6 +42,6 @@
     "command": "input=$(cat); current_dir=$(echo \"$input\" | jq -r '.workspace.current_dir'); model_name=$(echo \"$input\" | jq -r '.model.display_name'); current_file=$(echo \"$input\" | jq -r '.workspace.current_file // empty' | xargs basename 2>/dev/null || echo ''); cd \"$current_dir\" 2>/dev/null || exit; git_branch=$(git branch --show-current 2>/dev/null || echo ''); git_info=''; if [ -n \"$git_branch\" ]; then modified=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' '); additions=$(git diff --numstat 2>/dev/null | awk '{sum += $1} END {print sum+0}'); deletions=$(git diff --numstat 2>/dev/null | awk '{sum += $2} END {print sum+0}'); if [ \"$additions\" != '0' ] || [ \"$deletions\" != '0' ]; then git_info=\" $(tput setaf 3)$modified files, $additions (+), $deletions (-)$(tput sgr0)\"; elif [ \"$modified\" != '0' ]; then git_info=\" $(tput setaf 3)$modified files changed$(tput sgr0)\"; fi; fi; printf \"$(tput bold)%s$(tput sgr0) $(tput setaf 6)git$(tput sgr0):$(tput setaf 2)(%s)$(tput sgr0)%s%s │ $(tput setaf 5)%s$(tput sgr0)\" \"$(basename \"$current_dir\")\" \"$git_branch\" \"$git_info\" \"$([ -n \"$current_file\" ] && printf \" @ %s\" \"$current_file\" || echo '')\" \"$(echo \"$model_name\" | sed 's/Claude //')\""
   },
   "outputStyle": "minimal",
-  "spinnerTipsEnabled": false,
-  "alwaysThinkingEnabled": true
+  "spinnerTipsEnabled": true,
+  "alwaysThinkingEnabled": false
 }

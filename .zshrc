@@ -109,12 +109,12 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+alias myip='curl ipinfo.io/ip'
+
 # Fnm
 eval "$(fnm env --use-on-cd)"
+
 # Pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
@@ -131,6 +131,7 @@ export PATH="$HOME/Library/Python/3.13/bin:$PATH"
 # Claude Code and VS Code paths
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/usr/local/bin:$PATH"
+export DISABLE_AUTOUPDATER=1
 
 # Android SDK
 export ANDROID_HOME=$HOME/Library/Android/sdk
@@ -144,9 +145,6 @@ alias ccm="claude-monitor --plan pro --view realtime --reset-hour 3 --timezone A
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Custom aliases
-alias myip='curl ipinfo.io/ip'
 
 # Show system info on terminal start
 fastfetch
