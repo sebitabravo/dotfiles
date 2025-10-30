@@ -139,9 +139,9 @@ export PATH=$PATH:$ANDROID_HOME/tools
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/emulator
 
-# Claude Code Monitor
-alias claude-monitor="claude-monitor --plan pro --timezone America/Santiago"
-alias ccm="claude-monitor --plan pro --view realtime --reset-hour 3 --timezone America/Santiago"
+# Go Lang
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

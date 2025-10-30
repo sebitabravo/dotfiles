@@ -20,15 +20,15 @@ brew "mailhog"
 brew "vercel-cli"
 brew "imagemagick"
 brew "ffmpeg"
-brew "gemini-cli"
-brew "powerlevel10k"
-brew "spicetify-cli"
+brew "go"
+brew "r"
+brew "pipx"
 
 # ============================================================================
 # Applications (Casks)
 # ============================================================================
 
-cask "claude-code"
+cask "dotnet-sdk"
 
 # Fuentes
 cask "font-meslo-lg-nerd-font"
