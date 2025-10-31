@@ -40,17 +40,10 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **Elgato Stream Deck** - <https://www.elgato.com/en/gaming/downloads>
 - [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos>
-
-### Gaming
-
-- [ ] **Steam** - <https://store.steampowered.com/about/>
-- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
 
 ### Herramientas Especiales
 
-- [ ] **SysDVR-Client** - <https://github.com/exelix11/SysDVR>
 - [ ] **AIDente** - <https://aidente.com/>
 - [ ] **Parsec** - <https://parsecgaming.com/downloads/>
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
@@ -81,9 +74,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Media & Content
 
-- [ ] **OBS Studio** - <https://obsproject.com/download>
 - [ ] **VLC Media Player** - <https://www.videolan.org/vlc/download-macosx.html>
-- [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
 
 ---
 
@@ -101,17 +92,9 @@ fnm default 20
 
 ```bash
 pyenv install 3.11.1 # Versión desarrollo
-pyenv install 3.13.7 # Ultima versión
-pyenv global 3.13.7
+pyenv install 3.14.0 # Ultima versión
+pyenv global 3.14.0
 ```
-
-### OBS Studio Plugins
-
-Descargar e instalar manualmente desde OBS Forums:
-
-- [ ] **StreamFX** - <https://obsproject.com/forum/resources/streamfx-for-obs-studio.578/>
-- [ ] **MultiStream** - <https://aitum.tv/products/multi>
-- [ ] **Draw** - <https://obsproject.com/forum/resources/draw.2081/>
 
 ### Oh My Zsh con Warp
 

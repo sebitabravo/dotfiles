@@ -123,15 +123,12 @@ autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
-export PATH=$PATH:$HOME/.spicetify
-
 PATH=~/.console-ninja/.bin:$PATH
-export PATH="$HOME/Library/Python/3.13/bin:$PATH"
+export PATH="$HOME/Library/Python/3.14/bin:$PATH"
 
 # Claude Code and VS Code paths
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/usr/local/bin:$PATH"
-export DISABLE_AUTOUPDATER=1
 
 # Android SDK
 export ANDROID_HOME=$HOME/Library/Android/sdk
