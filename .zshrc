@@ -110,6 +110,7 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias myip='curl ipinfo.io/ip'
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
 # Fnm
 eval "$(fnm env --use-on-cd)"
@@ -139,6 +140,12 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 # Go Lang
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
+
+# R
+export R_HOME="$(R RHOME)"
+
+# Added by Antigravity
+export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

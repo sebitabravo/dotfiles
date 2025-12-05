@@ -7,10 +7,10 @@
 **Descripción:** Quickly swap your input/output audio devices
 **Uso:** Cambiar rápidamente entre dispositivos de audio (AirPods, parlantes, etc.)
 
-### 🎧 Spotify Player
+### 🎧 Coffee
 
-**Descripción:** Control spotify from Raycast
-**Uso:** Controlar Spotify sin abrir la app (play, pause, next, previous, buscar canciones)
+**Descripción:** Prevent your Mac from going to sleep
+**Uso:** Mantén tu Mac despierto mientras trabajas (Caffeinate status)
 
 ### 🔌 Port Manager
 
@@ -22,10 +22,10 @@
 **Descripción:** Run a speedtest from Raycast
 **Uso:** Test de velocidad de internet rápido
 
-### 👻 Kill Process
+### 👻 Lock Keyboard
 
-**Descripción:** Kill processes by name or PID
-**Uso:** Terminar procesos directamente desde Raycast
+**Descripción:** Lock your keyboard to clean it easily
+**Uso:** Bloquea tu teclado rápidamente (útil para limpieza o pausas rápidas)
 
 ### 📂 Github
 
@@ -36,5 +36,10 @@
 
 **Descripción:** Pick colors and copy them to clipboard
 **Uso:** Selector de colores rápido
+
+### 📱 Simulator Manager
+
+**Descripción:** Manage iOS Simulators from Raycast
+**Uso:** Administrar simuladores de iOS directamente desde Raycast
 
 ---

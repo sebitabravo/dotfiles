@@ -6,7 +6,7 @@ Apps que deben instalarse manualmente desde la App Store o fuentes externas.
 
 Estas apps se instalan desde la App Store de macOS:
 
-### Productividad
+### Productivity
 
 - [ ] **Xcode** - IDE de Apple
 - [ ] **Microsoft Office Suite**:
@@ -15,23 +15,16 @@ Estas apps se instalan desde la App Store de macOS:
   - [ ] Word
   - [ ] Excel
   - [ ] OneDrive
+- [ ] **Tailscale** - VPN fácil de usar
+- [ ] **PPTControl Desktop** - Control remoto para PowerPoint
+- [ ] **Dark Reader** - Modo oscuro para sitios web
 
-### Utilidades
+### Utilities
 
 - [ ] **CleanMyMac** - Limpieza del sistema
-- [ ] **Amphetamine** - Prevenir que Mac se duerma
-- [ ] **Hidden Bar** - Organizar iconos de la barra de menú
-- [ ] **PPTControl Desktop** - Control remoto para PowerPoint
 - [ ] **DaVinci Resolve** - Edición de video profesional
-
-### Comunicación
-
-- [ ] **WhatsApp** - Mensajería
-
-### Safari Extensions
-
-- [ ] **1Blocker** - Bloqueador de anuncios
-- [ ] **Dark Reader** - Modo oscuro para sitios web
+- [ ] **The Unarchiver** - Descompresor de archivos
+- [ ] **TestFlight** - Probar apps beta de macOS
 
 ---
 
@@ -41,40 +34,61 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
 - [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos>
+- [ ] **Logitech Options+** - <https://www.logitech.com/es-ar/software/logi-options-plus.htmls>
+- [ ] **VencordInstaller** - <https://vencord.dev/>
+- [ ] **SysDVR-Client** - <https://github.com/exelix11/SysDVR>
 
 ### Herramientas Especiales
 
-- [ ] **AIDente** - <https://aidente.com/>
+- [ ] **AlDente** - <https://apphousekitchen.com/aldente-overview/>
 - [ ] **Parsec** - <https://parsecgaming.com/downloads/>
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
-
-### AI Tools
-
-- [ ] **Claude Desktop** - <https://www.claude.com/download>
+- [ ] **Bartender** - <https://www.macbartender.com/>
+- [ ] **Elgato Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
+- [ ] **Elgato Wave Link** - <https://www.elgato.com/ww/en/s/downloads>
 
 ### Terminal & Development
 
 - [ ] **Warp Terminal** - <https://www.warp.dev/>
 - [ ] **Visual Studio Code** - <https://code.visualstudio.com/>
-- [ ] **Docker** - <https://www.docker.com/products/docker-desktop/>
+- [ ] **OrbStack** - <https://orbstack.dev/download>
 - [ ] **Android Studio** - <https://developer.android.com/studio>
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
-- [ ] **UTM** - <https://mac.getutm.app/>
+- [ ] **JetBrains Toolbox** - <https://www.jetbrains.com/toolbox-app/>
+- [ ] **Antigravity** - <https://antigravity.google/>
+- [ ] **Zed** - <https://zed.dev/>
+- [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 
 ### Browsers
 
 - [ ] **Brave** - <https://brave.com/>
+- [ ] **Firefox** - <https://www.mozilla.org/en-US/firefox/new/>
+- [ ] **Google Chrome** - <https://www.google.com/chrome/>
+- [ ] **Comet** - <https://www.perplexity.ai/comet>
 
 ### Productivity
 
 - [ ] **Raycast** - <https://www.raycast.com/>
 - [ ] **Google Drive** - <https://www.google.com/drive/download/>
 - [ ] **Dropbox** - <https://www.dropbox.com/install>
+- [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app>
+- [ ] **Discord** - <https://discord.com/download>
 
 ### Media & Content
 
-- [ ] **VLC Media Player** - <https://www.videolan.org/vlc/download-macosx.html>
+- [ ] **IINA** - <https://iina.io/>
+- [ ] **Affinity** - <https://www.affinity.studio/>
+- [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
+- [ ] **OBS Studio** - <https://obsproject.com/download>
+- [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
+- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
+
+### Gaming
+
+- [ ] **Steam** - <https://store.steampowered.com/about/>
+- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
+- [ ] **Prism Launcher** - <https://prismlauncher.org/>
 
 ---
 
@@ -92,8 +106,8 @@ fnm default 20
 
 ```bash
 pyenv install 3.11.1 # Versión desarrollo
-pyenv install 3.14.0 # Ultima versión
-pyenv global 3.14.0
+pyenv install 3.14.1 # Ultima versión
+pyenv global 3.14.1
 ```
 
 ### Oh My Zsh con Warp
@@ -121,6 +135,10 @@ R -e 'install.packages("languageserver", repos="https://cran.r-project.org")'
 pipx install radian
 ```
 
+### PHP
+
+<https://php.new/?hl=es-US>
+
 ### IA
 
 Instalar inteligencias artificiales IA:
@@ -128,7 +146,7 @@ Instalar inteligencias artificiales IA:
 ```bash
 npm install -g @github/copilot
 npm install -g @google/gemini-cli
-npm install -g @anthropic-ai/claude-code
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
 ---

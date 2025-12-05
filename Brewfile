@@ -3,7 +3,6 @@
 
 # Taps
 tap "oven-sh/bun"
-tap "homebrew/cask-fonts"
 
 # ============================================================================
 # CLI Tools - Solo las herramientas que uso
@@ -16,13 +15,14 @@ brew "xz"
 brew "git-lfs"
 brew "fastfetch"
 brew "gh"
-brew "mailhog"
-brew "vercel-cli"
-brew "imagemagick"
-brew "ffmpeg"
 brew "go"
 brew "r"
 brew "pipx"
+brew "tcping"
+brew "rbenv"
+brew "ruby-build"
+brew "bat"
+brew "eza"
 
 # ============================================================================
 # Applications (Casks)
