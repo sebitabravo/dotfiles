@@ -18,11 +18,9 @@ brew "gh"
 brew "go"
 brew "r"
 brew "pipx"
-brew "tcping"
-brew "rbenv"
-brew "ruby-build"
 brew "bat"
 brew "eza"
+brew "zoxide"
 
 # ============================================================================
 # Applications (Casks)

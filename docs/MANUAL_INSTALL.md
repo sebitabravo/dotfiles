@@ -25,6 +25,8 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **DaVinci Resolve** - Edición de video profesional
 - [ ] **The Unarchiver** - Descompresor de archivos
 - [ ] **TestFlight** - Probar apps beta de macOS
+- [ ] **CrystalFetch** - Descarga ISOs de Windows ARM
+- [ ] **Parallels Desktop** - Virtualización de sistemas operativos
 
 ---
 
@@ -46,6 +48,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Bartender** - <https://www.macbartender.com/>
 - [ ] **Elgato Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
 - [ ] **Elgato Wave Link** - <https://www.elgato.com/ww/en/s/downloads>
+- [ ] **DockDoor** - <https://dockdoor.net/>
 
 ### Terminal & Development
 
@@ -59,6 +62,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Antigravity** - <https://antigravity.google/>
 - [ ] **Zed** - <https://zed.dev/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
+- [ ] **Bruno** - <https://www.usebruno.com/downloads>
 
 ### Browsers
 
@@ -86,9 +90,10 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Gaming
 
-- [ ] **Steam** - <https://store.steampowered.com/about/>
+- [ ] **Steam** - <https://store.steampowered.com/about/> - Habilitar beta Update
 - [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
 - [ ] **Prism Launcher** - <https://prismlauncher.org/>
+- [ ] **GOG GALAXY 2.0** - <https://www.gogalaxy.com/en/>
 
 ---
 
@@ -106,8 +111,8 @@ fnm default 20
 
 ```bash
 pyenv install 3.11.1 # Versión desarrollo
-pyenv install 3.14.1 # Ultima versión
-pyenv global 3.14.1
+pyenv install 3.14.2 # Ultima versión
+pyenv global 3.14.2
 ```
 
 ### Oh My Zsh con Warp

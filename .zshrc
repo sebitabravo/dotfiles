@@ -111,6 +111,12 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias myip='curl ipinfo.io/ip'
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+alias ls='eza --git --group-directories-first --icons'
+alias l='eza --git --group-directories-first --icons'
+alias ll='eza --git --group-directories-first --icons -alF'
+alias la='eza --git --group-directories-first --icons -a'
+alias lt='eza --git --group-directories-first --icons -T'
+alias ltl='eza --git --group-directories-first --icons -TL'
 
 # Fnm
 eval "$(fnm env --use-on-cd)"
@@ -118,14 +124,12 @@ eval "$(fnm env --use-on-cd)"
 # Pyenv
 eval "$(pyenv init -)"
 
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=($HOME/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
-# End of Docker CLI completions
+# Zoxide
+eval "$(zoxide init zsh)"
 
+# Console Ninja and Python PATH
 PATH=~/.console-ninja/.bin:$PATH
-export PATH="$HOME/Library/Python/3.14/bin:$PATH"
+export PATH="$HOME/Library/Python/3.14.2/bin:$PATH"
 
 # Claude Code and VS Code paths
 export PATH="$HOME/.local/bin:$PATH"
@@ -143,6 +147,9 @@ export PATH=$PATH:$GOPATH/bin
 
 # R
 export R_HOME="$(R RHOME)"
+
+# Alias Tunnel pinggy
+tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
 # Added by Antigravity
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
