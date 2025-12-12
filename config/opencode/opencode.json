@@ -1,0 +1,75 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "sebita",
+  "autoupdate": true,
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
+  "tui": {
+    "scroll_speed": 1,
+    "scroll_acceleration": {
+      "enabled": true
+    }
+  },
+  "mcp": {
+    "context7": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "enabled": true
+    }
+  },
+  "agent": {
+    "sebastian": {
+      "mode": "primary",
+      "description": "Reviews code for best practices and potential issues as the sebastian",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/sebastian.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "webfetch": true,
+        "git": true
+      },
+      "permissions": {
+        "edit": "allow",
+        "webfetch": "allow",
+        "git": "ask",
+        "bash": "ask"
+      },
+      "instructions": [
+        "~/.config/opencode/security_rules.md"
+      ]
+    }
+  }
+}
