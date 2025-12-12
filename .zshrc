@@ -111,12 +111,16 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias myip='curl ipinfo.io/ip'
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+alias ports="lsof -iTCP -sTCP:LISTEN -n -P"
 alias ls='eza --git --group-directories-first --icons'
 alias l='eza --git --group-directories-first --icons'
-alias ll='eza --git --group-directories-first --icons -alF'
+alias ll='eza --long --header --icons --git --group-directories-first -alF'
 alias la='eza --git --group-directories-first --icons -a'
-alias lt='eza --git --group-directories-first --icons -T'
+alias lt='eza --git --level=2 --icons --group-directories-first -T'
 alias ltl='eza --git --group-directories-first --icons -TL'
+alias lsn='eza --long --header --icons --git --group-directories-first --no-permissions --no-user --time-style=relative'
+alias grep="grep --color=auto"
+alias mkdir="mkdir -p"
 
 # Fnm
 eval "$(fnm env --use-on-cd)"

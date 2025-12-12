@@ -21,6 +21,8 @@ brew "pipx"
 brew "bat"
 brew "eza"
 brew "zoxide"
+brew "jq"
+brew "ripgrep"
 
 # ============================================================================
 # Applications (Casks)

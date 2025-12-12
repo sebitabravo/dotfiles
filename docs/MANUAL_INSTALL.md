@@ -58,7 +58,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Android Studio** - <https://developer.android.com/studio>
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
-- [ ] **JetBrains Toolbox** - <https://www.jetbrains.com/toolbox-app/>
 - [ ] **Antigravity** - <https://antigravity.google/>
 - [ ] **Zed** - <https://zed.dev/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
@@ -71,7 +70,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Google Chrome** - <https://www.google.com/chrome/>
 - [ ] **Comet** - <https://www.perplexity.ai/comet>
 
-### Productivity
+### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com/>
 - [ ] **Google Drive** - <https://www.google.com/drive/download/>
@@ -84,7 +83,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **IINA** - <https://iina.io/>
 - [ ] **Affinity** - <https://www.affinity.studio/>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
-- [ ] **OBS Studio** - <https://obsproject.com/download>
+- [ ] **Meld Studio** - <https://meldstudio.co/>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
 
@@ -148,10 +147,11 @@ pipx install radian
 
 Instalar inteligencias artificiales IA:
 
+- Configurar con copilot, gemini-cli y claude.
+
 ```bash
-npm install -g @github/copilot
-npm install -g @google/gemini-cli
-curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://opencode.ai/install | bash
+opencode auth login
 ```
 
 ---
