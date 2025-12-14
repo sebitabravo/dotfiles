@@ -119,8 +119,12 @@ alias la='eza --git --group-directories-first --icons -a'
 alias lt='eza --git --level=2 --icons --group-directories-first -T'
 alias ltl='eza --git --group-directories-first --icons -TL'
 alias lsn='eza --long --header --icons --git --group-directories-first --no-permissions --no-user --time-style=relative'
-alias grep="grep --color=auto"
+alias grep="rg --color=auto"
 alias mkdir="mkdir -p"
+alias cat='bat --paging=never'
+alias less='bat'
+alias find='fd'
+alias z='zoxide query -i'
 
 # Fnm
 eval "$(fnm env --use-on-cd)"

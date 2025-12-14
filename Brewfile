@@ -23,6 +23,8 @@ brew "eza"
 brew "zoxide"
 brew "jq"
 brew "ripgrep"
+brew "sd"
+brew "fd"
 
 # ============================================================================
 # Applications (Casks)

@@ -59,7 +59,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
 - [ ] **Antigravity** - <https://antigravity.google/>
-- [ ] **Zed** - <https://zed.dev/>
+- [ ] **Trae** - <https://www.trae.ai/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads>
 
