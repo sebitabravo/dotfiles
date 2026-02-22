@@ -14,7 +14,6 @@ Estas apps se instalan desde la App Store de macOS:
   - [ ] PowerPoint
   - [ ] Word
   - [ ] Excel
-  - [ ] OneDrive
 - [ ] **Tailscale** - VPN fácil de usar
 - [ ] **PPTControl Desktop** - Control remoto para PowerPoint
 - [ ] **Dark Reader** - Modo oscuro para sitios web
@@ -24,9 +23,9 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **CleanMyMac** - Limpieza del sistema
 - [ ] **DaVinci Resolve** - Edición de video profesional
 - [ ] **The Unarchiver** - Descompresor de archivos
-- [ ] **TestFlight** - Probar apps beta de macOS
-- [ ] **CrystalFetch** - Descarga ISOs de Windows ARM
 - [ ] **Parallels Desktop** - Virtualización de sistemas operativos
+- [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
+- [ ] **WhatsApp** - Cliente de mensajería
 
 ---
 
@@ -36,9 +35,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
 - [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos>
-- [ ] **Logitech Options+** - <https://www.logitech.com/es-ar/software/logi-options-plus.htmls>
-- [ ] **VencordInstaller** - <https://vencord.dev/>
-- [ ] **SysDVR-Client** - <https://github.com/exelix11/SysDVR>
+- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
 
 ### Herramientas Especiales
 
@@ -46,9 +43,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Parsec** - <https://parsecgaming.com/downloads/>
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
 - [ ] **Bartender** - <https://www.macbartender.com/>
-- [ ] **Elgato Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
-- [ ] **Elgato Wave Link** - <https://www.elgato.com/ww/en/s/downloads>
-- [ ] **DockDoor** - <https://dockdoor.net/>
+- [ ] **CodexBar** - <https://codexbar.app/>
 
 ### Terminal & Development
 
@@ -59,22 +54,27 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
 - [ ] **Antigravity** - <https://antigravity.google/>
-- [ ] **Trae** - <https://www.trae.ai/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads>
+- [ ] **Laravel Herd** - <https://herd.laravel.com/>
+- [ ] **Pencil** - <https://www.pencil.dev/>
+- [ ] **Cursor** - <https://cursor.com/download/>
+- [ ] **Unity** - <https://unity.com/download/>
+
+### IA & Coding Agents
+
+- [ ] **Codex** - <https://openai.com/es-419/codex/>
+- [ ] **Cowork** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
 
 ### Browsers
 
-- [ ] **Brave** - <https://brave.com/>
-- [ ] **Firefox** - <https://www.mozilla.org/en-US/firefox/new/>
+- [ ] **Firefox** - <https://www.firefox.com/es-CL/channel/desktop/developer/>
 - [ ] **Google Chrome** - <https://www.google.com/chrome/>
-- [ ] **Comet** - <https://www.perplexity.ai/comet>
+- [ ] **Brave Browser** - <https://brave.com/download-nightly/>
 
 ### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com/>
-- [ ] **Google Drive** - <https://www.google.com/drive/download/>
-- [ ] **Dropbox** - <https://www.dropbox.com/install>
 - [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app>
 - [ ] **Discord** - <https://discord.com/download>
 
@@ -92,26 +92,25 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Steam** - <https://store.steampowered.com/about/> - Habilitar beta Update
 - [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
 - [ ] **Prism Launcher** - <https://prismlauncher.org/>
-- [ ] **GOG GALAXY 2.0** - <https://www.gogalaxy.com/en/>
 
 ---
 
 ## ⚙️ Configuraciones Post-Instalación
 
-### Node.js (con fnm)
+### Node.js (con nvm)
 
 ```bash
-fnm install 20
-fnm use 20
-fnm default 20
+nvm install 20
+nvm use 20
+nvm alias default 20
 ```
 
 ### Python (con pyenv)
 
 ```bash
 pyenv install 3.11.1 # Versión desarrollo
-pyenv install 3.14.2 # Ultima versión
-pyenv global 3.14.2
+pyenv install 3.14.3 # Ultima versión
+pyenv global 3.14.3
 ```
 
 ### Oh My Zsh con Warp
@@ -139,19 +138,27 @@ R -e 'install.packages("languageserver", repos="https://cran.r-project.org")'
 pipx install radian
 ```
 
-### PHP
+### instalar Sail
 
-<https://php.new/?hl=es-US>
+```bash
+php artisan sail:install
+```
 
 ### IA
 
 Instalar inteligencias artificiales IA:
 
-- Configurar con copilot, gemini-cli y claude.
+- Configurar con copilot, ChatGPT, Antigravity.
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 opencode auth login
+```
+
+```bash
+npm i -g @openai/codex
+npm install -g @google/gemini-cli
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
 ---

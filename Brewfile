@@ -9,7 +9,6 @@ tap "oven-sh/bun"
 # ============================================================================
 
 brew "bun"
-brew "fnm"
 brew "pyenv"
 brew "xz"
 brew "git-lfs"
@@ -25,6 +24,8 @@ brew "jq"
 brew "ripgrep"
 brew "sd"
 brew "fd"
+brew "uv"
+brew "mole"
 
 # ============================================================================
 # Applications (Casks)

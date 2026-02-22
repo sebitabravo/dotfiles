@@ -2,8 +2,26 @@
   "$schema": "https://opencode.ai/config.json",
   "theme": "sebita",
   "autoupdate": true,
-  "model": "anthropic/claude-sonnet-4-5",
-  "small_model": "anthropic/claude-haiku-4-5",
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git commit *": "ask",
+      "git push *": "ask",
+      "git push": "ask",
+      "git push --force *": "ask",
+      "git rebase *": "ask",
+      "git reset --hard *": "ask"
+    },
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/secrets/**": "deny",
+      "**/credentials.json": "deny"
+    }
+  },
   "tui": {
     "scroll_speed": 1,
     "scroll_acceleration": {
@@ -37,15 +55,6 @@
         "@playwright/mcp@latest"
       ],
       "enabled": true
-    },
-    "chrome-devtools": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "chrome-devtools-mcp@latest"
-      ],
-      "enabled": true
     }
   },
   "agent": {
@@ -66,6 +75,20 @@
         "webfetch": "allow",
         "git": "ask",
         "bash": "ask"
+      },
+      "instructions": [
+        "~/.config/opencode/security_rules.md"
+      ]
+    },
+    "mimasoft": {
+      "mode": "primary",
+      "description": "Assists the primary agent by providing additional insights and suggestions as the mimasoft",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/mimasoft.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "read": true
       },
       "instructions": [
         "~/.config/opencode/security_rules.md"

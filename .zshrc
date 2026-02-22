@@ -125,6 +125,7 @@ alias cat='bat --paging=never'
 alias less='bat'
 alias find='fd'
 alias z='zoxide query -i'
+alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
 # Fnm
 eval "$(fnm env --use-on-cd)"
@@ -161,6 +162,9 @@ tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
 # Added by Antigravity
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+
+# opencode
+export PATH=/Users/sebita/.opencode/bin:$PATH
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "sequential-thinking": {
+      "type": "http",
+      "url": "https://mcp.sequential-thinking.com/mcp"
+    },
+    "playwright": {
+      "type": "http",
+      "url": "https://mcp.playwright.dev/mcp"
+    }
+  }
+}

@@ -17,11 +17,6 @@
 **Descripción:** View and close your open ports
 **Uso:** Ver qué puertos están abiertos y cerrarlos (útil cuando algo queda corriendo)
 
-### 🛜 Speedtest
-
-**Descripción:** Run a speedtest from Raycast
-**Uso:** Test de velocidad de internet rápido
-
 ### 👻 Lock Keyboard
 
 **Descripción:** Lock your keyboard to clean it easily
