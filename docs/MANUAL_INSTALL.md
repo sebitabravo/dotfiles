@@ -34,8 +34,8 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos>
-- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
+- [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos/>
+- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
 
 ### Herramientas Especiales
 
@@ -49,13 +49,13 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **Warp Terminal** - <https://www.warp.dev/>
 - [ ] **Visual Studio Code** - <https://code.visualstudio.com/>
-- [ ] **OrbStack** - <https://orbstack.dev/download>
-- [ ] **Android Studio** - <https://developer.android.com/studio>
+- [ ] **OrbStack** - <https://orbstack.dev/download/>
+- [ ] **Android Studio** - <https://developer.android.com/studio/>
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
 - [ ] **Antigravity** - <https://antigravity.google/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
-- [ ] **Bruno** - <https://www.usebruno.com/downloads>
+- [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
 - [ ] **Pencil** - <https://www.pencil.dev/>
 - [ ] **Cursor** - <https://cursor.com/download/>
@@ -75,8 +75,9 @@ Estas apps se instalan desde la App Store de macOS:
 ### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com/>
-- [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app>
-- [ ] **Discord** - <https://discord.com/download>
+- [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app/>
+- [ ] **Discord** - <https://discord.com/download/>
+- [ ] **WisprFlow** - <https://wisprflow.ai/>
 
 ### Media & Content
 
@@ -85,12 +86,12 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **Meld Studio** - <https://meldstudio.co/>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
-- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
+- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
 
 ### Gaming
 
 - [ ] **Steam** - <https://store.steampowered.com/about/> - Habilitar beta Update
-- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download>
+- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download/>
 - [ ] **Prism Launcher** - <https://prismlauncher.org/>
 
 ---

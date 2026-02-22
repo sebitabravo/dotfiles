@@ -123,12 +123,8 @@ alias grep="rg --color=auto"
 alias mkdir="mkdir -p"
 alias cat='bat --paging=never'
 alias less='bat'
-alias find='fd'
 alias z='zoxide query -i'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
-
-# Fnm
-eval "$(fnm env --use-on-cd)"
 
 # Pyenv
 eval "$(pyenv init -)"
@@ -136,9 +132,8 @@ eval "$(pyenv init -)"
 # Zoxide
 eval "$(zoxide init zsh)"
 
-# Console Ninja and Python PATH
+# Console Ninja
 PATH=~/.console-ninja/.bin:$PATH
-export PATH="$HOME/Library/Python/3.14.2/bin:$PATH"
 
 # Claude Code and VS Code paths
 export PATH="$HOME/.local/bin:$PATH"
@@ -164,7 +159,23 @@ tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # opencode
-export PATH=/Users/sebita/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"
+
+# Herd PHP configuration
+[[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
+  export HERD_PHP_84_INI_SCAN_DIR="$HOME/Library/Application Support/Herd/config/php/84/"
+
+# Herd NVM configuration
+export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Herd shell config
+[[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
+  builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
+
+# Herd PHP binary
+[[ -d "$HOME/Library/Application Support/Herd/bin" ]] && \
+  export PATH="$HOME/Library/Application Support/Herd/bin":$PATH
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
