@@ -44,6 +44,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
 - [ ] **Bartender** - <https://www.macbartender.com/>
 - [ ] **CodexBar** - <https://codexbar.app/>
+- [ ] **LLStudio** - <https://lmstudio.ai/download>
 
 ### Terminal & Development
 
@@ -60,6 +61,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Pencil** - <https://www.pencil.dev/>
 - [ ] **Cursor** - <https://cursor.com/download/>
 - [ ] **Unity** - <https://unity.com/download/>
+- [ ] **Superset** - <https://superset.sh>
 
 ### IA & Coding Agents
 
@@ -78,6 +80,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app/>
 - [ ] **Discord** - <https://discord.com/download/>
 - [ ] **WisprFlow** - <https://wisprflow.ai/>
+- [ ] **Obsidian** - <https://obsidian.md/download>
 
 ### Media & Content
 
@@ -87,6 +90,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Meld Studio** - <https://meldstudio.co/>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
+- [ ] **FL Studio** - <https://support.image-line.com/redirect/flstudio_mac_installer/>
 
 ### Gaming
 
@@ -160,6 +164,8 @@ opencode auth login
 npm i -g @openai/codex
 npm install -g @google/gemini-cli
 curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://gh.io/copilot-install | bash
+curl https://cursor.com/install -fsS | bash
 ```
 
 ---

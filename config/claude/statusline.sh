@@ -64,7 +64,7 @@ get_mcp_servers() {
 
   # Fallback to home config if current project has no MCP
   if [ -z "$SERVERS" ]; then
-    SERVERS=$(jq -r '.projects["/Users/alanbuscaglia"].mcpServers // {} | keys[]' ~/.claude.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+    SERVERS=$(jq -r ".projects[\"$HOME\"].mcpServers // {} | keys[]" ~/.claude.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
   fi
 
   local ALL_SERVERS="$SERVERS"

@@ -1,5 +1,9 @@
 {
   "cleanupPeriodDays": 3,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENTS_TEAMS": "1",
+    "CLAUDE_CODE_COORDINATOR_MODE": "1"
+  },
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
@@ -111,6 +115,7 @@
       "Read(**/.git/hooks/**)"
     ]
   },
+  "model": "opusplan",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -122,5 +127,7 @@
   },
   "outputStyle": "sebita",
   "spinnerTipsEnabled": true,
-  "alwaysThinkingEnabled": false
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true
 }
