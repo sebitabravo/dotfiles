@@ -1,7 +1,13 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "theme": "sebita",
   "autoupdate": true,
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 40000
+  },
+  "small_model": "opencode/qwen3.6-plus-free",
+  "default_agent": "sebastian",
   "permission": {
     "bash": {
       "*": "allow",
@@ -10,7 +16,11 @@
       "git push": "ask",
       "git push --force *": "ask",
       "git rebase *": "ask",
-      "git reset --hard *": "ask"
+      "git reset --hard *": "ask",
+      "git clean *": "ask",
+      "git checkout -f *": "ask",
+      "rm -rf *": "ask",
+      "rm -f *": "ask"
     },
     "read": {
       "*": "allow",
@@ -22,12 +32,12 @@
       "**/credentials.json": "deny"
     }
   },
-  "tui": {
-    "scroll_speed": 1,
-    "scroll_acceleration": {
-      "enabled": true
-    }
-  },
+  "plugin": [
+    "opencode-gemini-auth@latest",
+    "opencode-anthropic-login-via-cli@latest",
+    "./plugins/model-context-guard.ts",
+    "./plugins/background-agents.ts"
+  ],
   "mcp": {
     "context7": {
       "type": "local",
@@ -54,43 +64,46 @@
         "-y",
         "@playwright/mcp@latest"
       ],
-      "enabled": true
+      "enabled": false
+    },
+    "pencil": {
+      "command": [
+        "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+        "--app",
+        "desktop"
+      ],
+      "enabled": false,
+      "type": "local"
     }
   },
   "agent": {
     "sebastian": {
       "mode": "primary",
       "description": "Reviews code for best practices and potential issues as the sebastian",
+      "model": "anthropic/claude-sonnet-4-6",
       "temperature": 0.1,
       "prompt": "{file:./prompts/sebastian.txt}",
       "tools": {
+        "read": true,
         "write": true,
         "edit": true,
         "bash": true,
+        "skill": true,
+        "task": true,
         "webfetch": true,
-        "git": true
+        "delegate": true,
+        "delegation_read": true,
+        "delegation_list": true
       },
-      "permissions": {
+      "permission": {
         "edit": "allow",
         "webfetch": "allow",
-        "git": "ask",
-        "bash": "ask"
+        "task": {
+          "*": "allow"
+        }
       },
       "instructions": [
-        "~/.config/opencode/security_rules.md"
-      ]
-    },
-    "mimasoft": {
-      "mode": "primary",
-      "description": "Assists the primary agent by providing additional insights and suggestions as the mimasoft",
-      "temperature": 0.1,
-      "prompt": "{file:./prompts/mimasoft.txt}",
-      "tools": {
-        "write": true,
-        "edit": true,
-        "read": true
-      },
-      "instructions": [
+        "~/.config/opencode/AGENTS.md",
         "~/.config/opencode/security_rules.md"
       ]
     }
