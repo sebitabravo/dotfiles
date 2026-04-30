@@ -1,8 +1,23 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 3,
   "env": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "200000",
+    "CLAUDE_CODE_MAX_FILE_READ_BYTES": "500000",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "ENABLE_PROMPT_CACHING_1H": "1",
     "CLAUDE_CODE_EXPERIMENTAL_AGENTS_TEAMS": "1",
-    "CLAUDE_CODE_COORDINATOR_MODE": "1"
+    "CLAUDE_CODE_COORDINATOR_MODE": "1",
+    "CLAUDE_CODE_MAX_AGENT_DEPTH": "5",
+    "ENABLE_MONITOR_TOOL": "1",
+    "CLAUDE_CODE_ENABLE_AWAY_SUMMARY": "1",
+    "CLAUDE_CODE_USE_LOCAL_GIT_USER": "1",
+    "CLAUDE_CODE_AUTO_IGNORE_PATTERNS": "1",
+    "CLAUDE_CODE_RETRY_LIMIT": "2",
+    "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -75,23 +90,7 @@
       "Bash(turbo:*)",
       "WebFetch"
     ],
-    "ask": [
-      "Copy",
-      "Move",
-      "Delete",
-      "Shell",
-      "Edit",
-      "Task",
-      "Http",
-      "Https",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git push --force:*)",
-      "Bash(git rebase:*)",
-      "Bash(git reset --hard:*)"
-    ],
     "deny": [
-      "Ssh",
       "Write(./.env)",
       "Write(./.env.*)",
       "Read(.env)",
@@ -113,9 +112,29 @@
       "Read(**/CVS/**)",
       "Read(**/.git/objects/**)",
       "Read(**/.git/hooks/**)"
+    ],
+    "ask": [
+      "Edit",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git push --force:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset --hard:*)"
     ]
   },
   "model": "opusplan",
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git -C \"$PWD\" add -A && git -C \"$PWD\" diff --cached --quiet || git -C \"$PWD\" commit -m \"auto-save: pre-compaction checkpoint\" --no-verify 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -125,9 +144,17 @@
     "commit": "",
     "pr": ""
   },
+  "enableFileCheckpointing": true,
   "outputStyle": "sebita",
+  "language": "spanish",
   "spinnerTipsEnabled": true,
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true
+  "advisorModel": "opus",
+  "autoUpdatesChannel": "latest",
+  "autoDreamEnabled": true,
+  "skipDangerousModePermissionPrompt": true,
+  "memoryPruning": true,
+  "mcpPriority": "project-first",
+  "maxBudgetPerSession": "2.0",
+  "includeGitHistoryContext": "last-5"
 }
