@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "description": "Canonical source of truth for subagent model assignments. agents/*.md is synced from this file and does not override it.",
+  "subagentModels": {
+    "backend-architect": "github-copilot/gpt-5-mini",
+    "code-reviewer": "github-copilot/gpt-5-mini",
+    "debugger": "github-copilot/gpt-5-mini",
+    "deployment-engineer": "github-copilot/gpt-5-mini",
+    "frontend-developer": "github-copilot/gpt-5-mini",
+    "observability-engineer": "github-copilot/gpt-5-mini",
+    "performance-engineer": "github-copilot/gpt-5-mini",
+    "reliability-engineer": "github-copilot/gpt-5-mini",
+    "requirements-clarifier": "github-copilot/gpt-5-mini",
+    "sdd-apply": "github-copilot/gpt-5-mini",
+    "sdd-archive": "github-copilot/gpt-5-mini",
+    "sdd-design": "github-copilot/gpt-5-mini",
+    "sdd-explore": "github-copilot/gpt-5-mini",
+    "sdd-init": "github-copilot/gpt-5-mini",
+    "sdd-onboard": "github-copilot/gpt-5-mini",
+    "sdd-propose": "github-copilot/gemini-3.1-pro-preview",
+    "sdd-spec": "github-copilot/gpt-5-mini",
+    "sdd-tasks": "github-copilot/gemini-3.1-pro-preview",
+    "sdd-verify": "github-copilot/gpt-5-mini",
+    "security-auditor": "github-copilot/gpt-5-mini",
+    "task-decomposer": "github-copilot/gpt-5-mini",
+    "universal-free-fallback": "github-copilot/gpt-5-mini"
+  }
+}

@@ -2,7 +2,7 @@
 description: SDD Phase 5 - Break design/spec into ordered implementation tasks.
 mode: subagent
 hidden: true
-model: openai/gpt-5.4
+model: github-copilot/gemini-3.1-pro-preview
 temperature: 0.1
 ---
 

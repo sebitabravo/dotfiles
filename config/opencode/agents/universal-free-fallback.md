@@ -1,7 +1,7 @@
 ---
 description: Universal free-tier fallback executor for any delegation that fails due provider/quota/model issues.
 mode: subagent
-model: opencode/qwen3.6-plus-free
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 

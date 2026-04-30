@@ -2,7 +2,7 @@
 description: SDD Phase 8 - Archive final outcome and summarize deliverables, decisions, and follow-ups.
 mode: subagent
 hidden: true
-model: anthropic/claude-sonnet-4-6
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 

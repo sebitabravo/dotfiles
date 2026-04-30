@@ -2,7 +2,7 @@
 description: SDD Phase 3 - Write functional spec with requirements, scenarios, and acceptance criteria.
 mode: subagent
 hidden: true
-model: github-copilot/gemini-3.1-pro-preview
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 

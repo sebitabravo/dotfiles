@@ -2,7 +2,7 @@
 description: SDD Phase 1 - Explore the codebase and constraints before proposing a solution.
 mode: subagent
 hidden: true
-model: anthropic/claude-sonnet-4-6
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 

@@ -2,7 +2,7 @@
 description: SDD Phase 0 - Initialize project context, stack signals, and phase readiness.
 mode: subagent
 hidden: true
-model: anthropic/claude-sonnet-4-6
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 

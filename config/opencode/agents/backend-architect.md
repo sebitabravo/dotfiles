@@ -1,7 +1,7 @@
 ---
 description: Design RESTful APIs, microservice boundaries, and database schemas. Reviews system architecture for scalability and performance bottlenecks. Use PROACTIVELY when creating new backend services or APIs.
 mode: subagent
-model: openai/gpt-5.4
+model: github-copilot/gpt-5-mini
 temperature: 0.2
 ---
 

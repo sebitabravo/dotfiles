@@ -1,7 +1,7 @@
 ---
 description: Debugging specialist for errors, test failures, and unexpected behavior. Use proactively when encountering any issues.
 mode: subagent
-model: openai/gpt-5.4
+model: github-copilot/gpt-5-mini
 temperature: 0.2
 ---
 

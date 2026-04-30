@@ -1,43 +1,39 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "sebastian": {
+      "mode": "primary",
+      "description": "Primary orchestrator and senior architect focused on technical judgment, delegation, and safe autonomy",
+      "model": "anthropic/claude-sonnet-4-6",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/sebastian.txt}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "skill": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "webfetch": "allow",
+        "delegate": "allow",
+        "delegation_read": "allow",
+        "delegation_list": "allow"
+      },
+      "instructions": [
+        "~/.config/opencode/AGENTS.md",
+        "~/.config/opencode/security_rules.md"
+      ]
+    }
+  },
   "autoupdate": true,
   "compaction": {
     "auto": true,
     "prune": true,
-    "reserved": 40000
+    "reserved": 60000
   },
-  "small_model": "opencode/qwen3.6-plus-free",
   "default_agent": "sebastian",
-  "permission": {
-    "bash": {
-      "*": "allow",
-      "git commit *": "ask",
-      "git push *": "ask",
-      "git push": "ask",
-      "git push --force *": "ask",
-      "git rebase *": "ask",
-      "git reset --hard *": "ask",
-      "git clean *": "ask",
-      "git checkout -f *": "ask",
-      "rm -rf *": "ask",
-      "rm -f *": "ask"
-    },
-    "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "**/.env": "deny",
-      "**/.env.*": "deny",
-      "**/secrets/**": "deny",
-      "**/credentials.json": "deny"
-    }
-  },
-  "plugin": [
-    "opencode-gemini-auth@latest",
-    "opencode-anthropic-login-via-cli@latest",
-    "./plugins/model-context-guard.ts",
-    "./plugins/background-agents.ts"
-  ],
   "mcp": {
     "context7": {
       "type": "local",
@@ -65,47 +61,51 @@
         "@playwright/mcp@latest"
       ],
       "enabled": false
-    },
-    "pencil": {
-      "command": [
-        "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
-        "--app",
-        "desktop"
-      ],
-      "enabled": false,
-      "type": "local"
     }
   },
-  "agent": {
-    "sebastian": {
-      "mode": "primary",
-      "description": "Reviews code for best practices and potential issues as the sebastian",
-      "model": "anthropic/claude-sonnet-4-6",
-      "temperature": 0.1,
-      "prompt": "{file:./prompts/sebastian.txt}",
-      "tools": {
-        "read": true,
-        "write": true,
-        "edit": true,
-        "bash": true,
-        "skill": true,
-        "task": true,
-        "webfetch": true,
-        "delegate": true,
-        "delegation_read": true,
-        "delegation_list": true
-      },
-      "permission": {
-        "edit": "allow",
-        "webfetch": "allow",
-        "task": {
-          "*": "allow"
-        }
-      },
-      "instructions": [
-        "~/.config/opencode/AGENTS.md",
-        "~/.config/opencode/security_rules.md"
-      ]
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git commit*": "ask",
+      "git push*": "ask",
+      "git rebase*": "ask",
+      "git reset --hard*": "ask",
+      "git clean*": "ask",
+      "git checkout -f*": "ask",
+      "rm -rf *": "ask",
+      "rm -f *": "ask"
+    },
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/.ssh/**": "deny",
+      "**/id_*": "deny",
+      "**/.git/hooks/**": "deny",
+      "**/.git/objects/**": "deny",
+      "**/.DS_Store": "deny",
+      "**/Thumbs.db": "deny",
+      "**/.svn/**": "deny",
+      "**/.hg/**": "deny",
+      "**/CVS/**": "deny",
+      "**/*.pem": "deny",
+      "**/*.key": "deny",
+      "**/*.ppk": "deny",
+      "**/*.p12": "deny",
+      "**/*.pfx": "deny",
+      "**/*.pvk": "deny",
+      "**/secrets/**": "deny",
+      "**/credentials.json": "deny"
     }
-  }
+  },
+  "plugin": [
+    "opencode-gemini-auth@latest",
+    "opencode-anthropic-login-via-cli@latest",
+    "./plugins/model-context-guard.ts",
+    "./plugins/subagent-model-sync.ts",
+    "./plugins/background-agents.ts"
+  ],
+  "small_model": "google/gemini-2.5-flash"
 }

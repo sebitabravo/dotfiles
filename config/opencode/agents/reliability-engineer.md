@@ -1,7 +1,7 @@
 ---
 description: Performance optimization, observability, monitoring, and system reliability. Masters profiling, load testing, Core Web Vitals, OpenTelemetry, distributed tracing, SLI/SLO, caching, alerting, and incident response. Use PROACTIVELY for performance issues, monitoring setup, or production reliability.
 mode: subagent
-model: openai/gpt-5.4
+model: github-copilot/gpt-5-mini
 temperature: 0.2
 ---
 

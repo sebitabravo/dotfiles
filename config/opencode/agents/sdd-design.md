@@ -2,7 +2,7 @@
 description: SDD Phase 4 - Produce technical design and architecture decisions from the approved spec.
 mode: subagent
 hidden: true
-model: anthropic/claude-opus-4-6
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 ---
 
