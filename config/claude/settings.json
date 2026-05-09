@@ -200,30 +200,5 @@
   "memoryPruning": true,
   "mcpPriority": "project-first",
   "maxBudgetPerSession": "2.0",
-  "includeGitHistoryContext": "last-5",
-  "enabledPlugins": {
-    "engram@engram": true,
-    "caveman@caveman": true,
-    "warp@claude-code-warp": true
-  },
-  "extraKnownMarketplaces": {
-    "caveman": {
-      "source": {
-        "source": "github",
-        "repo": "JuliusBrussee/caveman"
-      }
-    },
-    "engram": {
-      "source": {
-        "source": "github",
-        "repo": "Gentleman-Programming/engram"
-      }
-    },
-    "claude-code-warp": {
-      "source": {
-        "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
-      }
-    }
-  }
+  "includeGitHistoryContext": "last-5"
 }
