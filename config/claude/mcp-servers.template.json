@@ -1,12 +1,46 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-mcp.json",
+  "_comment": "Copiar a ~/.claude/mcp-servers.json y ajustar según necesidades. Mantener <10 MCPs y <80 tools activas para no saturar la context window.",
+
   "mcpServers": {
     "context7": {
       "type": "http",
-      "url": "https://mcp.context7.com/mcp"
+      "url": "https://mcp.context7.com/mcp",
+      "_note": "Documentación actualizada de librerías y frameworks. Usar en vez de WebSearch para docs de código."
     },
     "playwright": {
       "type": "http",
-      "url": "https://mcp.playwright.dev/mcp"
+      "url": "https://mcp.playwright.dev/mcp",
+      "_note": "Automatización de navegador para E2E testing y web scraping."
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <tu-github-token>"
+      },
+      "_note": "PRs, issues, repos, code search. Requiere token de GitHub con scopes: repo, read:org."
+    },
+    "postgres": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-postgres", "<connection-string>"],
+      "_note": "Consultas y schema introspection de PostgreSQL. Connection string en .env, NUNCA hardcodeado."
+    },
+    "brave-search": {
+      "type": "http",
+      "url": "https://mcp.brave.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <tu-brave-api-key>"
+      },
+      "_note": "Búsqueda web para información actualizada. API key gratuita en brave.com/search/api/."
     }
+  },
+
+  "_howto": {
+    "agregar_mcp": "Agregar entrada en mcpServers y configurar type (http/local) + credenciales en .env.",
+    "desactivar_mcp": "Borrar la entrada del objeto mcpServers o usar /mcp en Claude Code.",
+    "limite_seguro": "Máximo 8-10 MCPs activos. Más = saturación de context window con tool descriptions.",
+    "seguridad": "Nunca hardcodear tokens en este archivo. Usar variables de entorno o el campo headers con placeholder."
   }
 }

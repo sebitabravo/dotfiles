@@ -18,8 +18,9 @@
     "CLAUDE_CODE_AUTO_IGNORE_PATTERNS": "1",
     "CLAUDE_CODE_RETRY_LIMIT": "2",
     "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
+    "MAX_THINKING_TOKENS": "10000"
   },
   "attribution": {
     "commit": "",
@@ -130,12 +131,43 @@
   },
   "model": "opusplan",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[SessionStart] Stack: '$(uname -s)' | Claude Code v'$(claude --version 2>/dev/null | head -1 || echo 'latest')' | '$(date +%Y-%m-%dT%H:%M:%S) >&2"
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "git -C \"$PWD\" add -A && git -C \"$PWD\" diff --cached --quiet || git -C \"$PWD\" commit -m \"auto-save: pre-compaction checkpoint\" --no-verify 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "tool == \"Edit\" || tool == \"Write\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\" && case \"$file\" in *.ts|*.tsx|*.js|*.jsx|*.py|*.rb|*.go|*.rs|*.php) grep -n -E '(console\\.(log|warn|error|debug)|print\\(|var_dump|dd\\(|debugger|binding\\.pry|byebug)' \"$file\" 2>/dev/null && echo '[Hook] Debug statements detectados en '$file >&2 ;; esac || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v engram &>/dev/null; then engram mem save --title \"Session checkpoint\" --content \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery --project dotfiles 2>/dev/null || true; fi"
           }
         ]
       }
