@@ -17,7 +17,13 @@
     "CLAUDE_CODE_USE_LOCAL_GIT_USER": "1",
     "CLAUDE_CODE_AUTO_IGNORE_PATTERNS": "1",
     "CLAUDE_CODE_RETRY_LIMIT": "2",
-    "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1"
+    "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -26,6 +32,7 @@
       "Grep",
       "Glob",
       "Write",
+      "Edit",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git add:*)",
@@ -114,7 +121,6 @@
       "Read(**/.git/hooks/**)"
     ],
     "ask": [
-      "Edit",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git push --force:*)",
@@ -139,10 +145,6 @@
     "type": "command",
     "command": "~/.claude/statusline.sh",
     "padding": 0
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   },
   "enableFileCheckpointing": true,
   "outputStyle": "sebita",

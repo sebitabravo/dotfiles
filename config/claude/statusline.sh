@@ -171,5 +171,26 @@ LINE+="${SUCCESS}+${ADDED}${NC} ${ERROR}-${REMOVED}${NC}"
 LINE+="${SEP}"
 LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 
+# Caveman mode badge
+CAVEMAN_FLAG="${HOME}/.claude/.caveman-active"
+CAVEMAN_BADGE=""
+if [ -f "$CAVEMAN_FLAG" ] && [ ! -L "$CAVEMAN_FLAG" ]; then
+  CAV_MODE=$(head -c 64 "$CAVEMAN_FLAG" 2>/dev/null | tr -d '\n\r' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
+  case "$CAV_MODE" in
+    lite|full|ultra|wenyan-lite|wenyan|wenyan-full|wenyan-ultra)
+      if [ -z "$CAV_MODE" ] || [ "$CAV_MODE" = "full" ]; then
+        CAVEMAN_BADGE="\033[38;5;172m[CAVEMAN]\033[0m"
+      else
+        CAV_SUFFIX=$(printf '%s' "$CAV_MODE" | tr '[:lower:]' '[:upper:]')
+        CAVEMAN_BADGE="\033[38;5;172m[CAVEMAN:${CAV_SUFFIX}]\033[0m"
+      fi
+      ;;
+  esac
+fi
+
+if [ -n "$CAVEMAN_BADGE" ]; then
+  LINE+="${MUTED}  ${NC}${CAVEMAN_BADGE}"
+fi
+
 # Clear to end of line to prevent artifacts from previous renders
 echo -e "${LINE}\033[K"
