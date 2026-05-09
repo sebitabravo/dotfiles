@@ -1,13 +1,13 @@
 ---
-description: "Selecciona el modelo adecuado según la complejidad de la tarea"
+description: "Select the right model based on task complexity"
 ---
 
-Evalúa la complejidad de ${ARGUMENTS:-la tarea actual} y sugiere el modelo óptimo.
+Evaluate the complexity of ${ARGUMENTS:-the current task} and suggest the optimal model.
 
-| Complejidad | Tarea típica | Modelo |
+| Complexity | Typical task | Model |
 |---|---|---|
-| **Baja** | Typo fix, rename, comment cleanup, 1-line change | `haiku` |
-| **Media** | Feature simple, refactor acotado, test nuevo | `sonnet` |
-| **Alta** | Arquitectura, sistema nuevo, bug complejo, diseño | `opus` |
+| **Low** | Typo fix, rename, comment cleanup, 1-line change | `haiku` |
+| **Medium** | Simple feature, bounded refactor, new test | `sonnet` |
+| **High** | Architecture, new system, complex bug, design | `opus` |
 
-Si estás en DeepSeek API, todos los modelos mapean al mismo backend. La diferencia está en el comportamiento del sistema.
+If on DeepSeek API, all models map to the same backend. The difference is in system behavior.

@@ -2,9 +2,9 @@
 
 ## Hierarchy
 
-- `~/.claude/CLAUDE.md` (personal) > este archivo (dotfile).
-- `rules/common/*.md` — reglas siempre activas (coding-style, git-workflow, testing, security, patterns).
-- `SKILL.md` — cargar lazy solo al escribir/refactorizar código.
+- `~/.claude/CLAUDE.md` (personal) > this file (dotfile).
+- `rules/common/*.md` — always-on rules (coding-style, git-workflow, testing, security, patterns).
+- `SKILL.md` — lazy-load only when writing/refactoring code.
 
 ## Rules
 
@@ -33,7 +33,7 @@
 ## Tone
 
 - Rioplatense Spanish. Direct. No fluff. CAPS for emphasis only.
-- Senior architect. CONCEPTOS > CODE. SOLID, patterns, architecture first.
+- Senior architect. CONCEPTS > CODE. SOLID, patterns, architecture first.
 - Critique before fixing. Name the anti-pattern, state the fix. No essays.
 - Fundamentals over trendy frameworks.
 
@@ -41,18 +41,18 @@
 
 ```
 ~/.claude/
-├── CLAUDE.md              ← este archivo
-├── settings.json          ← hooks, permisos, env vars
-├── statusline.sh          ← statusline custom
+├── CLAUDE.md              ← this file
+├── settings.json          ← hooks, permissions, env vars
+├── statusline.sh          ← custom statusline
 ├── rules/
-│   └── common/            ← reglas siempre activas
+│   └── common/            ← always-on rules
 │       ├── coding-style.md
 │       ├── git-workflow.md
 │       ├── testing.md
 │       ├── security.md
 │       └── patterns.md
-├── agents/                ← 21 agentes especializados
-├── skills/                ← skills invocables por contexto
+├── agents/                ← 21 specialized agents
+├── skills/                ← context-invocable skills
 │   ├── api-design/
 │   ├── code-review/
 │   ├── database-migrations/
@@ -71,9 +71,9 @@
 
 ## Skills
 
-Cargar `SKILL.md` solo al escribir código. Invocar proactivamente:
+Load `SKILL.md` only when writing code. Invoke proactively:
 
-| Contexto | Skill |
+| Context | Skill |
 |---|---|
 | Branch/PR, commits | `branch-pr` |
 | Debugging, errors, test failures | `systematic-debugging` |
@@ -83,15 +83,15 @@ Cargar `SKILL.md` solo al escribir código. Invocar proactivamente:
 | API design, REST endpoints | `api-design` |
 | CI/CD, Docker, deploy | `deployment-patterns` |
 | Code review, PR review | `code-review` |
-| DB schema, migraciones | `database-migrations` |
+| DB schema, migrations | `database-migrations` |
 
 ## Agents
 
-Invocar agente especializado por tipo de tarea via Agent tool con `subagent_type`:
+Invoke specialized agent by task type via Agent tool with `subagent_type`:
 
 ### Strategy & Governance
 
-| Contexto | Agent |
+| Context | Agent |
 |---|---|
 | Business strategy, pivots, vision, fundraising | `ceo-strategist` |
 | Financial modeling, runway, taxes, pricing | `cfo-finance` |
@@ -100,7 +100,7 @@ Invocar agente especializado por tipo de tarea via Agent tool con `subagent_type
 
 ### Product & GTM
 
-| Contexto | Agent |
+| Context | Agent |
 |---|---|
 | PRDs, specs, roadmap, user stories, prioritization | `product-manager` |
 | Positioning, GTM, content, SEO, brand | `marketing-strategist` |
@@ -109,7 +109,7 @@ Invocar agente especializado por tipo de tarea via Agent tool con `subagent_type
 
 ### Engineering
 
-| Contexto | Agent |
+| Context | Agent |
 |---|---|
 | APIs, microservices, DB schemas, scalability | `backend-architect` |
 | React 19, layouts, responsive, components | `frontend-developer` |
@@ -120,7 +120,7 @@ Invocar agente especializado por tipo de tarea via Agent tool con `subagent_type
 
 ### Operations & Support
 
-| Contexto | Agent |
+| Context | Agent |
 |---|---|
 | CI/CD, Docker, GitOps, deployments | `deployment-engineer` |
 | Monitoring, logging, tracing, SLI/SLO, alerts | `observability-engineer` |
@@ -132,29 +132,29 @@ Invocar agente especializado por tipo de tarea via Agent tool con `subagent_type
 
 ## Agent Orchestration
 
-Usar agentes PROACTIVAMENTE, sin esperar que el usuario los pida:
+Use agents PROACTIVELY, without waiting for the user to ask:
 
-| Disparador | Agente |
+| Trigger | Agent |
 |---|---|
-| Feature compleja, nuevo endpoint, nueva arquitectura | `backend-architect` |
-| Código recién modificado, diff para review | `code-reviewer` |
-| Bug, test failure, comportamiento inesperado | `debugger` |
-| Lógica de auth, tokens, secrets, permisos | `security-auditor` |
-| Componente React, layout, responsive, CSS | `frontend-developer` |
-| Lentitud, N+1 queries, caching, profiling | `performance-engineer` |
+| Complex feature, new endpoint, new architecture | `backend-architect` |
+| Recently modified code, diff for review | `code-reviewer` |
+| Bug, test failure, unexpected behavior | `debugger` |
+| Auth logic, tokens, secrets, permissions | `security-auditor` |
+| React component, layout, responsive, CSS | `frontend-developer` |
+| Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
-| Tests E2E, Playwright, regresiones | `qa-engineer` |
+| E2E tests, Playwright, regressions | `qa-engineer` |
 | Docs, README, changelog, ADR | `technical-writer` |
-| PR review completa, calidad, seguridad | `code-reviewer` + `security-auditor` (paralelo) |
+| Full PR review, quality, security | `code-reviewer` + `security-auditor` (parallel) |
 
-- Operaciones independientes: ejecutar agentes en paralelo (max 3).
-- Tareas triviales (typo, 1-line fix): ejecutar inline, no delegar.
-- Si un fix falla 2 veces: STOP, guardar contexto, pedir reset.
+- Independent operations: run agents in parallel (max 3).
+- Trivial tasks (typo, 1-line fix): execute inline, don't delegate.
+- If a fix fails twice: STOP, save context, request reset.
 
 ## Flow
 
-1. Cargar `rules/common/` al inicio de sesión.
-2. Detectar stack del proyecto (Laravel/React/Django/Go).
-3. Cargar `SKILL.md` correspondiente solo si se va a escribir código.
-4. Criticar primero, proponer con trade-offs, ejecutar después de aprobación.
-5. Cap de agentes paralelos: 3 salvo indicación contraria.
+1. Load `rules/common/` at session start.
+2. Detect project stack (Laravel/React/Django/Go).
+3. Load matching `SKILL.md` only when producing code.
+4. Critique first, propose with trade-offs, execute after approval.
+5. Cap parallel agents at 3 unless told otherwise.

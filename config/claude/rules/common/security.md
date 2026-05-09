@@ -1,36 +1,36 @@
 ---
-description: "OWASP Top 10, secretos, dependencias — reglas de seguridad no negociables"
+description: "OWASP Top 10, secrets, dependencies — non-negotiable security rules"
 globs: []
 alwaysApply: true
 ---
 
 # Security
 
-## No negociable
+## Non-negotiable
 
-- **Nunca commits con secretos**. API keys, tokens, contraseñas = `.env` o vault.
-- **Validar input de usuario SIEMPRE**. En el backend, aunque el frontend ya valide.
-- **Sanitizar output**. XSS prevention. Escapar antes de renderizar.
-- **Prepared statements para SQL**. Nunca concatenar queries con input.
-- **HTTPS en producción**. HTTP solo para desarrollo local.
+- **Never commit secrets**. API keys, tokens, passwords = `.env` or vault.
+- **ALWAYS validate user input**. Backend-side, even if frontend validates.
+- **Sanitize output**. XSS prevention. Escape before rendering.
+- **Prepared statements for SQL**. Never concatenate queries with user input.
+- **HTTPS in production**. HTTP only for local development.
 
-## Niveles de criticidad
+## Severity levels
 
-| Nivel | Condición | Acción |
+| Level | Condition | Action |
 |---|---|---|
-| **Crítico** | Secreto expuesto en código/commit | Rotar inmediatamente, purgar historial git |
-| **Alto** | SQL injection, XSS, auth bypass | Fix antes del deploy |
-| **Medio** | Dependencia vulnerable, falta rate limiting | Fix en esta iteración |
+| **Critical** | Secret exposed in code/commit | Rotate immediately, purge git history |
+| **High** | SQL injection, XSS, auth bypass | Fix before deploy |
+| **Medium** | Vulnerable dependency, missing rate limiting | Fix this iteration |
 
-## Al generar código
+## When generating code
 
-- No generes tokens, passwords ni secretos de ejemplo (ni siquiera "test_sk_123").
-- Usá variables de entorno o placeholders obvios: `$API_KEY`, `<tu-api-key>`.
-- No uses algoritmos criptográficos obsoletos: MD5, SHA1, DES, RC4.
-- No uses `eval()`, `exec()`, `Function()`, `system()` con strings dinámicos.
+- Never generate tokens, passwords, or example secrets (not even "test_sk_123").
+- Use environment variables or obvious placeholders: `$API_KEY`, `<your-api-key>`.
+- Never use obsolete cryptographic algorithms: MD5, SHA1, DES, RC4.
+- Never use `eval()`, `exec()`, `Function()`, `system()` with dynamic strings.
 
-## Dependencias
+## Dependencies
 
-- Antes de instalar: verificá que el paquete sea legítimo (typo-squatting).
-- Mantené dependencias actualizadas. `npm audit`, `pip audit`, `cargo audit`.
-- La cantidad mínima necesaria. Menos dependencias = menor superficie de ataque.
+- Before installing: verify the package is legitimate (typo-squatting).
+- Keep dependencies updated. `npm audit`, `pip audit`, `cargo audit`.
+- Minimum necessary amount. Fewer dependencies = smaller attack surface.

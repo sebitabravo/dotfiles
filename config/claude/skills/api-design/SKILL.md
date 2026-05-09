@@ -5,52 +5,52 @@ description: Design RESTful APIs with proper status codes, pagination, error res
 
 # API Design
 
-Diseño de APIs RESTful con foco en consistencia, escalabilidad y developer experience.
+RESTful API design focused on consistency, scalability, and developer experience.
 
 ## When to Use
 
-- Crear nuevos endpoints o recursos.
-- Revisar diseño de API existente.
-- Definir contratos de API para microservicios.
-- El usuario pregunta sobre versionado, paginación, o estructura de responses.
+- Creating new endpoints or resources.
+- Reviewing existing API design.
+- Defining API contracts for microservices.
+- User asks about versioning, pagination, or response structure.
 
 ## Principles
 
 ### URLs
-- Sustantivos en plural: `/users`, `/users/:id/orders`.
-- Sin verbos en la URL. La acción la define el método HTTP.
-- Hasta 3 niveles de anidación máximo. Más → evaluar un recurso raíz.
+- Plural nouns: `/users`, `/users/:id/orders`.
+- No verbs in the URL. The action is defined by the HTTP method.
+- Max 3 nesting levels. More → evaluate a root resource.
 
-### Métodos HTTP
+### HTTP Methods
 
-| Método | Ruta | Descripción |
+| Method | Route | Description |
 |---|---|---|
-| `GET` | `/users` | Listar con filtros y paginación |
-| `GET` | `/users/:id` | Obtener uno |
-| `POST` | `/users` | Crear |
-| `PUT` | `/users/:id` | Reemplazar completo |
-| `PATCH` | `/users/:id` | Actualizar parcial |
-| `DELETE` | `/users/:id` | Eliminar (soft delete) |
+| `GET` | `/users` | List with filters and pagination |
+| `GET` | `/users/:id` | Get one |
+| `POST` | `/users` | Create |
+| `PUT` | `/users/:id` | Full replace |
+| `PATCH` | `/users/:id` | Partial update |
+| `DELETE` | `/users/:id` | Delete (soft delete) |
 
 ### Status Codes
 
-| Códigos | Uso |
+| Codes | Use |
 |---|---|
-| `200` | GET/PUT/PATCH exitoso |
-| `201` | POST exitoso (con Location header) |
-| `204` | DELETE exitoso (sin body) |
-| `400` | Error de validación del cliente |
-| `401` | No autenticado |
-| `403` | Autenticado pero sin permisos |
-| `404` | Recurso no encontrado |
-| `409` | Conflicto (duplicado, estado inválido) |
-| `422` | Entidad no procesable (errores de validación) |
-| `429` | Rate limit excedido |
-| `500` | Error interno (nunca exponer detalles) |
+| `200` | Successful GET/PUT/PATCH |
+| `201` | Successful POST (with Location header) |
+| `204` | Successful DELETE (no body) |
+| `400` | Client validation error |
+| `401` | Not authenticated |
+| `403` | Authenticated but no permissions |
+| `404` | Resource not found |
+| `409` | Conflict (duplicate, invalid state) |
+| `422` | Unprocessable entity (validation errors) |
+| `429` | Rate limit exceeded |
+| `500` | Internal error (never expose details) |
 
 ### Response Envelope
 
-Toda respuesta sigue esta estructura:
+Every response follows this structure:
 
 ```json
 {
@@ -70,38 +70,38 @@ Error:
   "data": null,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "El campo email es requerido",
+    "message": "The email field is required",
     "details": [{"field": "email", "reason": "required"}]
   },
   "meta": null
 }
 ```
 
-### Paginación
+### Pagination
 
-- Siempre paginar colecciones. Sin excepción.
-- Parámetros: `?page=1&per_page=20`. Máximo `per_page=100`.
-- Response incluye `meta` con `page`, `per_page`, `total`, `total_pages`.
-- Cursor-based para datasets grandes o tiempo real.
+- Always paginate collections. No exceptions.
+- Parameters: `?page=1&per_page=20`. Max `per_page=100`.
+- Response includes `meta` with `page`, `per_page`, `total`, `total_pages`.
+- Cursor-based for large datasets or real-time.
 
-### Versionado
+### Versioning
 
-- En el header: `Accept: application/vnd.api.v2+json`.
-- Fallback a URL: `/v2/users` si el header no es viable.
-- Deprecación: warning en header `Sunset` + documentación de migration path.
+- In the header: `Accept: application/vnd.api.v2+json`.
+- Fallback to URL: `/v2/users` if header isn't viable.
+- Deprecation: warning in `Sunset` header + migration path documentation.
 
 ### Filtering, Sorting, Search
 
 ```
-GET /users?status=active&role=admin     → filtros exactos
-GET /users?q=juan                        → búsqueda textual
-GET /users?sort=-created_at,name         → ordenamiento (- para desc)
-GET /users?include=orders,profile        → recursos relacionados
+GET /users?status=active&role=admin     → exact filters
+GET /users?q=juan                        → text search
+GET /users?sort=-created_at,name         → sorting (- for desc)
+GET /users?include=orders,profile        → related resources
 ```
 
 ### Rate Limiting
 
-Headers obligatorios en toda response:
+Mandatory headers on every response:
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 987

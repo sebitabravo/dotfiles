@@ -5,14 +5,14 @@ description: CI/CD pipelines, Docker optimization, health checks, rollback strat
 
 # Deployment Patterns
 
-Patrones de deploy, CI/CD, y contenedores con foco en zero-downtime y confiabilidad.
+Deploy, CI/CD, and container patterns focused on zero-downtime and reliability.
 
 ## When to Use
 
-- Configurar CI/CD pipeline.
-- Escribir o revisar Dockerfile/docker-compose.yml.
-- Planificar estrategia de deploy (rolling, blue-green, canary).
-- Debuggear problemas de deploy en producción.
+- Configuring CI/CD pipeline.
+- Writing or reviewing Dockerfile/docker-compose.yml.
+- Planning deploy strategy (rolling, blue-green, canary).
+- Debugging production deploy issues.
 
 ## Docker
 
@@ -40,12 +40,12 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 CMD ["node", "dist/main.js"]
 ```
 
-Reglas:
-- Multi-stage builds. Imagen final sin herramientas de build.
-- Usuario no-root (`USER app`).
-- `.dockerignore`: `node_modules`, `.git`, `.env*`, `dist` (en builder stage).
-- Tags: `:latest` para dev, commit SHA para staging, semver para prod.
-- Sin secrets en layers. `ARG` solo para build-time, no persiste.
+Rules:
+- Multi-stage builds. Final image without build tools.
+- Non-root user (`USER app`).
+- `.dockerignore`: `node_modules`, `.git`, `.env*`, `dist` (in builder stage).
+- Tags: `:latest` for dev, commit SHA for staging, semver for prod.
+- No secrets in layers. `ARG` only for build-time, doesn't persist.
 
 ### Docker Compose
 
@@ -86,19 +86,19 @@ volumes:
 
 ## Health Checks
 
-Tres niveles:
+Three levels:
 
-1. **Liveness** (`/health`): ¿el proceso está vivo? Retorna 200 si el servidor responde.
-2. **Readiness** (`/ready`): ¿listo para recibir tráfico? Verifica DB, Redis, y dependencias.
-3. **Deep** (`/health/deep`): verifica queries, salud de workers, espacio en disco. No usarlo para orquestador, solo monitoreo.
+1. **Liveness** (`/health`): is the process alive? Returns 200 if server responds.
+2. **Readiness** (`/ready`): ready for traffic? Checks DB, Redis, and dependencies.
+3. **Deep** (`/health/deep`): checks queries, worker health, disk space. Not for orchestrator, monitoring only.
 
 ## Deploy Strategies
 
-| Estrategia | Downtime | Rollback | Complejidad | Cuándo |
+| Strategy | Downtime | Rollback | Complexity | When |
 |---|---|---|---|---|
-| **Rolling** | 0 | Minutos | Media | Default para la mayoría |
-| **Blue-Green** | 0 | Instantáneo | Alta | Aplicaciones críticas |
-| **Canary** | 0 | Instantáneo | Alta | Cambios de alto riesgo |
+| **Rolling** | 0 | Minutes | Medium | Default for most |
+| **Blue-Green** | 0 | Instant | High | Critical applications |
+| **Canary** | 0 | Instant | High | High-risk changes |
 
 ### Rolling (Kubernetes)
 
@@ -110,9 +110,9 @@ strategy:
     maxUnavailable: 0
 ```
 
-- `maxUnavailable: 0` garantiza sin pérdida de capacidad.
-- Health check debe pasar antes de marcar el pod como Ready.
-- `minReadySeconds: 10` para evitar falso-positivo.
+- `maxUnavailable: 0` guarantees no capacity loss.
+- Health check must pass before marking pod as Ready.
+- `minReadySeconds: 10` to avoid false positives.
 
 ## CI/CD Pipeline
 
@@ -120,16 +120,16 @@ strategy:
 Push → Lint → Test → Build → Scan → Deploy Staging → Smoke → Deploy Prod
 ```
 
-Gates obligatorios:
-- Tests unitarios + integración pasan.
-- Security scan sin críticos.
-- Build exitoso.
-- Smoke test en staging (GET /health + endpoint crítico).
-- Aprobación manual para prod (si no hay continuous deployment maduro).
+Mandatory gates:
+- Unit + integration tests pass.
+- Security scan with no criticals.
+- Successful build.
+- Smoke test on staging (GET /health + critical endpoint).
+- Manual approval for prod (if no mature continuous deployment).
 
 ## Rollback
 
-Siempre tener plan B antes de deployar:
-- **DB migrations**: deben ser reversibles. Migración forward + rollback script validado.
-- **Feature flags**: toggle para desactivar features problemáticos sin redeploy.
-- **Rollback command**: una línea: `kubectl rollout undo deployment/app` o `helm rollback`.
+Always have plan B before deploying:
+- **DB migrations**: must be reversible. Forward migration + validated rollback script.
+- **Feature flags**: toggle to disable problematic features without redeploy.
+- **Rollback command**: one-liner: `kubectl rollout undo deployment/app` or `helm rollback`.

@@ -5,90 +5,90 @@ description: Safe database migration patterns: zero-downtime, backward-compatibl
 
 # Database Migrations
 
-Migraciones seguras con foco en zero-downtime y rollback.
+Safe migrations focused on zero-downtime and rollback.
 
 ## When to Use
 
-- Escribir o revisar migraciones.
-- Agregar columnas, tablas, índices.
-- Modificar constraints en producción.
-- Planificar backfill de datos.
-- El usuario pregunta sobre migraciones o schema changes.
+- Writing or reviewing migrations.
+- Adding columns, tables, indexes.
+- Modifying constraints in production.
+- Planning data backfills.
+- User asks about migrations or schema changes.
 
 ## Golden Rules
 
-1. **Toda migración debe ser reversible**. Si tenés `up`, tenés `down`.
-2. **Nunca bloquear la tabla por más de 2 segundos**. Usar estrategias sin lock.
-3. **Expand & Contract**: primero agregar, luego migrar datos, luego eliminar lo viejo.
-4. **Backfill en batches**. Nunca un solo UPDATE sobre millones de filas.
+1. **Every migration must be reversible**. If you have `up`, you have `down`.
+2. **Never block the table for more than 2 seconds**. Use lock-free strategies.
+3. **Expand & Contract**: first add, then migrate data, then remove the old.
+4. **Backfill in batches**. Never a single UPDATE over millions of rows.
 
 ## Patterns
 
-### Agregar columna NOT NULL
+### Adding a NOT NULL column
 
-Mal:
+Bad:
 ```sql
-ALTER TABLE users ADD COLUMN status VARCHAR NOT NULL;  -- bloquea toda la tabla
+ALTER TABLE users ADD COLUMN status VARCHAR NOT NULL;  -- blocks the entire table
 ```
 
-Bien:
+Good:
 ```sql
--- Paso 1: nullable con default
+-- Step 1: nullable with default
 ALTER TABLE users ADD COLUMN status VARCHAR DEFAULT 'active';
 
--- Paso 2: backfill en batches (en código, no en migración)
+-- Step 2: backfill in batches (in code, not in migration)
 -- UPDATE users SET status = 'active' WHERE status IS NULL LIMIT 10000;
 
--- Paso 3: agregar NOT NULL cuando todos los registros tienen valor (próximo deploy)
+-- Step 3: add NOT NULL when all rows have a value (next deploy)
 ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 ```
 
-### Renombrar columna
+### Renaming a column
 
 ```sql
--- Paso 1: agregar nueva columna
+-- Step 1: add new column
 ALTER TABLE users ADD COLUMN full_name VARCHAR;
 
--- Paso 2: escribe en ambas columnas desde la app
--- Paso 3: backfill de datos históricos
--- Paso 4: migrar lecturas a nueva columna
--- Paso 5: eliminar columna vieja (próximo deploy)
+-- Step 2: write to both columns from the app
+-- Step 3: backfill historical data
+-- Step 4: migrate reads to new column
+-- Step 5: drop old column (next deploy)
 ALTER TABLE users DROP COLUMN name;
 ```
 
-### Agregar índice
+### Adding an index
 
 ```sql
--- CONCURRENTLY evita bloquear escrituras (PostgreSQL)
+-- CONCURRENTLY avoids blocking writes (PostgreSQL)
 CREATE INDEX CONCURRENTLY idx_users_email ON users (email);
 ```
 
-MySQL: `ALGORITHM=INPLACE, LOCK=NONE` en InnoDB.
+MySQL: `ALGORITHM=INPLACE, LOCK=NONE` on InnoDB.
 
-### Eliminar columna/tabla
+### Dropping a column/table
 
-Mal:
+Bad:
 ```sql
-ALTER TABLE users DROP COLUMN old_field;  -- ¿seguro que nadie la lee?
+ALTER TABLE users DROP COLUMN old_field;  -- sure no one reads it?
 ```
 
-Bien:
-1. Deploy 1: Dejar de escribir en la columna. App ignora reads.
-2. Deploy 2: Eliminar columna (ya sin tráfico).
+Good:
+1. Deploy 1: Stop writing to the column. App ignores reads.
+2. Deploy 2: Drop column (no traffic anymore).
 
-## Validación pre-deploy
+## Pre-deploy Validation
 
-- `down` migration testeada en staging.
-- `EXPLAIN` para nuevas queries. Sin full table scans en tablas grandes.
-- Constraints validados con datos de producción (copia anonimizada).
-- Tiempo estimado de migración basado en `ANALYZE` de la tabla real.
+- `down` migration tested in staging.
+- `EXPLAIN` for new queries. No full table scans on large tables.
+- Constraints validated against production data (anonymized copy).
+- Estimated migration time based on real table `ANALYZE`.
 
 ## Frameworks
 
 | Framework | Nullable | Default | Concurrent Index | Rollback |
 |---|---|---|---|---|
-| **Prisma** | `?` en tipo | `@default()` | No nativo | `prisma migrate diff` |
+| **Prisma** | `?` in type | `@default()` | Not native | `prisma migrate diff` |
 | **Django** | `null=True` | `default=` | `AddIndexConcurrently` | `migrate <app> <prev>` |
 | **Laravel** | `->nullable()` | `->default()` | Manual (raw SQL) | `migrate:rollback` |
-| **golang-migrate** | Tipo puntero `*string` | Default en SQL | Raw SQL en `.up.sql` | `.down.sql` explícito |
+| **golang-migrate** | Pointer type `*string` | Default in SQL | Raw SQL in `.up.sql` | Explicit `.down.sql` |
 | **Alembic** | `nullable=True` | `server_default=` | `postgresql_concurrently=True` | `alembic downgrade -1` |

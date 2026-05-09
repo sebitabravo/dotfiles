@@ -1,14 +1,14 @@
 ---
-description: "Revisa el diff actual o archivos especificados con el agente code-reviewer"
+description: "Review the current diff or specified files using the code-reviewer agent"
 ---
 
-Ejecuta una revisión de código sistemática sobre ${ARGUMENTS:-el diff actual}.
+Run a systematic code review on ${ARGUMENTS:-the current diff}.
 
-Usa el skill `code-review` con el agente `code-reviewer`.
+Uses the `code-review` skill with the `code-reviewer` agent.
 
-Dimensiones a revisar: correctness, security, performance, maintainability, testing.
+Dimensions to review: correctness, security, performance, maintainability, testing.
 
-Formato de output:
+Output format:
 ```
-path:line: <severidad> <problema>. <sugerencia de fix>.
+path:line: <severity> <problem>. <fix suggestion>.
 ```

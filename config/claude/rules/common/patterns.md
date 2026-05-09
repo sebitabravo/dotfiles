@@ -1,41 +1,41 @@
 ---
-description: "Patrones de arquitectura y diseño — SOLID, composición, capas"
+description: "SOLID, composition, layered architecture — design patterns"
 globs: []
 alwaysApply: true
 ---
 
 # Architecture Patterns
 
-## SOLID aplicado
+## SOLID applied
 
-1. **Single Responsibility**: una clase/módulo = una razón para cambiar. Si el nombre tiene "y", dividilo.
-2. **Open/Closed**: extensible sin modificar. Nuevo comportamiento = nueva clase, no editar la existente.
-3. **Liskov**: subtipos deben ser sustituibles por su base. Si necesitás `instanceof`, rompiste LSP.
-4. **Interface Segregation**: interfaces chicas y específicas. No obligues a implementar lo que no se usa.
-5. **Dependency Inversion**: dependé de abstracciones, no de implementaciones concretas.
+1. **Single Responsibility**: one class/module = one reason to change. If the name has "and", split it.
+2. **Open/Closed**: extensible without modification. New behavior = new class, don't edit existing one.
+3. **Liskov**: subtypes must be substitutable for their base. If you need `instanceof`, LSP is broken.
+4. **Interface Segregation**: small, specific interfaces. Don't force implementing what isn't used.
+5. **Dependency Inversion**: depend on abstractions, not concrete implementations.
 
-## Composición sobre herencia
+## Composition over inheritance
 
-- **Herencia**: relación "es-un". Jerarquías planas, máximo 2 niveles de profundidad.
-- **Composición**: relación "tiene-un". Inyectá comportamientos, no los heredes.
-- Si necesitás herencia múltiple → composición.
+- **Inheritance**: "is-a" relationship. Flat hierarchies, max 2 levels deep.
+- **Composition**: "has-a" relationship. Inject behaviors, don't inherit them.
+- If you need multiple inheritance → composition.
 
-## Separación por capas
+## Layered separation
 
 ```
 Controller → Service → Repository → Data Source
    ↓            ↓
-  HTTP       Lógica de     Acceso a     DB/API
-  request     negocio       datos        externa
+  HTTP       Business      Data        DB/API
+  request     logic        access      external
 ```
 
-- **Controllers**: parsean input, delegan a service, formatean response. Sin lógica de negocio.
-- **Services**: lógica de negocio pura. Sin conocimiento de HTTP o DB.
-- **Repositories**: acceso a datos. Sin lógica de negocio.
+- **Controllers**: parse input, delegate to service, format response. No business logic.
+- **Services**: pure business logic. No knowledge of HTTP or DB.
+- **Repositories**: data access. No business logic.
 
-## Principios de diseño
+## Design principles
 
-- **YAGNI**: no construyas para "por las dudas". Solo lo que se necesita ahora.
-- **KISS**: la solución más simple que funciona. Sin abstracciones prematuras.
-- **Polymorphism > conditionals**: un `switch`/`if-else` gigante = candidate a polimorfismo.
-- **Tell, Don't Ask**: decile al objeto qué hacer, no le preguntes su estado para decidir vos.
+- **YAGNI**: don't build for "just in case". Only what's needed now.
+- **KISS**: the simplest solution that works. No premature abstractions.
+- **Polymorphism > conditionals**: a giant `switch`/`if-else` = candidate for polymorphism.
+- **Tell, Don't Ask**: tell the object what to do, don't ask its state to decide yourself.

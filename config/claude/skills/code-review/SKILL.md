@@ -5,59 +5,59 @@ description: Systematic code review for correctness, security, performance, and 
 
 # Code Review
 
-Revisión sistemática de código. Una pasada por dimensión, no un vistazo general.
+Systematic code review. One pass per dimension, not a general glance.
 
 ## When to Use
 
-- PR listo para review.
-- Feature recién completada.
-- El usuario pide "review this", "check my code", "code review".
-- Antes de commit significativo.
+- PR ready for review.
+- Feature just completed.
+- User asks "review this", "check my code", "code review".
+- Before a significant commit.
 
 ## Review Dimensions
 
-Revisar en este orden. Cada dimensión es un pase independiente:
+Review in this order. Each dimension is an independent pass:
 
 ### 1. Correctness
-- ¿Hace lo que debe? Leer el diff contra los requisitos.
-- Casos borde: null, vacío, límites, timeouts, errores de red.
-- Condiciones de carrera si hay código concurrente/asíncrono.
-- Errores de off-by-one, condiciones invertidas.
+- Does it do what it should? Read the diff against requirements.
+- Edge cases: null, empty, boundaries, timeouts, network errors.
+- Race conditions if there's concurrent/async code.
+- Off-by-one errors, inverted conditions.
 
 ### 2. Security
-- Input validado y sanitizado.
+- Input validated and sanitized.
 - SQL injection, XSS, path traversal.
-- Secrets ausentes del diff.
-- Auth y autorización en nuevas rutas.
-- Rate limiting en endpoints públicos.
+- Secrets absent from the diff.
+- Auth and authorization on new routes.
+- Rate limiting on public endpoints.
 
 ### 3. Performance
-- N+1 queries: loops con llamadas a DB.
-- Operaciones bloqueantes en event loop (sync I/O en Node/Python async).
-- Memoria: arrays/objetos grandes sin necesidad, leaks en event listeners.
-- Índices necesarios para nuevas queries.
+- N+1 queries: loops with DB calls.
+- Blocking operations on event loop (sync I/O in Node/Python async).
+- Memory: large arrays/objects unnecessarily, leaks in event listeners.
+- Indexes needed for new queries.
 
 ### 4. Maintainability
-- Nombres claros y consistentes.
-- Funciones con una sola responsabilidad.
-- Sin abstracciones prematuras.
-- Sin código comentado o dead code.
-- Testabilidad: ¿se puede testear esto fácilmente?
+- Clear and consistent names.
+- Single-responsibility functions.
+- No premature abstractions.
+- No commented-out code or dead code.
+- Testability: can this be tested easily?
 
 ### 5. Testing
-- Tests para el happy path.
-- Tests para al menos 2 edge cases.
-- Tests para comportamiento de error.
-- Sin tests que dependan de orden de ejecución o estado global mutable.
+- Tests for the happy path.
+- Tests for at least 2 edge cases.
+- Tests for error behavior.
+- No tests that depend on execution order or mutable global state.
 
 ## Output
 
-Emitir hallazgos en este formato:
+Emit findings in this format:
 
 ```
-path:line: <severidad> <problema>. <sugerencia de fix>.
+path:line: <severity> <problem>. <fix suggestion>.
 ```
 
-Severidades: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`.
+Severities: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`.
 
-No emitir halagos. No comentar formato si el linter lo cubre. Solo hallazgos accionables.
+Don't emit praise. Don't comment on formatting if the linter covers it. Only actionable findings.

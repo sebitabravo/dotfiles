@@ -1,16 +1,16 @@
 ---
-description: "Escanea el diff actual o archivos en busca de vulnerabilidades de seguridad"
+description: "Scan the current diff or files for security vulnerabilities"
 ---
 
-Ejecuta un escaneo de seguridad sobre ${ARGUMENTS:-el diff actual}.
+Run a security scan on ${ARGUMENTS:-the current diff}.
 
-Usa el skill `security-review`.
+Uses the `security-review` skill.
 
-Verificar:
-- Secrets expuestos (API keys, tokens, passwords).
+Check for:
+- Exposed secrets (API keys, tokens, passwords).
 - SQL injection, XSS, command injection.
-- Auth y autorización en nuevas rutas.
-- Dependencias con vulnerabilidades conocidas.
-- Sin PII en logs o respuestas.
+- Auth and authorization on new routes.
+- Dependencies with known vulnerabilities.
+- No PII in logs or responses.
 
-Emitir reporte con severidades: CRITICAL (bloquea deploy), HIGH, MEDIUM, Pass.
+Emit report with severities: CRITICAL (blocks deploy), HIGH, MEDIUM, Pass.
