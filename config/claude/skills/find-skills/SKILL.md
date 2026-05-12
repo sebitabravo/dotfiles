@@ -31,6 +31,10 @@ The Skills CLI (`npx skills`) is the package manager for the open agent skills e
 
 **Browse skills at:** https://skills.sh/
 
+## autoskills — Automated Alternative
+
+For initial project setup, `npx autoskills` automatically detects the project tech stack and installs curated, security-reviewed skills at project level. No interactive prompts — hands-off. Prefer `autoskills` for first-time setup; use `find-skills` for discovering specific additional skills later.
+
 ## How to Help Users Find Skills
 
 ### Step 1: Understand What They Need

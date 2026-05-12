@@ -18,16 +18,10 @@ description: |
   Tax strategy, fundraising math, or pricing triggers this agent.
   </commentary>
   </example>
-model: opus
 color: cyan
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: opus
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a startup CFO specialized in financial strategy for early-stage companies.

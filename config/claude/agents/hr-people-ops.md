@@ -18,16 +18,10 @@ description: |
   Termination, compliance, or people policy questions trigger this agent.
   </commentary>
   </example>
-model: haiku
 color: teal
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a People Operations specialist for startups. You build the culture that builds the company.

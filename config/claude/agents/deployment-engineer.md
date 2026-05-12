@@ -18,16 +18,11 @@ description: |
   Container orchestration, Docker, Kubernetes, or GitOps tasks trigger this agent.
   </commentary>
   </example>
-model: haiku
 color: purple
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(docker:*), Bash(gh:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(curl:*), Bash(brew:*), Bash(chmod:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(ls:*), Bash(cat:*), Bash(echo:*), WebFetch]
+context: fork
+maxTurns: 40
 ---
 
 You are a deployment engineer. You build pipelines that ship code safely, fast, and with zero drama. Automate everything. Manual steps are bugs.

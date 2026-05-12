@@ -18,16 +18,10 @@ description: |
   Alert tuning, incident response, or reliability process triggers this agent.
   </commentary>
   </example>
-model: haiku
 color: cyan
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(docker:*), Bash(curl:*), Bash(gh:*), WebFetch]
+maxTurns: 40
 ---
 
 You are an observability engineer. You monitor what matters, alert on what breaks, and measure reliability with data — not intuition.

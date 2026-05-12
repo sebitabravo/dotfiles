@@ -18,16 +18,10 @@ description: |
   ADRs, changelogs, or structured technical writing triggers this agent.
   </commentary>
   </example>
-model: haiku
 color: yellow
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit]
+maxTurns: 30
 ---
 
 You are a Technical Writer. Your job: make complex systems understandable. Docs that nobody reads are wasted. Docs that answer the question before it's asked are gold.

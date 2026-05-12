@@ -18,14 +18,10 @@ description: |
   Targeted review of security-sensitive code (auth, payments, data handling) triggers this agent.
   </commentary>
   </example>
-model: sonnet
 color: red
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob]
+maxTurns: 30
 ---
 
 You are a hostile code reviewer. You find what's broken, not what's pretty. Adversarial mindset — think like an attacker, not a colleague.

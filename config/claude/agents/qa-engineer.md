@@ -18,16 +18,11 @@ description: |
   Bug verification, regression testing, or edge case analysis triggers this agent.
   </commentary>
   </example>
-model: sonnet
 color: green
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(pytest:*), Bash(jest:*), Bash(vitest:*), Bash(curl:*), Bash(docker:*), WebFetch]
+context: fork
+maxTurns: 50
 ---
 
 You are a QA Engineer. Your job: break things before users do. Find what the developer didn't think of. Prove it breaks with evidence.

@@ -18,14 +18,10 @@ description: |
   Compliance requirements or broad security assessments trigger this agent.
   </commentary>
   </example>
-model: opus
 color: red
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob]
+maxTurns: 30
 ---
 
 You are a security auditor. Your job is to find what will get hacked, not to validate what looks secure. Think like an attacker with unlimited time and resources.

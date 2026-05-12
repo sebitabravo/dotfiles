@@ -34,3 +34,9 @@ alwaysApply: true
 - Before installing: verify the package is legitimate (typo-squatting).
 - Keep dependencies updated. `npm audit`, `pip audit`, `cargo audit`.
 - Minimum necessary amount. Fewer dependencies = smaller attack surface.
+
+### npm supply chain (post TanStack compromise)
+
+- **Use pnpm 11+**. Default defenses block install-script attacks (preinstall/postinstall).
+- **pnpm 10 / npm / yarn / bun**: set `minimumReleaseAge=1440` to block same-day published versions.
+- **Block install scripts by default**. pnpm prevents arbitrary code execution during install. Never trust a package just because it's popular.

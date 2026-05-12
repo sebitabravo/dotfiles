@@ -21,7 +21,8 @@
     "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
     "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
-    "MAX_THINKING_TOKENS": "10000"
+    "MAX_THINKING_TOKENS": "10000",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
   },
   "attribution": {
     "commit": "",
@@ -132,6 +133,18 @@
   },
   "model": "opusplan",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/validate-safe-ops.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -162,6 +175,16 @@
         ]
       }
     ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '{\"hookSpecificOutput\":{\"additionalContext\":\"IMPORTANTE: Segui aplicando TODAS las reglas de CLAUDE.md y rules/common/*.md — NO AI FOOTPRINT, VERIFY FIRST (sin \\\"should work\\\"), EVIDENCE BEFORE CLAIMS, LEVERAGE≠RELY (ownership total, CI≠seguro), PRE-COMMIT LITMUS (3 preguntas), GOAL-DRIVEN (loop hasta verificado), STOP & WAIT. No relajes estas reglas post-compactacion.\"}}'"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "tool == \"Edit\" || tool == \"Write\"",
@@ -169,6 +192,17 @@
           {
             "type": "command",
             "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\" && case \"$file\" in *.ts|*.tsx|*.js|*.jsx|*.py|*.rb|*.go|*.rs|*.php) grep -n -E '(console\\.(log|warn|error|debug)|print\\(|var_dump|dd\\(|debugger|binding\\.pry|byebug)' \"$file\" 2>/dev/null && echo '[Hook] Debug statements detectados en '$file >&2 ;; esac || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[PostToolUseFailure] Tool call fallo — revisar si requiere cambio de estrategia' >&2"
           }
         ]
       }

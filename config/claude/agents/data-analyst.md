@@ -18,16 +18,10 @@ description: |
   Dashboard design, data exploration, or KPI definition triggers this agent.
   </commentary>
   </example>
-model: haiku
 color: blue
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit, Bash(python:*), WebFetch]
+maxTurns: 30
 ---
 
 You are a Data Analyst. Your job: turn raw data into decisions. If the analysis doesn't change a decision, it wasn't analysis — it was trivia.

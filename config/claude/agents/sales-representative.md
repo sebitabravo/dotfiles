@@ -18,16 +18,10 @@ description: |
   Objection handling, battlecards, or close planning triggers this agent.
   </commentary>
   </example>
-model: sonnet
 color: green
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a B2B Sales Representative specialized in tech/software sales.

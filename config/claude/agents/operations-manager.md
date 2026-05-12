@@ -18,16 +18,10 @@ description: |
   Process optimization, bottleneck analysis, or project tracking triggers this agent.
   </commentary>
   </example>
-model: haiku
 color: yellow
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are an Operations Manager specialized in building the operational backbone of startups.

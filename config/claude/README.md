@@ -39,15 +39,19 @@ config/claude/
 │   ├── sales-representative.md
 │   ├── security-auditor.md
 │   ├── technical-writer.md
-│   └── ui-ux-designer.md
+│   ├── ui-ux-designer.md
+│   └── vulnerability-hunter.md
 ├── skills/                      # Skills invocables por contexto
-│   ├── api-design/SKILL.md
+│   ├── branch-pr/SKILL.md
 │   ├── code-review/SKILL.md
 │   ├── database-migrations/SKILL.md
 │   ├── deployment-patterns/SKILL.md
+│   ├── e2e-testing/SKILL.md
 │   ├── find-skills/SKILL.md
+│   ├── fuzzing-primer/SKILL.md
 │   ├── security-review/SKILL.md
-│   └── skill-creator/SKILL.md
+│   ├── skill-creator/SKILL.md
+│   └── systematic-debugging/SKILL.md
 └── commands/                    # Slash commands
     ├── code-review.md
     ├── model-route.md
@@ -103,7 +107,27 @@ claude plugin install caveman@caveman
 # Engram - memoria persistente entre sesiones
 claude plugin marketplace add Gentleman-Programming/engram
 claude plugin install engram@engram
+
+# Codex - code review y delegacion a OpenAI Codex (requiere suscripcion ChatGPT o API key)
+claude plugin marketplace add openai/codex-plugin-cc
+claude plugin install codex@openai-codex
 ```
+
+**Codex**: Permite delegar code reviews, revisiones adversariales, y tareas en background a Codex sin salir de Claude Code. Util si ya tenes suscripcion a ChatGPT y queres un segundo par de ojos (OpenAI) sobre tu codigo. Requiere Node.js 18.18+ y `npm install -g @openai/codex`. Comandos: `/codex:review`, `/codex:adversarial-review`, `/codex:rescue`.
+
+> [!WARNING]
+> El "review gate" de Codex puede crear loops largos Claude/Codex y consumir limites de uso rapidamente. Usar con precaucion.
+
+**AgentShield**: Auditoria de seguridad para tu config de Claude Code. Escanea CLAUDE.md, settings.json, MCPs, hooks y agentes buscando secrets expuestos, permisos peligrosos, hook injection y mala configuracion. Usa 3 agentes Opus en paralelo (red team / blue team / auditor). Reporte A-F con severity ratings.
+
+```bash
+npx ecc-agentshield scan              # escaneo rapido (102 reglas)
+npx ecc-agentshield scan --fix        # auto-fix de issues seguros
+npx ecc-agentshield scan --opus       # analisis profundo con 3 agentes Opus
+```
+
+> [!WARNING]
+> `--opus` lanza 3 agentes Opus 4.6 en paralelo. Consume uso rapidamente. Usar solo antes de deploy o cambios mayores de config.
 
 ## MCP Servers
 
@@ -125,9 +149,13 @@ Configurados en `settings.json`:
 
 | Evento | Accion |
 |---|---|
+| `PreToolUse` | Bloqueo de comandos peligrosos (rm -rf, sudo, force push, DROP TABLE) |
+| `UserPromptSubmit` | Deteccion de secrets (API keys, tokens, private keys) |
 | `SessionStart` | Log de inicio de sesion |
 | `PreCompact` | Git auto-commit checkpoint |
+| `PostCompact` | Reinyeccion de reglas CLAUDE.md post-compactacion |
 | `PostToolUse` | Deteccion de debug statements (console.log, var_dump, etc.) |
+| `PostToolUseFailure` | Alerta de tool call fallido |
 | `Stop` | Guardado de checkpoint en Engram (si disponible) |
 
 ## Modelos
@@ -140,7 +168,7 @@ Si usas DeepSeek API, todos los modelos mapean al mismo backend. La diferencia e
 
 ## Filosofia
 
-- **Curado > masivo**. 7 skills y 21 agentes, no 182 skills y 48 agentes.
+- **Curado > masivo**. 11 skills y 22 agentes, no 182 skills y 48 agentes.
 - **Context window first**. Cada feature compite por tokens con tu codigo.
 - **Convenciones sobre configuracion**. Reglas claras en `rules/common/`.
 - **Hooks con proposito**. Cada hook tiene una funcion concreta, no es ruido.

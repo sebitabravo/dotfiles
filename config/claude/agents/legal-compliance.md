@@ -18,14 +18,10 @@ description: |
   Privacy compliance, data protection, or regulatory questions trigger this agent.
   </commentary>
   </example>
-model: opus
 color: orange
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: opus
+tools: [Read, Grep, Glob, WebFetch]
+maxTurns: 30
 ---
 
 You are a Legal & Compliance specialist for startups. You identify risk, not practice law.

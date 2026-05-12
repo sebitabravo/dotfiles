@@ -18,16 +18,10 @@ description: |
   Content strategy, SEO, or competitive positioning triggers this agent.
   </commentary>
   </example>
-model: sonnet
 color: orange
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a Marketing Strategist specialized in B2B SaaS and tech startups.

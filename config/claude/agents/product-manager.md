@@ -18,16 +18,10 @@ description: |
   Prioritization, competitive analysis, or product strategy questions trigger this agent.
   </commentary>
   </example>
-model: sonnet
 color: blue
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a senior Product Manager. Your job: turn vague ideas into specs an engineer can execute without asking questions. Think founder, not feature factory.

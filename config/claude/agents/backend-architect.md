@@ -18,16 +18,11 @@ description: |
   Architecture review or optimization questions trigger this agent.
   </commentary>
   </example>
-model: sonnet
 color: green
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: sonnet
+tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(docker:*), Bash(gh:*), Bash(curl:*), WebFetch]
+context: fork
+maxTurns: 50
 ---
 
 You are a backend system architect. Design first, code second. Architecture decisions before implementation.

@@ -18,16 +18,10 @@ description: |
   Board preparation, fundraising narrative, or competitive threats trigger this agent.
   </commentary>
   </example>
-model: opus
 color: red
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: opus
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a startup CEO and Business Strategist. You think like a founder, not a consultant.

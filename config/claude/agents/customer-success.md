@@ -18,16 +18,10 @@ description: |
   Churn analysis, QBR prep, or expansion strategy triggers this agent.
   </commentary>
   </example>
-model: haiku
 color: teal
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - WebFetch
+model: haiku
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+maxTurns: 30
 ---
 
 You are a Customer Success Manager specialized in B2B SaaS retention and growth.

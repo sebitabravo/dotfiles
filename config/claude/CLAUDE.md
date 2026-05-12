@@ -11,6 +11,9 @@
 - NO AI FOOTPRINT. Conventional Commits only: `feat(scope):`, `fix(scope):`, `refactor(scope):`.
 - STOP & WAIT on questions. No blind assumptions. When ambiguous: list assumptions, present alternatives, ask which.
 - VERIFY FIRST. "Dejame verificar" before claims. Never guess config syntax, CLI flags, package names, or best practices — WebSearch or Context7 MCP before writing code when unsure.
+- EVIDENCE BEFORE CLAIMS. Never say "should work", "probably fixed", "seems fine". Run verification command, read output, confirm exit 0 / 0 failures, THEN declare success. If you didn't run it, you don't know it.
+- LEVERAGE ≠ RELY. Agents iterate fast but YOU maintain total ownership of the output. If you can't explain every change, it's not ready. "Passing CI" is not proof of correctness — it's proof the agent persuaded the pipeline.
+- PRE-COMMIT LITMUS. Before committing generated code, answer: (1) What does this do? How does it behave? (2) How can this adversely impact production or users? (3) Am I comfortable owning a production incident tied to this code? If "no" to any → don't commit, verify more.
 - Read existing code before changes. Never edit blind.
 - Wrong? Prove with evidence. Right? Same.
 - Check `package.json`/`composer.json` before suggesting installs.
@@ -38,38 +41,6 @@
 - Critique before fixing. Name the anti-pattern, state the fix. No essays.
 - Fundamentals over trendy frameworks.
 
-## Structure
-
-```
-~/.claude/
-├── CLAUDE.md              ← this file
-├── settings.json          ← hooks, permissions, env vars
-├── statusline.sh          ← custom statusline
-├── rules/
-│   └── common/            ← always-on rules
-│       ├── coding-style.md
-│       ├── git-workflow.md
-│       ├── testing.md
-│       ├── security.md
-│       └── patterns.md
-├── agents/                ← 21 specialized agents
-├── skills/                ← context-invocable skills
-│   ├── api-design/
-│   ├── code-review/
-│   ├── database-migrations/
-│   ├── deployment-patterns/
-│   ├── find-skills/
-│   ├── security-review/
-│   └── skill-creator/
-├── commands/              ← slash commands
-│   ├── code-review.md
-│   ├── plan.md
-│   ├── security-scan.md
-│   └── model-route.md
-├── mcp-servers.json       ← MCP servers config
-└── mcp-servers.template.json
-```
-
 ## Skills
 
 Load `SKILL.md` only when writing code. Invoke proactively:
@@ -85,6 +56,8 @@ Load `SKILL.md` only when writing code. Invoke proactively:
 | CI/CD, Docker, deploy | `deployment-patterns` |
 | Code review, PR review | `code-review` |
 | DB schema, migrations | `database-migrations` |
+| E2E testing, Playwright, browser tests | `e2e-testing` |
+| Fuzzing, parameter discovery, AFL++, ffuf | `fuzzing-primer` |
 
 ## Auto-Skills (use without waiting for slash command)
 
@@ -123,7 +96,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | Context | Agent |
 |---|---|
 | APIs, microservices, DB schemas, scalability | `backend-architect` |
-| React 19, layouts, responsive, components | `frontend-developer` |
+| React 19, layouts, responsive, components, SEO, meta tags | `frontend-developer` |
 | Code review, static analysis, quality gates | `code-reviewer` |
 | Debugging, root cause, test failures, errors | `debugger` |
 | Optimization, caching, Core Web Vitals, profiling | `performance-engineer` |
@@ -152,7 +125,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
 | Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
-| React component, layout, responsive, CSS | `frontend-developer` |
+| React component, layout, responsive, CSS, SEO, structured data | `frontend-developer` |
 | Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |
@@ -167,6 +140,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 
 1. Load `rules/common/` at session start.
 2. Detect project stack (Laravel/React/Django/Go).
-3. Load matching `SKILL.md` only when producing code.
-4. Critique first, propose with trade-offs, execute after approval.
-5. Cap parallel agents at 3 unless told otherwise.
+3. Run `npx autoskills` (project-level, never global). Auto-detects stack, installs curated skills. Security-reviewed, own registry — no external servers.
+4. Load matching `SKILL.md` only when producing code.
+5. Critique first, propose with trade-offs, execute after approval.
+6. Cap parallel agents at 3 unless told otherwise.
