@@ -138,6 +138,8 @@ esac
 # Progress bar
 BAR_WIDTH=8
 FILLED=$((CTX_PERCENT * BAR_WIDTH / 100))
+# Al menos 1 bloque si hay uso > 0, para que no se vea vacío
+[ "$CTX_PERCENT" -gt 0 ] && [ "$FILLED" -eq 0 ] && FILLED=1
 EMPTY=$((BAR_WIDTH - FILLED))
 
 if [ "$CTX_PERCENT" -ge 80 ]; then
@@ -171,20 +173,55 @@ LINE+="${SUCCESS}+${ADDED}${NC} ${ERROR}-${REMOVED}${NC}"
 LINE+="${SEP}"
 LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 
+# Peak hours warning — multi-provider
+# Providers WITHOUT peak/surge pricing: OpenAI, Gemini, Mistral, Groq, xAI, Kimi/Moonshot,
+#   Qwen/DashScope, StepFun, MiMo/Xiaomi, Copilot, MiniMax (flat rate or throttling only)
+get_peak_warning() {
+  local UTC_HOUR=$(date -u +%H)
+  local BJS_HOUR=$(( (UTC_HOUR + 8) % 24 ))  # Beijing time for CN providers
+
+  # z.ai/GLM: daily 14:00-18:00 Beijing (06:00-10:00 UTC) — 3x quota
+  if [ "$BJS_HOUR" -ge 14 ] && [ "$BJS_HOUR" -lt 18 ]; then
+    echo -e "${ERROR}🔥 3x${NC}"
+    return
+  fi
+
+  # Anthropic: 1.5-2x throttling, weekdays 5am-11am PT (09:00-15:00 CLT)
+  # Was peak throttling, removed May 2026 but may return.
+  local PT_HOUR=$(TZ="America/Los_Angeles" date +%-H)
+  local PT_DOW=$(TZ="America/Los_Angeles" date +%u)
+  local PT_H=$((10#$PT_HOUR))
+  if [ "$PT_DOW" -le 5 ] && [ "$PT_H" -ge 5 ] && [ "$PT_H" -lt 11 ]; then
+    echo -e "${ACCENT}💸 2x${NC}"
+    return
+  fi
+
+  # DeepSeek: daily 9:00-21:00 Beijing (01:00-13:00 UTC) — ~1.2x premium vs off-peak
+  if [ "$BJS_HOUR" -ge 9 ] && [ "$BJS_HOUR" -lt 21 ]; then
+    echo -e "${MUTED}⚠️ 1.2x${NC}"
+    return
+  fi
+}
+
+PEAK_WARNING=$(get_peak_warning)
+
+if [ -n "$PEAK_WARNING" ]; then
+  LINE+="${MUTED}  ${NC}${PEAK_WARNING}"
+fi
+
 # Caveman mode badge
 CAVEMAN_FLAG="${HOME}/.claude/.caveman-active"
 CAVEMAN_BADGE=""
-if [ -f "$CAVEMAN_FLAG" ] && [ ! -L "$CAVEMAN_FLAG" ]; then
+if [ -f "$CAVEMAN_FLAG" ]; then
   CAV_MODE=$(head -c 64 "$CAVEMAN_FLAG" 2>/dev/null | tr -d '\n\r' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
   case "$CAV_MODE" in
-    lite|full|ultra|wenyan-lite|wenyan|wenyan-full|wenyan-ultra)
-      if [ -z "$CAV_MODE" ] || [ "$CAV_MODE" = "full" ]; then
-        CAVEMAN_BADGE="\033[38;5;172m[CAVEMAN]\033[0m"
-      else
-        CAV_SUFFIX=$(printf '%s' "$CAV_MODE" | tr '[:lower:]' '[:upper:]')
-        CAVEMAN_BADGE="\033[38;5;172m[CAVEMAN:${CAV_SUFFIX}]\033[0m"
-      fi
-      ;;
+    full)     CAVEMAN_BADGE="\033[38;5;172m🦴\033[0m" ;;
+    lite)     CAVEMAN_BADGE="\033[38;5;172m🦴 lite\033[0m" ;;
+    ultra)    CAVEMAN_BADGE="\033[38;5;172m🦴 ultra\033[0m" ;;
+    wenyan-lite)   CAVEMAN_BADGE="\033[38;5;172m📜 LITE\033[0m" ;;
+    wenyan)        CAVEMAN_BADGE="\033[38;5;172m📜\033[0m" ;;
+    wenyan-full)   CAVEMAN_BADGE="\033[38;5;172m📜 FULL\033[0m" ;;
+    wenyan-ultra)  CAVEMAN_BADGE="\033[38;5;172m📜 ULTRA\033[0m" ;;
   esac
 fi
 

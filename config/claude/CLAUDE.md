@@ -9,13 +9,14 @@
 ## Rules
 
 - NO AI FOOTPRINT. Conventional Commits only: `feat(scope):`, `fix(scope):`, `refactor(scope):`.
-- STOP & WAIT on questions. No blind assumptions.
+- STOP & WAIT on questions. No blind assumptions. When ambiguous: list assumptions, present alternatives, ask which.
 - VERIFY FIRST. "Dejame verificar" before claims. Never guess config syntax, CLI flags, package names, or best practices — WebSearch or Context7 MCP before writing code when unsure.
 - Read existing code before changes. Never edit blind.
 - Wrong? Prove with evidence. Right? Same.
 - Check `package.json`/`composer.json` before suggesting installs.
 - 2+ replan rounds without code → stop, execute.
 - On failure: state what failed, what was attempted. Don't retry same approach more than twice — rethink instead.
+- GOAL-DRIVEN. Define success criteria before coding. Loop until verified. "Write a test that reproduces the bug" > "Fix the bug".
 - If it works, stop. No polishing, no "while we're here" improvements.
 - Prefer targeted edits (Edit) over full rewrites (Write).
 - Skip reading files >100KB unless task specifically requires them.
@@ -106,6 +107,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | Financial modeling, runway, taxes, pricing | `cfo-finance` |
 | Contracts, NDAs, compliance, privacy, risk | `legal-compliance` |
 | Security audit, DevSecOps, threat modeling | `security-auditor` |
+| Vulnerability hunting, pentesting, exploit chains | `vulnerability-hunter` |
 
 ### Product & GTM
 
@@ -149,6 +151,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Recently modified code, diff for review | `code-reviewer` |
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
+| Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
 | React component, layout, responsive, CSS | `frontend-developer` |
 | Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
