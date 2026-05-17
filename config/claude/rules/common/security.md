@@ -37,23 +37,10 @@ alwaysApply: true
 
 ### npm install — requiere confirmacion
 
-- **`npm install` / `npm i` requiere confirmacion explicita**. Ejecuta scripts de postinstall arbitrarios sin verificacion de integridad del lockfile. Vector de supply chain attack documentado:
-  - **Axios (Marzo 2026)**: credenciales de maintainer comprometidas → publicaron `axios@1.14.1` + dependencia maliciosa `plain-crypto-js@4.2.1` → postinstall script (`node setup.js`) descargaba RAT multiplataforma (macOS/Linux/Windows) → script se autolimpiaba, `npm audit` no detectaba nada.
-  - **TanStack (Mayo 2026)**: 42 paquetes, 84 versiones, propagacion a Mistral, UiPath, PyPI.
+- **`npm install` / `npm i` requiere confirmacion explicita**. Ejecuta scripts de postinstall arbitrarios sin verificacion de integridad del lockfile. Vector de supply chain attack documentado (TanStack compromise, Mayo 2026 — 42 paquetes, 84 versiones, propagacion a Mistral, UiPath, PyPI).
 - **Preferi `npm ci`** para instalaciones deterministas que respetan el lockfile y no ejecutan postinstall scripts.
-- **Alternativa preferida: `pnpm`**. pnpm 11+ bloquea install-scripts por defecto (con approval prompt, no binario como `--ignore-scripts`) y tiene `minimumReleaseAge=1440` (1 dia) por defecto.
+- **Alternativa preferida: `pnpm`**. pnpm 11+ bloquea install-scripts por defecto y es deterministico.
 - **`npm install -g` esta BLOQUEADO**. Usa `npx` o `pnpm dlx` para herramientas one-shot.
-
-#### Cooldown de versiones (minimum release age)
-
-- **`min-release-age=1` en `~/.npmrc`** (npm 11.10.0+, Febrero 2026). Bloquea instalacion de paquetes publicados hace <1 dia. El ataque Axios duro <24h antes de deteccion — un cooldown de 1 dia lo hubiera frenado completamente.
-  ```ini
-  # ~/.npmrc (global) o .npmrc (proyecto)
-  min-release-age=1
-  ```
-- **No uses `ignore-scripts=true` global**. Rompe paquetes con native addons (esbuild, node-gyp, sharp, etc.). Para proyectos que no necesitan native addons, configuralo por proyecto.
-- **pnpm ya lo trae por defecto**. `minimumReleaseAge=1440` (minutos = 1 dia) desde pnpm 11.0. No requiere configuracion adicional.
-- Para emergencias (parche de seguridad critico): `npm install --min-release-age=0 <pkg>`.
 
 ### pip install — requiere confirmacion
 
