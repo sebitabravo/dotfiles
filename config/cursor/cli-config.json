@@ -1,0 +1,134 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Grep",
+      "Shell(ls)",
+      "Shell(cat)",
+      "Shell(bat)",
+      "Shell(rg)",
+      "Shell(fd)",
+      "Shell(sd)",
+      "Shell(eza)",
+      "Shell(git status:*)",
+      "Shell(git diff:*)",
+      "Shell(git add:*)",
+      "Shell(git checkout:*)",
+      "Shell(git branch:*)",
+      "Shell(git log:*)",
+      "Shell(git stash:*)",
+      "Shell(git fetch:*)",
+      "Shell(git pull:*)",
+      "Shell(git commit:*)",
+      "Shell(npm:*)",
+      "Shell(npx:*)",
+      "Shell(pnpm:*)",
+      "Shell(bun:*)",
+      "Shell(yarn:*)",
+      "Shell(brew:*)",
+      "Shell(python:*)",
+      "Shell(python3:*)",
+      "Shell(pip:*)",
+      "Shell(uv:*)",
+      "Shell(uvx:*)",
+      "Shell(cargo:*)",
+      "Shell(go:*)",
+      "Shell(make:*)",
+      "Shell(docker:*)",
+      "Shell(gh:*)",
+      "Shell(mkdir:*)",
+      "Shell(cp:*)",
+      "Shell(mv:*)",
+      "Shell(touch:*)",
+      "Shell(chmod:*)",
+      "Shell(head:*)",
+      "Shell(tail:*)",
+      "Shell(wc:*)",
+      "Shell(echo:*)",
+      "Shell(printf:*)",
+      "Shell(pwd:*)",
+      "Shell(cd:*)",
+      "Shell(env:*)",
+      "Shell(export:*)",
+      "Shell(curl:*)",
+      "Shell(wget:*)",
+      "Shell(which:*)",
+      "Shell(code:*)",
+      "Shell(nvim:*)",
+      "Shell(grep:*)",
+      "Shell(find:*)",
+      "Shell(pytest:*)",
+      "Shell(jest:*)",
+      "Shell(vitest:*)",
+      "Shell(ng:*)",
+      "Shell(nx:*)",
+      "Shell(turbo:*)",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(secrets/**)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials.json)",
+      "Read(**/.ssh/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/node_modules/**)",
+      "Shell(rm -rf:*)",
+      "Shell(rm -r:*)",
+      "Shell(sudo:*)",
+      "Shell(git push --force:*)",
+      "Shell(git reset --hard:*)"
+    ]
+  },
+  "version": 1,
+  "editor": {
+    "vimMode": false
+  },
+  "notifications": true,
+  "hints": false,
+  "rewind": false,
+  "suggestNextPrompt": false,
+  "model": {
+    "modelId": "default",
+    "displayModelId": "auto",
+    "displayName": "Auto",
+    "displayNameShort": "Auto",
+    "aliases": ["auto"],
+    "maxMode": false
+  },
+  "hasChangedDefaultModel": true,
+  "maxMode": false,
+  "modelParameters": {
+    "default": []
+  },
+  "selectedModel": {
+    "modelId": "default",
+    "parameters": []
+  },
+  "privacyCache": {
+    "ghostMode": true,
+    "privacyMode": 2
+  },
+  "serverConfigCache": {
+    "cliSandboxDefaultEnabled": true
+  },
+  "network": {
+    "useHttp1ForAgent": false
+  },
+  "approvalMode": "allowlist",
+  "sandbox": {
+    "mode": "enabled",
+    "networkAccess": "user_config_with_defaults"
+  },
+  "attribution": {
+    "attributeCommitsToAgent": false,
+    "attributePRsToAgent": false
+  }
+}
