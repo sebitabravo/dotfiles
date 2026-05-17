@@ -12,151 +12,151 @@ metadata:
 ## Branch Naming
 
 ```
-main                          ← Producción (NUNCA push directo)
-└── development               ← Desarrollo principal
-    ├── feature/TECH-XX-...   ← Features nuevas
-    ├── fix/descripcion       ← Bug fixes
-    ├── refactor/descripcion  ← Refactoring
-    └── hotfix/bug-urgente    ← Fixes urgentes en producción
+main                          ← Production (NEVER push direct)
+└── development               ← Main development branch
+    ├── feature/TECH-XX-...   ← New features
+    ├── fix/description       ← Bug fixes
+    ├── refactor/description  ← Refactoring
+    └── hotfix/urgent-bug     ← Urgent production fixes
 ```
 
-### Formato
+### Format
 
 ```bash
-feature/TECH-XX-descripcion-corta   # Con ticket de Linear/Jira
-feature/nombre-descriptivo          # Sin ticket
-fix/descripcion-del-bug
-refactor/que-se-refactoriza
-hotfix/bug-urgente
+feature/TECH-XX-short-description   # With Linear/Jira ticket
+feature/descriptive-name            # Without ticket
+fix/bug-description
+refactor/what-is-refactored
+hotfix/urgent-bug
 ```
 
-## Conventional Commits (OBLIGATORIO)
+## Conventional Commits (MANDATORY)
 
-### Formato
+### Format
 
 ```
-tipo(alcance): descripción en minúsculas
+type(scope): lowercase description
 ```
 
-### Tipos permitidos
+### Allowed types
 
-| Tipo | Cuándo |
-|------|--------|
-| `feat` | Feature nueva |
+| Type | When |
+|------|------|
+| `feat` | New feature |
 | `fix` | Bug fix |
-| `refactor` | Refactoring sin cambio de comportamiento |
-| `test` | Agregar o modificar tests |
-| `ci` | Cambios en CI/CD |
-| `docs` | Documentación |
-| `chore` | Tareas de mantenimiento |
+| `refactor` | Refactoring without behavior change |
+| `test` | Add or modify tests |
+| `ci` | CI/CD changes |
+| `docs` | Documentation |
+| `chore` | Maintenance tasks |
 
-### Ejemplos
+### Examples
 
 ```bash
-feat(auth): agregar login con google
-fix(tenant): corregir validación de dominio
-refactor(tests): mover tests a integración
-test(carbon-footprint): agregar tests de validación
-docs(api): actualizar documentación de endpoints
+feat(auth): add google login
+fix(tenant): fix domain validation
+refactor(tests): move tests to integration
+test(carbon-footprint): add validation tests
+docs(api): update endpoint documentation
 ```
 
 ### WIP Commits
 
 ```bash
-WIP: [feature] - descripción del progreso
-WIP: sistema modular - contratos de dominio completados
-WIP: guardado fin de día
+WIP: [feature] - progress description
+WIP: modular system - domain contracts completed
+WIP: end of day save
 ```
 
-## Flujo de Feature
+## Feature Flow
 
 ```bash
-# 1. Crear desde main limpio
+# 1. Create from clean main
 git checkout main
 git pull origin main
-git checkout -b feature/nombre-feature
+git checkout -b feature/feature-name
 
-# 2. Desarrollar con commits frecuentes (cada 30-60 min)
-git commit -m "feat(scope): estructura inicial"
-git commit -m "feat(scope): implementación core"
+# 2. Develop with frequent commits (every 30-60 min)
+git commit -m "feat(scope): initial structure"
+git commit -m "feat(scope): core implementation"
 
-# 3. Push para backup
-git push -u origin feature/nombre-feature
+# 3. Push for backup
+git push -u origin feature/feature-name
 
-# 4. Crear PR hacia development
-# CI debe pasar antes de merge
+# 4. Create PR to development
+# CI must pass before merge
 ```
 
-## Crear Pull Request
+## Create Pull Request
 
-### Antes de crear el PR
+### Before creating the PR
 
 ```bash
-# Verificar que tests pasen (buscar comando en docs del proyecto)
-# Squash commits en uno solo
-git rebase -i HEAD~N  # N = cantidad de commits a squashear
+# Verify tests pass (check project docs for command)
+# Squash commits into one
+git rebase -i HEAD~N  # N = number of commits to squash
 ```
 
-### Checklist del PR
+### PR Checklist
 
-- [ ] Todos los tests pasan
-- [ ] Quality checks pasan (linters, formatters)
-- [ ] Commits squasheados en uno
-- [ ] PR apunta a `development` (NO a main)
-- [ ] Descripción clara del cambio
+- [ ] All tests pass
+- [ ] Quality checks pass (linters, formatters)
+- [ ] Commits squashed into one
+- [ ] PR targets `development` (NOT main)
+- [ ] Clear description of change
 
-### Crear el PR con gh
+### Create PR with gh
 
 ```bash
 gh pr create \
   --base development \
-  --title "feat(scope): descripción del cambio" \
-  --body "## Resumen
-- Qué se hizo y por qué
+  --title "feat(scope): change description" \
+  --body "## Summary
+- What was done and why
 
-## Cambios
-- Lista de cambios principales
+## Changes
+- List of main changes
 
 ## Testing
-- Cómo se testeó"
+- How it was tested"
 ```
 
-## Flujo de Merge
+## Merge Flow
 
 ```
-feature branch → development → main (producción)
+feature branch → development → main (production)
 ```
 
-## Hotfix (Urgente)
+## Hotfix (Urgent)
 
 ```bash
-# 1. Guardar trabajo actual
-git stash push --include-untracked -m "WIP: pausado por hotfix"
+# 1. Save current work
+git stash push --include-untracked -m "WIP: paused for hotfix"
 
-# 2. Crear branch de hotfix
+# 2. Create hotfix branch
 git checkout main && git pull origin main
-git checkout -b hotfix/descripcion-bug
+git checkout -b hotfix/bug-description
 
 # 3. Fix, test, commit
-git commit -m "fix(scope): descripción del bug resuelto"
+git commit -m "fix(scope): description of resolved bug"
 
-# 4. Merge y volver
-git checkout main && git merge hotfix/descripcion-bug
+# 4. Merge and return
+git checkout main && git merge hotfix/bug-description
 git push origin main
-git branch -d hotfix/descripcion-bug
-git checkout branch-anterior && git stash pop
+git branch -d hotfix/bug-description
+git checkout previous-branch && git stash pop
 ```
 
-## Reglas de Seguridad
+## Security Rules
 
 ```
-❌ NUNCA: git push --force (en main/development)
-❌ NUNCA: git clean -fd (sin dry-run primero)
-❌ NUNCA: git reset --hard (sin verificar estado)
-❌ NUNCA: Push directo a main
-❌ NUNCA: Rebase en branches compartidas
-✅ SIEMPRE: git clean -n antes de git clean -fd
-✅ SIEMPRE: git status antes de operaciones destructivas
+❌ NEVER: git push --force (on main/development)
+❌ NEVER: git clean -fd (without dry-run first)
+❌ NEVER: git reset --hard (without checking status)
+❌ NEVER: Push direct to main
+❌ NEVER: Rebase on shared branches
+✅ ALWAYS: git clean -n before git clean -fd
+✅ ALWAYS: git status before destructive operations
 ```
 
 ## Keywords

@@ -1,34 +1,34 @@
 ---
 name: fuzzing-primer
 description: >
-  Fuzzing methodology for vulnerability discovery. AFL++, libFuzzer, ffuf avanzado,
+  Fuzzing methodology for vulnerability discovery. AFL++, libFuzzer, advanced ffuf,
   parameter mutation, protocol fuzzing. Trigger: fuzzing, fuzz, AFL, ffuf advanced,
   parameter discovery, input mutation, coverage-guided.
 ---
 
 # Fuzzing Primer
 
-Metodología sistemática de fuzzing para descubrir vulnerabilidades que scanners estáticos no encuentran.
+Systematic fuzzing methodology to discover vulnerabilities that static scanners miss.
 
 ## When to Use
 
-- Después del scan inicial (nuclei/nikto), para profundizar.
-- Cuando hay parámetros sospechosos (ID, file, path, query, body).
-- Binarios o librerías con input parsing.
-- APIs con POST/GET parameters complejos.
-- Protocolos custom o formatos de archivo propietarios.
+- After initial scan (nuclei/nikto), to go deeper.
+- When suspicious parameters exist (ID, file, path, query, body).
+- Binaries or libraries with input parsing.
+- APIs with complex POST/GET parameters.
+- Custom protocols or proprietary file formats.
 
-## Fuzzing Web — ffuf Avanzado
+## Web Fuzzing — Advanced ffuf
 
 ### Parameter Discovery
 
 ```bash
-# Descubrir parámetros GET
+# Discover GET parameters
 ffuf -u 'http://target.com/page?FUZZ=test' \
   -w /usr/share/wordlists/seclists/Discovery/Web-Content/raft-medium-words.txt \
   -fc 404 -mc all
 
-# Descubrir parámetros POST
+# Discover POST parameters
 ffuf -u 'http://target.com/api/endpoint' \
   -X POST -d 'FUZZ=test' \
   -w /usr/share/wordlists/seclists/Discovery/Web-Content/raft-medium-words.txt \
@@ -82,53 +82,53 @@ ffuf -u 'http://target.com/template?name=FUZZ' \
   -mr '49|7777777'
 ```
 
-## Fuzzing de APIs — Esquemas OpenAPI/GraphQL
+## API Fuzzing — OpenAPI/GraphQL Schemas
 
 ```bash
 # GraphQL introspection → fuzz
-# Extraer schema, generar queries mutantes
+# Extract schema, generate mutant queries
 graphql-fuzz --endpoint http://target.com/graphql --schema schema.json
 
-# REST API fuzzing con OpenAPI spec
-# Mutar cada parámetro con payloads maliciosos
+# REST API fuzzing with OpenAPI spec
+# Mutate each parameter with malicious payloads
 cat openapi.json | jq '.paths | keys[]' | while read path; do
   ffuf -u "http://target.com${path}?FUZZ=../../etc/passwd" \
     -w /usr/share/wordlists/seclists/Discovery/Web-Content/api-params.txt
 done
 ```
 
-## Fuzzing de Binarios — AFL++
+## Binary Fuzzing — AFL++
 
-### Setup Rápido
+### Quick Setup
 
 ```bash
-# Instalar
+# Install
 brew install afl-fuzz  # macOS
-# o
+# or
 apt install afl++
 
-# Compilar con instrumentación
+# Compile with instrumentation
 afl-cc -o target_fuzz target.c
 
-# Crear corpus inicial
+# Create initial corpus
 mkdir corpus_in corpus_out
 echo "valid_input" > corpus_in/seed1
 
-# Fuzzear
+# Fuzz
 afl-fuzz -i corpus_in -o corpus_out -- ./target_fuzz @@
 ```
 
 ### Dictionary-Assisted Fuzzing
 
 ```bash
-# Crear diccionario de tokens del formato
+# Create token dictionary for the format
 afl-fuzz -i corpus_in -o corpus_out -x tokens.dict -- ./target_fuzz @@
 ```
 
-### Persistent Mode (más rápido)
+### Persistent Mode (faster)
 
 ```c
-// En el harness del target
+// In the target harness
 __AFL_FUZZ_INIT();
 while (__AFL_LOOP(10000)) {
   unsigned char *buf = __AFL_FUZZ_TESTCASE_BUF;
@@ -137,22 +137,22 @@ while (__AFL_LOOP(10000)) {
 }
 ```
 
-## Fuzzing con libFuzzer
+## Fuzzing with libFuzzer
 
 ```bash
-# Compilar target con -fsanitize=fuzzer,address
+# Compile target with -fsanitize=fuzzer,address
 clang -fsanitize=fuzzer,address -o fuzz_target fuzz_target.c
 
-# Ejecutar con corpus
+# Run with corpus
 ./fuzz_target corpus/ -max_len=4096 -jobs=4
 ```
 
-## Fuzzing de Protocolos
+## Protocol Fuzzing
 
 ### Network Protocol Fuzzing
 
 ```bash
-# Usar boofuzz o spike para protocolos TCP/UDP
+# Use boofuzz or spike for TCP/UDP protocols
 python3 << 'PYEOF'
 from boofuzz import *
 
@@ -171,61 +171,61 @@ PYEOF
 ### DNS Fuzzing
 
 ```bash
-# Mutar queries DNS para encontrar parsing bugs
+# Mutate DNS queries to find parsing bugs
 dns_fuzz --server 10.0.0.53 --domain lab.local --type ALL
 ```
 
 ## Fuzzing Workflow
 
 ```
-1. Identificar Input Surface
-   ├── Parámetros HTTP (query, body, headers, cookies)
-   ├── Formatos de archivo (PDF, PNG, XML, JSON, YAML)
-   ├── Protocolos (TCP/UDP custom, RPC, gRPC)
+1. Identify Input Surface
+   ├── HTTP parameters (query, body, headers, cookies)
+   ├── File formats (PDF, PNG, XML, JSON, YAML)
+   ├── Protocols (custom TCP/UDP, RPC, gRPC)
    └── CLI arguments
 
-2. Elegir Fuzzer
+2. Choose Fuzzer
    ├── HTTP params → ffuf / wfuzz
-   ├── Archivos → AFL++ / libFuzzer / honggfuzz
+   ├── Files → AFL++ / libFuzzer / honggfuzz
    ├── APIs → schemathesis / graphql-fuzz
-   └── Protocolos → boofuzz / kitty
+   └── Protocols → boofuzz / kitty
 
-3. Crear Corpus / Wordlist
-   ├── Payloads válidos + edge cases
-   ├── Diccionarios de formato
-   └── Mutaciones guiadas
+3. Create Corpus / Wordlist
+   ├── Valid payloads + edge cases
+   ├── Format dictionaries
+   └── Guided mutations
 
-4. Ejecutar Fuzzing
-   ├── 30 min mínimo
-   ├── Monitorizar crashes/timeouts
-   └── Ajustar según cobertura
+4. Execute Fuzzing
+   ├── 30 min minimum
+   ├── Monitor crashes/timeouts
+   └── Adjust based on coverage
 
 5. Triaging
-   ├── Minimizar crashes: afl-tmin
-   ├── Verificar exploitabilidad
-   └── Documentar PoC
+   ├── Minimize crashes: afl-tmin
+   ├── Verify exploitability
+   └── Document PoC
 ```
 
 ## Crash Triaging
 
 ```bash
-# Minimizar input que crashea
+# Minimize crashing input
 afl-tmin -i crashing_input -o minimized_input -- ./target @@
 
-# Analizar con ASAN output
-# Buscar: heap-buffer-overflow, stack-buffer-overflow, use-after-free
+# Analyze with ASAN output
+# Look for: heap-buffer-overflow, stack-buffer-overflow, use-after-free
 
-# Determinar exploitabilidad
+# Determine exploitability
 gdb ./target -ex "run < minimized_input" -ex "bt" -ex "info registers"
 ```
 
-## Integración con Vulnerability Hunter
+## Integration with Vulnerability Hunter
 
-- Fase 2.5 del core loop: después de Scan, antes de Exploit.
-- Usar ffuf avanzado para cada endpoint con parámetros.
-- Si se encuentra un binario o librería: AFL++ + dictionary.
-- Documentar crashes explotables en la cadena de explotación.
-- Todo input que crashea → candidato a exploit.
+- Phase 2.5 of core loop: after Scan, before Exploit.
+- Use advanced ffuf for each endpoint with parameters.
+- If a binary or library is found: AFL++ + dictionary.
+- Document exploitable crashes in the exploit chain.
+- Any crashing input → exploit candidate.
 
 ## Commands Quick Reference
 

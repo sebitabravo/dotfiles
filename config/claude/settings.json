@@ -87,6 +87,7 @@
       "Bash(wget:*)",
       "Bash(echo:*)",
       "Bash(printf:*)",
+      "Bash(./init.sh:*)",
       "Bash(pwd:*)",
       "Bash(cd:*)",
       "Bash(env:*)",

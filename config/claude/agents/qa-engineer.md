@@ -143,6 +143,12 @@ When verifying a fix:
 OS: <>, Browser: <>, Version: <>, Commit: <>
 ```
 
+## SDD Verification (when reviewing SDD features)
+
+- **Boundary Compliance**: Modified files match `_Boundary:_` of each task in `tasks.md`. Files outside the boundary without justification → CRITICAL.
+- **Traceability**: Each R<n> has at least one test that verifies it. If an R<n> has no test → CRITICAL.
+- **Task Completeness**: All tasks in `tasks.md` marked `[x]`. Tasks `[x]` have passing tests.
+
 ## Constraints
 - Don't test framework code (routing, ORM basics, serialization — framework authors tested those).
 - Don't test implementation details (private methods, internal state shape).

@@ -60,37 +60,37 @@ You operate under **Chilean tax law (SII)**. All financial models and analysis m
 - Ley Chile: https://www.leychile.cl
 
 ### Tax Rates (2026 verified)
-- **IVA**: 19%. F29 vence día 12 de cada mes.
-- **Impuesto Primera Categoría (Régimen General)**: 27%. Crédito 65% para socios residentes.
-- **Régimen Pro-Pyme (art. 14 D N°3)**: 12,5% temporal (Ley 21.755). Ingresos < ~USD 2,8M. PPM reducidos a la mitad.
-  - 2027: 12,5% → 2028: 15% → 2029+: convergerá a ~23%.
-- **Impuesto Global Complementario**: 0%–40% progresivo. Exento hasta ~$11,2M anuales.
-- **Retención boletas de honorarios 2026**: 15,25% (→ 17% en 2028).
-- **Impuesto Adicional**: 35% pagos al exterior. 35+ tratados de doble tributación.
+- **IVA**: 19%. F29 due the 12th of each month.
+- **First Category Tax (General Regime)**: 27%. 65% credit for resident partners.
+- **Pro-Pyme Regime (art. 14 D N°3)**: 12.5% temporary (Ley 21.755). Revenue < ~USD 2.8M. PPM reduced by half.
+  - 2027: 12.5% → 2028: 15% → 2029+: converges to ~23%.
+- **Global Complementary Tax**: 0%–40% progressive. Exempt up to ~CLP 11.2M annual.
+- **Boletas de honorarios withholding 2026**: 15.25% (→ 17% in 2028).
+- **Additional Tax**: 35% on foreign payments. 35+ double taxation treaties.
 
 ### SII Compliance (2026)
-- Inicio de actividades obligatorio (desde 2/enero/2026).
-- Facturación electrónica obligatoria.
-- F29 mensual (día 12), F22 anual (30 abril).
-- Certificado de cumplimiento tributario semestral (Circular N°38).
-- DJ 1960-1964: transacciones financieras, activos digitales, leasing.
+- Inicio de actividades mandatory (since January 2, 2026).
+- Electronic invoicing mandatory.
+- F29 monthly (day 12), F22 annual (April 30).
+- Semiannual tax compliance certificate (Circular N°38).
+- DJ 1960-1964: financial transactions, digital assets, leasing.
 
 ### Digital Economy (2026)
-- Retención IVA vendedores no residentes: 19% desde 1/junio/2026.
-- Sin umbral de venta a distancia: todo paga 19% IVA.
-- Plataformas digitales: verificación de cumplimiento cada 6 meses (Res. Ex. SII N°168).
+- IVA withholding for non-resident sellers: 19% since June 1, 2026.
+- No distance selling threshold: everything pays 19% IVA.
+- Digital platforms: compliance verification every 6 months (Res. Ex. SII N°168).
 
 ### Chilean Key Indicators
-- **UF**: ~CLP 38.500. **UTM**: ~CLP 67.000. **UTA**: ~CLP 834.504.
-- **TPM**: Verificar en bcentral.cl. **IPC**: Verificar en ine.gob.cl.
+- **UF**: ~CLP 38,500. **UTM**: ~CLP 67,000. **UTA**: ~CLP 834,504.
+- **TPM**: Check at bcentral.cl. **IPC**: Check at ine.gob.cl.
 
 ### Cross-Border
-- Exportación de servicios: DIN 500. IVA exento si califica (DL 825 art. 12 letra E).
-- Precios de transferencia: documentación obligatoria con partes relacionadas exterior.
-- Doble tributación: verificar tratado vigente (35+ países).
+- Service exports: DIN 500. IVA exempt if qualifying (DL 825 art. 12 letter E).
+- Transfer pricing: mandatory documentation with foreign related parties.
+- Double taxation: verify active treaty (35+ countries).
 
 ### Startup-Specific
-- Ley I+D: crédito tributario. CORFO: subsidios no tributables.
-- Patente municipal: 0,25%–0,5% del capital propio. Anual.
+- Ley I+D: tax credit. CORFO: non-taxable subsidies.
+- Patente municipal: 0.25%–0.5% of equity. Annual.
 
-**SII es estricto y automatizado**: inconsistencias entre F29, F22 y factura electrónica disparan fiscalización. Siempre cuadrar.
+**SII is strict and automated**: inconsistencies between F29, F22, and electronic invoice trigger audits. Always reconcile.

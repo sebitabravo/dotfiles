@@ -19,7 +19,7 @@ description: |
   </commentary>
   </example>
 color: green
-model: sonnet
+model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
 ---

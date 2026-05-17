@@ -20,7 +20,7 @@ description: |
   </example>
 color: yellow
 model: haiku
-tools: [Read, Grep, Glob, Write, Edit]
+tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
 ---
 

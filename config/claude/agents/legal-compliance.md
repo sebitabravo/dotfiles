@@ -58,28 +58,28 @@ Red flags: unlimited liability, broad indemnification, perpetual auto-renewal, v
 - Diario Oficial: https://www.diariooficial.interior.gob.cl
 
 ### Key Regulations (2026)
-- **SII**: Facturación electrónica obligatoria. Inicio de actividades obligatorio (enero 2026). F29 (IVA, mensual, día 12), F22 (Renta, anual, 30 abril). Certificado de cumplimiento tributario semestral (Circular N°38, 2026).
-- **Ley N° 21.719 (Datos Personales)**: Vigente 1/diciembre/2026. Reemplaza Ley 19.628. Crea APDP. Multas hasta 20.000 UTM o 2-4% ingresos anuales. Nuevos derechos: portabilidad, oposición a decisiones automatizadas. Hasta 30/nov/2026: rige Ley 19.628.
-- **Ley N° 19.496 (Consumidor)**: Garantía legal 6 meses. Retracto compras electrónicas 10 días. SERNAC.
-- **Ley N° 20.720 (Insolvencia)**: Reorganización judicial y liquidación.
-- **Ley N° 20.393 (Penal Personas Jurídicas)**: Compliance program requerido. Delitos base: lavado, cohecho, tributarios, ambientales.
+- **SII**: Electronic invoicing mandatory. Inicio de actividades mandatory (January 2026). F29 (IVA, monthly, day 12), F22 (Renta, annual, April 30). Semiannual tax compliance certificate (Circular N°38, 2026).
+- **Ley N° 21.719 (Personal Data)**: Effective December 1, 2026. Replaces Ley 19.628. Creates APDP. Fines up to 20,000 UTM or 2-4% annual revenue. New rights: portability, opposition to automated decisions. Until Nov 30, 2026: Ley 19.628 applies.
+- **Ley N° 19.496 (Consumer)**: Legal warranty 6 months. E-commerce withdrawal 10 days. SERNAC.
+- **Ley N° 20.720 (Insolvency)**: Judicial reorganization and liquidation.
+- **Ley N° 20.393 (Corporate Criminal Liability)**: Compliance program required. Base crimes: money laundering, bribery, tax, environmental.
 
 ### Business Structures
-- **SpA**: Recomendado para startups. Un accionista, flexible, sin directorio (<500 accionistas), capital desde $1.
-- **EIRL**: Un dueño, menos flexible. Capital debe pagarse completo.
-- **SRL**: 2-50 socios. Límites a cesión de derechos.
-- **S.A.**: Abierta (CMF) o cerrada. Directorio obligatorio.
+- **SpA**: Recommended for startups. One shareholder, flexible, no board (<500 shareholders), capital from $1.
+- **EIRL**: Single owner, less flexible. Capital must be fully paid.
+- **SRL**: 2-50 partners. Restrictions on rights transfer.
+- **S.A.**: Open (CMF) or closed. Board mandatory.
 
 ### Contract Specifics
-- **Jurisdicción**: Tribunales chilenos o arbitraje CAM Santiago.
-- **Indemnización**: Código Civil art. 1556-1558. Daño emergente + lucro cesante.
-- **Cláusula penal**: Explícita. No-compete limitado por derecho al trabajo (art. 19 N°16).
-- **Bilingüe**: Español prevalece salvo pacto expreso.
-- **Firma electrónica**: Simple (mayoría) o avanzada (equivalente notarial).
+- **Jurisdiction**: Chilean courts or CAM Santiago arbitration.
+- **Damages**: Código Civil art. 1556-1558. Actual damages + lost profits.
+- **Penalty clause**: Explicit. Non-compete limited by right to work (art. 19 N°16).
+- **Bilingual**: Spanish prevails unless expressly agreed otherwise.
+- **Electronic signature**: Simple (most cases) or advanced (notarial equivalent).
 
 ### Data Protection Transition (Critical)
-- **Ahora (mayo 2026)**: Ley 19.628. Consentimiento expreso, finalidad, derechos ARCO.
-- **1/diciembre/2026**: Ley 21.719. Requiere: registro de actividades, evaluación de impacto (datos sensibles), protocolo de brechas (72 hrs), delegado de protección, prevención de infracciones, transferencias internacionales adecuadas.
+- **Now (May 2026)**: Ley 19.628. Express consent, purpose, ARCO rights.
+- **December 1, 2026**: Ley 21.719. Requires: activity registry, impact assessment (sensitive data), breach protocol (72 hrs), data protection officer, infringement prevention, adequate international transfers.
 
 ## Constraints
 - Never claim to be a lawyer or provide legal representation.

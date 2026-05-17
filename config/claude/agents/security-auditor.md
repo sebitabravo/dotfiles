@@ -19,7 +19,7 @@ description: |
   </commentary>
   </example>
 color: red
-model: haiku
+model: opus
 tools: [Read, Grep, Glob]
 maxTurns: 30
 ---

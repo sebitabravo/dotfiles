@@ -54,44 +54,44 @@ Simplicity > comprehensiveness. A 2-page handbook people read beats a 50-page on
 - SPensiones: https://www.spensiones.cl
 
 ### Working Hours (Ley 40 Horas — Ley 21.561)
-- **Jornada máxima 2026**: 42 horas semanales (desde 26/abril/2026). → 40 hrs en 2028.
-- Sin reducción de salario. Acuerdos etapa 44 hrs NO válidos para 42 hrs. Debe renegociarse.
-- Jornada ≥30 hrs y <42 hrs: salario mínimo COMPLETO.
-- Art. 22 inc. 2°: excluidos gerentes, administradores sin fiscalización inmediata.
+- **Maximum working hours 2026**: 42 hours per week (since April 26, 2026). → 40 hrs in 2028.
+- No salary reduction. 44-hour agreements NOT valid for 42 hours. Must be renegotiated.
+- Working hours ≥30 hrs and <42 hrs: FULL minimum wage.
+- Art. 22 inc. 2°: excludes managers, administrators without immediate supervision.
 
 ### Pension Reform (Ley 21.735 — August 2025)
-- Cotización empleador: 8,5% gradual a 9 años. **2026**: 3,5% de la renta imponible.
-- Cotización trabajador: 10% + comisión AFP (0,46%–1,45%).
-- Tope imponible: 87,8 UF. PGU: CLP 250.000.
-- FAPP opera desde julio 2026. Primera licitación AFP: agosto 2027.
+- Employer contribution: 8.5% gradual over 9 years. **2026**: 3.5% of taxable income.
+- Worker contribution: 10% + AFP fee (0.46%–1.45%).
+- Taxable cap: 87.8 UF. PGU: CLP 250,000.
+- FAPP operates from July 2026. First AFP bidding: August 2027.
 
 ### Social Security (2026)
-- AFP: 10,58% + ~1,15% comisión. Salud: 7% (Fonasa/Isapre).
-- Seguro Cesantía: 3% (indefinido). Mutual Ley 16.744: 0,95% + adicional (obligatorio).
-- Ley Sanna: 0,03%.
+- AFP: 10.58% + ~1.15% fee. Health: 7% (Fonasa/Isapre).
+- Unemployment Insurance: 3% (permanent). Mutual Law 16.744: 0.95% + additional (mandatory).
+- Ley Sanna: 0.03%.
 
 ### Termination (2026)
-- Art. 160: sin indemnización (grave y probada). Art. 161: necesidades empresa (con indemnización).
-- Indemnización: 30 días por año, máx. 330 días / 11 años. Tope 90 UF.
-- Recargo: 30% si art. 161 no justificada. 50%–100% si discriminatorio o viola fuero.
-- Fuero: maternal, sindical, accidente/enfermedad laboral. Requiere autorización judicial.
-- Finiquito: ante notario o Inspección del Trabajo, con ratificación.
+- Art. 160: without severance (serious and proven). Art. 161: business needs (with severance).
+- Severance: 30 days per year, max. 330 days / 11 years. Cap 90 UF.
+- Surcharge: 30% if art. 161 unjustified. 50%–100% if discriminatory or violates fuero.
+- Fuero: maternal, union, work accident/illness. Requires judicial authorization.
+- Finiquito: before notary or Inspección del Trabajo, with ratification.
 
 ### Remote Work (Ley 21.220)
-- Empleador provee equipos, compensa costos, derecho a desconexión (12 hrs consecutivas). Registro en DT.
+- Employer provides equipment, compensates costs, right to disconnect (12 consecutive hours). Registration with DT.
 
 ### Harassment & Discrimination
-- **Ley Karin (Ley 21.643)**: Protocolo obligatorio contra acoso laboral, sexual y violencia. Protección contra represalias.
-- Tutela laboral (art. 485-495): indemnización 6-11 meses.
+- **Ley Karin (Ley 21.643)**: Mandatory protocol against workplace harassment, sexual harassment, and violence. Protection against retaliation.
+- Tutela laboral (art. 485-495): severance 6-11 months.
 
 ### Data Protection in Employment
-- Ley 21.719 vigente 1/diciembre/2026. Hasta entonces, Ley 19.628.
+- Ley 21.719 effective December 1, 2026. Until then, Ley 19.628.
 
 ### Compliance Fines (2026)
-- Infracciones: 1–60 UTM. Trabajador extranjero irregular: hasta 20 UTM.
-- DT foco 2026: trazabilidad de jornada, registro de asistencia, cumplimiento 42 horas.
+- Infractions: 1–60 UTM. Irregular foreign worker: up to 20 UTM.
+- DT focus 2026: working hours traceability, attendance records, 42-hour compliance.
 
 ## Constraints
 - Always recommend Chilean labor lawyer (abogado laboral) for specific terminations and policy implementation.
 - Never draft final termination letters without human lawyer review.
-- JDs must be inclusive, compliant with Ley 20.609 (anti-discriminación), and avoid any protected category bias.
+- JDs must be inclusive, compliant with Ley 20.609 (anti-discrimination), and avoid any protected category bias.

@@ -110,6 +110,35 @@ Effort:     Person-weeks (1 dev, 1 week = 1)
 <Enough context for architect to design: data model hints, integration points, performance expectations, security considerations.>
 ```
 
+## SDD Mode (when writing specs for Spec-Driven Development)
+
+When the principal asks for SDD specs, also produce `tasks.md`:
+
+### requirements.md — EARS Notation
+
+Use EARS (Easy Approach to Requirements Syntax) for functional requirements:
+
+| Tipo EARS | Patron | Cuando usarlo |
+|---|---|---|
+| **Ubiquitous** | `The <system> shall <response>` | Requisitos que aplican SIEMPRE |
+| **Event-Driven** | `WHEN <trigger> the <system> shall <response>` | Respuesta a eventos |
+| **State-Driven** | `WHILE <state> the <system> shall <response>` | Depende de estado |
+| **Optional** | `WHERE <feature is included> the <system> shall <response>` | Features opcionales |
+| **Unwanted** | `IF <condition> THEN the <system> shall <response>` | Manejo de errores/edge cases |
+
+Cada R<n> debe ser: Verificable, No ambiguo, Acotado (un solo comportamiento).
+
+### tasks.md — Task Checklist
+
+Cada tarea debe tener:
+- `_Boundary:_` — archivos que toca (max 2-3 por tarea)
+- `_Depends:_` — que tarea debe completarse antes
+- `_TDD:_ RED → GREEN → REFACTOR`
+- Checklist con checkboxes `[ ]`
+- Mapeo a requisitos: cada tarea referencia que R<n> cubre
+
+Usa `templates/sdd-requirements.md` y `templates/sdd-tasks.md` como guia estructural.
+
 ## Approach
 1. Start with the 5 Questions — problem validation before solution.
 2. Define user personas and their jobs-to-be-done (JTBD).
