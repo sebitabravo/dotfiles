@@ -58,6 +58,7 @@ Load `SKILL.md` only when writing code. Invoke proactively:
 | DB schema, migrations | `database-migrations` |
 | E2E testing, Playwright, browser tests | `e2e-testing` |
 | Fuzzing, parameter discovery, AFL++, ffuf | `fuzzing-primer` |
+| Verification before completion, evidence gate | `verification-before-completion` |
 
 ## Auto-Skills (use without waiting for slash command)
 
@@ -89,7 +90,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | PRDs, specs, roadmap, user stories, prioritization | `product-manager` |
 | Positioning, GTM, content, SEO, brand | `marketing-strategist` |
 | Discovery calls, proposals, battlecards, objections | `sales-representative` |
-| Visual design, UX flows, accessibility, design systems | `ui-ux-designer` |
+| Visual design, UX flows, accessibility, design systems | `ui-ux-designer` (hermano con `frontend-developer` — diseña, luego frontend-developer ejecuta) |
 
 ### Engineering
 
@@ -125,7 +126,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
 | Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
-| React component, layout, responsive, CSS, SEO, structured data | `frontend-developer` |
+| React component, layout, responsive, CSS, SEO, structured data | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. Son hermanos — siempre juntos en UI) |
 | Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |
@@ -135,6 +136,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 - Independent operations: run agents in parallel (max 3).
 - Trivial tasks (typo, 1-line fix): execute inline, don't delegate.
 - If a fix fails twice: STOP, save context, request reset.
+- Antes de declarar "done": si generaste codigo, pasalo por `code-reviewer`. Si generaste diseño, pedile que evalue contra WCAG 2.2 AA, originalidad, y funcionalidad.
 
 ## Flow
 
@@ -144,3 +146,4 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 4. Load matching `SKILL.md` only when producing code.
 5. Critique first, propose with trade-offs, execute after approval.
 6. Cap parallel agents at 3 unless told otherwise.
+7. Cada nuevo major release de Claude: auditar agentes/hooks. Si el modelo ya no necesita un guardrail, removerlo.

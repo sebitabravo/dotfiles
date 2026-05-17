@@ -129,6 +129,25 @@ npx ecc-agentshield scan --opus       # analisis profundo con 3 agentes Opus
 > [!WARNING]
 > `--opus` lanza 3 agentes Opus 4.6 en paralelo. Consume uso rapidamente. Usar solo antes de deploy o cambios mayores de config.
 
+**Impeccable**: Deteccion deterministica de anti-patrones de diseño (sin LLM, sin API key). Atrapa 24 issues: tipografia, color, spacing, motion, anti-slop patterns. Basado en la skill de Anthropic + 27 reglas propias.
+
+```bash
+npx impeccable detect src/              # escanea directorio
+npx impeccable detect --fast --json .   # regex-only, JSON output
+npx impeccable detect https://...       # escanea URL (Puppeteer)
+```
+
+> [!NOTE]
+> Impeccable es standalone CLI, no un plugin de Claude Code. No consume context window. Util como pre-commit hook o CI check de calidad de diseño.
+
+## Skills recomendados
+
+Instalacion opcional via `npx skills add <url>` para capacidades especificas:
+
+| Skill | Utilidad |
+|---|---|
+| `https://github.com/greensock/gsap-skills` | Animaciones profesionales con GSAP (8 skills: core, timeline, scrolltrigger, react, plugins, utils, performance, frameworks). Standard enterprise — Apple, Google, Nike, Webflow. 100% free. |
+
 ## MCP Servers
 
 Copiar `mcp-servers.template.json` a `~/.claude/mcp-servers.json` y configurar credenciales.

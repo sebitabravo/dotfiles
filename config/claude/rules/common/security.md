@@ -35,8 +35,23 @@ alwaysApply: true
 - Keep dependencies updated. `npm audit`, `pip audit`, `cargo audit`.
 - Minimum necessary amount. Fewer dependencies = smaller attack surface.
 
-### npm supply chain (post TanStack compromise)
+### npm install — requiere confirmacion
 
-- **Use pnpm 11+**. Default defenses block install-script attacks (preinstall/postinstall).
-- **pnpm 10 / npm / yarn / bun**: set `minimumReleaseAge=1440` to block same-day published versions.
-- **Block install scripts by default**. pnpm prevents arbitrary code execution during install. Never trust a package just because it's popular.
+- **`npm install` / `npm i` requiere confirmacion explicita**. Ejecuta scripts de postinstall arbitrarios sin verificacion de integridad del lockfile. Vector de supply chain attack documentado (TanStack compromise, Mayo 2026 — 42 paquetes, 84 versiones, propagacion a Mistral, UiPath, PyPI).
+- **Preferi `npm ci`** para instalaciones deterministas que respetan el lockfile y no ejecutan postinstall scripts.
+- **Alternativa preferida: `pnpm`**. pnpm 11+ bloquea install-scripts por defecto y es deterministico.
+- **`npm install -g` esta BLOQUEADO**. Usa `npx` o `pnpm dlx` para herramientas one-shot.
+
+### pip install — requiere confirmacion
+
+- **`pip install` requiere confirmacion explicita**. ~1/3 de los paquetes en PyPI usan source distributions (`.tar.gz` con `setup.py`) que **ejecutan codigo arbitrario al instalarse** — incluso `pip download` ejecuta `setup.py`. Mas peligroso estructuralmente que npm: no existe equivalente a `npm ci` que saltee scripts. Incidente LiteLLM/Telnyx (Marzo 2026): 119k+ descargas maliciosas en <3 horas, vector via CI/CD compromise.
+- **`--only-binary :all:` siempre**. Fuerza wheels (`.whl`) que no ejecutan codigo al instalarse. Equivalente funcional a "bloquear postinstall scripts" en npm. Si un paquete no tiene wheel disponible, instalalo manualmente con revision de `setup.py`.
+  ```bash
+  pip install --only-binary :all: <paquete>
+  ```
+- **`--require-hashes` para integridad**. Verifica checksums criptograficos contra un lockfile. No es autenticidad (el autor malicioso publica sus propios hashes), pero detecta tampering en transito o en el registry. Usa `pip-compile --generate-hashes` para generar lockfiles; `pip freeze` NO es un lockfile (no incluye hashes).
+- **Cooldown de dependencias**. pip 26.1+ soporta `uploaded-prior-to = P3D` en `pip.conf`. Bloquea paquetes publicados hace <3 dias — el ataque LiteLLM duro 2.5h, un cooldown lo hubiera frenado. En proyectos, configura `exclude-newer = "P3D"` con uv.
+- **Siempre dentro de un venv**. Nunca `pip install` global en el sistema.
+- **`pip install --break-system-packages` BLOQUEADO**. By-passea la proteccion del venv.
+- **`pip install` sin venv activo esta BLOQUEADO**. Usa `uv` (alternativa moderna de Rust, lockfile con hashes por defecto, mas rapido) o `pipx` para herramientas CLI.
+- **`pip-audit` en CI**. Escaneo de CVEs en cada commit. `uvx pip-audit --requirement requirements.txt`.

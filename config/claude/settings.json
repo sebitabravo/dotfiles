@@ -121,9 +121,13 @@
       "Read(**/.hg/**)",
       "Read(**/CVS/**)",
       "Read(**/.git/objects/**)",
-      "Read(**/.git/hooks/**)"
+      "Read(**/.git/hooks/**)",
+      "Bash(npm install -g:*)"
     ],
     "ask": [
+      "Bash(npm install:*)",
+      "Bash(npm i:*)",
+      "Bash(pip install:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git push --force:*)",
