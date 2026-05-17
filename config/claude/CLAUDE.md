@@ -44,7 +44,7 @@
 
 ## Skills
 
-Load `SKILL.md` only when writing code. Invoke proactively:
+Invoke proactively:
 
 | Context | Skill |
 |---|---|
@@ -123,7 +123,8 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Trigger | Agent |
 |---|---|
 | Complex feature, new endpoint, new architecture | `backend-architect` |
-| Feature SDD (spec-first), multi-file, requires prior spec | `product-manager` → human gate → `backend-architect` → implement → `code-reviewer` + `qa-engineer` |
+| Feature request ("crea un feature", "nuevo feature", "quiero construir X"), complex multi-file feature, architectural change | Ejecutar SDD Flow (abajo) — `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` |
+| Continue/resume feature ("continua con X", "seguí con X", "retoma X"), check feature status ("como va X", "en que quedo X") | Leer `specs/{change}/` — detectar fase y retomar SDD Flow |
 | Recently modified code, diff for review | `code-reviewer` |
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
@@ -155,19 +156,41 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 1. Run `npx autoskills` (project-level, never global). Auto-detects stack, installs curated skills. Security-reviewed, own registry — no external servers.
 2. Load matching `SKILL.md` only when producing code.
 3. Critique first, propose with trade-offs, execute after approval.
-4. Cap parallel agents at 4 unless told otherwise.
-5. Every new Claude major release: audit agents/hooks. If the model no longer needs a guardrail, remove it.
+4. Every new Claude major release: audit agents/hooks. If the model no longer needs a guardrail, remove it.
 
 ### SDD Flow (for complex features)
 
-If the task is multi-file, new functionality, or architecturally significant:
+DAG: `explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-1. **Product-manager** writes EARS requirements in `specs/<feature>/requirements.md` and tasks in `specs/<feature>/tasks.md`. Base templates in `templates/`.
-2. **Backend-architect** writes technical design in `specs/<feature>/design.md` (ADR, File Structure Plan, data model).
-3. **⏸ HUMAN APPROVES** the specs. Without explicit approval, no code is touched.
-4. **Implementation** — TDD RED→GREEN→REFACTOR. The principal executes or delegates to the corresponding engineering agent.
-5. **Code-reviewer + QA-engineer** in parallel. Code-reviewer verifies traceability R<n>→test and security. QA-engineer verifies boundary compliance, edge cases, and regressions.
-6. If review finds CRITICAL → back to implementation (max 2 cycles). If approved → `done`.
+**Artifacts** en `specs/{change-name}/`. Templates en `templates/`.
+
+#### Iniciar Feature Nuevo
+Trigger: "crea un feature X", "nuevo feature: X", "quiero construir X"
+
+1. **Init Check** — verificar `specs/.sdd-init.md`. Si no existe: crear `specs/`, detectar stack + test runner, guardar init con `strict_tdd`.
+2. **Explore** (inline) — leer codebase relevante. Identificar constraints, coupling, approaches. Output: `specs/{change}/explore.md`.
+3. **Propose** (inline) — one-pager. Template: `templates/sdd-proposal.md`. Output: `specs/{change}/proposal.md`. **⏸ HUMAN GATE: ¿aprobado?**
+4. **Spec + Design** (parallel):
+   - Delegar `product-manager`: EARS requirements. Lee proposal + `templates/sdd-requirements.md`. Output: `specs/{change}/requirements.md`.
+   - Delegar `backend-architect`: ADR + data model + file plan. Lee proposal + `templates/sdd-design.md`. Output: `specs/{change}/design.md`.
+5. **⏸ HUMAN GATE: ¿spec y design aprobados?**
+6. **Tasks** — delegar `product-manager`: desglosa spec+design en T<n>. Boundary, Depends, TDD. Template: `templates/sdd-tasks.md`. Output: `specs/{change}/tasks.md`.
+7. **Apply** — delegar `backend-architect`: batches de 3 tareas. TDD RED→GREEN→REFACTOR. Marca [x] en tasks.md. Actualiza `specs/{change}/apply-progress.md` con template `templates/sdd-apply-progress.md`.
+8. **Verify** (parallel):
+   - Delegar `code-reviewer`: diff vs spec, seguridad, traceability R<n>→test.
+   - Delegar `qa-engineer`: tests, boundary compliance, tasks [x].
+   - Consolidar en `specs/{change}/verify-report.md`. CRITICAL → volver a apply (max 2 ciclos).
+9. **Archive** (inline) — verify-report ✅. Escribir `specs/{change}/archive-report.md`. Mover a `specs/archive/{change}/`.
+
+#### Continuar Feature
+Trigger: "continua con X", "seguí con X", "retoma X"
+
+Leer `specs/{change}/`, detectar fase según artifacts presentes, ejecutar fase. Si apply con `apply-progress.md`, saltar tareas [x].
+
+#### Estado de Feature
+Trigger: "cómo va X?", "estado de X", "en qué quedó X"
+
+Contar `[x]` vs `[ ]` en tasks.md. Leer apply-progress.md y verify-report.md. Reportar: "Feature X: N/M tareas. Próximo paso: ..."
 
 Trivial features (typo, 1-line fix, doc update): direct implementation, no SDD. The principal decides the route.
 
@@ -176,19 +199,15 @@ Trivial features (typo, 1-line fix, doc update): direct implementation, no SDD. 
 1. **One feature at a time.** Don't mix tasks from different features.
 2. **Never skip the spec phase** for SDD features. The principal stops at `spec_ready` until the human approves.
 3. **Don't declare `done` without green tests.** Run verification, confirm exit 0, only then close.
-4. **Write results to files**, not chat. The anti-telephone rule: subagents return paths, not content.
-5. **Don't edit blind.** Read the file before modifying it.
-6. **If you don't know, search `docs/` or `templates/`** before improvising.
-7. **Leave the repo clean on session close.** No temporary artifacts, no dangling TODOs.
+4. **If you don't know, search `docs/` or `templates/`** before improvising.
+5. **Leave the repo clean on session close.** No temporary artifacts, no dangling TODOs.
 
 ## Session Close
 
 1. Run verification (tests, linters).
-2. If you completed an SDD feature, mark `"done"` in `feature_list.json`.
-3. Append summary from `progress/current.md` to `progress/history.md`.
-4. Reset `progress/current.md` to the template.
-5. Remove temporary artifacts, debug statements, dangling TODOs.
-6. If using Engram: `mem_session_summary`.
+2. If you completed an SDD feature, ensure all artifacts are in `specs/{change}/`.
+3. Remove temporary artifacts, debug statements, dangling TODOs.
+4. If using Engram: `mem_session_summary`.
 
 ## Blockers
 
