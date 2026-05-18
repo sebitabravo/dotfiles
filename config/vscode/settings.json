@@ -238,13 +238,6 @@
   "[astro]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "[go]": {
-    "editor.insertSpaces": false,
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
-    }
-  },
   "workbench.editor.customLabels.patterns": {
     "**/types/**": "${filename}.${extname} - 🛃",
     "**/app/**": "${filename}.${extname} - 🧩",
@@ -568,5 +561,4 @@
       "text": "Use conventional commits (feat, fix, docs, chore, refactor)"
     }
   ],
-  "go.toolsManagement.autoUpdate": true
 }

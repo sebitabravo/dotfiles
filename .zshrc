@@ -73,7 +73,7 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git gitfast docker)
+plugins=(gitfast docker)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -128,7 +128,6 @@ if [[ -f "$HOME/.pyenv/shims/.pyenv-shim" ]]; then
   lock_age=$(( $(date +%s) - $(stat -f %m "$HOME/.pyenv/shims/.pyenv-shim") ))
   (( lock_age > 120 )) && rm -f "$HOME/.pyenv/shims/.pyenv-shim"
 fi
-sleep $(( RANDOM % 3 ))  # jitter 0-2s to stagger rehash across shells
 eval "$(pyenv init -)"
 
 # Zoxide
@@ -143,9 +142,9 @@ export PATH="/usr/local/bin:$PATH"
 
 # Android SDK
 export ANDROID_HOME=$HOME/Library/Android/sdk
-export PATH=$PATH:$ANDROID_HOME/tools
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-export PATH=$PATH:$ANDROID_HOME/emulator
+[[ -d "$ANDROID_HOME" ]] && {
+  export PATH="$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
+}
 
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
@@ -155,9 +154,6 @@ export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
-
-# LM Studio CLI
-[[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$PATH:$HOME/.lmstudio/bin"
 
 # Engram Cloud (NAS via Tailscale) — set token in ~/.engram-cloud.env
 [[ -f "$HOME/.engram-cloud.env" ]] && source "$HOME/.engram-cloud.env"

@@ -43,8 +43,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
 - [ ] **Bartender** - <https://www.macbartender.com/>
 - [ ] **CodexBar** - <https://codexbar.app/>
-- [ ] **LLStudio** - <https://lmstudio.ai/download>
-
 ### Terminal & Development
 
 - [ ] **Warp Terminal** - <https://www.warp.dev/>
