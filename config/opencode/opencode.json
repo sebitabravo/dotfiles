@@ -3,8 +3,7 @@
   "agent": {
     "sebastian": {
       "mode": "primary",
-      "description": "Primary orchestrator and senior architect focused on technical judgment, delegation, and safe autonomy",
-      "model": "anthropic/claude-sonnet-4-6",
+      "description": "Senior Architect - minimal config",
       "temperature": 0.1,
       "prompt": "{file:./prompts/sebastian.txt}",
       "permission": {
@@ -44,14 +43,19 @@
       ],
       "enabled": true
     },
-    "sequential-thinking": {
-      "type": "local",
+    "engram": {
       "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "/opt/homebrew/bin/engram",
+        "mcp",
+        "--tools=agent"
       ],
-      "enabled": true
+      "enabled": true,
+      "type": "local",
+      "environment": {
+        "ENGRAM_CLOUD_AUTOSYNC": "1",
+        "ENGRAM_CLOUD_TOKEN": "engram-local-token-32chars-xxxxx",
+        "ENGRAM_CLOUD_SERVER": "http://100.75.235.85:18080"
+      }
     },
     "playwright": {
       "type": "local",
@@ -61,6 +65,15 @@
         "@playwright/mcp@latest"
       ],
       "enabled": false
+    },
+    "pencil": {
+      "command": [
+        "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+        "--app",
+        "desktop"
+      ],
+      "enabled": false,
+      "type": "local"
     }
   },
   "permission": {
@@ -101,11 +114,8 @@
     }
   },
   "plugin": [
-    "opencode-gemini-auth@latest",
-    "opencode-anthropic-login-via-cli@latest",
-    "./plugins/model-context-guard.ts",
-    "./plugins/subagent-model-sync.ts",
-    "./plugins/background-agents.ts"
-  ],
-  "small_model": "google/gemini-2.5-flash"
+    "@warp-dot-dev/opencode-warp",
+    "@tarquinen/opencode-dcp@latest",
+    "opencode-worktree@latest"
+  ]
 }
