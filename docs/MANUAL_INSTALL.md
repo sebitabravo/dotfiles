@@ -34,7 +34,6 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **DisplayLink Manager** - <https://www.displaylink.com/downloads/macos/>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
 
 ### Herramientas Especiales
@@ -58,10 +57,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
-- [ ] **Pencil** - <https://www.pencil.dev/>
-- [ ] **Cursor** - <https://cursor.com/download/>
 - [ ] **Unity** - <https://unity.com/download/>
-- [ ] **Superset** - <https://superset.sh>
 
 ### IA & Coding Agents
 
@@ -70,9 +66,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Browsers
 
-- [ ] **Firefox** - <https://www.firefox.com/es-CL/channel/desktop/developer/>
 - [ ] **Google Chrome** - <https://www.google.com/chrome/>
-- [ ] **Brave Browser** - <https://brave.com/download-nightly/>
 
 ### Productividad
 
@@ -90,7 +84,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Meld Studio** - <https://meldstudio.co/>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
-- [ ] **FL Studio** - <https://support.image-line.com/redirect/flstudio_mac_installer/>
 
 ### Gaming
 
@@ -134,15 +127,6 @@ Configurar Powerlevel10k manualmente:
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 ```
 
-### R Language
-
-Instalar paquetes R esenciales:
-
-```bash
-R -e 'install.packages("languageserver", repos="https://cran.r-project.org")'
-pipx install radian
-```
-
 ### instalar Sail
 
 ```bash
@@ -164,8 +148,6 @@ opencode auth login
 npm i -g @openai/codex
 npm install -g @google/gemini-cli
 curl -fsSL https://claude.ai/install.sh | bash
-curl -fsSL https://gh.io/copilot-install | bash
-curl https://cursor.com/install -fsS | bash
 ```
 
 ---

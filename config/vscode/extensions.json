@@ -1,0 +1,30 @@
+{
+  "core": [
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "usernamehw.errorlens",
+    "wayou.vscode-todo-highlight",
+    "davidanson.vscode-markdownlint",
+    "christian-kohler.path-intellisense",
+    "yoavbls.pretty-ts-errors"
+  ],
+  "php-laravel": [
+    "bmewburn.vscode-intelephense-client",
+    "amiralizadeh9480.laravel-extra-intellisense",
+    "onecentlin.laravel-blade",
+    "codingyu.laravel-goto-view",
+    "stef-k.laravel-goto-controller",
+    "shufo.vscode-blade-formatter"
+  ],
+  "frontend": [
+    "bradlc.vscode-tailwindcss",
+    "astro-build.astro-vscode",
+    "dsznajder.es7-react-js-snippets"
+  ],
+  "copilot": [
+    "github.copilot-chat"
+  ]
+}

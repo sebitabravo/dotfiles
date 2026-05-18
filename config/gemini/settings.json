@@ -1,0 +1,157 @@
+{
+  "$schema": "https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json",
+  "advanced": {
+    "autoConfigureMemory": true,
+    "ignoreLocalEnv": false
+  },
+  "billing": {
+    "overageStrategy": "ask"
+  },
+  "context": {
+    "fileName": [
+      "GEMINI.md",
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "discoveryMaxDirs": 200,
+    "loadMemoryFromIncludeDirectories": false,
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "respectGeminiIgnore": true,
+      "enableRecursiveFileSearch": true,
+      "enableFuzzySearch": true
+    }
+  },
+  "experimental": {
+    "memoryV2": true,
+    "autoMemory": false,
+    "gemma": true,
+    "directWebFetch": false,
+    "modelSteering": false,
+    "worktrees": false,
+    "contextManagement": false,
+    "generalistProfile": false,
+    "voiceMode": false
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit",
+    "enableAutoUpdate": true,
+    "enableAutoUpdateNotification": true,
+    "enableNotifications": true,
+    "notificationMethod": "auto",
+    "checkpointing": {
+      "enabled": true
+    },
+    "plan": {
+      "enabled": true,
+      "modelRouting": false
+    },
+    "retryFetchErrors": true,
+    "maxAttempts": 10,
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "7d"
+    },
+    "topicUpdateNarration": true
+  },
+  "hooks": {},
+  "hooksConfig": {
+    "enabled": false,
+    "notifications": false
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "trust": true,
+      "timeout": 30000
+    },
+    "engram": {
+      "args": [
+        "mcp",
+        "--tools=agent"
+      ],
+      "command": "/opt/homebrew/bin/engram"
+    }
+  },
+  "model": {
+    "name": "gemini-2.5-flash",
+    "maxSessionTurns": 100,
+    "compressionThreshold": 0.3,
+    "disableLoopDetection": false,
+    "skipNextSpeakerCheck": true,
+    "summarizeToolOutput": {
+      "run_shell_command": {
+        "tokenBudget": 2000
+      }
+    }
+  },
+  "privacy": {
+    "usageStatisticsEnabled": false
+  },
+  "security": {
+    "toolSandboxing": true,
+    "disableYoloMode": false,
+    "disableAlwaysAllow": false,
+    "enablePermanentToolApproval": true,
+    "autoAddToPolicyByDefault": true,
+    "folderTrust": {
+      "enabled": true
+    },
+    "environmentVariableRedaction": {
+      "enabled": true
+    },
+    "enableConseca": false,
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  },
+  "skills": {
+    "enabled": true
+  },
+  "tools": {
+    "sandboxAllowedPaths": [
+      "$HOME/Developer",
+      "$HOME/projects",
+      "$HOME/.config",
+      "/opt/homebrew"
+    ],
+    "sandboxNetworkAccess": false,
+    "shell": {
+      "enableInteractiveShell": true,
+      "showColor": true
+    },
+    "useRipgrep": true,
+    "truncateToolOutputThreshold": 40000,
+    "disableLLMCorrection": true
+  },
+  "ui": {
+    "autoThemeSwitching": true,
+    "hideBanner": false,
+    "hideTips": true,
+    "hideContextSummary": false,
+    "compactToolOutput": true,
+    "inlineThinkingMode": "off",
+    "showStatusInTitle": true,
+    "dynamicWindowTitle": true,
+    "showMemoryUsage": false,
+    "showLineNumbers": true,
+    "showShortcutsHint": true,
+    "loadingPhrases": "off",
+    "errorVerbosity": "full",
+    "showSpinner": true,
+    "useAlternateBuffer": false,
+    "showCitations": false,
+    "showModelInfoInChat": false,
+    "escapePastedAtSymbols": false,
+    "footer": {
+      "hideCWD": false,
+      "hideModelInfo": false,
+      "hideSandboxStatus": false,
+      "hideContextPercentage": false
+    }
+  }
+}

@@ -6,6 +6,8 @@
 [user]
 	name = sebitabravo
 	email = sebastianalejandrobravocampos@gmail.com
+[core]
+	commentChar = "#"
 [init]
   defaultBranch = main
 [color]

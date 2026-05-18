@@ -3,6 +3,7 @@
 
 # Taps
 tap "oven-sh/bun"
+tap "gentleman-programming/tap"
 
 # ============================================================================
 # CLI Tools - Solo las herramientas que uso
@@ -14,9 +15,8 @@ brew "xz"
 brew "git-lfs"
 brew "fastfetch"
 brew "gh"
-brew "go"
-brew "r"
 brew "pipx"
+brew "actionlint"
 brew "bat"
 brew "eza"
 brew "zoxide"
@@ -26,6 +26,8 @@ brew "sd"
 brew "fd"
 brew "uv"
 brew "mole"
+brew "btop"
+brew "engram"
 
 # ============================================================================
 # Applications (Casks)
@@ -37,3 +39,4 @@ cask "dotnet-sdk"
 cask "font-meslo-lg-nerd-font"
 cask "font-cascadia-code-pl"
 cask "font-fira-code-nerd-font"
+cask "font-jetbrains-mono-nerd-font"

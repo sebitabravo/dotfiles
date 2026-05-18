@@ -502,6 +502,10 @@
   # isn't in an svn or hg repository.
   typeset -g POWERLEVEL9K_VCS_BACKENDS=(git)
 
+  # Disable gitstatus daemon if binary is broken (e.g. macOS 15.7).
+  # P10k falls back to native zsh vcs_info.
+  typeset -g POWERLEVEL9K_DISABLE_GITSTATUS=true
+
   # These settings are used for repositories other than Git or when gitstatusd fails and
   # Powerlevel10k has to fall back to using vcs_info.
   typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=76

@@ -30,10 +30,8 @@ CASE_SENSITIVE="true"
 # Case-sensitive completion must be off. _ and - will be interchangeable.
 # HYPHEN_INSENSITIVE="true"
 
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+# Disable network check on every shell start
+zstyle ':omz:update' mode disabled
 
 # Uncomment the following line to change how often to auto-update (in days).
 # zstyle ':omz:update' frequency 13
@@ -56,10 +54,8 @@ CASE_SENSITIVE="true"
 # Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
 # COMPLETION_WAITING_DOTS="true"
 
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+# Mark untracked files as dirty only when needed. Speeds up large repos.
+DISABLE_UNTRACKED_FILES_DIRTY="true"
 
 # Uncomment the following line if you want to change the command execution time
 # stamp shown in the history command output.
@@ -77,7 +73,7 @@ CASE_SENSITIVE="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git docker)
+plugins=(git gitfast docker)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -126,7 +122,13 @@ alias less='bat'
 alias z='zoxide query -i'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
-# Pyenv
+# Pyenv — prevent race condition on simultaneous shells (Warp session restore, reboot)
+export PYENV_REHASH_TIMEOUT=5
+if [[ -f "$HOME/.pyenv/shims/.pyenv-shim" ]]; then
+  lock_age=$(( $(date +%s) - $(stat -f %m "$HOME/.pyenv/shims/.pyenv-shim") ))
+  (( lock_age > 120 )) && rm -f "$HOME/.pyenv/shims/.pyenv-shim"
+fi
+sleep $(( RANDOM % 3 ))  # jitter 0-2s to stagger rehash across shells
 eval "$(pyenv init -)"
 
 # Zoxide
@@ -145,13 +147,6 @@ export PATH=$PATH:$ANDROID_HOME/tools
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/emulator
 
-# Go Lang
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
-
-# R
-export R_HOME="$(R RHOME)"
-
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
@@ -160,6 +155,12 @@ export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# LM Studio CLI
+[[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$PATH:$HOME/.lmstudio/bin"
+
+# Engram Cloud (NAS via Tailscale) — set token in ~/.engram-cloud.env
+[[ -f "$HOME/.engram-cloud.env" ]] && source "$HOME/.engram-cloud.env"
 
 # Herd PHP configuration
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
@@ -180,5 +181,7 @@ export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Show system info on terminal start
-fastfetch
+# Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
+if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
+  fastfetch
+fi

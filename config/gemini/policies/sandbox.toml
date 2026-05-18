@@ -1,0 +1,44 @@
+[modes.plan]
+network = false
+readonly = true
+approvedTools = [ ]
+allowOverrides = true
+
+[modes.default]
+network = false
+readonly = false
+approvedTools = [
+  "cat",
+  "ls",
+  "grep",
+  "head",
+  "tail",
+  "less",
+  "Get-Content",
+  "dir",
+  "type",
+  "findstr",
+  "Get-ChildItem",
+  "echo"
+]
+allowOverrides = true
+
+[modes.accepting_edits]
+network = false
+readonly = false
+approvedTools = [
+  "sed",
+  "grep",
+  "awk",
+  "perl",
+  "cat",
+  "echo",
+  "Add-Content",
+  "Set-Content"
+]
+allowOverrides = true
+
+[commands.pytest]
+# Change this to your pyenv path or remove if not using pytest with pyenv
+allowed_paths = [ "$HOME/.pyenv/versions/3.11.1/lib/python3.11" ]
+allow_network = false

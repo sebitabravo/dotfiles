@@ -535,13 +535,6 @@
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
-  "r.rterm.option": [
-    "--no-save",
-    "--no-restore"
-  ],
-  "r.rterm.mac": "/Users/sebita/.local/bin/radian",
-  "r.rpath.mac": "/opt/homebrew/bin/R",
-  "r.bracketedPaste": true,
   "terminal.integrated.suggest.enabled": true,
   "editor.aiStats.enabled": true,
   "github.copilot.nextEditSuggestions.enabled": true,

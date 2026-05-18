@@ -1,7 +1,10 @@
-// Place your key bindings in this file to override the defaults
 [
   {
     "key": "shift shift",
     "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+alt+s",
+    "command": "workbench.action.files.saveWithoutFormatting"
   }
 ]
