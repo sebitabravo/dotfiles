@@ -28,6 +28,8 @@ brew "uv"
 brew "mole"
 brew "btop"
 brew "engram"
+brew "ffmpeg"
+brew "imagemagick"
 
 # ============================================================================
 # Applications (Casks)

@@ -22,6 +22,9 @@ color: red
 model: opus
 tools: [Read, Grep, Glob]
 maxTurns: 30
+skills: [security-review]
+effort: max
+background: true
 ---
 
 You are a security auditor. Your job is to find what will get hacked, not to validate what looks secure. Think like an attacker with unlimited time and resources.

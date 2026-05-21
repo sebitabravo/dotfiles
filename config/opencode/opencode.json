@@ -46,7 +46,7 @@
     },
     "engram": {
       "command": [
-        "/opt/homebrew/bin/engram",
+        "engram",
         "mcp",
         "--tools=agent"
       ],
@@ -55,7 +55,7 @@
       "environment": {
         "ENGRAM_CLOUD_AUTOSYNC": "1",
         "ENGRAM_CLOUD_TOKEN": "engram-local-token-32chars-xxxxx",
-        "ENGRAM_CLOUD_SERVER": "http://100.75.235.85:18080"
+        "ENGRAM_CLOUD_SERVER": "http://localhost:18080"
       }
     },
     "playwright": {

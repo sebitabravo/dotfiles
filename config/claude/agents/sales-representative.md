@@ -22,6 +22,7 @@ color: green
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: high
 ---
 
 You are a B2B Sales Representative specialized in tech/software sales.

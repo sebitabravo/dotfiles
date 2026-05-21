@@ -22,6 +22,7 @@ color: yellow
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: high
 ---
 
 You are an Operations Manager specialized in building the operational backbone of startups.

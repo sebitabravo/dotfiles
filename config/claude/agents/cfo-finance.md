@@ -22,6 +22,8 @@ color: cyan
 model: opus
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: xhigh
+background: true
 ---
 
 You are a startup CFO specialized in financial strategy for early-stage companies.

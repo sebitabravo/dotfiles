@@ -17,6 +17,8 @@ Use modern CLI tools when operating in terminal:
 - `eza` instead of `ls`
 - `jq` for JSON processing
 - `gh` for GitHub CLI operations
+- `ffmpeg` for media conversion/processing
+- `imagemagick` (magick, convert) for image manipulation
 
 Install missing tools with `brew install <tool>`.
 
@@ -72,6 +74,7 @@ Invoke proactively:
 | Code review, PR review | `code-review` |
 | DB schema, migrations | `database-migrations` |
 | E2E testing, Playwright, browser tests | `e2e-testing` |
+| TanStack Query v5, data fetching, mutations, caching | `tanstack-query` |
 | Fuzzing, parameter discovery, AFL++, ffuf | `fuzzing-primer` |
 | Verification before completion, evidence gate | `verification-before-completion` |
 
@@ -222,6 +225,18 @@ Trivial features (typo, 1-line fix, doc update): direct implementation, no SDD. 
 2. If you completed an SDD feature, ensure all artifacts are in `specs/{change}/`.
 3. Remove temporary artifacts, debug statements, dangling TODOs.
 4. If using Engram: `mem_session_summary`.
+
+## Reading Large Files
+
+When reading large files:
+1. First run `wc -l <file>` to check line count
+2. If over 2,000 lines, use the Read tool with offset/limit parameters:
+   - offset: starting line number (0-indexed)
+   - limit: maximum lines to read (up to 2,000 per call)
+3. Example: Read file.js with offset=0, limit=2000
+   Then Read file.js with offset=2000, limit=2000
+
+This avoids "File content exceeds maximum tokens" errors and saves context window space.
 
 ## Blockers
 

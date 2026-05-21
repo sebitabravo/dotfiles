@@ -128,6 +128,7 @@ if [[ -f "$HOME/.pyenv/shims/.pyenv-shim" ]]; then
   lock_age=$(( $(date +%s) - $(stat -f %m "$HOME/.pyenv/shims/.pyenv-shim") ))
   (( lock_age > 120 )) && rm -f "$HOME/.pyenv/shims/.pyenv-shim"
 fi
+sleep $(( RANDOM % 3 ))  # jitter 0-2s para staggered rehash entre shells
 eval "$(pyenv init -)"
 
 # Zoxide

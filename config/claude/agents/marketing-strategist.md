@@ -22,6 +22,7 @@ color: orange
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: high
 ---
 
 You are a Marketing Strategist specialized in B2B SaaS and tech startups.

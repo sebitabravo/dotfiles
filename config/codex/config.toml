@@ -1,0 +1,70 @@
+# Core
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+model_reasoning_summary = "concise"
+model_verbosity = "medium"
+commit_attribution = ""
+personality = "pragmatic"
+
+# Instrucciones y compactacion (rutas relativas a ~/.codex/)
+model_instructions_file = "engram-instructions.md"
+experimental_compact_prompt_file = "engram-compact-prompt.md"
+
+# Seguridad — las 3 llaves maestras
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+# Features
+[features]
+multi_agent = true
+memories = true
+hooks = true
+
+# Proteccion de secrets en shell
+[shell_environment_policy]
+exclude = ["*_KEY", "*_SECRET", "*_TOKEN", "*_PASSWORD", "*_CREDENTIAL*"]
+
+# Agentes custom
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.reviewer]
+description = "Code review: correctness, security, missing tests, edge cases. Read-only."
+config_file = "agents/reviewer.toml"
+
+[agents.security-auditor]
+description = "Security audit: OWASP Top 10, auth, secrets, supply chain. Read-only."
+config_file = "agents/security-auditor.toml"
+
+[agents.debugger]
+description = "Debugging: root cause analysis, test failures, error traces."
+config_file = "agents/debugger.toml"
+
+[agents.test-writer]
+description = "Test generation: unit, integration, E2E, edge cases, regression tests."
+config_file = "agents/test-writer.toml"
+
+[agents.perf-profiler]
+description = "Performance profiling: N+1 queries, caching, Core Web Vitals, bottlenecks."
+config_file = "agents/perf-profiler.toml"
+
+# Perfiles de entorno
+[profiles.work]
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.personal]
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.quick]
+model = "gpt-5.3-codex"
+model_reasoning_effort = "minimal"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"

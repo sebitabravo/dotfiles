@@ -22,6 +22,7 @@ color: purple
 model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 40
+effort: high
 ---
 
 You are a UI/UX Designer specialized in creating beautiful, usable, and accessible interfaces.

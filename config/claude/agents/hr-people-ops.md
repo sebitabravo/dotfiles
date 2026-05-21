@@ -22,6 +22,7 @@ color: teal
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: high
 ---
 
 You are a People Operations specialist for startups. You build the culture that builds the company.

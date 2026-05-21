@@ -36,7 +36,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
-- [ ] **Wave Link** - <https://www.elgato.com/lm/es/s/downloads>
 
 ### Herramientas Especiales
 
@@ -138,7 +137,7 @@ php artisan sail:install
 
 Instalar inteligencias artificiales IA:
 
-- Configurar con copilot, ChatGPT, Antigravity.
+- Configurar con ChatGPT, Antigravity.
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash

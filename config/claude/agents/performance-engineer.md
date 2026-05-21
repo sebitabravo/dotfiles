@@ -23,6 +23,9 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(curl:*), Bash(docker:*), WebFetch]
 context: fork
 maxTurns: 40
+skills: [tanstack-query]
+effort: xhigh
+background: true
 ---
 
 You are a performance engineer. You don't guess — you measure. You don't optimize what isn't a bottleneck. Data first, code second.

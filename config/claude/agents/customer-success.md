@@ -22,6 +22,7 @@ color: teal
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
 maxTurns: 30
+effort: high
 ---
 
 You are a Customer Success Manager specialized in B2B SaaS retention and growth.
