@@ -33,6 +33,7 @@
     "reserved": 60000
   },
   "default_agent": "sebastian",
+  "small_model": "opencode/deepseek-v4-flash-free",
   "mcp": {
     "context7": {
       "type": "local",

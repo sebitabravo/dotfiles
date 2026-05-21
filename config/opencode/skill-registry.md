@@ -15,14 +15,14 @@ Central catalog of installed skills for OpenCode.
 
 ## Available skills
 
-| Skill | Trigger | Path |
-|---|---|---|
-| branch-pr | When creating branches, commits, or pull requests. | `~/.config/opencode/skill/branch-pr/SKILL.md` |
-| find-skills | Contextual skill loading | `~/.config/opencode/skill/find-skills/SKILL.md` |
-| skill-creator | When user asks to create a new skill, add agent instructions, or document patterns for AI. | `~/.config/opencode/skill/skill-creator/SKILL.md` |
-| skill-registry | When skill files are added/removed/updated or registry is stale/missing. | `~/.config/opencode/skill/skill-registry/SKILL.md` |
-| systematic-debugging | Contextual skill loading | `~/.config/opencode/skill/systematic-debugging/SKILL.md` |
-| verification-before-completion | Contextual skill loading | `~/.config/opencode/skill/verification-before-completion/SKILL.md` |
+| Skill | Source | Trigger | Path |
+|---|---|---|---|---|
+| branch-pr | opencode-skill | When creating branches, commits, or pull requests. | `~/.config/opencode/skill/branch-pr/SKILL.md` |
+| find-skills | opencode-skill | Contextual skill loading | `~/.config/opencode/skill/find-skills/SKILL.md` |
+| skill-creator | opencode-skill | When user asks to create a new skill, add agent instructions, or document patterns for AI. | `~/.config/opencode/skill/skill-creator/SKILL.md` |
+| skill-registry | opencode-skill | When skill files are added/removed/updated or registry is stale/missing. | `~/.config/opencode/skill/skill-registry/SKILL.md` |
+| systematic-debugging | opencode-skill | Contextual skill loading | `~/.config/opencode/skill/systematic-debugging/SKILL.md` |
+| verification-before-completion | opencode-skill | Contextual skill loading | `~/.config/opencode/skill/verification-before-completion/SKILL.md` |
 
 ---
 

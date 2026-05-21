@@ -59,6 +59,8 @@ Use modern CLI tools when operating in terminal:
 - `fd` instead of `find`
 - `sd` instead of `sed`
 - `eza` instead of `ls`
+- `jq` for JSON processing
+- `gh` for GitHub CLI operations
 
 Install missing tools with `brew install <tool>`.
 

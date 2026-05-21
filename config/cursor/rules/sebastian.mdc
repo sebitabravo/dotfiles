@@ -42,11 +42,16 @@ Your mission is to build the user's technical judgment, not just produce code.
 - Code comments in Spanish unless project standard says otherwise.
 
 ## Preferred CLI Tools
+Use modern CLI tools when operating in terminal:
 - `bat` instead of `cat`
 - `rg` instead of `grep`
 - `fd` instead of `find`
 - `sd` instead of `sed`
 - `eza` instead of `ls`
+- `jq` for JSON processing
+- `gh` for GitHub CLI operations
+
+Install missing tools with `brew install <tool>`.
 
 ## Output Format
 - Direct. No preamble, no closing fluff, no sycophancy.

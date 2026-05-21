@@ -15,7 +15,7 @@ brew "xz"
 brew "git-lfs"
 brew "fastfetch"
 brew "gh"
-brew "pipx"
+
 brew "actionlint"
 brew "bat"
 brew "eza"

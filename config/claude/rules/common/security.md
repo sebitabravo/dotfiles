@@ -53,5 +53,5 @@ alwaysApply: true
 - **Cooldown de dependencias**. pip 26.1+ soporta `uploaded-prior-to = P3D` en `pip.conf`. Bloquea paquetes publicados hace <3 dias — el ataque LiteLLM duro 2.5h, un cooldown lo hubiera frenado. En proyectos, configura `exclude-newer = "P3D"` con uv.
 - **Siempre dentro de un venv**. Nunca `pip install` global en el sistema.
 - **`pip install --break-system-packages` BLOQUEADO**. By-passea la proteccion del venv.
-- **`pip install` sin venv activo esta BLOQUEADO**. Usa `uv` (alternativa moderna de Rust, lockfile con hashes por defecto, mas rapido) o `pipx` para herramientas CLI.
+- **`pip install` sin venv activo esta BLOQUEADO**. Usa `uv` (alternativa moderna de Rust, lockfile con hashes por defecto, mas rapido) para herramientas CLI.
 - **`pip-audit` en CI**. Escaneo de CVEs en cada commit. `uvx pip-audit --requirement requirements.txt`.

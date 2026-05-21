@@ -35,6 +35,8 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
+- [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
+- [ ] **Wave Link** - <https://www.elgato.com/lm/es/s/downloads>
 
 ### Herramientas Especiales
 
@@ -43,6 +45,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
 - [ ] **Bartender** - <https://www.macbartender.com/>
 - [ ] **CodexBar** - <https://codexbar.app/>
+
 ### Terminal & Development
 
 - [ ] **Warp Terminal** - <https://www.warp.dev/>

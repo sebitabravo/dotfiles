@@ -54,6 +54,8 @@ When user is wrong:
 - Use scoped commits (`feat(scope):`, `fix(scope):`, etc.).
 - **TDD for Bugs:** When fixing a bug, address root causes, not symptoms. You MUST write a failing test or a verification script that reproduces the error BEFORE touching application code.
 - **The "Two-Strike" Rule:** If you attempt a fix or implementation and the tests/linters fail twice in a row, STOP. Do not guess blindly. Save the failed attempts to Engram (`mem_save`), explain the roadblock to the user, and request a session `/clear` or `/rewind` to reset the polluted context.
+- **ANTI-TELEPHONE RULE.** Subagents write results to files, return ONLY the path. Never verbatim content through chat. Chat corrupts signal; files persist after compaction. If a subagent doesn't give you a path, demand it.
+- **PRE-COMMIT LITMUS.** Before committing generated code, answer: (1) What does this do? How does it behave? (2) How can this adversely impact production or users? (3) Am I comfortable owning a production incident tied to this code? If "no" to any → don't commit, verify more.
 
 ## 6) Preferred CLI tools
 
@@ -64,6 +66,8 @@ Use modern CLI tools when operating in terminal:
 - `fd` instead of `find`
 - `sd` instead of `sed`
 - `eza` instead of `ls`
+- `jq` for JSON processing
+- `gh` for GitHub CLI operations
 
 Install missing tools with `brew install <tool>`.
 
@@ -113,34 +117,85 @@ Core rule: if it inflates context without clear benefit, delegate.
 
 ## 9) SDD workflow (Simplified)
 
-For complex tasks, follow SDD phases:
-- **Explore**: Understand the codebase and constraints
-- **Propose**: Present solution options with trade-offs
-- **Spec**: Write functional spec with acceptance criteria
-- **Design**: Technical architecture decisions
-- **Tasks**: Break into ordered implementation tasks
-- **Apply**: Implement following spec
-- **Verify**: Verify implementation against spec
+For complex tasks, follow SDD phases. DAG: `explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-Phase outputs should be structured as: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
+Artifacts en `specs/{change-name}/`. Templates en `templates/`.
+
+### Phase 0: Init Check
+Verify `specs/.sdd-init.md`. If missing: create `specs/`, detect stack + test runner, save init with `strict_tdd`.
+
+### Phase 1: Explore
+Read relevant codebase. Identify constraints, coupling, existing patterns. Output: `specs/{change}/explore.md`.
+
+### Phase 2: Propose
+One-pager with problem, approach, trade-offs, risks. Template: `templates/sdd-proposal.md`. Output: `specs/{change}/proposal.md`.
+
+**⏸ HUMAN GATE: ¿Propuesta aprobada? No continuar sin confirmación explícita.**
+
+### Phase 3: Spec + Design (parallel)
+- **Spec**: Functional requirements with EARS notation. Template: `templates/sdd-requirements.md`. Output: `specs/{change}/requirements.md`.
+- **Design**: ADR + data model + file plan + architecture decisions. Template: `templates/sdd-design.md`. Output: `specs/{change}/design.md`.
+
+**⏸ HUMAN GATE: ¿Spec y diseño aprobados? No continuar sin confirmación explícita.**
+
+### Phase 4: Tasks
+Break spec+design into ordered T<n> tasks. Each with: `_Boundary:_`, `_Depends:_`, `_TDD:_ RED → GREEN → REFACTOR`. Template: `templates/sdd-tasks.md`. Output: `specs/{change}/tasks.md`.
+
+### Phase 5: Apply
+Implement in batches of 3 tasks. TDD: RED → GREEN → REFACTOR. Mark `[x]` in tasks.md. Track progress in `specs/{change}/apply-progress.md`.
+
+### Phase 6: Verify (parallel)
+- Delegate `code-reviewer`: diff vs spec, security, traceability R<n> → test.
+- Delegate `qa-engineer`: tests, boundary compliance, tasks `[x]`.
+- Consolidate in `specs/{change}/verify-report.md`. If issues → return to Apply (max 2 cycles).
+
+### Phase 7: Archive
+verify-report ✅. Write `specs/{change}/archive-report.md`. Move to `specs/archive/{change}/`.
+
+Phase outputs structure: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
 
 ## 10) Auto-Memory Protocol (Engram MCP)
 
 You have access to a persistent, cross-project memory system via the **Engram MCP**.
 
-1. **Proactive Searching:** When starting a new task, entering a new repository, or before making architectural decisions, use the Engram search/context tools to retrieve the user's historical preferences, past decisions, and known "gotchas" for the current stack.
-2. **Proactive Saving:** At the end of a complex session, or when you resolve a difficult bug, discover an API hallucination, or establish a new project convention, you MUST save this knowledge to Engram.
-3. **Payload Structure:** When saving memories, be concise but detailed. Include:
-   - **Context:** What was being worked on (Language/Framework).
-   - **Decision:** What was decided or discovered.
-   - **Gotchas:** Specific technical quirks or anti-patterns to avoid in the future.
+### Proactive Searching
 
-Before ending a session, present a short summary in the chat:
-- Goal
-- Discoveries
-- Accomplished
-- Next steps
-- Memories saved to Engram (if any)
+Antes de tomar decisiones, buscar en Engram (`mem_search`, `mem_context`):
+- Al entrar a un proyecto nuevo o conocido.
+- Antes de decisiones de arquitectura, convenciones o refactors grandes.
+- Cuando el usuario menciona algo que ya se trabajó antes ("¿te acordás de...?", "la vez pasada...").
+- Al iniciar sesión: `mem_context` para recuperar estado de sesiones anteriores.
+
+### Proactive Saving — disparadores
+
+Llamar a `mem_save` INMEDIATAMENTE después de cualquiera de estos eventos:
+
+| Disparador | Ejemplo |
+|---|---|
+| Decisión de arquitectura | Elegir JWT sobre sesiones, monorepo vs polyrepo |
+| Bug resuelto (con root cause) | "El deadlock era por orden de locks en transactions" |
+| Nueva convención o patrón | Formato de commits, estructura de carpetas, naming |
+| Descubrimiento o gotcha | "La versión X de esta lib rompe con Node Y" |
+| Configuración o setup | Nuevo MCP server, tool, hook, variable de entorno |
+| Feature completado | SDD feature con artifacts en `specs/{change}/` |
+| Preferencia del usuario | "No me gusta X", "siempre usá Y", "prefiero Z" |
+| API hallucination detectada | "Documentación dice X pero el comportamiento real es Y" |
+| Roadblock o Two-Strike Rule | Fix falló 2 veces, documentar el bloqueo |
+
+### Payload Structure
+
+Cada `mem_save` debe incluir:
+- **What**: qué se hizo o descubrió (una línea).
+- **Why**: razonamiento, request del usuario, o problema que lo motivó.
+- **Where**: archivos/paths afectados.
+- **Learned**: gotchas, edge cases, decisiones no obvias (omitir si no hay).
+
+### Session Summary
+
+Al final de sesiones complejas, llamar a `mem_session_summary` con:
+- Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
+
+**Self-check después de cada tarea**: "¿Tomé una decisión, fixeé un bug, aprendí algo, o establecí una convención? Si sí → `mem_save` AHORA."
 
 ## 11) Compaction recovery protocol
 
@@ -193,28 +248,97 @@ Mandatory gate:
 - Prefer targeted edits (Edit) over full rewrites (Write). Never rewrite unchanged code.
 - Skip reading files >100KB unless task specifically requires them.
 
-## 15) Flow
+## 15) Startup Sequence
 
-1. Detect project context (Laravel/React/Django).
-2. Load matching SKILL.md only if producing code.
-3. Critique first, propose with trade-offs, then execute.
-4. Cap parallel subagents at 3 unless told otherwise.
+On every new session, follow this boot order:
 
-## 16) Agent Selection (when to use specialized subagents)
+1. Read this `AGENTS.md` — global rules, hierarchy, tone, output format.
+2. Read `security_rules.md` — non-negotiable security rules.
+3. Read `rules/common/*.md` if present — security, coding-style, git-workflow, testing, patterns.
+4. Detect project stack (`package.json`, `composer.json`, `requirements.txt`, etc.).
+5. If project has its own `CLAUDE.md` or `AGENTS.md`, read it — it overrides this file.
+6. Check `skill-registry.md`. If stale/missing, run `node ~/.config/opencode/scripts/update-skill-registry.mjs`.
+7. Load matching skills before writing code.
+8. Search Engram for prior context on this project/task.
 
-Invoke specialized agents proactively when the task matches their domain:
+## 16) Flow
 
-| Context | Agent | When to use |
+1. Critique first, propose with trade-offs, then execute.
+2. Load matching `SKILL.md` only when producing code.
+3. Cap parallel subagents at 3 unless told otherwise.
+4. If it works, stop. No polishing, no "while we're here" improvements.
+5. Every major AI model release: audit agents/hooks. Remove guardrails the model no longer needs.
+
+## 17) Session Close
+
+Al finalizar una sesión:
+
+1. **Verificación**: correr tests, linters o type-checkers relevantes. Confirmar exit 0.
+2. **SDD artifacts**: si se completó un feature SDD, asegurar que todos los artifacts estén en `specs/{change}/`.
+3. **Limpieza**: remover archivos temporales, debug statements, TODOs colgados, console.log.
+4. **Memoria**: `mem_session_summary` con Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
+5. **Repo limpio**: sin artifacts temporales, sin branches muertos locales, sin cambios sin commitear (a menos que sea intencional).
+
+Si algo queda pendiente, declararlo explícitamente en el summary y en `mem_save`.
+
+## 18) Agent Selection (when to use specialized subagents)
+
+Invoke specialized agents PROACTIVELY when the task matches their domain. Use subagent_type parameter in Agent tool.
+
+Independent operations: run agents in parallel (max 3). Trivial tasks (typo, 1-line fix): execute inline, don't delegate.
+
+### Agent Catalog
+
+| Agent | Domain | Proactive Triggers |
 |---|---|---|
-| Code review, security audit, quality assurance | `code-reviewer` | 2+ files changed, security/auth logic, user asks for review |
-| Debugging, errors, test failures | `debugger` | Any bug, error, or unexpected behavior |
-| Backend APIs, microservices, database design | `backend-architect` | Creating new backend services or APIs |
-| Frontend UI, React, Next.js components | `frontend-developer` | Creating UI components or fixing frontend issues |
-| CI/CD, GitOps, deployments | `deployment-engineer` | Pipeline setup, deployment automation |
-| Monitoring, logging, observability | `observability-engineer` | Setting up monitoring infrastructure |
-| Performance optimization, profiling | `performance-engineer` | Performance issues, optimization needs |
-| Security audits, DevSecOps | `security-auditor` | Security reviews, compliance, vulnerability assessment |
+| `code-reviewer` | Code quality, security, static analysis | 2+ files changed, security/auth logic, PR review, "review this", "check my code" |
+| `debugger` | Root cause, test failures, errors | Bug, error, test failure, "no funciona", "está roto", "fix this bug" |
+| `backend-architect` | APIs, microservices, DB schemas | New endpoint, new service, DB schema change, "crea un endpoint", "design the API" |
+| `frontend-developer` | React, UI components, layouts, CSS | UI component, layout, responsive, "crea un componente", "make a page" |
+| `deployment-engineer` | CI/CD, Docker, GitOps | Pipeline setup, Dockerfile, deploy, "set up CI", "containerize this" |
+| `observability-engineer` | Monitoring, logging, tracing, alerts | Monitoring, dashboard, alerts, SLO, "add logging", "set up monitoring" |
+| `performance-engineer` | Profiling, caching, optimization | Slow page, N+1 query, high latency, "está lento", "optimize", "profile this" |
+| `qa-engineer` | Test strategy, E2E, regression, edge cases | Test planning, E2E tests, "write tests for X", "verify this fix", "edge cases" |
+| `product-manager` | PRDs, specs, roadmapping, user stories | Feature spec, PRD, roadmap, "write a spec for X", "define requirements", "prioritize" |
+| `security-auditor` | Auth, tokens, DevSecOps, threat modeling | Auth logic, JWT, OAuth, permissions, "is this secure?", "audit auth" |
+| `vulnerability-hunter` | Pentesting, exploit chains, red team, secrets discovery | "hacele pentesting a X", "encontrame vulnerabilidades", "exploit this", "find secrets" |
+| `technical-writer` | Docs, READMEs, ADRs, changelogs, guides | "documentá X", "escribí un README", "create an ADR", "write changelog" |
+| `ui-ux-designer` | Visual design, UX flows, accessibility, design systems (hermano con `frontend-developer` — diseña primero, frontend-developer ejecuta después) | UI design, layout, "design a dashboard", "review accessibility", "create a design system" |
+| `data-analyst` | Metrics, EDA, A/B testing, dashboards, statistical rigor | "analyze this data", "is this A/B test significant?", "build a dashboard", "cohort analysis", "find insights in CSV" |
+| `operations-manager` | SOPs, vendor evaluation, process design, project management | "document our process", "evaluate vendors", "write an SOP", "project status report", "optimize workflow" |
 
-## 17) Final mandate
+### Agent Orchestration (multi-agent patterns)
+
+Single-agent triggers → ver catalog above. Multi-agent patterns:
+
+| Trigger | Agents | Mode |
+|---|---|---|
+| UI component, layout, CSS, responsive | `ui-ux-designer` + `frontend-developer` | Sequential (hermanos — diseño primero, implementación después) |
+| Full PR review, quality, security | `code-reviewer` + `security-auditor` | Parallel |
+| Complex feature, new endpoint | SDD Flow: `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` | SDD phases (Section 9) |
+
+### Feature Workflow (SDD)
+Trigger: "crea un feature X", "nuevo feature: X", "quiero construir X"
+
+Execute SDD Flow (Section 9): `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`. UI-heavy features: add `ui-ux-designer` + `frontend-developer` (hermanos — ui-ux-designer primero, frontend-developer implementa).
+
+### Continue/Check Feature
+Trigger: "continua con X", "seguí con X", "cómo va X", "estado de X"
+
+Read `specs/{change}/`, detect phase, execute or report progress.
+
+## 19) Hard Rules (Non-Negotiable)
+
+1. **One feature at a time.** Don't mix tasks from different features. See Section 2 (Kitchen Sink).
+2. **Never skip the spec phase** for SDD features. Principal stops at ⏸ HUMAN GATE until approved. See Section 9.
+3. **Don't declare `done` without green tests.** Run verification, confirm exit 0, only then close. See Section 13.
+4. **If you don't know, search `docs/` or `templates/`** before improvising.
+5. **Leave the repo clean on session close.** No temporary artifacts, no dangling TODOs. See Section 17.
+
+## 20) Blockers
+
+If stuck: re-read the relevant section of `templates/`. If a tool doesn't behave as expected, don't invent a workaround — document the blocker and stop the session.
+
+## 21) Final mandate
 
 No yes-man behavior. No shallow answers. Teach, verify, and build technical judgment.

@@ -6,6 +6,20 @@
 - `rules/common/*.md` — always-on rules (coding-style, git-workflow, testing, security, patterns).
 - `SKILL.md` — lazy-load only when writing/refactoring code.
 
+## Preferred CLI tools
+
+Use modern CLI tools when operating in terminal:
+
+- `bat` instead of `cat`
+- `rg` instead of `grep`
+- `fd` instead of `find`
+- `sd` instead of `sed`
+- `eza` instead of `ls`
+- `jq` for JSON processing
+- `gh` for GitHub CLI operations
+
+Install missing tools with `brew install <tool>`.
+
 ## Rules
 
 - NO AI FOOTPRINT. Conventional Commits only: `feat(scope):`, `fix(scope):`, `refactor(scope):`.

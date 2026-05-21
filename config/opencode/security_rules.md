@@ -18,3 +18,6 @@
 
 4. **NETWORKING:**
    - If working on "homelab", "NAS" or "Proxmox" topics, assume a local network environment (192.168.x.x).
+
+5. **RELATED RULES:**
+   - See `rules/common/security.md` for code-generation security rules: SQL injection, XSS, dependency audit, cryptographic standards, and severity classification.
