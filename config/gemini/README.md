@@ -19,22 +19,24 @@ config/gemini/
 ## Instalacion rapida
 
 ```bash
-# 1. Archivos core
-ln -sf ~/Developer/dotfiles/config/gemini/settings.json ~/.gemini/settings.json
-ln -sf ~/Developer/dotfiles/config/gemini/GEMINI.md ~/.gemini/GEMINI.md
-ln -sf ~/Developer/dotfiles/config/gemini/system.md ~/.gemini/system.md
+# 1. Archivos core (copia, no symlink — el dotfile se puede borrar sin perder config)
+cp ~/Developer/dotfiles/config/gemini/settings.json ~/.gemini/settings.json
+cp ~/Developer/dotfiles/config/gemini/GEMINI.md ~/.gemini/GEMINI.md
+cp ~/Developer/dotfiles/config/gemini/system.md ~/.gemini/system.md
 cp -n ~/Developer/dotfiles/config/gemini/.env ~/.gemini/.env
 
 # 2. Policies
 mkdir -p ~/.gemini/policies
-ln -sf ~/Developer/dotfiles/config/gemini/policies/auto-saved.toml ~/.gemini/policies/auto-saved.toml
-ln -sf ~/Developer/dotfiles/config/gemini/policies/sandbox.toml ~/.gemini/policies/sandbox.toml
+cp ~/Developer/dotfiles/config/gemini/policies/auto-saved.toml ~/.gemini/policies/auto-saved.toml
+cp ~/Developer/dotfiles/config/gemini/policies/sandbox.toml ~/.gemini/policies/sandbox.toml
 ```
+
+> Las configuraciones son copias independientes. Borrar `~/Developer/dotfiles/` no afecta Gemini CLI.
 
 O en una linea:
 
 ```bash
-ln -sf ~/Developer/dotfiles/config/gemini/settings.json ~/.gemini/ && ln -sf ~/Developer/dotfiles/config/gemini/GEMINI.md ~/.gemini/ && ln -sf ~/Developer/dotfiles/config/gemini/system.md ~/.gemini/ && cp -n ~/Developer/dotfiles/config/gemini/.env ~/.gemini/ && mkdir -p ~/.gemini/policies && ln -sf ~/Developer/dotfiles/config/gemini/policies/auto-saved.toml ~/.gemini/policies/ && ln -sf ~/Developer/dotfiles/config/gemini/policies/sandbox.toml ~/.gemini/policies/ && echo 'OK - Gemini CLI config instalada'
+cp ~/Developer/dotfiles/config/gemini/settings.json ~/.gemini/ && cp ~/Developer/dotfiles/config/gemini/GEMINI.md ~/.gemini/ && cp ~/Developer/dotfiles/config/gemini/system.md ~/.gemini/ && cp -n ~/Developer/dotfiles/config/gemini/.env ~/.gemini/ && mkdir -p ~/.gemini/policies && cp ~/Developer/dotfiles/config/gemini/policies/auto-saved.toml ~/.gemini/policies/ && cp ~/Developer/dotfiles/config/gemini/policies/sandbox.toml ~/.gemini/policies/ && echo 'OK - Gemini CLI config instalada'
 ```
 
 > [!IMPORTANT]

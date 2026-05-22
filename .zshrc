@@ -150,9 +150,6 @@ export ANDROID_HOME=$HOME/Library/Android/sdk
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
-# Added by Antigravity
-export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
-
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 

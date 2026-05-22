@@ -53,7 +53,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Android Studio** - <https://developer.android.com/studio/>
 - [ ] **TablePlus** - <https://tableplus.com/>
 - [ ] **Cyberduck** - <https://cyberduck.io/>
-- [ ] **Antigravity** - <https://antigravity.google/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
@@ -73,7 +72,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Raycast** - <https://www.raycast.com/>
 - [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app/>
 - [ ] **Discord** - <https://discord.com/download/>
-- [ ] **WisprFlow** - <https://wisprflow.ai/>
+- [ ] **VoiceInk** - <https://tryvoiceink.com/> — Whisper small/base
 - [ ] **Obsidian** - <https://obsidian.md/download>
 
 ### Media & Content
@@ -81,8 +80,9 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **IINA** - <https://iina.io/>
 - [ ] **Affinity** - <https://www.affinity.studio/>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
-- [ ] **Meld Studio** - <https://meldstudio.co/>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
+- [ ] **Recordly** - <https://recordly.dev>
+- [ ] **VoiceBox** - <https://voicebox.sh/download> — Qwen3-TTS 0.6B, Whisper Small, Qwen3 0.6B LLM
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
 
 ### Gaming
@@ -137,7 +137,7 @@ php artisan sail:install
 
 Instalar inteligencias artificiales IA:
 
-- Configurar con ChatGPT, Antigravity.
+- Configurar con ChatGPT.
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash

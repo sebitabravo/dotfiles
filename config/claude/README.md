@@ -62,39 +62,34 @@ config/claude/
 ## Instalacion rapida
 
 ```bash
-# 1. Symlinks de archivos core
-ln -sf ~/Developer/dotfiles/config/claude/settings.json ~/.claude/settings.json
-ln -sf ~/Developer/dotfiles/config/claude/CLAUDE.md ~/.claude/CLAUDE.md
-ln -sf ~/Developer/dotfiles/config/claude/statusline.sh ~/.claude/statusline.sh
-ln -sf ~/Developer/dotfiles/config/claude/mcp-servers.template.json ~/.claude/mcp-servers.json
+# 1. Archivos core (copia, no symlink — el dotfile se puede borrar sin perder config)
+cp ~/Developer/dotfiles/config/claude/settings.json ~/.claude/settings.json
+cp ~/Developer/dotfiles/config/claude/CLAUDE.md ~/.claude/CLAUDE.md
+cp ~/Developer/dotfiles/config/claude/statusline.sh ~/.claude/statusline.sh
+cp -n ~/Developer/dotfiles/config/claude/mcp-servers.template.json ~/.claude/mcp-servers.json
 
 # 2. Directorios
 mkdir -p ~/.claude/agents ~/.claude/skills ~/.claude/commands ~/.claude/rules
 
-# 3. Agentes (symlinks)
-for f in ~/Developer/dotfiles/config/claude/agents/*.md; do
-  ln -sf "$f" ~/.claude/agents/
-done
+# 3. Agentes
+cp -R ~/Developer/dotfiles/config/claude/agents/* ~/.claude/agents/
 
 # 4. Skills
-for d in ~/Developer/dotfiles/config/claude/skills/*/; do
-  skill_name=$(basename "$d")
-  ln -sfn "$d" ~/.claude/skills/"$skill_name"
-done
+cp -R ~/Developer/dotfiles/config/claude/skills/* ~/.claude/skills/
 
 # 5. Commands
-for f in ~/Developer/dotfiles/config/claude/commands/*.md; do
-  ln -sf "$f" ~/.claude/commands/
-done
+cp -R ~/Developer/dotfiles/config/claude/commands/* ~/.claude/commands/
 
 # 6. Rules
-ln -sfn ~/Developer/dotfiles/config/claude/rules/common ~/.claude/rules/common
+cp -R ~/Developer/dotfiles/config/claude/rules/common ~/.claude/rules/common
 ```
+
+> Las configuraciones son copias independientes. Borrar `~/Developer/dotfiles/` no afecta Claude Code.
 
 O en una linea:
 
 ```bash
-ln -sf ~/Developer/dotfiles/config/claude/settings.json ~/.claude/ && ln -sf ~/Developer/dotfiles/config/claude/CLAUDE.md ~/.claude/ && ln -sf ~/Developer/dotfiles/config/claude/statusline.sh ~/.claude/ && cp -n ~/Developer/dotfiles/config/claude/mcp-servers.template.json ~/.claude/mcp-servers.json && mkdir -p ~/.claude/{agents,skills,commands,rules} && for f in ~/Developer/dotfiles/config/claude/agents/*.md; do ln -sf "$f" ~/.claude/agents/; done && for d in ~/Developer/dotfiles/config/claude/skills/*/; do ln -sfn "$d" ~/.claude/skills/$(basename "$d"); done && for f in ~/Developer/dotfiles/config/claude/commands/*.md; do ln -sf "$f" ~/.claude/commands/; done && ln -sfn ~/Developer/dotfiles/config/claude/rules/common ~/.claude/rules/common && echo 'OK - Config instalada'
+cp ~/Developer/dotfiles/config/claude/settings.json ~/.claude/ && cp ~/Developer/dotfiles/config/claude/CLAUDE.md ~/.claude/ && cp ~/Developer/dotfiles/config/claude/statusline.sh ~/.claude/ && cp -n ~/Developer/dotfiles/config/claude/mcp-servers.template.json ~/.claude/mcp-servers.json && mkdir -p ~/.claude/{agents,skills,commands,rules} && cp -R ~/Developer/dotfiles/config/claude/agents/* ~/.claude/agents/ && cp -R ~/Developer/dotfiles/config/claude/skills/* ~/.claude/skills/ && cp -R ~/Developer/dotfiles/config/claude/commands/* ~/.claude/commands/ && cp -R ~/Developer/dotfiles/config/claude/rules/common ~/.claude/rules/common && echo 'OK - Config instalada'
 ```
 
 ## Plugins recomendados

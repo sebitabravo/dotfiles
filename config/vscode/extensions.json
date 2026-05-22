@@ -9,7 +9,15 @@
     "wayou.vscode-todo-highlight",
     "davidanson.vscode-markdownlint",
     "christian-kohler.path-intellisense",
-    "yoavbls.pretty-ts-errors"
+    "yoavbls.pretty-ts-errors",
+    "ms-vscode.live-server"
+  ],
+  "python": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-python.autopep8",
+    "ms-python.vscode-python-envs"
   ],
   "php-laravel": [
     "bmewburn.vscode-intelephense-client",
@@ -22,7 +30,8 @@
   "frontend": [
     "bradlc.vscode-tailwindcss",
     "astro-build.astro-vscode",
-    "dsznajder.es7-react-js-snippets"
+    "dsznajder.es7-react-js-snippets",
+    "vue.volar"
   ],
   "copilot": [
     "github.copilot-chat"

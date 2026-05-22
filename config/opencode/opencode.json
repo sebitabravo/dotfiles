@@ -67,14 +67,33 @@
       ],
       "enabled": false
     },
-    "pencil": {
+    "unity": {
+      "type": "local",
       "command": [
-        "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
-        "--app",
-        "desktop"
+        "uvx",
+        "--from",
+        "mcpforunityserver",
+        "mcp-for-unity",
+        "--transport",
+        "stdio"
+      ],
+      "enabled": false
+    },
+    "resolve": {
+      "type": "local",
+      "command": [
+        "uv",
+        "--directory",
+        "/Users/sebastian/Developer/resolve-claude-mcp",
+        "run",
+        "resolve-claude-mcp"
       ],
       "enabled": false,
-      "type": "local"
+      "environment": {
+        "RESOLVE_SCRIPT_LIB": "/Applications/DaVinci Resolve.app/Contents/Libraries/Fusion/fusionscript.so",
+        "RESOLVE_SCRIPT_API": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting",
+        "PYTHONPATH": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting/Modules/"
+      }
     }
   },
   "permission": {
