@@ -11,10 +11,13 @@ tap "gentleman-programming/tap"
 
 brew "bun"
 brew "pyenv"
+brew "go"
+brew "rust"
 brew "xz"
 brew "git-lfs"
 brew "fastfetch"
 brew "gh"
+brew "helm"
 
 brew "actionlint"
 brew "bat"
@@ -31,11 +34,40 @@ brew "engram"
 brew "ffmpeg"
 brew "imagemagick"
 
+brew "nmap"
+brew "whatweb"
+brew "gobuster"
+brew "amass"
+brew "subfinder"
+
+brew "ffuf"
+brew "nuclei"
+brew "nikto"
+brew "sqlmap"
+brew "afl-fuzz"
+
+brew "hydra"
+brew "john-jumbo"
+brew "exploitdb"
+
+brew "semgrep"
+brew "gitleaks"
+brew "trufflehog"
+brew "radare2"
+
+brew "binwalk"
+brew "jadx"
+brew "wabt"
+brew "upx"
+
+brew "seclists"
 # ============================================================================
 # Applications (Casks)
 # ============================================================================
 
 cask "dotnet-sdk"
+cask "ghidra"
+cask "metasploit"
 
 # Fuentes
 cask "font-meslo-lg-nerd-font"

@@ -74,10 +74,12 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Discord** - <https://discord.com/download/>
 - [ ] **VoiceInk** - <https://tryvoiceink.com/> — Whisper small/base
 - [ ] **Obsidian** - <https://obsidian.md/download>
+- [ ] **Notion** - <https://www.notion.so/desktop>
 
 ### Media & Content
 
 - [ ] **IINA** - <https://iina.io/>
+- [ ] **Figma** - <https://www.figma.com/downloads/>
 - [ ] **Affinity** - <https://www.affinity.studio/>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
