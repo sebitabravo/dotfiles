@@ -106,6 +106,10 @@ echo "[OK] Dock process indicators"
 defaults write com.apple.dock showhidden -bool true
 echo "[OK] Dock show hidden app icons"
 
+# Desactiva rebote de íconos cuando apps piden atención
+defaults write com.apple.dock no-bouncing -bool true
+echo "[OK] Dock no bouncing icons"
+
 # ── Trackpad ─────────────────────────────────────────────────────────
 defaults write NSGlobalDomain com.apple.trackpad.scaling -float 1.5
 echo "[OK] Trackpad tracking speed"
@@ -122,6 +126,11 @@ echo "[OK] Two-finger right click"
 # Mejora calidad de audio en auriculares Bluetooth (default 0x80 = low)
 defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 echo "[OK] Bluetooth audio bitpool = 40"
+
+# ── WindowManager (Sequoia 15.x) ──────────────────────────────────────
+# Tiling edge-to-edge sin margen entre ventanas
+defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
+echo "[OK] WindowManager tiling no margins"
 
 # ── Finder ─────────────────────────────────────────────────────────
 defaults write com.apple.finder DisableAllAnimations -bool true
@@ -177,6 +186,17 @@ echo "[OK] Sidebar places section"
 defaults write com.apple.finder SidebarShowingiCloudDesktop -bool false
 echo "[OK] Hide iCloud Desktop from sidebar"
 
+# Mostrar discos externos, servidores y medios removibles en escritorio
+defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
+defaults write com.apple.finder ShowMountedServersOnDesktop -bool true
+defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool true
+echo "[OK] Finder show external/removable drives on desktop"
+
+# Nueva ventana de Finder abre Home (no Recents)
+defaults write com.apple.finder NewWindowTarget -string "PfHm"
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
+echo "[OK] Finder new window = Home"
+
 defaults write com.apple.finder FK_StandardViewSettings -dict-add ListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
 defaults write com.apple.finder FK_StandardViewSettings -dict-add ExtendedListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
 echo "[OK] Finder list view columns: name, date, size"
@@ -186,6 +206,10 @@ echo "[OK] Finder info panes reset"
 
 defaults delete com.apple.finder FXDesktopVolumePositions 2>/dev/null || true
 echo "[OK] Desktop icon positions reset"
+
+# Permitir seleccionar texto en Quick Look (copiar sin abrir archivo)
+defaults write com.apple.finder QLEnableTextSelection -bool true
+echo "[OK] Quick Look text selection"
 
 # ── Network Browser ─────────────────────────────────────────────────
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
@@ -198,6 +222,11 @@ echo "[OK] No .DS_Store on network volumes"
 
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 echo "[OK] No .DS_Store on USB drives"
+
+# ── Archive Utility ─────────────────────────────────────────────────
+# No crear carpetas __MACOSX al extraer ZIPs
+defaults write com.apple.archiveutility "com.apple.archiveutility.disable-resourceforks" -bool true
+echo "[OK] Archive Utility no __MACOSX folders"
 
 # ── Global Finder ──────────────────────────────────────────────────
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -241,9 +270,29 @@ echo "[OK] Full keyboard navigation"
 defaults write NSGlobalDomain NSAutomaticTextCompletionEnabled -bool false
 echo "[OK] Auto text completion off"
 
+# Sequoia: desactiva predicciones inline grises (Apple Intelligence typing)
+defaults write NSGlobalDomain NSAutomaticInlinePredictionEnabled -bool false
+echo "[OK] Inline predictions off"
+
 # Instant toolbar title rollover (proxy icon in title bar)
 defaults write NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0
 echo "[OK] Toolbar title rollover instant"
+
+# Ctrl+Cmd+click arrastra ventanas desde cualquier parte (no solo title bar)
+defaults write NSGlobalDomain NSWindowShouldDragOnGesture -bool true
+echo "[OK] Drag windows from anywhere (Ctrl+Cmd+click)"
+
+# Desactiva App Nap globalmente (evita throttling de build watchers/dev servers)
+defaults write NSGlobalDomain NSAppSleepDisabled -bool true
+echo "[OK] App Nap disabled globally"
+
+# Documentos nuevos en tabs, no ventanas separadas
+defaults write NSGlobalDomain AppleWindowTabbingMode -string "always"
+echo "[OK] New documents open in tabs"
+
+# Evita que macOS cierre apps idle automáticamente (Preview, QuickTime)
+defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
+echo "[OK] No automatic app termination"
 
 # ── Diálogos Save/Print ──────────────────────────────────────────────
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
@@ -276,6 +325,20 @@ echo "[OK] Screenshots to Desktop"
 defaults write com.apple.screencapture show-thumbnail -bool false
 echo "[OK] Screenshot thumbnail off"
 
+# Nombre de archivo sin timestamp (Screenshot.png en vez de Screenshot 2026-05-23 at 14.30.45.png)
+defaults write com.apple.screencapture include-date -bool false
+echo "[OK] Screenshot filenames no timestamp"
+
+# ── Global Window Restoration ────────────────────────────────────────
+# Cierra ventanas al salir de apps (inverso de System Settings → Desktop & Dock → "Close windows when quitting")
+defaults write NSGlobalDomain NSQuitAlwaysKeepsWindows -bool false
+echo "[OK] No window restoration on app quit"
+
+# ── Preview ─────────────────────────────────────────────────────────
+# No restaurar PDFs/imágenes al reabrir (evita flood de ventanas viejas)
+defaults write com.apple.Preview NSQuitAlwaysKeepsWindows -bool false
+echo "[OK] Preview no window restoration"
+
 # ── Mail ───────────────────────────────────────────────────────────
 defaults write com.apple.mail DisableReplyAnimations -bool true
 echo "[OK] Mail reply animations off"
@@ -285,6 +348,10 @@ echo "[OK] Mail send animations off"
 
 defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
 echo "[OK] Mail inline attachments off"
+
+# Forzar composición en texto plano (sin HTML)
+defaults write com.apple.mail PreferPlainText -bool true
+echo "[OK] Mail plain text compose"
 
 # Copiar dirección de email sin nombre del contacto
 defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
@@ -315,6 +382,10 @@ echo "[OK] Crash reporter dialogs disabled"
 defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
 defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
 echo "[OK] Siri disabled"
+
+# Evita que macOS pregunte "Enable Siri?" después de updates
+defaults write com.apple.Siri UserHasDeclinedEnable -bool true
+echo "[OK] Siri declined permanently"
 
 # ── Image Capture ───────────────────────────────────────────────────
 # Evita que Photos.app se abra al conectar cámara/SD
@@ -415,6 +486,10 @@ echo "[OK] Activity Monitor show all processes"
 defaults write com.apple.ActivityMonitor IconType -int 5
 echo "[OK] Activity Monitor CPU history icon"
 
+# Refresco cada 2s en vez de 5s (default)
+defaults write com.apple.ActivityMonitor UpdatePeriod -int 2
+echo "[OK] Activity Monitor refresh = 2s"
+
 # ── Help Viewer ───────────────────────────────────────────────────
 defaults write com.apple.helpviewer DevMode -bool true
 echo "[OK] Help Viewer doesn't float on top"
@@ -433,6 +508,21 @@ echo "[OK] Auto-install critical security updates"
 defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
 echo "[OK] Auto-install XProtect/MRT data"
 
+# ── Notification Center ──────────────────────────────────────────────
+# Banners desaparecen en 3s (default ~5s)
+defaults write com.apple.notificationcenterui bannerTime -int 3
+echo "[OK] Notification banner time = 3s"
+
+# ── Login Window ────────────────────────────────────────────────────
+# No restaurar apps al reiniciar/login
+defaults write com.apple.loginwindow TALLogoutSavesState -bool false
+defaults write com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false
+echo "[OK] Login: no app restoration on reboot"
+
+# ── Menu Bar ────────────────────────────────────────────────────────
+defaults write com.apple.menuextra.battery ShowPercent -string "YES"
+echo "[OK] Battery percentage in menu bar"
+
 # ── App Store ───────────────────────────────────────────────────────
 defaults write com.apple.commerce AutoUpdate -bool true
 echo "[OK] App Store auto-update apps"
@@ -445,10 +535,21 @@ echo "[OK] App Store auto-restart apps"
 defaults write com.apple.Spotlight SuggestionsEnabled -bool false
 echo "[OK] Spotlight suggestions disabled"
 
+# ── Sound ──────────────────────────────────────────────────────────
+# Sin beep/pop al ajustar volumen con teclas
+defaults write -g com.apple.sound.beep.feedback -int 0
+echo "[OK] Volume change feedback silent"
+
+# ── Library visible ─────────────────────────────────────────────────
+# ~/Library visible en Finder sin Cmd+Shift+G
+chflags nohidden ~/Library
+echo "[OK] ~/Library visible"
+
 # ── Reiniciar servicios ────────────────────────────────────────────
 killall Dock 2>/dev/null  && echo "[OK] Dock restarted"
 killall Finder 2>/dev/null && echo "[OK] Finder restarted"
 killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
 killall cfprefsd 2>/dev/null   && echo "[OK] cfprefsd restarted"
+killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
 
 echo "=== Done ==="
