@@ -60,6 +60,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### IA & Coding Agents
 
+- [ ] **GitHub Copilot App** - <https://github.com/github/app>
 - [ ] **Codex** - <https://openai.com/es-419/codex/>
 - [ ] **Cowork** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
 
