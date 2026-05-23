@@ -23,6 +23,10 @@ echo "[OK] Window resize instant"
 defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
 echo "[OK] Window open/close animations disabled"
 
+# Desactiva animación del anillo de foco al navegar con Tab
+defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
+echo "[OK] Focus ring animation disabled"
+
 # ── Teclado ──────────────────────────────────────────────────────────
 # CRÍTICO: sin esto, mantener tecla = menú acentos en vez de repetir
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
@@ -94,6 +98,14 @@ echo "[OK] Dock scroll to Exposé"
 defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
 echo "[OK] Spring-load all Dock items"
 
+# Indicadores luminosos bajo apps abiertas
+defaults write com.apple.dock show-process-indicators -bool true
+echo "[OK] Dock process indicators"
+
+# Mostrar apps ocultas con icono translúcido
+defaults write com.apple.dock showhidden -bool true
+echo "[OK] Dock show hidden app icons"
+
 # ── Trackpad ─────────────────────────────────────────────────────────
 defaults write NSGlobalDomain com.apple.trackpad.scaling -float 1.5
 echo "[OK] Trackpad tracking speed"
@@ -105,6 +117,11 @@ echo "[OK] Tap to click"
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
 defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
 echo "[OK] Two-finger right click"
+
+# ── Bluetooth ──────────────────────────────────────────────────────────
+# Mejora calidad de audio en auriculares Bluetooth (default 0x80 = low)
+defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
+echo "[OK] Bluetooth audio bitpool = 40"
 
 # ── Finder ─────────────────────────────────────────────────────────
 defaults write com.apple.finder DisableAllAnimations -bool true
@@ -123,6 +140,10 @@ echo "[OK] Finder Quit menu item"
 # No warning when changing file extensions
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 echo "[OK] No extension change warning"
+
+# No warning when emptying Trash
+defaults write com.apple.finder WarnOnEmptyTrash -bool false
+echo "[OK] No empty Trash warning"
 
 # Keep folders on top when sorting by name
 defaults write com.apple.finder _FXSortFoldersFirst -bool true
@@ -165,6 +186,10 @@ echo "[OK] Finder info panes reset"
 
 defaults delete com.apple.finder FXDesktopVolumePositions 2>/dev/null || true
 echo "[OK] Desktop icon positions reset"
+
+# ── Network Browser ─────────────────────────────────────────────────
+defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
+echo "[OK] Network browser show all interfaces"
 
 # ── .DS_Store ──────────────────────────────────────────────────────
 # Evita crear .DS_Store en volúmenes de red y USB (requiere logout)
@@ -232,6 +257,11 @@ defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
 echo "[OK] Print dialog always expanded"
 
+# ── Screensaver ─────────────────────────────────────────────────────
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+echo "[OK] Screensaver password immediate"
+
 # ── Screenshots ────────────────────────────────────────────────────
 defaults write com.apple.screencapture disable-shadow -bool true
 echo "[OK] Screenshot shadows off"
@@ -256,11 +286,20 @@ echo "[OK] Mail send animations off"
 defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
 echo "[OK] Mail inline attachments off"
 
+# Copiar dirección de email sin nombre del contacto
+defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+echo "[OK] Mail copy email address only"
+
 # ── Disk Utility ───────────────────────────────────────────────────
 defaults write com.apple.frameworks.diskimages skip-verify -bool true
 defaults write com.apple.frameworks.diskimages skip-verify-locked -bool true
 defaults write com.apple.frameworks.diskimages skip-verify-remote -bool true
 echo "[OK] Skip DMG verification"
+
+# Disk Utility: menú Debug + opciones avanzadas de imagen
+defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true
+defaults write com.apple.DiskUtility advanced-image-options -bool true
+echo "[OK] Disk Utility debug menu + advanced image options"
 
 # ── Time Machine ───────────────────────────────────────────────────
 defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
@@ -276,6 +315,11 @@ echo "[OK] Crash reporter dialogs disabled"
 defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
 defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
 echo "[OK] Siri disabled"
+
+# ── Image Capture ───────────────────────────────────────────────────
+# Evita que Photos.app se abra al conectar cámara/SD
+defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
+echo "[OK] Image Capture no auto-launch"
 
 # ── Safari / WebKit ────────────────────────────────────────────────
 defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
@@ -308,27 +352,93 @@ echo "[OK] Safari WebKit2 dev extras"
 defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
 echo "[OK] Safari spelling correction off"
 
+# Security: no abrir archivos "seguros" automáticamente
+defaults write com.apple.Safari AutoOpenSafeDownloads -bool false
+echo "[OK] Safari never auto-open downloads"
+
+# Security: activar advertencia de sitios fraudulentos
+defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+echo "[OK] Safari fraudulent site warnings ON"
+
+# Auto-instalar extensiones de Safari
+defaults write com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
+echo "[OK] Safari auto-update extensions"
+
+# Desactivar AutoFill (privacidad)
+defaults write com.apple.Safari AutoFillFromAddressBook -bool false
+defaults write com.apple.Safari AutoFillPasswords -bool false
+defaults write com.apple.Safari AutoFillCreditCardData -bool false
+defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
+echo "[OK] Safari AutoFill disabled"
+
+# Find on page: buscar "contiene" en vez de "empieza con"
+defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
+echo "[OK] Safari find contains (not starts-with)"
+
+# Internal Debug menu (más profundo que Develop + Debug)
+defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+echo "[OK] Safari Internal Debug menu"
+
 # ── Apple Intelligence ─────────────────────────────────────────────
 # Sequoia 15.x: Feature ID 545129924
 defaults write com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool false
 echo "[OK] Apple Intelligence opt-out"
+
+# ── Terminal ────────────────────────────────────────────────────────
+# Default encoding UTF-8
+defaults write com.apple.terminal StringEncodings -array 4
+echo "[OK] Terminal UTF-8 encoding"
+
+# Secure keyboard entry (prevents other apps from reading keystrokes)
+defaults write com.apple.Terminal SecureKeyboardEntry -bool true
+echo "[OK] Terminal secure keyboard entry"
+
+# Ocultar marcas de scroll en la ventana
+defaults write com.apple.Terminal ShowLineMarks -int 0
+echo "[OK] Terminal hide line marks"
 
 # ── TextEdit ────────────────────────────────────────────────────────
 # Default to plain text mode (not rich text)
 defaults write com.apple.TextEdit RichText -int 0
 echo "[OK] TextEdit plain text default"
 
+# UTF-8 encoding for read/write
+defaults write com.apple.TextEdit PlainTextEncoding -int 4
+defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+echo "[OK] TextEdit UTF-8 encoding"
+
 # ── Activity Monitor ──────────────────────────────────────────────
 defaults write com.apple.ActivityMonitor ShowCategory -int 0
 echo "[OK] Activity Monitor show all processes"
+
+# Dock icon muestra uso de CPU como gráfico
+defaults write com.apple.ActivityMonitor IconType -int 5
+echo "[OK] Activity Monitor CPU history icon"
 
 # ── Help Viewer ───────────────────────────────────────────────────
 defaults write com.apple.helpviewer DevMode -bool true
 echo "[OK] Help Viewer doesn't float on top"
 
 # ── Software Update ───────────────────────────────────────────────
+defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
+echo "[OK] Automatic update checks ON"
+
 defaults write com.apple.SoftwareUpdate AutomaticDownload -bool false
 echo "[OK] No automatic update downloads"
+
+# Auto-instalar parches de seguridad y datos de configuración (XProtect, MRT, etc.)
+defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
+echo "[OK] Auto-install critical security updates"
+
+defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
+echo "[OK] Auto-install XProtect/MRT data"
+
+# ── App Store ───────────────────────────────────────────────────────
+defaults write com.apple.commerce AutoUpdate -bool true
+echo "[OK] App Store auto-update apps"
+
+defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
+echo "[OK] App Store auto-restart apps"
 
 # ── Spotlight ─────────────────────────────────────────────────────
 # Disable Spotlight Suggestions — prevents sending searches to Apple
