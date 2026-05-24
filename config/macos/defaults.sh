@@ -387,6 +387,28 @@ echo "[OK] Siri disabled"
 defaults write com.apple.Siri UserHasDeclinedEnable -bool true
 echo "[OK] Siri declined permanently"
 
+	# Dictado por voz desactivado (evita envío de audio a servidores Apple)
+	defaults write com.apple.assistant.support "Dictation Enabled" -bool false
+	echo "[OK] Dictation disabled"
+	# Spotlight/Siri: no enviar búsquedas a Apple
+	defaults write com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
+	echo "[OK] Search queries data sharing off"
+
+	# Siri: no compartir datos de uso con Apple (mejora de Siri)
+	defaults write com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
+	echo "[OK] Siri data sharing opt-out"
+
+	# No recolectar archivos automáticamente al reportar feedback
+	defaults write com.apple.appleseed.FeedbackAssistant Autogather -bool false
+	echo "[OK] Feedback Assistant no auto-gather"
+
+	# Desactivar IDFA (Identifier for Advertisers) — previene tracking cross-app
+	defaults write com.apple.AdLib allowIdentifierForAdvertising -int 0
+	echo "[OK] Advertising identifier disabled"
+	# Desactivar publicidad personalizada de Apple (App Store, News, Stocks)
+	defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
+	echo "[OK] Apple personalized advertising off"
+
 # ── Image Capture ───────────────────────────────────────────────────
 # Evita que Photos.app se abra al conectar cámara/SD
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
@@ -441,6 +463,15 @@ defaults write com.apple.Safari AutoFillPasswords -bool false
 defaults write com.apple.Safari AutoFillCreditCardData -bool false
 defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
 echo "[OK] Safari AutoFill disabled"
+
+	# Security: bloquear ventanas pop-up de JavaScript
+	defaults write com.apple.Safari "WebKitPreferences.javaScriptCanOpenWindowsAutomatically" -bool false
+	defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically" -bool false
+	echo "[OK] Safari popup blocking"
+
+	# Security: enviar header Do Not Track
+	defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
+	echo "[OK] Safari Do Not Track"
 
 # Find on page: buscar "contiene" en vez de "empieza con"
 defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
