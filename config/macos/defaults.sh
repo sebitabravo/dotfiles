@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
-# macOS Sequoia 15.x — defaults write optimizations
+# macOS Sequoia 15.x / Tahoe 26.x — defaults write optimizations
 # Source: ChrisTitusTech/macutil (curated for developers)
 # Apply: chmod +x defaults.sh && ./defaults.sh
 set -euo pipefail
 
 echo "=== Aplicando defaults de macOS ==="
-
-# ═══════════════════════════════════════════════════════════════════
-# NOTAS PARA DESARROLLADORES
-# ═══════════════════════════════════════════════════════════════════
-# reduceMotion NO se aplica — activa prefers-reduced-motion en
-# navegadores y bloquea animaciones CSS/JS/web. El resto de los
-# defaults son seguros: afectan UI nativa de macOS, no WebKit/Blink.
-
-# ── Accesibilidad ──────────────────────────────────────────────────
-# reduceMotion OMITIDO intencionalmente (ver nota arriba)
 
 # ── Animaciones de ventanas ────────────────────────────────────────
 defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
@@ -26,6 +16,22 @@ echo "[OK] Window open/close animations disabled"
 # Desactiva animación del anillo de foco al navegar con Tab
 defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
 echo "[OK] Focus ring animation disabled"
+
+# Rubber-band scrolling (rebote elástico al llegar al final del scroll)
+defaults write NSGlobalDomain NSScrollViewRubberbanding -bool false
+echo "[OK] Rubber-band scrolling disabled"
+
+# Animación del navegador de versiones de documentos
+defaults write NSGlobalDomain NSDocumentRevisionsWindowTransformAnimation -bool false
+echo "[OK] Document revisions animation disabled"
+
+# Toolbar en full-screen: animación instantánea
+defaults write NSGlobalDomain NSToolbarFullScreenAnimationDuration -float 0
+echo "[OK] Full-screen toolbar animation instant"
+
+# Animación de columnas en diálogos de archivos (vista columnas)
+defaults write NSGlobalDomain NSBrowserColumnAnimationSpeedMultiplier -float 0
+echo "[OK] Column view animation disabled"
 
 # ── Teclado ──────────────────────────────────────────────────────────
 # CRÍTICO: sin esto, mantener tecla = menú acentos en vez de repetir
@@ -51,6 +57,10 @@ echo "[OK] Click scroll bar = jump to position"
 defaults write -g QLPanelAnimationDuration -float 0
 echo "[OK] Quick Look animation = 0"
 
+# Desactiva magnificación del cursor al agitarlo (reduce GPU usage)
+defaults write -g CGDisableCursorLocationMagnification -bool true
+echo "[OK] Cursor location magnification off"
+
 # ── Mission Control ────────────────────────────────────────────────
 defaults write com.apple.dock expose-animation-duration -float 0.1
 echo "[OK] Mission Control speed"
@@ -61,12 +71,19 @@ echo "[OK] Mission Control group by app"
 defaults write com.apple.dock mru-spaces -bool false
 echo "[OK] Spaces never rearrange"
 
-# ── Launchpad ──────────────────────────────────────────────────────
+# No hacer auto-switch al espacio de una app al hacer click en Dock
+defaults write com.apple.dock workspaces-auto-swoosh -bool false
+echo "[OK] Dock: no auto-switch space on app click"
+
+# ── Launchpad (Sequoia 15.x only — removed in Tahoe 26.x) ──────────
 defaults write com.apple.dock springboard-show-duration -float 0.1
 echo "[OK] Launchpad show speed"
 
 defaults write com.apple.dock springboard-hide-duration -float 0.1
 echo "[OK] Launchpad hide speed"
+
+defaults write com.apple.dock springboard-page-duration -float 0
+echo "[OK] Launchpad page scroll instant"
 
 # ── Dock ───────────────────────────────────────────────────────────
 defaults write com.apple.dock autohide-time-modifier -float 0
@@ -110,6 +127,18 @@ echo "[OK] Dock show hidden app icons"
 defaults write com.apple.dock no-bouncing -bool true
 echo "[OK] Dock no bouncing icons"
 
+# Auto-hide Dock (más espacio vertical para contenido)
+defaults write com.apple.dock autohide -bool true
+echo "[OK] Dock auto-hide"
+
+# Resaltar stacks al pasar el mouse (mejor feedback visual)
+defaults write com.apple.dock mouse-over-hilite-stack -bool true
+echo "[OK] Dock highlight stacks on hover"
+
+# Desactiva transparencia del Dock (reduce GPU compositing)
+defaults write com.apple.dock no-glass -bool YES
+echo "[OK] Dock glass effect off"
+
 # ── Trackpad ─────────────────────────────────────────────────────────
 defaults write NSGlobalDomain com.apple.trackpad.scaling -float 1.5
 echo "[OK] Trackpad tracking speed"
@@ -122,15 +151,29 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightC
 defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
 echo "[OK] Two-finger right click"
 
+# Arrastre con 3 dedos (sin botón físico)
+defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
+echo "[OK] Three-finger drag"
+
 # ── Bluetooth ──────────────────────────────────────────────────────────
-# Mejora calidad de audio en auriculares Bluetooth (default 0x80 = low)
+# Mejora calidad de audio en auriculares Bluetooth (default min ~40)
 defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
-echo "[OK] Bluetooth audio bitpool = 40"
+defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Max (editable)" -int 80
+defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool Min (editable)" -int 80
+defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool (editable)" -int 80
+defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool" -int 80
+defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Max" -int 80
+defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Min" -int 48
+echo "[OK] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
 
 # ── WindowManager (Sequoia 15.x) ──────────────────────────────────────
 # Tiling edge-to-edge sin margen entre ventanas
 defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
 echo "[OK] WindowManager tiling no margins"
+
+# Desactiva Stage Manager (consume GPU, developers prefieren Mission Control)
+defaults write com.apple.WindowManager GloballyEnabled -bool false
+echo "[OK] Stage Manager disabled"
 
 # ── Finder ─────────────────────────────────────────────────────────
 defaults write com.apple.finder DisableAllAnimations -bool true
@@ -186,11 +229,12 @@ echo "[OK] Sidebar places section"
 defaults write com.apple.finder SidebarShowingiCloudDesktop -bool false
 echo "[OK] Hide iCloud Desktop from sidebar"
 
-# Mostrar discos externos, servidores y medios removibles en escritorio
+# Mostrar discos externos, internos, servidores y medios removibles en escritorio
 defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
+defaults write com.apple.finder ShowHardDrivesOnDesktop -bool true
 defaults write com.apple.finder ShowMountedServersOnDesktop -bool true
 defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool true
-echo "[OK] Finder show external/removable drives on desktop"
+echo "[OK] Finder show external/internal/removable drives on desktop"
 
 # Nueva ventana de Finder abre Home (no Recents)
 defaults write com.apple.finder NewWindowTarget -string "PfHm"
@@ -211,6 +255,10 @@ echo "[OK] Desktop icon positions reset"
 defaults write com.apple.finder QLEnableTextSelection -bool true
 echo "[OK] Quick Look text selection"
 
+# Columnas auto-ajustables en vista Columnas (Finder > View Options en Tahoe)
+defaults write com.apple.finder _FXEnableColumnAutoSizing -bool true
+echo "[OK] Finder column auto-resize"
+
 # ── Network Browser ─────────────────────────────────────────────────
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
 echo "[OK] Network browser show all interfaces"
@@ -227,6 +275,14 @@ echo "[OK] No .DS_Store on USB drives"
 # No crear carpetas __MACOSX al extraer ZIPs
 defaults write com.apple.archiveutility "com.apple.archiveutility.disable-resourceforks" -bool true
 echo "[OK] Archive Utility no __MACOSX folders"
+
+# Extraer en directorio actual (no en subcarpeta)
+defaults write com.apple.archiveutility "dearchive-into-subfolder" -bool false
+echo "[OK] Archive Utility extract in current folder"
+
+# Mover archivo a Papelera después de extraer
+defaults write com.apple.archiveutility "move-archive-to-trash" -bool true
+echo "[OK] Archive Utility auto-trash after extract"
 
 # ── Global Finder ──────────────────────────────────────────────────
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -258,6 +314,9 @@ echo "[OK] Auto-period off"
 
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 echo "[OK] Smart quotes off"
+
+defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+echo "[OK] Spelling correction off"
 
 defaults write NSGlobalDomain WebAutomaticSpellingCorrectionEnabled -bool false
 echo "[OK] Web spelling correction off"
@@ -294,6 +353,10 @@ echo "[OK] New documents open in tabs"
 defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
 echo "[OK] No automatic app termination"
 
+# Desactiva tracking de documentos recientes (privacidad + reduce I/O)
+defaults write NSGlobalDomain NSRecentDocumentsLimit -int 0
+echo "[OK] Recent documents tracking disabled"
+
 # ── Diálogos Save/Print ──────────────────────────────────────────────
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
@@ -305,6 +368,10 @@ echo "[OK] Save to disk by default (not iCloud)"
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
 echo "[OK] Print dialog always expanded"
+
+# Cerrar automáticamente el diálogo de impresión al terminar
+defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
+echo "[OK] Print dialog auto-close after job"
 
 # ── Screensaver ─────────────────────────────────────────────────────
 defaults write com.apple.screensaver askForPassword -int 1
@@ -326,8 +393,8 @@ defaults write com.apple.screencapture show-thumbnail -bool false
 echo "[OK] Screenshot thumbnail off"
 
 # Nombre de archivo sin timestamp (Screenshot.png en vez de Screenshot 2026-05-23 at 14.30.45.png)
-defaults write com.apple.screencapture include-date -bool false
-echo "[OK] Screenshot filenames no timestamp"
+defaults write com.apple.screencapture include-date -bool true
+echo "[OK] Screenshot filenames with timestamp"
 
 # ── Global Window Restoration ────────────────────────────────────────
 # Cierra ventanas al salir de apps (inverso de System Settings → Desktop & Dock → "Close windows when quitting")
@@ -338,6 +405,11 @@ echo "[OK] No window restoration on app quit"
 # No restaurar PDFs/imágenes al reabrir (evita flood de ventanas viejas)
 defaults write com.apple.Preview NSQuitAlwaysKeepsWindows -bool false
 echo "[OK] Preview no window restoration"
+
+# ── QuickTime Player ────────────────────────────────────────────────
+defaults write com.apple.QuickTimePlayerX NSQuitAlwaysKeepsWindows -bool false
+defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool true
+echo "[OK] QuickTime no window restoration + auto-play on open"
 
 # ── Mail ───────────────────────────────────────────────────────────
 defaults write com.apple.mail DisableReplyAnimations -bool true
@@ -357,11 +429,24 @@ echo "[OK] Mail plain text compose"
 defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
 echo "[OK] Mail copy email address only"
 
+defaults write com.apple.mail SpellCheckingBehavior -string "NoSpellCheckingEnabled"
+echo "[OK] Mail spell checking off"
+
+# ── Messages ────────────────────────────────────────────────────────
+# Desactivar auto-emoji, smart quotes y spell check en iMessage
+defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
+echo "[OK] Messages: auto-emoji off"
+
+defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
+echo "[OK] Messages: smart quotes off"
+
 # ── Disk Utility ───────────────────────────────────────────────────
-defaults write com.apple.frameworks.diskimages skip-verify -bool true
-defaults write com.apple.frameworks.diskimages skip-verify-locked -bool true
-defaults write com.apple.frameworks.diskimages skip-verify-remote -bool true
-echo "[OK] Skip DMG verification"
+echo "[SKIP] DMG verification kept at system default (security)"
+
+# Auto-abrir imágenes de disco montadas (ro y rw)
+defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true
+defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
+echo "[OK] Auto-open DMG root after mount"
 
 # Disk Utility: menú Debug + opciones avanzadas de imagen
 defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true
@@ -380,34 +465,83 @@ defaults write com.apple.CrashReporter DialogType -string "none"
 echo "[OK] Crash reporter dialogs disabled"
 
 defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
+defaults write com.apple.Siri StatusMenuVisible -bool false
 defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
-echo "[OK] Siri disabled"
+echo "[OK] Siri disabled + menu bar icon removed"
 
 # Evita que macOS pregunte "Enable Siri?" después de updates
 defaults write com.apple.Siri UserHasDeclinedEnable -bool true
 echo "[OK] Siri declined permanently"
 
-	# Dictado por voz desactivado (evita envío de audio a servidores Apple)
-	defaults write com.apple.assistant.support "Dictation Enabled" -bool false
-	echo "[OK] Dictation disabled"
-	# Spotlight/Siri: no enviar búsquedas a Apple
-	defaults write com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
-	echo "[OK] Search queries data sharing off"
+# Dictado por voz desactivado (evita envío de audio a servidores Apple)
+defaults write com.apple.assistant.support "Dictation Enabled" -bool false
+echo "[OK] Dictation disabled"
+# Spotlight/Siri: no enviar búsquedas a Apple
+defaults write com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
+echo "[OK] Search queries data sharing off"
 
-	# Siri: no compartir datos de uso con Apple (mejora de Siri)
-	defaults write com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
-	echo "[OK] Siri data sharing opt-out"
+# Siri: no compartir datos de uso con Apple (mejora de Siri)
+defaults write com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
+echo "[OK] Siri data sharing opt-out"
 
-	# No recolectar archivos automáticamente al reportar feedback
-	defaults write com.apple.appleseed.FeedbackAssistant Autogather -bool false
-	echo "[OK] Feedback Assistant no auto-gather"
+# Desactivar motor de sugerencias de Siri (indexación en segundo plano)
+defaults write com.apple.suggestions SiriSuggestionsEnabled -bool false
+echo "[OK] Siri suggestions engine off"
 
-	# Desactivar IDFA (Identifier for Advertisers) — previene tracking cross-app
-	defaults write com.apple.AdLib allowIdentifierForAdvertising -int 0
-	echo "[OK] Advertising identifier disabled"
-	# Desactivar publicidad personalizada de Apple (App Store, News, Stocks)
-	defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
-	echo "[OK] Apple personalized advertising off"
+# Desactivar Siri Assistant core (ahorra CPU en segundo plano)
+defaults write com.apple.assistant.support "Assistant Enabled" -bool false
+echo "[OK] Siri Assistant core disabled"
+
+# No recolectar archivos automáticamente al reportar feedback
+defaults write com.apple.appleseed.FeedbackAssistant Autogather -bool false
+echo "[OK] Feedback Assistant no auto-gather"
+
+# Desactivar IDFA (Identifier for Advertisers) — previene tracking cross-app
+defaults write com.apple.AdLib allowIdentifierForAdvertising -int 0
+echo "[OK] Advertising identifier disabled"
+# Desactivar publicidad personalizada de Apple (App Store, News, Stocks)
+defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
+echo "[OK] Apple personalized advertising off"
+
+defaults write com.apple.AdLib forceLimitAdTracking -bool true
+echo "[OK] Ad tracking force-limited"
+
+# ── Telemetría y diagnóstico ──────────────────────────────────────
+# Desactivar envío de datos a terceros
+defaults write com.apple.SubmitDiagInfo ThirdPartyDataSubmit -bool false
+echo "[OK] Third-party diagnostic data off"
+
+defaults write com.apple.analyticsd AnalyticsEnabled -bool false
+echo "[OK] Analytics disabled"
+
+defaults write com.apple.iCloud EnableAnalytics -bool false
+echo "[OK] iCloud analytics off"
+
+defaults write com.apple.UsageTracking CoreDonationsEnabled -bool false
+echo "[OK] Core donations tracking off"
+
+defaults write com.apple.UsageTracking UDCAutomationEnabled -bool false
+echo "[OK] UDC automation off"
+
+defaults write com.apple.appstore SendDiagnosticData -bool false
+echo "[OK] App Store diagnostic data off"
+
+# ── Apps: anonymous usage opt-out ─────────────────────────────────
+defaults write com.apple.Maps UserSelectedAnonymousUsageOptIn -bool false
+echo "[OK] Maps anonymous usage off"
+
+defaults write com.apple.Health UserSelectedAnonymousUsageOptIn -bool false
+echo "[OK] Health anonymous usage off"
+
+defaults write com.apple.imessage UserSelectedAnonymousUsageOptIn -bool false
+echo "[OK] iMessage anonymous usage off"
+
+defaults write com.apple.Photos UserSelectedAnonymousUsageOptIn -bool false
+echo "[OK] Photos anonymous usage off"
+
+# Handoff: desactivar logging de actividad (Handoff en sí sigue activo)
+defaults write -g NSUserActivityLoggingEnabled -bool false
+echo "[OK] Handoff activity logging off"
 
 # ── Image Capture ───────────────────────────────────────────────────
 # Evita que Photos.app se abra al conectar cámara/SD
@@ -432,6 +566,12 @@ echo "[OK] Safari universal search off"
 
 defaults write com.apple.Safari SuppressSearchSuggestions -bool true
 echo "[OK] Safari search suggestions off"
+
+defaults write com.apple.Safari SearchSuggestionsEnabled -bool false
+echo "[OK] Safari search suggestions disabled"
+
+defaults write com.apple.Safari PreloadTopHit -bool false
+echo "[OK] Safari preload top hit off"
 
 # Enable debug menu
 defaults write com.apple.Safari IncludeDebugMenu -bool true
@@ -464,14 +604,47 @@ defaults write com.apple.Safari AutoFillCreditCardData -bool false
 defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
 echo "[OK] Safari AutoFill disabled"
 
-	# Security: bloquear ventanas pop-up de JavaScript
-	defaults write com.apple.Safari "WebKitPreferences.javaScriptCanOpenWindowsAutomatically" -bool false
-	defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically" -bool false
-	echo "[OK] Safari popup blocking"
+# Security: bloquear ventanas pop-up de JavaScript
+defaults write com.apple.Safari "WebKitPreferences.javaScriptCanOpenWindowsAutomatically" -bool false
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically" -bool false
+echo "[OK] Safari popup blocking"
 
-	# Security: enviar header Do Not Track
-	defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
-	echo "[OK] Safari Do Not Track"
+# Security: enviar header Do Not Track
+defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
+echo "[OK] Safari Do Not Track"
+
+# Privacidad mejorada en navegación normal (no solo private browsing)
+defaults write com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
+echo "[OK] Safari enhanced privacy in regular browsing"
+
+# Security: desactivar plugins legacy (Flash, Silverlight, Java applets)
+defaults write com.apple.Safari WebKitPluginsEnabled -bool false
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2PluginsEnabled" -bool false
+echo "[OK] Safari plugins disabled"
+
+# Security: desactivar Java (WebKit1, WebKit2, WebKit2 local files)
+defaults write com.apple.Safari WebKitJavaEnabled -bool false
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled" -bool false
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles" -bool false
+echo "[OK] Safari Java disabled"
+
+# Tab navega entre links (keyboard navigation, accesibilidad)
+defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
+echo "[OK] Safari Tab to links"
+
+# Backspace/Delete navega a página anterior
+defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
+echo "[OK] Safari backspace navigation"
+
+# Página de inicio en blanco (no carga nada al abrir nueva ventana/pestaña)
+defaults write com.apple.Safari HomePage -string "about:blank"
+echo "[OK] Safari blank homepage"
+
+# Ocultar barra de favoritos y sidebar en Top Sites
+defaults write com.apple.Safari ShowFavoritesBar -bool false
+defaults write com.apple.Safari ShowSidebarInTopSites -bool false
+echo "[OK] Safari hide favorites bar + sidebar"
 
 # Find on page: buscar "contiene" en vez de "empieza con"
 defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
@@ -486,6 +659,39 @@ echo "[OK] Safari Internal Debug menu"
 defaults write com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool false
 echo "[OK] Apple Intelligence opt-out"
 
+# ── Xcode & Simulator ─────────────────────────────────────────────────
+# Debug menu interno (opciones avanzadas de debugging)
+defaults write com.apple.dt.Xcode ShowDVTDebugMenu -bool YES
+echo "[OK] Xcode DVT debug menu"
+
+# Suprimir upsell de Xcode Cloud
+defaults write com.apple.dt.Xcode XcodeCloudUpsellPromptEnabled -bool false
+echo "[OK] Xcode Cloud upsell suppressed"
+
+# Progreso numérico durante indexing (feedback visual útil)
+defaults write com.apple.dt.Xcode IDEIndexerActivityShowNumericProgress -bool true
+echo "[OK] Xcode indexing numeric progress"
+
+# Mostrar extensiones de archivo en navegador de proyecto
+defaults write com.apple.dt.Xcode IDEFileExtensionDisplayMode -int 1
+echo "[OK] Xcode file extensions visible"
+
+# Mostrar build version en icono del Dock (útil con múltiples Xcodes)
+defaults write com.apple.dt.Xcode DVTEnableDockIconVersionNumber -bool YES
+echo "[OK] Xcode build version in Dock icon"
+
+# No restaurar tabs/ventanas al abrir proyecto (arranque más rápido)
+defaults write com.apple.dt.Xcode IDEDisableStateRestoration -bool YES
+echo "[OK] Xcode no state restoration on launch"
+
+# No reabrir automáticamente el último proyecto
+defaults write com.apple.dt.Xcode ApplePersistenceIgnoreState -bool YES
+echo "[OK] Xcode no auto-reopen last project"
+
+# Mostrar toques en Simulator (útil para demos/grabaciones)
+defaults write com.apple.iphonesimulator ShowSingleTouches -int 1
+echo "[OK] Simulator show touches"
+
 # ── Terminal ────────────────────────────────────────────────────────
 # Default encoding UTF-8
 defaults write com.apple.terminal StringEncodings -array 4
@@ -499,6 +705,10 @@ echo "[OK] Terminal secure keyboard entry"
 defaults write com.apple.Terminal ShowLineMarks -int 0
 echo "[OK] Terminal hide line marks"
 
+# Focus follows mouse entre ventanas de Terminal (útil con múltiples ventanas)
+defaults write com.apple.Terminal FocusFollowsMouse -bool true
+echo "[OK] Terminal focus follows mouse"
+
 # ── TextEdit ────────────────────────────────────────────────────────
 # Default to plain text mode (not rich text)
 defaults write com.apple.TextEdit RichText -int 0
@@ -510,6 +720,9 @@ defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 echo "[OK] TextEdit UTF-8 encoding"
 
 # ── Activity Monitor ──────────────────────────────────────────────
+defaults write com.apple.ActivityMonitor OpenMainWindow -bool true
+echo "[OK] Activity Monitor open main window on launch"
+
 defaults write com.apple.ActivityMonitor ShowCategory -int 0
 echo "[OK] Activity Monitor show all processes"
 
@@ -521,9 +734,25 @@ echo "[OK] Activity Monitor CPU history icon"
 defaults write com.apple.ActivityMonitor UpdatePeriod -int 2
 echo "[OK] Activity Monitor refresh = 2s"
 
+# Ordenar por CPU descendente (procesos más intensivos arriba)
+defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
+defaults write com.apple.ActivityMonitor SortDirection -int 0
+echo "[OK] Activity Monitor sort by CPU usage"
+
+# ── Console ──────────────────────────────────────────────────────────
+# Debug menu (logging avanzado para developers)
+defaults write com.apple.Console DebugMenuEnabled -bool true
+# Mostrar logs privados (system/3rd-party) en vez de ocultarlos
+defaults write com.apple.Console PrivateLogsEnabled -bool true
+echo "[OK] Console debug menu + private logs"
+
 # ── Help Viewer ───────────────────────────────────────────────────
 defaults write com.apple.helpviewer DevMode -bool true
 echo "[OK] Help Viewer doesn't float on top"
+
+# ── Calendar ──────────────────────────────────────────────────────
+defaults write com.apple.iCal IncludeDebugMenu -bool true
+echo "[OK] Calendar debug menu"
 
 # ── Software Update ───────────────────────────────────────────────
 defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
@@ -550,9 +779,25 @@ defaults write com.apple.loginwindow TALLogoutSavesState -bool false
 defaults write com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false
 echo "[OK] Login: no app restoration on reboot"
 
+# Mostrar nombre completo en pantalla de login (seguridad: quién está logueado)
+defaults write com.apple.loginwindow SHOWFULLNAME -bool true
+echo "[OK] Login window show full name"
+
 # ── Menu Bar ────────────────────────────────────────────────────────
 defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 echo "[OK] Battery percentage in menu bar"
+
+# Mostrar segundos en el reloj (útil para logs y debugging)
+defaults write com.apple.menuextra.clock ShowSeconds -bool true
+defaults write com.apple.menuextra.clock ShowDayOfWeek -bool true
+defaults write com.apple.menuextra.clock ShowDate -int 1
+defaults write com.apple.menuextra.clock IsAnalog -bool false
+echo "[OK] Clock: digital, seconds + day + date"
+
+# Reducir spacing entre íconos de menubar (útil en MacBooks con notch)
+defaults -currentHost write -globalDomain NSStatusItemSpacing -int 6
+defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 12
+echo "[OK] Menu bar icon spacing compact"
 
 # ── App Store ───────────────────────────────────────────────────────
 defaults write com.apple.commerce AutoUpdate -bool true
@@ -561,10 +806,19 @@ echo "[OK] App Store auto-update apps"
 defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
 echo "[OK] App Store auto-restart apps"
 
+# Debug menu (útil para devs: refresh cache, reset download queue)
+defaults write com.apple.appstore ShowDebugMenu -bool true
+defaults write com.apple.appstore IncludeDebugMenu -bool true
+defaults write com.apple.appstore WebKitDeveloperExtras -bool true
+echo "[OK] App Store debug menu enabled"
+
 # ── Spotlight ─────────────────────────────────────────────────────
 # Disable Spotlight Suggestions — prevents sending searches to Apple
 defaults write com.apple.Spotlight SuggestionsEnabled -bool false
 echo "[OK] Spotlight suggestions disabled"
+
+defaults write com.apple.Spotlight ServerSuggestionsEnabled -bool false
+echo "[OK] Spotlight server suggestions disabled"
 
 # ── Sound ──────────────────────────────────────────────────────────
 # Sin beep/pop al ajustar volumen con teclas
@@ -575,6 +829,16 @@ echo "[OK] Volume change feedback silent"
 # ~/Library visible en Finder sin Cmd+Shift+G
 chflags nohidden ~/Library
 echo "[OK] ~/Library visible"
+
+# ── Tahoe 26.x — Liquid Glass ───────────────────────────────────────
+# Oculta íconos clutter en items de menú (nuevo en Liquid Glass design)
+defaults write -g NSMenuEnableActionImages -bool false
+echo "[OK] Menu item icons hidden (Liquid Glass)"
+
+
+# en Electron apps (VSCode, Slack, Discord, Cursor) bajo Tahoe
+defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
+echo "[OK] AutoFill heuristic disabled (Tahoe perf fix)"
 
 # ── Reiniciar servicios ────────────────────────────────────────────
 killall Dock 2>/dev/null  && echo "[OK] Dock restarted"
