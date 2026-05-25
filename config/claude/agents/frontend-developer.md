@@ -23,7 +23,7 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(ls:*), Bash(cat:*), WebFetch]
 context: fork
 maxTurns: 50
-skills: [tanstack-query, e2e-testing]
+skills: [tanstack-query, e2e-testing, android-jetpack-compose, swift, unity-developer, ffmpeg]
 effort: xhigh
 ---
 

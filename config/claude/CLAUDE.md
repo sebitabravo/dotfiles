@@ -101,6 +101,21 @@ Invoke proactively:
 | TanStack Query v5, data fetching, mutations, caching | `tanstack-query` |
 | Fuzzing, parameter discovery, AFL++, ffuf | `fuzzing-primer` |
 | Verification before completion, evidence gate | `verification-before-completion` |
+| Android, Jetpack Compose, state, UI | `android-jetpack-compose` |
+| iOS, Swift, SwiftUI, Xcode, Apple platforms | `swift` |
+| Android architecture, MVVM, Clean Architecture | `android-clean-architecture` |
+| Kotlin coroutines, Flow, async operations | `kotlin-coroutines-flows` |
+| Mobile testing, Jest, Detox, XCTest, Espresso | `mobile-app-testing` |
+| Laravel 10+, Eloquent, Sanctum, Horizon, Livewire | `laravel-specialist` |
+| Python design patterns, SOLID, composition | `python-design-patterns` |
+| Python testing, pytest, fixtures, mocking, TDD | `python-testing-patterns` |
+| Go concurrency, goroutines, gRPC, microservices | `golang-pro` |
+| C#/.NET, ASP.NET, EF Core, Dapper, xUnit | `dotnet-backend-patterns` |
+| Django, DRF, ORM, caching, signals, middleware | `django-patterns` |
+| Unity 6 LTS, URP/HDRP, game development | `unity-developer` |
+| Docker, containers, multi-stage builds, compose | `docker-expert` |
+| GitHub Actions, workflows, CI/CD YAML | `github-actions-docs` |
+| FFmpeg, video/audio processing, media conversion | `ffmpeg` |
 
 ## Auto-Skills (use without waiting for slash command)
 

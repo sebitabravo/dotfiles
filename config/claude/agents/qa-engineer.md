@@ -23,7 +23,7 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(pytest:*), Bash(jest:*), Bash(vitest:*), Bash(curl:*), Bash(docker:*), WebFetch]
 context: fork
 maxTurns: 50
-skills: [e2e-testing]
+skills: [e2e-testing, mobile-app-testing, python-testing-patterns]
 effort: xhigh
 background: true
 ---

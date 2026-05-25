@@ -23,7 +23,7 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(docker:*), Bash(gh:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(curl:*), Bash(brew:*), Bash(chmod:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(ls:*), Bash(cat:*), Bash(echo:*), WebFetch]
 context: fork
 maxTurns: 40
-skills: [deployment-patterns]
+skills: [deployment-patterns, docker-expert, github-actions-docs]
 effort: xhigh
 isolation: worktree
 ---
