@@ -8,17 +8,39 @@
 
 ## Preferred CLI tools
 
-Use modern CLI tools when operating in terminal:
+Use modern CLI tools when operating in terminal. Estas son las herramientas instaladas y como usarlas:
 
-- `bat` instead of `cat`
-- `rg` instead of `grep`
-- `fd` instead of `find`
-- `sd` instead of `sed`
-- `eza` instead of `ls`
-- `jq` for JSON processing
-- `gh` for GitHub CLI operations
-- `ffmpeg` for media conversion/processing
-- `imagemagick` (magick, convert) for image manipulation
+### Navegacion y busqueda
+- `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
+- `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
+- `fd` instead of `find` — faster, gitignore-aware
+- `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
+
+### Contenido y procesamiento
+- `bat` instead of `cat` — syntax highlighting, paging, git integration
+- `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
+- `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
+- `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
+
+### Git y GitHub
+- `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
+- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configurado en .gitconfig)
+- `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
+
+### Package managers
+- `uv` instead of `pip` — `uv pip install`, `uv run`, `uv sync`
+- `bun` instead of `node`/`npm` — `bun install`, `bun run`, `bun test`
+- `brew` for macOS package management
+
+### Media
+- `ffmpeg` for media conversion, compression, processing
+- `imagemagick` (`magick`, `convert`) for image manipulation
+
+### Infra
+- `helm` for Kubernetes package management
+- `actionlint` for GitHub Actions workflow validation
+- `btop` for system monitoring (CPU, memory, disks, network)
+- `fastfetch` for system info display
 
 Install missing tools with `brew install <tool>`.
 
@@ -26,6 +48,7 @@ Install missing tools with `brew install <tool>`.
 
 - NO AI FOOTPRINT. Conventional Commits only: `feat(scope):`, `fix(scope):`, `refactor(scope):`.
 - STOP & WAIT on questions. No blind assumptions. When ambiguous: list assumptions, present alternatives, ask which.
+- ASSUMPTIONS FIRST. State assumptions explicitly before writing code. Wrong assumption = wrong code. If you can't list your assumptions, you don't understand the problem yet.
 - VERIFY FIRST. "Let me verify" before claims. Never guess config syntax, CLI flags, package names, or best practices — WebSearch or Context7 MCP before writing code when unsure.
 - EVIDENCE BEFORE CLAIMS. Never say "should work", "probably fixed", "seems fine". Run verification command, read output, confirm exit 0 / 0 failures, THEN declare success. If you didn't run it, you don't know it.
 - LEVERAGE ≠ RELY. Agents iterate fast but YOU maintain total ownership of the output. If you can't explain every change, it's not ready. "Passing CI" is not proof of correctness — it's proof the agent persuaded the pipeline.
@@ -38,7 +61,8 @@ Install missing tools with `brew install <tool>`.
 - On failure: state what failed, what was attempted. Don't retry same approach more than twice — rethink instead.
 - GOAL-DRIVEN. Define success criteria before coding. Loop until verified. "Write a test that reproduces the bug" > "Fix the bug".
 - If it works, stop. No polishing, no "while we're here" improvements.
-- Prefer targeted edits (Edit) over full rewrites (Write).
+- Prefer targeted edits (Edit) over full rewrites (Write). Never rewrite unchanged code.
+- NO DRIVE-BY REFACTORS. Touch only what the task requires. Don't improve adjacent code, don't refactor what isn't broken. Match existing style even if you'd do it differently.
 - Skip reading files >100KB unless task specifically requires them.
 - Comments in Spanish.
 

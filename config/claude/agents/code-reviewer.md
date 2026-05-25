@@ -67,6 +67,21 @@ Tag every finding with severity and confidence:
 - **Testing**: Missing edge case tests, test only happy path, mocked too aggressively
 - **SDD Traceability**: Cada R<n> del spec tiene al menos un test que lo verifica. Boundary compliance: archivos modificados coinciden con `_Boundary:_` de las tareas
 
+### Auto-Fixable Patterns
+Findings that are mechanically fixable — flag them explicitly so the main thread can apply the fix inline without re-investigation:
+
+| Pattern | Detection | Fix |
+|---|---|---|
+| Missing null guard | `const x = obj.prop.method()` without `?.` or `if (obj.prop)` check | Add `if (!obj?.prop) return/throw` before use |
+| Unused import | Import not referenced in file body | Remove the import line |
+| `==` instead of `===` | Non-null loose equality comparison | Replace with `===` |
+| Missing `await` | Promise-returning call not awaited in async function | Add `await` before the call |
+| `console.log` left in | Debug statement in production path | Remove the line |
+| Hardcoded secret pattern | `password = "..."`, `apiKey = "..."` | Replace with `process.env.VAR` |
+| Missing `key` prop | React list without `key={uniqueId}` | Add `key={item.id}` to list item |
+
+Mark these as `[AUTO]` in findings table. Include exact fix in the report so no re-investigation is needed.
+
 ## Output Format
 For every review, produce a table:
 

@@ -70,7 +70,31 @@ For every input/parameter, test:
 - **Large payload**: 10MB file, 10000 items, recursive nesting
 - **Negative**: negative quantity, negative price, reverse date range
 
-## E2E Testing
+## Exploratory Testing
+
+When test plans don't exist yet or the feature is UI-heavy, run unstructured exploration BEFORE writing structured tests:
+
+### Session-Based Exploration (SBTM)
+1. **Charter**: One sentence — what are you exploring? (e.g., "Explore checkout with expired payment methods")
+2. **Timebox**: 30-45 min max. Exploration without time limit = diminishing returns.
+3. **Tour Types** (rotate through these):
+   - **Happy Path Tour**: Walk the golden path. Note anything unexpected.
+   - **Saboteur Tour**: Actively try to break things. Malformed input, double-clicks, back button abuse, concurrent tabs.
+   - **Corner Case Tour**: Empty states, loading states, error states, edge boundaries.
+   - **Role Tour**: Switch user roles mid-flow. Anonymous → logged in → admin.
+   - **Persistence Tour**: Refresh page at every step. Close browser, reopen. Kill app mid-transaction.
+4. **Capture**: Screenshot + console errors + network failures for every anomaly.
+5. **Triage**: After timebox — classify findings as Bug / UX Issue / Performance / False Alarm.
+
+### Heuristics for UI Exploration
+- **CRUD**: Create → verify appears → edit → verify updated → delete → verify gone
+- **State transitions**: Loading → empty → error → success → loading again
+- **Back/Forward**: Browser back button at every step. Does state survive?
+- **Concurrent tabs**: Open same page in 2 tabs. Make conflicting changes. Who wins?
+- **Network conditions**: Throttle to Slow 3G. Go offline mid-operation. What breaks?
+- **Input extremes**: Paste 10MB text. Upload 100MB file. Submit 1000 items. Type emoji everywhere.
+
+Output: unstructured findings list → feed into formal Test Plan (Risk Matrix + Test Cases).
 
 ### What to E2E test (and what NOT)
 - YES: Critical user journeys (login → browse → cart → checkout)

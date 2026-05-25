@@ -8,6 +8,24 @@
     "playwright": {
       "type": "http",
       "url": "https://mcp.playwright.dev/mcp"
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://mcp.github.com/mcp"
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-postgres", "$DATABASE_URL"]
+    },
+    "brave-search": {
+      "type": "http",
+      "url": "https://mcp.brave.com/mcp"
     }
   }
 }

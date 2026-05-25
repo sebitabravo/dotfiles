@@ -14,11 +14,6 @@ approvedTools = [
   "head",
   "tail",
   "less",
-  "Get-Content",
-  "dir",
-  "type",
-  "findstr",
-  "Get-ChildItem",
   "echo"
 ]
 allowOverrides = true
@@ -32,13 +27,11 @@ approvedTools = [
   "awk",
   "perl",
   "cat",
-  "echo",
-  "Add-Content",
-  "Set-Content"
+  "echo"
 ]
 allowOverrides = true
 
 [commands.pytest]
 # Change this to your pyenv path or remove if not using pytest with pyenv
-allowed_paths = [ "$HOME/.pyenv/versions/3.11.1/lib/python3.11" ]
+allowed_paths = [ "$HOME/.pyenv/versions" ]
 allow_network = false

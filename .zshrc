@@ -73,7 +73,16 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(gitfast docker)
+plugins=(gitfast)
+
+# Compinit caching
+ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${ZSH_VERSION}"
+autoload -Uz compinit
+if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(find "$ZSH_COMPDUMP" -mtime -1 2>/dev/null) ]]; then
+  compinit -C -d "$ZSH_COMPDUMP"
+else
+  compinit -d "$ZSH_COMPDUMP"
+fi
 
 source $ZSH/oh-my-zsh.sh
 
@@ -122,17 +131,26 @@ alias less='bat'
 alias z='zoxide query -i'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
-# Pyenv — prevent race condition on simultaneous shells (Warp session restore, reboot)
-export PYENV_REHASH_TIMEOUT=5
-if [[ -f "$HOME/.pyenv/shims/.pyenv-shim" ]]; then
-  lock_age=$(( $(date +%s) - $(stat -f %m "$HOME/.pyenv/shims/.pyenv-shim") ))
-  (( lock_age > 120 )) && rm -f "$HOME/.pyenv/shims/.pyenv-shim"
-fi
-sleep $(( RANDOM % 3 ))  # jitter 0-2s para staggered rehash entre shells
-eval "$(pyenv init -)"
+# Pyenv — lazy-load shims PATH + defer init (~300ms ahorro, elimina jitter)
+export PATH="$HOME/.pyenv/shims:$PATH"
+pyenv() {
+  unfunction pyenv
+  eval "$(command pyenv init - zsh)"
+  pyenv "$@"
+}
 
 # Zoxide
 eval "$(zoxide init zsh)"
+
+# fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
+# fd as backend: faster, gitignore-aware. Ctrl-R history via atuin.
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+source <(fzf --zsh) 2>/dev/null
+
+# atuin — shell history SQLite + fuzzy search (replaces Ctrl-R)
+eval "$(atuin init zsh)" 2>/dev/null
 
 # Console Ninja
 PATH=~/.console-ninja/.bin:$PATH
@@ -147,6 +165,10 @@ export ANDROID_HOME=$HOME/Library/Android/sdk
   export PATH="$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
 }
 
+# Go Lang
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
@@ -160,9 +182,16 @@ export PATH="$HOME/.opencode/bin:$PATH"
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
   export HERD_PHP_84_INI_SCAN_DIR="$HOME/Library/Application Support/Herd/config/php/84/"
 
-# Herd NVM configuration
+# Herd NVM configuration (lazy-load)
 export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm() {
+  unfunction nvm node npm npx
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  nvm "$@"
+}
+node() { unfunction node npm npx nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; node "$@" }
+npm()  { unfunction npm node npx nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npm "$@" }
+npx()  { unfunction npx node npm nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npx "$@" }
 
 # Herd shell config
 [[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
@@ -174,6 +203,15 @@ export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# p10k transient prompt
+typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
+
+# zsh-syntax-highlighting — colorea comandos mientras escribis (debe ir al final)
+source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2>/dev/null
+
+# zsh-autosuggestions — sugerencias grises basadas en historial
+source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-autosuggestions/zsh-autosuggestions.zsh" 2>/dev/null
 
 # Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
 if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then

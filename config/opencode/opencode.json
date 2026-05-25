@@ -84,7 +84,7 @@
       "command": [
         "uv",
         "--directory",
-        "/Users/sebastian/Developer/resolve-claude-mcp",
+        "$HOME/Developer/resolve-claude-mcp",
         "run",
         "resolve-claude-mcp"
       ],
@@ -134,7 +134,6 @@
     }
   },
   "plugin": [
-    "@warp-dot-dev/opencode-warp",
     "@tarquinen/opencode-dcp@latest",
     "opencode-worktree@latest"
   ]

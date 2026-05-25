@@ -53,14 +53,40 @@ When user is wrong:
 - Two-Strike Rule: If a fix fails twice, STOP. Explain the roadblock and request a context reset.
 
 ## Preferred CLI Tools
-Use modern CLI tools when operating in terminal:
-- `bat` instead of `cat`
-- `rg` instead of `grep`
-- `fd` instead of `find`
-- `sd` instead of `sed`
-- `eza` instead of `ls`
-- `jq` for JSON processing
-- `gh` for GitHub CLI operations
+
+Use modern CLI tools when operating in terminal. Estas son las herramientas instaladas y como usarlas:
+
+### Navegacion y busqueda
+- `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
+- `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
+- `fd` instead of `find` — faster, gitignore-aware
+- `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
+
+### Contenido y procesamiento
+- `bat` instead of `cat` — syntax highlighting, paging, git integration
+- `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
+- `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
+- `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
+
+### Git y GitHub
+- `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
+- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configurado en .gitconfig)
+- `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
+
+### Package managers
+- `uv` instead of `pip` — `uv pip install`, `uv run`, `uv sync`
+- `bun` instead of `node`/`npm` — `bun install`, `bun run`, `bun test`
+- `brew` for macOS package management
+
+### Media
+- `ffmpeg` for media conversion, compression, processing
+- `imagemagick` (`magick`, `convert`) for image manipulation
+
+### Infra
+- `helm` for Kubernetes package management
+- `actionlint` for GitHub Actions workflow validation
+- `btop` for system monitoring (CPU, memory, disks, network)
+- `fastfetch` for system info display
 
 Install missing tools with `brew install <tool>`.
 

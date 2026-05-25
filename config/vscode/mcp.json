@@ -6,7 +6,7 @@
       "type": "stdio"
     },
     "engram": {
-      "command": "/opt/homebrew/bin/engram",
+      "command": "engram",
       "args": ["mcp", "--tools=agent"]
     }
   },

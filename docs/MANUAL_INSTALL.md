@@ -101,16 +101,16 @@ Estas apps se instalan desde la App Store de macOS:
 ### Node.js (con nvm)
 
 ```bash
-nvm install 20
-nvm use 20
-nvm alias default 20
+nvm install 24
+nvm use 24
+nvm alias default 24
+corepack enable pnpm
 ```
 
 ### Python (con pyenv)
 
 ```bash
-pyenv install 3.11.1 # Versión desarrollo
-pyenv install 3.14.3 # Ultima versión
+pyenv install 3.14.3
 pyenv global 3.14.3
 ```
 
@@ -148,8 +148,8 @@ opencode auth login
 ```
 
 ```bash
-npm i -g @openai/codex
-npm install -g @google/gemini-cli
+pnpm add -g @openai/codex
+pnpm add -g @google/gemini-cli
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 

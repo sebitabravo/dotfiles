@@ -33,19 +33,6 @@ echo "[OK] Full-screen toolbar animation instant"
 defaults write NSGlobalDomain NSBrowserColumnAnimationSpeedMultiplier -float 0
 echo "[OK] Column view animation disabled"
 
-# ── Teclado ──────────────────────────────────────────────────────────
-# CRÍTICO: sin esto, mantener tecla = menú acentos en vez de repetir
-defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-echo "[OK] Key repeat enabled (no accent popup on hold)"
-
-# InitialKeyRepeat: delay antes de repetir (default 15 = 225ms, mínimo real que macOS respeta)
-defaults write NSGlobalDomain InitialKeyRepeat -int 15
-echo "[OK] Key repeat delay = 225ms"
-
-# KeyRepeat: velocidad de repetición (default 2 = 30ms, 1 = 15ms)
-defaults write NSGlobalDomain KeyRepeat -int 2
-echo "[OK] Key repeat rate = 30ms"
-
 # ── Scroll ─────────────────────────────────────────────────────────
 defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
 echo "[OK] Smooth scrolling disabled"
@@ -64,9 +51,6 @@ echo "[OK] Cursor location magnification off"
 # ── Mission Control ────────────────────────────────────────────────
 defaults write com.apple.dock expose-animation-duration -float 0.1
 echo "[OK] Mission Control speed"
-
-defaults write com.apple.dock expose-group-apps -bool true
-echo "[OK] Mission Control group by app"
 
 defaults write com.apple.dock mru-spaces -bool false
 echo "[OK] Spaces never rearrange"
@@ -92,6 +76,9 @@ echo "[OK] Dock hide/show instant"
 defaults write com.apple.dock autohide-delay -float 0
 echo "[OK] Dock show delay = 0"
 
+defaults write com.apple.dock tilesize -int 48
+echo "[OK] Dock tile size = 48px"
+
 defaults write com.apple.dock mineffect -string "scale"
 echo "[OK] Dock minimize effect = scale"
 
@@ -114,10 +101,6 @@ echo "[OK] Dock scroll to Exposé"
 # Spring-load on all Dock items (not just folders)
 defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
 echo "[OK] Spring-load all Dock items"
-
-# Indicadores luminosos bajo apps abiertas
-defaults write com.apple.dock show-process-indicators -bool true
-echo "[OK] Dock process indicators"
 
 # Mostrar apps ocultas con icono translúcido
 defaults write com.apple.dock showhidden -bool true
@@ -155,6 +138,11 @@ echo "[OK] Two-finger right click"
 defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
 echo "[OK] Three-finger drag"
 
+# ── Keyboard ──────────────────────────────────────────────────────────
+defaults write NSGlobalDomain InitialKeyRepeat -int 15
+defaults write NSGlobalDomain KeyRepeat -int 2
+echo "[OK] Key repeat: delay 225ms, rate 30ms"
+
 # ── Bluetooth ──────────────────────────────────────────────────────────
 # Mejora calidad de audio en auriculares Bluetooth (default min ~40)
 defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
@@ -170,10 +158,6 @@ echo "[OK] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
 # Tiling edge-to-edge sin margen entre ventanas
 defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
 echo "[OK] WindowManager tiling no margins"
-
-# Desactiva Stage Manager (consume GPU, developers prefieren Mission Control)
-defaults write com.apple.WindowManager GloballyEnabled -bool false
-echo "[OK] Stage Manager disabled"
 
 # ── Finder ─────────────────────────────────────────────────────────
 defaults write com.apple.finder DisableAllAnimations -bool true
@@ -193,20 +177,9 @@ echo "[OK] Finder Quit menu item"
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 echo "[OK] No extension change warning"
 
-# No warning when emptying Trash
-defaults write com.apple.finder WarnOnEmptyTrash -bool false
-echo "[OK] No empty Trash warning"
-
-# Keep folders on top when sorting by name
-defaults write com.apple.finder _FXSortFoldersFirst -bool true
-echo "[OK] Folders on top"
-
 # Open folders in tabs instead of new windows
 defaults write com.apple.finder FinderSpawnTab -bool true
 echo "[OK] Finder open in tabs"
-
-defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
-echo "[OK] Finder full POSIX path in title bar"
 
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 echo "[OK] Finder search current folder"
@@ -220,6 +193,9 @@ echo "[OK] Finder status bar"
 defaults write com.apple.finder ShowPathbar -bool true
 echo "[OK] Finder path bar"
 
+defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
+echo "[OK] Finder full POSIX path in title"
+
 defaults write com.apple.finder SidebarDevicesSectionDisclosedState -bool true
 echo "[OK] Sidebar devices section"
 
@@ -228,13 +204,6 @@ echo "[OK] Sidebar places section"
 
 defaults write com.apple.finder SidebarShowingiCloudDesktop -bool false
 echo "[OK] Hide iCloud Desktop from sidebar"
-
-# Mostrar discos externos, internos, servidores y medios removibles en escritorio
-defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
-defaults write com.apple.finder ShowHardDrivesOnDesktop -bool true
-defaults write com.apple.finder ShowMountedServersOnDesktop -bool true
-defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool true
-echo "[OK] Finder show external/internal/removable drives on desktop"
 
 # Nueva ventana de Finder abre Home (no Recents)
 defaults write com.apple.finder NewWindowTarget -string "PfHm"
@@ -254,10 +223,6 @@ echo "[OK] Desktop icon positions reset"
 # Permitir seleccionar texto en Quick Look (copiar sin abrir archivo)
 defaults write com.apple.finder QLEnableTextSelection -bool true
 echo "[OK] Quick Look text selection"
-
-# Columnas auto-ajustables en vista Columnas (Finder > View Options en Tahoe)
-defaults write com.apple.finder _FXEnableColumnAutoSizing -bool true
-echo "[OK] Finder column auto-resize"
 
 # ── Network Browser ─────────────────────────────────────────────────
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
@@ -296,12 +261,6 @@ echo "[OK] Scroll bars visible on scroll"
 
 defaults write NSGlobalDomain NSTextShowsControlCharacters -bool true
 echo "[OK] Show invisible characters"
-
-defaults write NSGlobalDomain com.apple.springing.enabled -bool true
-echo "[OK] Spring-loaded folders"
-
-defaults write NSGlobalDomain com.apple.springing.delay -float 0.5
-echo "[OK] Spring-load delay = 0.5s"
 
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 echo "[OK] Auto-capitalization off"
@@ -376,25 +335,12 @@ echo "[OK] Print dialog auto-close after job"
 # ── Screensaver ─────────────────────────────────────────────────────
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
-echo "[OK] Screensaver password immediate"
+defaults write com.apple.screensaver idleTime -int 300
+echo "[OK] Screensaver password immediate (5 min idle)"
 
 # ── Screenshots ────────────────────────────────────────────────────
 defaults write com.apple.screencapture disable-shadow -bool true
 echo "[OK] Screenshot shadows off"
-
-defaults write com.apple.screencapture type -string "png"
-echo "[OK] Screenshot format = PNG"
-
-defaults write com.apple.screencapture location -string "${HOME}/Desktop"
-echo "[OK] Screenshots to Desktop"
-
-# Disable floating thumbnail preview (save directly to disk)
-defaults write com.apple.screencapture show-thumbnail -bool false
-echo "[OK] Screenshot thumbnail off"
-
-# Nombre de archivo sin timestamp (Screenshot.png en vez de Screenshot 2026-05-23 at 14.30.45.png)
-defaults write com.apple.screencapture include-date -bool true
-echo "[OK] Screenshot filenames with timestamp"
 
 # ── Global Window Restoration ────────────────────────────────────────
 # Cierra ventanas al salir de apps (inverso de System Settings → Desktop & Dock → "Close windows when quitting")
@@ -589,25 +535,12 @@ echo "[OK] Safari spelling correction off"
 defaults write com.apple.Safari AutoOpenSafeDownloads -bool false
 echo "[OK] Safari never auto-open downloads"
 
-# Security: activar advertencia de sitios fraudulentos
-defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
-echo "[OK] Safari fraudulent site warnings ON"
-
-# Auto-instalar extensiones de Safari
-defaults write com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
-echo "[OK] Safari auto-update extensions"
-
 # Desactivar AutoFill (privacidad)
 defaults write com.apple.Safari AutoFillFromAddressBook -bool false
 defaults write com.apple.Safari AutoFillPasswords -bool false
 defaults write com.apple.Safari AutoFillCreditCardData -bool false
 defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
 echo "[OK] Safari AutoFill disabled"
-
-# Security: bloquear ventanas pop-up de JavaScript
-defaults write com.apple.Safari "WebKitPreferences.javaScriptCanOpenWindowsAutomatically" -bool false
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically" -bool false
-echo "[OK] Safari popup blocking"
 
 # Security: enviar header Do Not Track
 defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
@@ -616,17 +549,6 @@ echo "[OK] Safari Do Not Track"
 # Privacidad mejorada en navegación normal (no solo private browsing)
 defaults write com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
 echo "[OK] Safari enhanced privacy in regular browsing"
-
-# Security: desactivar plugins legacy (Flash, Silverlight, Java applets)
-defaults write com.apple.Safari WebKitPluginsEnabled -bool false
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2PluginsEnabled" -bool false
-echo "[OK] Safari plugins disabled"
-
-# Security: desactivar Java (WebKit1, WebKit2, WebKit2 local files)
-defaults write com.apple.Safari WebKitJavaEnabled -bool false
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled" -bool false
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles" -bool false
-echo "[OK] Safari Java disabled"
 
 # Tab navega entre links (keyboard navigation, accesibilidad)
 defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
@@ -693,10 +615,6 @@ defaults write com.apple.iphonesimulator ShowSingleTouches -int 1
 echo "[OK] Simulator show touches"
 
 # ── Terminal ────────────────────────────────────────────────────────
-# Default encoding UTF-8
-defaults write com.apple.terminal StringEncodings -array 4
-echo "[OK] Terminal UTF-8 encoding"
-
 # Secure keyboard entry (prevents other apps from reading keystrokes)
 defaults write com.apple.Terminal SecureKeyboardEntry -bool true
 echo "[OK] Terminal secure keyboard entry"
@@ -720,15 +638,9 @@ defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 echo "[OK] TextEdit UTF-8 encoding"
 
 # ── Activity Monitor ──────────────────────────────────────────────
-defaults write com.apple.ActivityMonitor OpenMainWindow -bool true
-echo "[OK] Activity Monitor open main window on launch"
-
-defaults write com.apple.ActivityMonitor ShowCategory -int 0
-echo "[OK] Activity Monitor show all processes"
-
-# Dock icon muestra uso de CPU como gráfico
-defaults write com.apple.ActivityMonitor IconType -int 5
-echo "[OK] Activity Monitor CPU history icon"
+# Icono default en Dock (no grafico de CPU) — borrar key vieja si existe
+defaults delete com.apple.ActivityMonitor IconType 2>/dev/null || true
+echo "[OK] Activity Monitor default Dock icon"
 
 # Refresco cada 2s en vez de 5s (default)
 defaults write com.apple.ActivityMonitor UpdatePeriod -int 2
@@ -755,18 +667,8 @@ defaults write com.apple.iCal IncludeDebugMenu -bool true
 echo "[OK] Calendar debug menu"
 
 # ── Software Update ───────────────────────────────────────────────
-defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
-echo "[OK] Automatic update checks ON"
-
 defaults write com.apple.SoftwareUpdate AutomaticDownload -bool false
 echo "[OK] No automatic update downloads"
-
-# Auto-instalar parches de seguridad y datos de configuración (XProtect, MRT, etc.)
-defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
-echo "[OK] Auto-install critical security updates"
-
-defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
-echo "[OK] Auto-install XProtect/MRT data"
 
 # ── Notification Center ──────────────────────────────────────────────
 # Banners desaparecen en 3s (default ~5s)
@@ -787,22 +689,21 @@ echo "[OK] Login window show full name"
 defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 echo "[OK] Battery percentage in menu bar"
 
-# Mostrar segundos en el reloj (útil para logs y debugging)
-defaults write com.apple.menuextra.clock ShowSeconds -bool true
-defaults write com.apple.menuextra.clock ShowDayOfWeek -bool true
-defaults write com.apple.menuextra.clock ShowDate -int 1
+# Reloj minimalista: solo hora HH:mm digital, sin fecha ni segundos
 defaults write com.apple.menuextra.clock IsAnalog -bool false
-echo "[OK] Clock: digital, seconds + day + date"
+defaults write com.apple.menuextra.clock ShowSeconds -bool false
+defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false
+defaults write com.apple.menuextra.clock ShowDate -int 0
+# DateFormat para Sequoia+ (reemplaza keys individuales)
+defaults write com.apple.menuextra.clock DateFormat -string "HH:mm"
+echo "[OK] Clock: digital, minimal (HH:mm)"
 
-# Reducir spacing entre íconos de menubar (útil en MacBooks con notch)
+# Reducir spacing entre iconos de menubar (util en MacBooks con notch)
 defaults -currentHost write -globalDomain NSStatusItemSpacing -int 6
 defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 12
 echo "[OK] Menu bar icon spacing compact"
 
 # ── App Store ───────────────────────────────────────────────────────
-defaults write com.apple.commerce AutoUpdate -bool true
-echo "[OK] App Store auto-update apps"
-
 defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
 echo "[OK] App Store auto-restart apps"
 
@@ -820,6 +721,10 @@ echo "[OK] Spotlight suggestions disabled"
 defaults write com.apple.Spotlight ServerSuggestionsEnabled -bool false
 echo "[OK] Spotlight server suggestions disabled"
 
+# Ocultar icono de Spotlight en menu bar (segui accesible via Cmd+Space)
+defaults write com.apple.Spotlight MenuBarSpotlightIcon -bool false
+echo "[OK] Spotlight menu bar icon hidden"
+
 # ── Sound ──────────────────────────────────────────────────────────
 # Sin beep/pop al ajustar volumen con teclas
 defaults write -g com.apple.sound.beep.feedback -int 0
@@ -835,8 +740,7 @@ echo "[OK] ~/Library visible"
 defaults write -g NSMenuEnableActionImages -bool false
 echo "[OK] Menu item icons hidden (Liquid Glass)"
 
-
-# en Electron apps (VSCode, Slack, Discord, Cursor) bajo Tahoe
+# Desactiva AutoFill heuristic controller en Electron apps bajo Tahoe
 defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
 echo "[OK] AutoFill heuristic disabled (Tahoe perf fix)"
 
@@ -844,6 +748,7 @@ echo "[OK] AutoFill heuristic disabled (Tahoe perf fix)"
 killall Dock 2>/dev/null  && echo "[OK] Dock restarted"
 killall Finder 2>/dev/null && echo "[OK] Finder restarted"
 killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
+killall Clock 2>/dev/null || true
 killall cfprefsd 2>/dev/null   && echo "[OK] cfprefsd restarted"
 killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
 

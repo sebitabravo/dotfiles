@@ -24,12 +24,18 @@ secrets/
 
 # Archivos específicos de usuario que no deben compartirse
 .vscode/
+*.local.json
+*.local.env
 
 # OpenCode — estado local y artifacts
 .opencode/
 *.log
 
+# Codex — estado local
+.codex/
+
 # Node.js (scripts de validacion, plugins)
 node_modules/
 package-lock.json
 bun.lock
+__pycache__/

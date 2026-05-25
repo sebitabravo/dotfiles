@@ -92,7 +92,63 @@ O en una linea:
 cp ~/Developer/dotfiles/config/claude/settings.json ~/.claude/ && cp ~/Developer/dotfiles/config/claude/CLAUDE.md ~/.claude/ && cp ~/Developer/dotfiles/config/claude/statusline.sh ~/.claude/ && cp -n ~/Developer/dotfiles/config/claude/mcp-servers.template.json ~/.claude/mcp-servers.json && mkdir -p ~/.claude/{agents,skills,commands,rules} && cp -R ~/Developer/dotfiles/config/claude/agents/* ~/.claude/agents/ && cp -R ~/Developer/dotfiles/config/claude/skills/* ~/.claude/skills/ && cp -R ~/Developer/dotfiles/config/claude/commands/* ~/.claude/commands/ && cp -R ~/Developer/dotfiles/config/claude/rules/common ~/.claude/rules/common && echo 'OK - Config instalada'
 ```
 
+## Herramientas recomendadas
+
+### CodeGraph — Knowledge graph para tu codebase
+
+Indexa la codebase en un grafo semantico (SQLite + FTS5) y lo expone como MCP server. Claude consulta el grafo en vez de hacer grep/read loops.
+
+**Impacto medido** (benchmarks sobre 7 codebases reales):
+- ~57% menos tokens procesados
+- ~71% menos tool calls
+- ~46% mas rapido wall-clock time
+- ~35% mas barato
+
+19+ lenguajes, 14 frameworks. Cero config. 100% local. Respeta `.gitignore`.
+
+```bash
+# macOS/Linux
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.ps1 | iex
+```
+
+Agregar a `mcp-servers.json`:
+
+```json
+"codegraph": {
+  "type": "stdio",
+  "command": "codegraph",
+  "args": ["serve", "--mcp"]
+}
+```
+
+> CodeGraph previene el patron que mas contexto quema: `grep → read → grep → read`. Con una sola llamada MCP obtenes definiciones, callers, callees y codigo relacionado.
+
+### AgentShield — Auditoria de seguridad para config
+
+Escanea CLAUDE.md, settings.json, MCPs, hooks y agentes buscando secrets expuestos, permisos peligrosos, hook injection y mala configuracion.
+
+```bash
+npx ecc-agentshield scan              # escaneo rapido (102 reglas)
+npx ecc-agentshield scan --fix        # auto-fix de issues seguros
+npx ecc-agentshield scan --opus       # analisis profundo con 3 agentes Opus
+```
+
+### Impeccable — Detector de anti-patrones de diseño
+
+Deteccion deterministica (sin LLM, sin API key). Atrapa 24 issues: tipografia, color, spacing, motion, anti-slop patterns.
+
+```bash
+npx impeccable detect src/              # escanea directorio
+npx impeccable detect --fast --json .   # regex-only, JSON output
+npx impeccable detect https://...       # escanea URL (Puppeteer)
+```
+
 ## Plugins recomendados
+
+Ademas del marketplace oficial (`/plugin` en Claude Code), estos plugins son especialmente utiles:
 
 ```bash
 # Caveman - compresion de comunicacion ~75%
@@ -113,28 +169,6 @@ claude plugin install codex@openai-codex
 > [!WARNING]
 > El "review gate" de Codex puede crear loops largos Claude/Codex y consumir limites de uso rapidamente. Usar con precaucion.
 
-**AgentShield**: Auditoria de seguridad para tu config de Claude Code. Escanea CLAUDE.md, settings.json, MCPs, hooks y agentes buscando secrets expuestos, permisos peligrosos, hook injection y mala configuracion. Usa 3 agentes Opus en paralelo (red team / blue team / auditor). Reporte A-F con severity ratings.
-
-```bash
-npx ecc-agentshield scan              # escaneo rapido (102 reglas)
-npx ecc-agentshield scan --fix        # auto-fix de issues seguros
-npx ecc-agentshield scan --opus       # analisis profundo con 3 agentes Opus
-```
-
-> [!WARNING]
-> `--opus` lanza 3 agentes Opus 4.6 en paralelo. Consume uso rapidamente. Usar solo antes de deploy o cambios mayores de config.
-
-**Impeccable**: Deteccion deterministica de anti-patrones de diseño (sin LLM, sin API key). Atrapa 24 issues: tipografia, color, spacing, motion, anti-slop patterns. Basado en la skill de Anthropic + 27 reglas propias.
-
-```bash
-npx impeccable detect src/              # escanea directorio
-npx impeccable detect --fast --json .   # regex-only, JSON output
-npx impeccable detect https://...       # escanea URL (Puppeteer)
-```
-
-> [!NOTE]
-> Impeccable es standalone CLI, no un plugin de Claude Code. No consume context window. Util como pre-commit hook o CI check de calidad de diseño.
-
 ## Skills recomendados
 
 Instalacion opcional via `npx skills add <url>` para capacidades especificas:
@@ -149,13 +183,14 @@ Copiar `mcp-servers.template.json` a `~/.claude/mcp-servers.json` y configurar c
 
 **Regla**: maximo 8-10 MCPs activos. Cada MCP tool description consume tokens de la context window de 200k. Mas MCPs = menos espacio para tu codigo.
 
-| Server | Utilidad |
-|---|---|
-| `context7` | Documentacion actualizada de librerias |
-| `playwright` | E2E testing y web scraping |
-| `github` | PRs, issues, code search |
-| `postgres` | Consultas y schema de DB |
-| `brave-search` | Busqueda web (API key gratuita) |
+| Server | Utilidad | Setup |
+|---|---|---|
+| `context7` | Documentacion actualizada de librerias | Ninguno |
+| `codegraph` | Grafo semantico de codigo — elimina grep/read loops | `curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh \| sh` |
+| `playwright` | E2E testing y web scraping | Ninguno |
+| `github` | PRs, issues, code search | OAuth |
+| `postgres` | Consultas y schema de DB | `DATABASE_URL` en env |
+| `brave-search` | Busqueda web | `BRAVE_API_KEY` gratuita |
 
 ## Hooks
 
