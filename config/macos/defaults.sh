@@ -88,9 +88,6 @@ echo "[OK] Minimize into app icon"
 defaults write com.apple.dock show-recents -bool false
 echo "[OK] No recent apps in Dock"
 
-defaults write com.apple.dock static-only -bool true
-echo "[OK] Only running apps in Dock"
-
 defaults write com.apple.dock launchanim -bool false
 echo "[OK] App launch animation off"
 
@@ -134,10 +131,6 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightC
 defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
 echo "[OK] Two-finger right click"
 
-# Arrastre con 3 dedos (sin botón físico)
-defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
-echo "[OK] Three-finger drag"
-
 # ── Keyboard ──────────────────────────────────────────────────────────
 defaults write NSGlobalDomain InitialKeyRepeat -int 15
 defaults write NSGlobalDomain KeyRepeat -int 2
@@ -169,10 +162,6 @@ echo "[OK] Finder default list view"
 defaults write com.apple.finder AppleShowAllFiles -bool true
 echo "[OK] Finder show hidden files"
 
-# Quit menu item (Cmd+Q closes Finder)
-defaults write com.apple.finder QuitMenuItem -bool true
-echo "[OK] Finder Quit menu item"
-
 # No warning when changing file extensions
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 echo "[OK] No extension change warning"
@@ -184,8 +173,6 @@ echo "[OK] Finder open in tabs"
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 echo "[OK] Finder search current folder"
 
-defaults write com.apple.finder FXRemoveOldTrashItems -bool true
-echo "[OK] Auto-delete trash >30 days"
 
 defaults write com.apple.finder ShowStatusBar -bool true
 echo "[OK] Finder status bar"
@@ -295,26 +282,6 @@ echo "[OK] Inline predictions off"
 # Instant toolbar title rollover (proxy icon in title bar)
 defaults write NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0
 echo "[OK] Toolbar title rollover instant"
-
-# Ctrl+Cmd+click arrastra ventanas desde cualquier parte (no solo title bar)
-defaults write NSGlobalDomain NSWindowShouldDragOnGesture -bool true
-echo "[OK] Drag windows from anywhere (Ctrl+Cmd+click)"
-
-# Desactiva App Nap globalmente (evita throttling de build watchers/dev servers)
-defaults write NSGlobalDomain NSAppSleepDisabled -bool true
-echo "[OK] App Nap disabled globally"
-
-# Documentos nuevos en tabs, no ventanas separadas
-defaults write NSGlobalDomain AppleWindowTabbingMode -string "always"
-echo "[OK] New documents open in tabs"
-
-# Evita que macOS cierre apps idle automáticamente (Preview, QuickTime)
-defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
-echo "[OK] No automatic app termination"
-
-# Desactiva tracking de documentos recientes (privacidad + reduce I/O)
-defaults write NSGlobalDomain NSRecentDocumentsLimit -int 0
-echo "[OK] Recent documents tracking disabled"
 
 # ── Diálogos Save/Print ──────────────────────────────────────────────
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
@@ -615,17 +582,11 @@ defaults write com.apple.iphonesimulator ShowSingleTouches -int 1
 echo "[OK] Simulator show touches"
 
 # ── Terminal ────────────────────────────────────────────────────────
-# Secure keyboard entry (prevents other apps from reading keystrokes)
-defaults write com.apple.Terminal SecureKeyboardEntry -bool true
-echo "[OK] Terminal secure keyboard entry"
 
 # Ocultar marcas de scroll en la ventana
 defaults write com.apple.Terminal ShowLineMarks -int 0
 echo "[OK] Terminal hide line marks"
 
-# Focus follows mouse entre ventanas de Terminal (útil con múltiples ventanas)
-defaults write com.apple.Terminal FocusFollowsMouse -bool true
-echo "[OK] Terminal focus follows mouse"
 
 # ── TextEdit ────────────────────────────────────────────────────────
 # Default to plain text mode (not rich text)
@@ -667,9 +628,6 @@ defaults write com.apple.iCal IncludeDebugMenu -bool true
 echo "[OK] Calendar debug menu"
 
 # ── Software Update ───────────────────────────────────────────────
-defaults write com.apple.SoftwareUpdate AutomaticDownload -bool false
-echo "[OK] No automatic update downloads"
-
 # ── Notification Center ──────────────────────────────────────────────
 # Banners desaparecen en 3s (default ~5s)
 defaults write com.apple.notificationcenterui bannerTime -int 3
@@ -704,9 +662,6 @@ defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 12
 echo "[OK] Menu bar icon spacing compact"
 
 # ── App Store ───────────────────────────────────────────────────────
-defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
-echo "[OK] App Store auto-restart apps"
-
 # Debug menu (útil para devs: refresh cache, reset download queue)
 defaults write com.apple.appstore ShowDebugMenu -bool true
 defaults write com.apple.appstore IncludeDebugMenu -bool true
@@ -740,9 +695,6 @@ echo "[OK] ~/Library visible"
 defaults write -g NSMenuEnableActionImages -bool false
 echo "[OK] Menu item icons hidden (Liquid Glass)"
 
-# Desactiva AutoFill heuristic controller en Electron apps bajo Tahoe
-defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
-echo "[OK] AutoFill heuristic disabled (Tahoe perf fix)"
 
 # ── Reiniciar servicios ────────────────────────────────────────────
 killall Dock 2>/dev/null  && echo "[OK] Dock restarted"
