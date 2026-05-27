@@ -105,6 +105,9 @@ nvm install 24
 nvm use 24
 nvm alias default 24
 corepack enable pnpm
+npm config set ignore-scripts true
+npm config set allow-git none
+npm config set min-release-age 3
 ```
 
 ### Python (con pyenv)

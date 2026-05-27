@@ -4,6 +4,7 @@
 
 - `~/.claude/CLAUDE.md` (personal) > this file (dotfile).
 - `rules/common/*.md` — always-on rules (coding-style, git-workflow, testing, security, patterns).
+- `rules/npm-security.md` — supply chain hardening (17 practicas de lirantal/npm-security-best-practices).
 - `SKILL.md` — lazy-load only when writing/refactoring code.
 
 ## Preferred CLI tools
