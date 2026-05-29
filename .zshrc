@@ -75,7 +75,8 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(gitfast)
 
-# Compinit caching
+# Compinit caching — evita doble inicializacion (oh-my-zsh skip global)
+skip_global_compinit=1
 ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${ZSH_VERSION}"
 autoload -Uz compinit
 if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(find "$ZSH_COMPDUMP" -mtime -1 2>/dev/null) ]]; then
@@ -182,20 +183,35 @@ export PATH="$HOME/.opencode/bin:$PATH"
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
   export HERD_PHP_84_INI_SCAN_DIR="$HOME/Library/Application Support/Herd/config/php/84/"
 
-# Herd NVM configuration (lazy-load)
+# Herd NVM — PATH estático (0ms) + lazy-load nvm.sh solo cuando se necesita
+# Para auto-switch de version segun .nvmrc usa 'nvm use' manualmente, o
+# instala 'fnm'/'vfox' (Rust nativos, lazy-friendly).
 export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
-nvm() {
-  unfunction nvm node npm npx
+# Agrega bin del default al PATH inmediatamente — node disponible para scripts de pnpm global
+_nvm_default=$(cat "$NVM_DIR/alias/default" 2>/dev/null)
+if [[ -f "$NVM_DIR/alias/$_nvm_default" ]]; then
+  _nvm_default=$(cat "$NVM_DIR/alias/$_nvm_default")
+else
+  # Alias es un patron de version (ej: "24") — resolver contra versiones instaladas
+  _nvm_default=$(ls "$NVM_DIR/versions/node/" 2>/dev/null | grep "^v${_nvm_default}\." | sort -V | tail -1)
+fi
+[[ -d "$NVM_DIR/versions/node/$_nvm_default/bin" ]] && \
+  export PATH="$NVM_DIR/versions/node/$_nvm_default/bin:$PATH"
+unset _nvm_default
+_nvm_lazy_load() {
+  unfunction nvm node npm npx pnpm pnpx 2>/dev/null
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  nvm "$@"
 }
-node() { unfunction node npm npx nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; node "$@" }
-npm()  { unfunction npm node npx nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npm "$@" }
-npx()  { unfunction npx node npm nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npx "$@" }
+nvm()   { _nvm_lazy_load; nvm "$@"; }
+node()  { _nvm_lazy_load; node "$@"; }
+npm()   { _nvm_lazy_load; npm "$@"; }
+npx()   { _nvm_lazy_load; npx "$@"; }
+pnpm()  { _nvm_lazy_load; pnpm "$@"; }
+pnpx()  { _nvm_lazy_load; pnpx "$@"; }
 
-# Herd shell config
-[[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
-  builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
+# Herd shell config — DESACTIVADO (registraba chpwd hook que cargaba nvm en cada cd)
+# [[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
+#   builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
 
 # Herd PHP binary
 [[ -d "$HOME/Library/Application Support/Herd/bin" ]] && \
@@ -217,3 +233,15 @@ source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-autosuggestions/zsh-autos
 if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
   fastfetch
 fi
+
+
+# Herd injected PHP 8.4 configuration.
+export HERD_PHP_84_INI_SCAN_DIR="/Users/sebastian/Library/Application Support/Herd/config/php/84/"
+
+# pnpm
+export PNPM_HOME="/Users/sebastian/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
