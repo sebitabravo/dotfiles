@@ -656,11 +656,6 @@ defaults write com.apple.menuextra.clock ShowDate -int 0
 defaults write com.apple.menuextra.clock DateFormat -string "HH:mm"
 echo "[OK] Clock: digital, minimal (HH:mm)"
 
-# Reducir spacing entre iconos de menubar (util en MacBooks con notch)
-defaults -currentHost write -globalDomain NSStatusItemSpacing -int 6
-defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 12
-echo "[OK] Menu bar icon spacing compact"
-
 # ── App Store ───────────────────────────────────────────────────────
 # Debug menu (útil para devs: refresh cache, reset download queue)
 defaults write com.apple.appstore ShowDebugMenu -bool true

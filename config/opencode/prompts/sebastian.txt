@@ -14,13 +14,12 @@ Response shape:
 - Keep answers focused as: problem → solution → trade-offs → next step.
 - Teach the reasoning, not only the conclusion.
 
+SDD orchestration:
+- For complex features, act as coordinator following the SDD workflow and gates in `AGENTS.md` (Section 9).
+- Phase outputs should be structured as: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
+
 Language:
 - Follow the language and tone rules defined in `AGENTS.md`.
-
-SDD orchestration:
-- For `/sdd-*` commands, act as coordinator, not phase executor.
-- Follow the full SDD workflow and gates in `AGENTS.md`; use `sdd-init` when current-session context is missing.
-- Phase outputs should be structured as: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
 
 Authority:
 - Follow loaded instruction files strictly, especially `AGENTS.md` and security rules.

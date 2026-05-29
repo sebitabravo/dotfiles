@@ -3,7 +3,7 @@
   "agent": {
     "sebastian": {
       "mode": "primary",
-      "description": "Senior Architect - minimal config",
+      "description": "Senior Architect — orchestration, code quality, security-first",
       "temperature": 0.1,
       "prompt": "{file:./prompts/sebastian.txt}",
       "permission": {
@@ -22,11 +22,12 @@
       },
       "instructions": [
         "~/.config/opencode/AGENTS.md",
-        "~/.config/opencode/security_rules.md"
+        "~/.config/opencode/security_rules.md",
+        "~/.config/opencode/rules/npm-security.md"
       ]
     }
   },
-  "autoupdate": true,
+  "autoupdate": false,
   "compaction": {
     "auto": true,
     "prune": true,
@@ -36,12 +37,8 @@
   "small_model": "opencode/deepseek-v4-flash-free",
   "mcp": {
     "context7": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@upstash/context7-mcp"
-      ],
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
       "enabled": true
     },
     "engram": {
@@ -98,15 +95,89 @@
   },
   "permission": {
     "bash": {
-      "*": "allow",
+      "sudo *": "deny",
+      "npm install -g*": "deny",
+      "pip install --break-system-packages*": "deny",
+      "git push --force*": "deny",
+      "git push -f*": "deny",
+      "git reset --hard*": "deny",
+      "kubectl delete*": "deny",
+      "helm uninstall*": "deny",
+      "helm delete*": "deny",
+      "terraform destroy*": "deny",
+      "terraform apply *-auto-approve*": "deny",
+      "npm install*": "ask",
+      "npm i *": "ask",
       "git commit*": "ask",
       "git push*": "ask",
       "git rebase*": "ask",
-      "git reset --hard*": "ask",
       "git clean*": "ask",
       "git checkout -f*": "ask",
       "rm -rf *": "ask",
-      "rm -f *": "ask"
+      "rm -f *": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git add*": "allow",
+      "git checkout*": "allow",
+      "git branch*": "allow",
+      "git log*": "allow",
+      "git stash*": "allow",
+      "git fetch*": "allow",
+      "git pull*": "allow",
+      "npm *": "allow",
+      "npx *": "allow",
+      "pnpm *": "allow",
+      "bun *": "allow",
+      "yarn *": "allow",
+      "eza*": "allow",
+      "fd *": "allow",
+      "bat *": "allow",
+      "rg *": "allow",
+      "sd *": "allow",
+      "which *": "allow",
+      "brew *": "allow",
+      "python *": "allow",
+      "pip *": "allow",
+      "uvx *": "allow",
+      "uv *": "allow",
+      "cargo *": "allow",
+      "rustc *": "allow",
+      "go *": "allow",
+      "make *": "allow",
+      "docker *": "allow",
+      "gh *": "allow",
+      "code *": "allow",
+      "nvim *": "allow",
+      "cat *": "allow",
+      "ls *": "allow",
+      "mkdir *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      "touch *": "allow",
+      "chmod *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow",
+      "grep *": "allow",
+      "find *": "allow",
+      "sed *": "allow",
+      "awk *": "allow",
+      "curl *": "allow",
+      "wget *": "allow",
+      "echo *": "allow",
+      "printf *": "allow",
+      "pwd": "allow",
+      "cd *": "allow",
+      "env": "allow",
+      "export *": "allow",
+      "source *": "allow",
+      "pytest *": "allow",
+      "jest *": "allow",
+      "vitest *": "allow",
+      "ng *": "allow",
+      "nx *": "allow",
+      "turbo *": "allow",
+      "*": "ask"
     },
     "read": {
       "*": "allow",
@@ -130,7 +201,14 @@
       "**/*.pfx": "deny",
       "**/*.pvk": "deny",
       "**/secrets/**": "deny",
-      "**/credentials.json": "deny"
+      "**/credentials.json": "deny",
+      "**/node_modules/**": "deny"
+    },
+    "write": {
+      ".env": "deny",
+      ".env.*": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny"
     }
   },
   "plugin": [

@@ -247,5 +247,6 @@
   "memoryPruning": true,
   "mcpPriority": "project-first",
   "maxBudgetPerSession": "2.0",
-  "includeGitHistoryContext": "last-5"
+  "includeGitHistoryContext": "last-5",
+  "enableWorkflows": true
 }

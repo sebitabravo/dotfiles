@@ -110,13 +110,23 @@ Invoke proactively when trigger matches. Don't wait for exact command syntax. Re
 
 | Context | Path |
 |---|---|
-| Branch/PR | `~/.config/opencode/skill/branch-pr/SKILL.md` |
-| Debugging | `~/.config/opencode/skill/systematic-debugging/SKILL.md` |
-| Find Skills | `~/.config/opencode/skill/find-skills/SKILL.md` |
-| Create Skill | `~/.config/opencode/skill/skill-creator/SKILL.md` |
-| Verification | `~/.config/opencode/skill/verification-before-completion/SKILL.md` |
+| Branch/PR | `~/.config/opencode/skills/branch-pr/SKILL.md` |
+| Debugging | `~/.config/opencode/skills/systematic-debugging/SKILL.md` |
+| Find Skills | `~/.config/opencode/skills/find-skills/SKILL.md` |
+| Create Skill | `~/.config/opencode/skills/skill-creator/SKILL.md` |
+| Verification | `~/.config/opencode/skills/verification-before-completion/SKILL.md` |
 
 **Nota**: Las skills de frameworks (React, Next.js, TypeScript, etc.) se instalan por proyecto según necesidad.
+
+### Skills (proactivos — invocar sin esperar slash command)
+
+| Context | Skill |
+|---|---|
+| Commit, commit message, staged changes | `branch-pr` |
+| PR review, code review, review diff | `verification-before-completion` |
+| Debugging, errors, test failures | `systematic-debugging` |
+| Skill discovery | `find-skills` |
+| Skill creation | `skill-creator` |
 
 
 
@@ -124,8 +134,8 @@ Invoke proactively when trigger matches. Don't wait for exact command syntax. Re
 
 Before acting, determine the task size to avoid over-engineering and token waste. Do NOT use heavy workflows for simple tasks.
 
-- **Trivial/Small Tasks (e.g., "Hello World", typos, single-file tweaks):** Execute inline immediately. NO subagent swarms. NO SDD workflow. Prioritize speed and token efficiency.
-- **Substantial/Complex Tasks (New features, architecture changes, multi-file refactors):** Use the full SDD workflow and delegate research.
+- **Trivial/Small Tasks (e.g., "Hello World", typos, single-file tweaks):** Execute inline immediately. NO subagent swarms. Prioritize speed and token efficiency.
+- **Substantial/Complex Tasks (New features, architecture changes, multi-file refactors):** Delegate research, plan inline, then implement with verification gates.
 
 | Action | Inline | Delegate |
 |---|---|---|
@@ -200,7 +210,8 @@ Llamar a `mem_save` INMEDIATAMENTE después de cualquiera de estos eventos:
 | Nueva convención o patrón | Formato de commits, estructura de carpetas, naming |
 | Descubrimiento o gotcha | "La versión X de esta lib rompe con Node Y" |
 | Configuración o setup | Nuevo MCP server, tool, hook, variable de entorno |
-| Feature completado | SDD feature con artifacts en `specs/{change}/` |
+| Feature completado | Feature shippeado, decisión de scope, gotchas descubiertos |
+| SDD feature archivado | Artifacts en `specs/{change}/` movidos a `specs/archive/{change}/` |
 | Preferencia del usuario | "No me gusta X", "siempre usá Y", "prefiero Z" |
 | API hallucination detectada | "Documentación dice X pero el comportamiento real es Y" |
 | Roadblock o Two-Strike Rule | Fix falló 2 veces, documentar el bloqueo |
@@ -277,12 +288,13 @@ On every new session, follow this boot order:
 
 1. Read this `AGENTS.md` — global rules, hierarchy, tone, output format.
 2. Read `security_rules.md` — non-negotiable security rules.
-3. Read `rules/common/*.md` if present — security, coding-style, git-workflow, testing, patterns.
-4. Detect project stack (`package.json`, `composer.json`, `requirements.txt`, etc.).
-5. If project has its own `CLAUDE.md` or `AGENTS.md`, read it — it overrides this file.
-6. Check `skill-registry.md`. If stale/missing, run `opencode skill update`.
-7. Load matching skills before writing code.
-8. Search Engram for prior context on this project/task.
+3. Read `rules/npm-security.md` — supply chain hardening (17 practices).
+4. Read `rules/common/*.md` if present — security, coding-style, git-workflow, testing, patterns.
+5. Detect project stack (`package.json`, `composer.json`, `requirements.txt`, etc.).
+6. If project has its own `CLAUDE.md` or `AGENTS.md`, read it — it overrides this file.
+7. Check `skill-registry.md`. If stale/missing, run `opencode skill update`.
+8. Load matching skills before writing code.
+9. Search Engram for prior context on this project/task.
 
 ## 16) Flow
 
@@ -297,10 +309,9 @@ On every new session, follow this boot order:
 Al finalizar una sesión:
 
 1. **Verificación**: correr tests, linters o type-checkers relevantes. Confirmar exit 0.
-2. **SDD artifacts**: si se completó un feature SDD, asegurar que todos los artifacts estén en `specs/{change}/`.
-3. **Limpieza**: remover archivos temporales, debug statements, TODOs colgados, console.log.
-4. **Memoria**: `mem_session_summary` con Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
-5. **Repo limpio**: sin artifacts temporales, sin branches muertos locales, sin cambios sin commitear (a menos que sea intencional).
+2. **Limpieza**: remover archivos temporales, debug statements, TODOs colgados, console.log.
+3. **Memoria**: `mem_session_summary` con Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
+4. **Repo limpio**: sin artifacts temporales, sin branches muertos locales, sin cambios sin commitear (a menos que sea intencional).
 
 Si algo queda pendiente, declararlo explícitamente en el summary y en `mem_save`.
 
@@ -309,6 +320,18 @@ Si algo queda pendiente, declararlo explícitamente en el summary y en `mem_save
 Invoke specialized agents PROACTIVELY when the task matches their domain. Use subagent_type parameter in Agent tool.
 
 Independent operations: run agents in parallel (max 3). Trivial tasks (typo, 1-line fix): execute inline, don't delegate.
+
+### Permission Model (per-agent)
+
+OpenCode permissions are NOT fully transitive primary → subagent (known issues opencode-ai/opencode#12566, #20549). Each subagent declares its own `permission:` block in `agents/<name>.md`. The legacy `tools: { write, edit, bash }` boolean field is deprecated — use `permission: { write, edit, bash }` with `allow` / `deny` / `ask` values (globs supported for `bash`). All 22 subagents migrated 2026-05-28.
+
+| Profile | write | edit | bash | Agents |
+|---|---|---|---|---|
+| Analyst (no shell) | `allow` | `allow` | `deny` | ceo-strategist, cfo-finance, customer-success, hr-people-ops, legal-compliance, marketing-strategist, operations-manager, product-manager, sales-representative, technical-writer, ui-ux-designer |
+| Engineer (shell allowlist) | `allow` | `allow` | globs + `"*": "ask"` | backend-architect, data-analyst, debugger, deployment-engineer, frontend-developer, observability-engineer, performance-engineer, qa-engineer, security-auditor, vulnerability-hunter |
+| Reviewer (read-only) | `deny` | `deny` | `git diff*`, `git log*`, `git show*`, `rg *` allowed; rest `ask` | code-reviewer |
+
+`sebastian.permission.task = "*: allow"` lets the primary dispatch any subagent; the subagent's own `permission:` block then governs what that subagent can actually do.
 
 ### Agent Catalog
 
@@ -329,6 +352,13 @@ Independent operations: run agents in parallel (max 3). Trivial tasks (typo, 1-l
 | `ui-ux-designer` | Visual design, UX flows, accessibility, design systems (hermano con `frontend-developer` — diseña primero, frontend-developer ejecuta después) | UI design, layout, "design a dashboard", "review accessibility", "create a design system" |
 | `data-analyst` | Metrics, EDA, A/B testing, dashboards, statistical rigor | "analyze this data", "is this A/B test significant?", "build a dashboard", "cohort analysis", "find insights in CSV" |
 | `operations-manager` | SOPs, vendor evaluation, process design, project management | "document our process", "evaluate vendors", "write an SOP", "project status report", "optimize workflow" |
+| `ceo-strategist` | Business strategy, pivots, vision, fundraising | "business model", "market analysis", "should we pivot", "fundraising strategy", "competitive analysis" |
+| `cfo-finance` | Financial modeling, runway, pricing, tax | "financial model", "burn rate", "runway", "pricing strategy", "unit economics", "LTV/CAC" |
+| `legal-compliance` | Contracts, GDPR, HIPAA, SOC2, privacy | "GDPR compliance", "contract review", "privacy policy", "NDA", "SOC2", "regulatory" |
+| `sales-representative` | Discovery calls, proposals, objection handling, battlecards | "discovery call", "proposal", "objection handling", "battlecard", "sales strategy" |
+| `marketing-strategist` | Positioning, GTM, content, SEO, brand | "marketing plan", "content strategy", "SEO", "brand positioning", "growth strategy" |
+| `hr-people-ops` | Hiring, JDs, onboarding, culture, policies | "job description", "interview framework", "onboarding", "culture", "hiring plan" |
+| `customer-success` | Onboarding, health scores, churn, retention | "churn analysis", "customer health", "retention strategy", "NPS", "expansion revenue" |
 
 ### Agent Orchestration (multi-agent patterns)
 
@@ -338,7 +368,12 @@ Single-agent triggers → ver catalog above. Multi-agent patterns:
 |---|---|---|
 | UI component, layout, CSS, responsive | `ui-ux-designer` + `frontend-developer` | Sequential (hermanos — diseño primero, implementación después) |
 | Full PR review, quality, security | `code-reviewer` + `security-auditor` | Parallel |
-| Complex feature, new endpoint | SDD Flow: `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` | SDD phases (Section 9) |
+| Business strategy, fundraising | `ceo-strategist` + `cfo-finance` | Sequential (strategy first, financials second) |
+| Contract/legal review | `legal-compliance` + `security-auditor` | Parallel |
+| Sales enablement | `sales-representative` + `marketing-strategist` | Parallel |
+| Customer lifecycle | `customer-success` + `data-analyst` | Sequential (data first, strategy second) |
+| Hiring process | `hr-people-ops` + `technical-writer` | Sequential (role first, JD second) |
+| Complex feature, new endpoint | `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` | Sequential (spec → design → implement → review) |
 
 ### Feature Workflow (SDD)
 Trigger: "crea un feature X", "nuevo feature: X", "quiero construir X"
@@ -353,14 +388,14 @@ Read `specs/{change}/`, detect phase, execute or report progress.
 ## 19) Hard Rules (Non-Negotiable)
 
 1. **One feature at a time.** Don't mix tasks from different features. See Section 2 (Kitchen Sink).
-2. **Never skip the spec phase** for SDD features. Principal stops at ⏸ HUMAN GATE until approved. See Section 9.
-3. **Don't declare `done` without green tests.** Run verification, confirm exit 0, only then close. See Section 13.
-4. **If you don't know, search `docs/` or `templates/`** before improvising.
-5. **Leave the repo clean on session close.** No temporary artifacts, no dangling TODOs. See Section 17.
+2. **Never skip the spec phase** for SDD features. The principal stops at `spec_ready` until the human approves. See Section 9.
+3. **Don't declare `done` without green tests.** Run verification, confirm exit 0, only then close. See Section 12.
+4. **If you don't know, search `docs/`, `templates/` or existing patterns** before improvising.
+5. **Leave the repo clean on session close.** No temporary artifacts, no dangling TODOs. See Section 16.
 
 ## 20) Blockers
 
-If stuck: re-read the relevant section of `templates/`. If a tool doesn't behave as expected, don't invent a workaround — document the blocker and stop the session.
+If stuck: re-read the relevant section of this `AGENTS.md`, project `CLAUDE.md`, or `templates/` (for SDD artifacts). If a tool doesn't behave as expected, don't invent a workaround — document the blocker and stop the session.
 
 ## 21) Final mandate
 
