@@ -68,7 +68,6 @@
   "git.enableSmartCommit": true,
   "git.confirmSync": false,
   "git.blame.editorDecoration.enabled": true,
-  "gitlens.home.preview.enabled": false,
   "gitlens.hovers.currentLine.over": "line",
   "gitlens.hovers.currentLine.details": false,
   "gitlens.codeLens.recentChange.enabled": false,
@@ -99,8 +98,6 @@
   "chat.agent.maxRequests": 100,
   "github.copilot.chat.localeOverride": "es",
   "github.copilot.chat.codesearch.enabled": true,
-  "github.copilot.chat.editor.temporalContext.enabled": true,
-  "github.copilot.chat.edits.temporalContext.enabled": true,
   "git.ignoreRebaseWarning": true,
   "security.promptForLocalFileProtocolHandling": false,
   "editor.accessibilitySupport": "off",
@@ -146,7 +143,6 @@
   "path-intellisense.autoSlashAfterDirectory": true,
   "path-intellisense.extensionOnImport": true,
   "path-intellisense.showHiddenFiles": false,
-  "thunder-client.requestTimeout": 30000,
   "prettier.jsxSingleQuote": true,
   "prettier.proseWrap": "always",
   "prettier.singleAttributePerLine": true,
@@ -171,7 +167,7 @@
     "**/*.min.*",
     "**/*.map",
     "**/.next/**",
-    "**/.git/**",
+    "**/.git/**"
   ],
   "emmet.includeLanguages": {
     "javascript": "javascriptreact",
@@ -180,7 +176,7 @@
   },
   "emmet.syntaxProfiles": {
     "javascript": "jsx",
-    "typescript": "tsx",
+    "typescript": "tsx"
   },
   "github.copilot.enable": {
     "*": true,
@@ -212,7 +208,7 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
+    "editor.tabSize": 2
   },
   "[python]": {
     "diffEditor.ignoreTrimWhitespace": false,
@@ -223,10 +219,10 @@
   },
   "[php]": {
     "editor.tabSize": 4,
-    "editor.formatOnPaste": true,
+    "editor.formatOnPaste": true
   },
   "[html]": {
-    "editor.tabSize": 2,
+    "editor.tabSize": 2
   },
   "[markdown]": {
     "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
@@ -273,7 +269,7 @@
     "**/.turbo/**": true,
     "**/.astro/**": true,
     "**/.vercel/**": true,
-    "**/coverage/**": true,
+    "**/coverage/**": true
   },
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.js",
@@ -324,7 +320,7 @@
     "type_traits": "cpp",
     ".prettierrc": "json",
     ".dev.vars": "dotenv",
-    "*.css": "tailwindcss",
+    "*.css": "tailwindcss"
   },
   "editor.quickSuggestions": {
     "strings": true
@@ -351,7 +347,7 @@
     ".env.local": "gear",
     ".env.example": "gear",
     "vitest.config.*.ts": "vite",
-    "README.md": "readme",
+    "README.md": "readme"
   },
   "tailwindCSS.experimental.classRegex": [
     [
@@ -369,7 +365,7 @@
   },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.fixAll.markdownlint": "explicit",
+    "source.fixAll.markdownlint": "explicit"
   },
   "eslint.validate": [
     "javascript",
@@ -384,8 +380,7 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/Thumbs.db": true,
-    //"node_modules": true
+    "**/Thumbs.db": true
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
@@ -507,7 +502,7 @@
       "border": "1px solid #FFA500",
       "borderRadius": "2px",
       "isWholeLine": false
-    },
+    }
   ],
   "terminal.integrated.env.osx": {},
   "terminal.integrated.env.windows": {},
@@ -542,13 +537,11 @@
   "github.copilot.chat.languageContext.fix.typescript.enabled": true,
   "github.copilot.chat.languageContext.inline.typescript.enabled": true,
   "github.copilot.chat.languageContext.typescript.includeDocumentation": true,
-  "github.copilot.chat.anthropic.thinking.maxTokens": 64000,
   "terminal.integrated.suggest.quickSuggestions": {
     "commands": "on",
     "arguments": "on",
     "unknown": "on"
   },
-  "github.copilot.chat.anthropic.thinking.enabled": true,
   "github.copilot.chat.anthropic.tools.websearch.enabled": true,
   "github.copilot.chat.anthropic.tools.websearch.userLocation": null,
   "github.copilot.chat.notebook.enhancedNextEditSuggestions.enabled": true,
@@ -558,4 +551,27 @@
       "text": "Use conventional commits (feat, fix, docs, chore, refactor)"
     }
   ],
+  "gitlens.ai.model": "vscode",
+  "gitlens.ai.vscode.model": "copilot:gpt-4.1",
+  "intelephense.environment.phpVersion": "8.4.0",
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/vendor/**/{Tests,tests}/**",
+    "**/storage/**",
+    "**/cache/**"
+  ],
+  "intelephense.telemetry.enabled": false,
+  "versionlens.suggestions.showOnStartup": true,
+  "versionlens.suggestions.showVulnerabilities": true,
+  "versionlens.caching.duration": 5,
+  "markdownlint.config": {
+    "MD013": false,
+    "MD033": false,
+    "MD041": false,
+    "MD024": {
+      "siblings_only": true
+    }
+  },
+  "geminicodeassist.inlineSuggestions.enableAuto": false,
+  "http.systemCertificates": true
 }

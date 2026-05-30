@@ -16,11 +16,11 @@
 - `src/{{file}}.ts` — {{what_changed}}
 - `tests/{{file}}.test.ts` — {{what_changed}}
 
-**Notes:** <!-- Gotchas, decisiones, desviaciones del spec -->
+**Notes:** <!-- Gotchas, decisions, deviations from the spec -->
 
 ---
 
-<!-- Agregar mas batches a medida que se completan -->
+<!-- Add more batches as they are completed -->
 
 ## Current State
 
@@ -35,5 +35,5 @@
 
 ## Implementation Notes
 
-<!-- Propagar aprendizajes de tasks tempranas a tasks tardias -->
-<!-- e.g.: "T1: Redis cache requiere serializacion manual para tipos Date" -->
+<!-- Propagate learnings from early tasks to later tasks -->
+<!-- e.g.: "T1: Redis cache requires manual serialization for Date types" -->

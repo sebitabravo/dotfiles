@@ -9,23 +9,23 @@
 
 ## Intent
 
-<!-- Problema que resuelve. Por que ahora. Un parrafo. -->
+<!-- Problem it solves. Why now. One paragraph. -->
 
 ## Scope
 
 ### In
-- <!-- Lo que SI se construye -->
+- <!-- What IS built -->
 
 ### Out
-- <!-- Lo que NO se construye -->
+- <!-- What is NOT built -->
 
 ## Approach
 
-<!-- Como: patrones, herramientas, direccion de arquitectura. Que NO hacer. -->
+<!-- How: patterns, tools, architecture direction. What NOT to do. -->
 
 ## Rationale
 
-<!-- Por que este approach sobre alternativas. Alternativas consideradas y rechazadas. -->
+<!-- Why this approach over alternatives. Alternatives considered and rejected. -->
 
 | Alternative | Why Rejected |
 |---|---|
@@ -34,7 +34,7 @@
 
 ## Affected Areas
 
-<!-- Areas del codebase que esto toca. Modulos afectados, entry points, tests existentes. -->
+<!-- Areas of the codebase this touches. Affected modules, entry points, existing tests. -->
 
 ## References
 

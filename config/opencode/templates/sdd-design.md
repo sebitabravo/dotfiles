@@ -16,8 +16,8 @@
 ## Architecture
 
 ```
-<!-- Diagrama de componentes/directorios afectados -->
-<!-- Usar Mermaid cuando aplique: -->
+<!-- Diagram of affected components/directories -->
+<!-- Use Mermaid when applicable: -->
 <!--
 graph TD
     A[Controller] --> B[Service]
@@ -27,10 +27,10 @@ graph TD
 
 ## Data Model
 
-<!-- Interfaces, tipos, esquemas DB. SIN logica de negocio aca. -->
+<!-- Interfaces, types, DB schemas. NO business logic here. -->
 
 ```typescript
-// Ejemplo: tipos/interfaces nuevos o modificados
+// Example: new or modified types/interfaces
 interface {{NAME}} {
   {{FIELD}}: {{TYPE}};
 }
@@ -38,7 +38,7 @@ interface {{NAME}} {
 
 ## File Structure Plan
 
-<!-- Archivos a crear/modificar. Esto define boundaries para las tasks. -->
+<!-- Files to create/modify. This defines boundaries for the tasks. -->
 
 ```
 src/
@@ -61,4 +61,4 @@ tests/
 
 ## References
 
-- <!-- Patrones existentes en el codebase, docs externos, APIs -->
+- <!-- Existing patterns in the codebase, external docs, APIs -->

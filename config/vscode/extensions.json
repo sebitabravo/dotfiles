@@ -9,7 +9,18 @@
     "davidanson.vscode-markdownlint",
     "christian-kohler.path-intellisense",
     "yoavbls.pretty-ts-errors",
-    "ms-vscode.live-server"
+    "ms-vscode.live-server",
+    "pflannery.vscode-versionlens",
+    "kisstkondoros.vscode-gutter-preview"
+  ],
+  "theme": [
+    "zhuangtongfa.material-theme",
+    "miguelsolorio.symbols",
+    "miguelsolorio.fluent-icons"
+  ],
+  "tools": [
+    "wallabyjs.console-ninja",
+    "wix.vscode-import-cost"
   ],
   "python": [
     "ms-python.python",
@@ -21,18 +32,46 @@
   "php-laravel": [
     "bmewburn.vscode-intelephense-client",
     "amiralizadeh9480.laravel-extra-intellisense",
-    "onecentlin.laravel-blade",
-    "codingyu.laravel-goto-view",
-    "stef-k.laravel-goto-controller",
     "shufo.vscode-blade-formatter"
   ],
   "frontend": [
     "bradlc.vscode-tailwindcss",
     "astro-build.astro-vscode",
-    "dsznajder.es7-react-js-snippets",
     "vue.volar"
   ],
-  "copilot": [
-    "github.copilot-chat"
+  "android": [
+    "fwcd.kotlin",
+    "redhat.java"
+  ],
+  "apple": [
+    "swiftlang.swift-vscode",
+    "llvm-vs-code-extensions.lldb-dap"
+  ],
+  "dotnet": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "visualstudiotoolsforunity.vstuc"
+  ],
+  "go": [
+    "golang.go"
+  ],
+  "remote": [
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-ssh-edit",
+    "ms-vscode.remote-explorer"
+  ],
+  "speech": [
+    "ms-vscode.vscode-speech"
+  ],
+  "ai": [
+    "anthropic.claude-code",
+    "google.geminicodeassist",
+    "openai.chatgpt"
+  ],
+  "jupyter": [
+    "ms-toolsai.jupyter",
+    "ms-toolsai.jupyter-keymap",
+    "ms-toolsai.jupyter-renderers"
   ]
 }

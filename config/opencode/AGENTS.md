@@ -59,23 +59,23 @@ When user is wrong:
 
 ## 6) Preferred CLI tools
 
-Use modern CLI tools when operating in terminal. Estas son las herramientas instaladas y como usarlas:
+Use modern CLI tools when operating in terminal. These are the installed tools and how to use them:
 
-### Navegacion y busqueda
+### Navigation and search
 - `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
 - `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
 - `fd` instead of `find` — faster, gitignore-aware
 - `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
 
-### Contenido y procesamiento
+### Content and processing
 - `bat` instead of `cat` — syntax highlighting, paging, git integration
 - `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
 - `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
 - `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
 
-### Git y GitHub
+### Git and GitHub
 - `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
-- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configurado en .gitconfig)
+- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configured in .gitconfig)
 - `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
 
 ### Package managers
@@ -116,9 +116,9 @@ Invoke proactively when trigger matches. Don't wait for exact command syntax. Re
 | Create Skill | `~/.config/opencode/skills/skill-creator/SKILL.md` |
 | Verification | `~/.config/opencode/skills/verification-before-completion/SKILL.md` |
 
-**Nota**: Las skills de frameworks (React, Next.js, TypeScript, etc.) se instalan por proyecto según necesidad.
+**Note**: Framework skills (React, Next.js, TypeScript, etc.) are installed per project as needed.
 
-### Skills (proactivos — invocar sin esperar slash command)
+### Skills (proactive — invoke without waiting for slash command)
 
 | Context | Skill |
 |---|---|
@@ -152,7 +152,7 @@ Core rule: if it inflates context without clear benefit, delegate.
 
 For complex tasks, follow SDD phases. DAG: `explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-Artifacts en `specs/{change-name}/`. Templates en `templates/`.
+Artifacts in `specs/{change-name}/`. Templates in `templates/`.
 
 ### Phase 0: Init Check
 Verify `specs/.sdd-init.md`. If missing: create `specs/`, detect stack + test runner, save init with `strict_tdd`.
@@ -163,13 +163,13 @@ Read relevant codebase. Identify constraints, coupling, existing patterns. Outpu
 ### Phase 2: Propose
 One-pager with problem, approach, trade-offs, risks. Template: `templates/sdd-proposal.md`. Output: `specs/{change}/proposal.md`.
 
-**⏸ HUMAN GATE: ¿Propuesta aprobada? No continuar sin confirmación explícita.**
+**⏸ HUMAN GATE: Proposal approved? Do not continue without explicit confirmation.**
 
 ### Phase 3: Spec + Design (parallel)
 - **Spec**: Functional requirements with EARS notation. Template: `templates/sdd-requirements.md`. Output: `specs/{change}/requirements.md`.
 - **Design**: ADR + data model + file plan + architecture decisions. Template: `templates/sdd-design.md`. Output: `specs/{change}/design.md`.
 
-**⏸ HUMAN GATE: ¿Spec y diseño aprobados? No continuar sin confirmación explícita.**
+**⏸ HUMAN GATE: Spec and design approved? Do not continue without explicit confirmation.**
 
 ### Phase 4: Tasks
 Break spec+design into ordered T<n> tasks. Each with: `_Boundary:_`, `_Depends:_`, `_TDD:_ RED → GREEN → REFACTOR`. Template: `templates/sdd-tasks.md`. Output: `specs/{change}/tasks.md`.
@@ -193,43 +193,43 @@ You have access to a persistent, cross-project memory system via the **Engram MC
 
 ### Proactive Searching
 
-Antes de tomar decisiones, buscar en Engram (`mem_search`, `mem_context`):
-- Al entrar a un proyecto nuevo o conocido.
-- Antes de decisiones de arquitectura, convenciones o refactors grandes.
-- Cuando el usuario menciona algo que ya se trabajó antes ("¿te acordás de...?", "la vez pasada...").
-- Al iniciar sesión: `mem_context` para recuperar estado de sesiones anteriores.
+Before making decisions, search Engram (`mem_search`, `mem_context`):
+- When entering a new or known project.
+- Before architecture decisions, conventions, or large refactors.
+- When the user mentions something already worked on before ("¿te acordás de...?", "la vez pasada...").
+- At session start: `mem_context` to recover state from previous sessions.
 
-### Proactive Saving — disparadores
+### Proactive Saving — triggers
 
-Llamar a `mem_save` INMEDIATAMENTE después de cualquiera de estos eventos:
+Call `mem_save` IMMEDIATELY after any of these events:
 
-| Disparador | Ejemplo |
+| Trigger | Example |
 |---|---|
-| Decisión de arquitectura | Elegir JWT sobre sesiones, monorepo vs polyrepo |
-| Bug resuelto (con root cause) | "El deadlock era por orden de locks en transactions" |
-| Nueva convención o patrón | Formato de commits, estructura de carpetas, naming |
-| Descubrimiento o gotcha | "La versión X de esta lib rompe con Node Y" |
-| Configuración o setup | Nuevo MCP server, tool, hook, variable de entorno |
-| Feature completado | Feature shippeado, decisión de scope, gotchas descubiertos |
-| SDD feature archivado | Artifacts en `specs/{change}/` movidos a `specs/archive/{change}/` |
-| Preferencia del usuario | "No me gusta X", "siempre usá Y", "prefiero Z" |
-| API hallucination detectada | "Documentación dice X pero el comportamiento real es Y" |
-| Roadblock o Two-Strike Rule | Fix falló 2 veces, documentar el bloqueo |
+| Architecture decision | Choosing JWT over sessions, monorepo vs polyrepo |
+| Bug resolved (with root cause) | "The deadlock was caused by lock ordering in transactions" |
+| New convention or pattern | Commit format, folder structure, naming |
+| Discovery or gotcha | "Version X of this lib breaks with Node Y" |
+| Configuration or setup | New MCP server, tool, hook, environment variable |
+| Feature completed | Feature shipped, scope decision, gotchas discovered |
+| SDD feature archived | Artifacts in `specs/{change}/` moved to `specs/archive/{change}/` |
+| User preference | "No me gusta X", "siempre usá Y", "prefiero Z" |
+| API hallucination detected | "Docs say X but real behavior is Y" |
+| Roadblock or Two-Strike Rule | Fix failed twice, document the blocker |
 
 ### Payload Structure
 
-Cada `mem_save` debe incluir:
-- **What**: qué se hizo o descubrió (una línea).
-- **Why**: razonamiento, request del usuario, o problema que lo motivó.
-- **Where**: archivos/paths afectados.
-- **Learned**: gotchas, edge cases, decisiones no obvias (omitir si no hay).
+Each `mem_save` must include:
+- **What**: what was done or discovered (one line).
+- **Why**: reasoning, user request, or problem that motivated it.
+- **Where**: affected files/paths.
+- **Learned**: gotchas, edge cases, non-obvious decisions (omit if none).
 
 ### Session Summary
 
-Al final de sesiones complejas, llamar a `mem_session_summary` con:
+At the end of complex sessions, call `mem_session_summary` with:
 - Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
 
-**Self-check después de cada tarea**: "¿Tomé una decisión, fixeé un bug, aprendí algo, o establecí una convención? Si sí → `mem_save` AHORA."
+**Self-check after each task**: "Did I make a decision, fix a bug, learn something, or establish a convention? If yes → `mem_save` NOW."
 
 ## 11) Compaction recovery protocol
 
@@ -306,14 +306,14 @@ On every new session, follow this boot order:
 
 ## 17) Session Close
 
-Al finalizar una sesión:
+At session close:
 
-1. **Verificación**: correr tests, linters o type-checkers relevantes. Confirmar exit 0.
-2. **Limpieza**: remover archivos temporales, debug statements, TODOs colgados, console.log.
-3. **Memoria**: `mem_session_summary` con Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
-4. **Repo limpio**: sin artifacts temporales, sin branches muertos locales, sin cambios sin commitear (a menos que sea intencional).
+1. **Verification**: run relevant tests, linters, or type-checkers. Confirm exit 0.
+2. **Cleanup**: remove temporary files, debug statements, dangling TODOs, console.log.
+3. **Memory**: `mem_session_summary` with Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
+4. **Clean repo**: no temporary artifacts, no dead local branches, no uncommitted changes (unless intentional).
 
-Si algo queda pendiente, declararlo explícitamente en el summary y en `mem_save`.
+If anything remains pending, declare it explicitly in the summary and in `mem_save`.
 
 ## 18) Agent Selection (when to use specialized subagents)
 
@@ -349,7 +349,7 @@ OpenCode permissions are NOT fully transitive primary → subagent (known issues
 | `security-auditor` | Auth, tokens, DevSecOps, threat modeling | Auth logic, JWT, OAuth, permissions, "is this secure?", "audit auth" |
 | `vulnerability-hunter` | Pentesting, exploit chains, red team, secrets discovery | "hacele pentesting a X", "encontrame vulnerabilidades", "exploit this", "find secrets" |
 | `technical-writer` | Docs, READMEs, ADRs, changelogs, guides | "documentá X", "escribí un README", "create an ADR", "write changelog" |
-| `ui-ux-designer` | Visual design, UX flows, accessibility, design systems (hermano con `frontend-developer` — diseña primero, frontend-developer ejecuta después) | UI design, layout, "design a dashboard", "review accessibility", "create a design system" |
+| `ui-ux-designer` | Visual design, UX flows, accessibility, design systems (sibling of `frontend-developer` — designs first, frontend-developer executes after) | UI design, layout, "design a dashboard", "review accessibility", "create a design system" |
 | `data-analyst` | Metrics, EDA, A/B testing, dashboards, statistical rigor | "analyze this data", "is this A/B test significant?", "build a dashboard", "cohort analysis", "find insights in CSV" |
 | `operations-manager` | SOPs, vendor evaluation, process design, project management | "document our process", "evaluate vendors", "write an SOP", "project status report", "optimize workflow" |
 | `ceo-strategist` | Business strategy, pivots, vision, fundraising | "business model", "market analysis", "should we pivot", "fundraising strategy", "competitive analysis" |
@@ -362,11 +362,11 @@ OpenCode permissions are NOT fully transitive primary → subagent (known issues
 
 ### Agent Orchestration (multi-agent patterns)
 
-Single-agent triggers → ver catalog above. Multi-agent patterns:
+Single-agent triggers → see catalog above. Multi-agent patterns:
 
 | Trigger | Agents | Mode |
 |---|---|---|
-| UI component, layout, CSS, responsive | `ui-ux-designer` + `frontend-developer` | Sequential (hermanos — diseño primero, implementación después) |
+| UI component, layout, CSS, responsive | `ui-ux-designer` + `frontend-developer` | Sequential (siblings — design first, implementation after) |
 | Full PR review, quality, security | `code-reviewer` + `security-auditor` | Parallel |
 | Business strategy, fundraising | `ceo-strategist` + `cfo-finance` | Sequential (strategy first, financials second) |
 | Contract/legal review | `legal-compliance` + `security-auditor` | Parallel |
@@ -378,7 +378,7 @@ Single-agent triggers → ver catalog above. Multi-agent patterns:
 ### Feature Workflow (SDD)
 Trigger: "crea un feature X", "nuevo feature: X", "quiero construir X"
 
-Execute SDD Flow (Section 9): `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`. UI-heavy features: add `ui-ux-designer` + `frontend-developer` (hermanos — ui-ux-designer primero, frontend-developer implementa).
+Execute SDD Flow (Section 9): `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`. UI-heavy features: add `ui-ux-designer` + `frontend-developer` (siblings — ui-ux-designer first, frontend-developer implements).
 
 ### Continue/Check Feature
 Trigger: "continua con X", "seguí con X", "cómo va X", "estado de X"

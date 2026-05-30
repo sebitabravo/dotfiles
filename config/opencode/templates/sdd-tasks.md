@@ -10,13 +10,13 @@
 
 ## Pre-implementation
 
-- [ ] Verificar que `requirements.md` este en estado `spec_ready`.
-- [ ] Verificar que `design.md` tenga un File Structure Plan completo.
-- [ ] Verificar que todas las dependencias esten instaladas.
+- [ ] Verify that `requirements.md` is in `spec_ready` state.
+- [ ] Verify that `design.md` has a complete File Structure Plan.
+- [ ] Verify that all dependencies are installed.
 
 ## Tasks
 
-<!-- Cada task = un commit. Boundary define archivos que toca. Depends bloquea ejecucion. -->
+<!-- Each task = one commit. Boundary defines the files it touches. Depends blocks execution. -->
 
 ### T1 — {{TASK_TITLE}}
 
@@ -24,10 +24,10 @@ _Boundary:_ `src/{{file}}.ts`, `tests/{{file}}.test.ts`
 _Depends:_ —
 _TDD:_ RED → GREEN → REFACTOR
 
-- [ ] RED: Escribir test que falle para {{R<n>}}
-- [ ] GREEN: Implementar codigo minimo para pasar el test
-- [ ] REFACTOR: Limpiar, re-correr tests, confirmar green
-- [ ] Verificar cobertura de requisito: {{R<n>}}
+- [ ] RED: Write a failing test for {{R<n>}}
+- [ ] GREEN: Implement the minimal code to pass the test
+- [ ] REFACTOR: Clean up, re-run tests, confirm green
+- [ ] Verify requirement coverage: {{R<n>}}
 
 ### T2 — {{TASK_TITLE}}
 
@@ -35,22 +35,22 @@ _Boundary:_ `src/{{file}}.ts`, `tests/{{file}}.test.ts`
 _Depends:_ T1
 _TDD:_ RED → GREEN → REFACTOR
 
-- [ ] RED: Escribir test que falle para {{R<n>}}
-- [ ] GREEN: Implementar codigo minimo para pasar el test
-- [ ] REFACTOR: Limpiar, re-correr tests, confirmar green
-- [ ] Verificar cobertura de requisito: {{R<n>}}
+- [ ] RED: Write a failing test for {{R<n>}}
+- [ ] GREEN: Implement the minimal code to pass the test
+- [ ] REFACTOR: Clean up, re-run tests, confirm green
+- [ ] Verify requirement coverage: {{R<n>}}
 
-<!-- Agregar mas T<n> segun necesidad -->
+<!-- Add more T<n> as needed -->
 
 ## Implementation Notes
 
-<!-- El implementador propaga aprendizajes de tasks tempranas a tasks tardias aca -->
-<!-- e.g.: "T1: Redis cache requiere serializacion manual para tipos Date" -->
+<!-- The implementer propagates learnings from early tasks to later tasks here -->
+<!-- e.g.: "T1: Redis cache requires manual serialization for Date types" -->
 
 ## Final Verification
 
-- [ ] Todos los tests pasan: `{{TEST_COMMAND}}`
-- [ ] Cobertura no menor a main
-- [ ] Linter limpio: `{{LINT_COMMAND}}`
-- [ ] Type check limpio: `{{TYPECHECK_COMMAND}}`
-- [ ] Trazabilidad completa: cada R<n> tiene al menos un test
+- [ ] All tests pass: `{{TEST_COMMAND}}`
+- [ ] Coverage not lower than main
+- [ ] Linter clean: `{{LINT_COMMAND}}`
+- [ ] Type check clean: `{{TYPECHECK_COMMAND}}`
+- [ ] Full traceability: each R<n> has at least one test

@@ -4,28 +4,28 @@
 
 - `~/.claude/CLAUDE.md` (personal) > this file (dotfile).
 - `rules/common/*.md` — always-on rules (coding-style, git-workflow, testing, security, patterns).
-- `rules/npm-security.md` — supply chain hardening (17 practicas de lirantal/npm-security-best-practices).
+- `rules/npm-security.md` — supply chain hardening (17 practices from lirantal/npm-security-best-practices).
 - `SKILL.md` — lazy-load only when writing/refactoring code.
 
 ## Preferred CLI tools
 
-Use modern CLI tools when operating in terminal. Estas son las herramientas instaladas y como usarlas:
+Use modern CLI tools when operating in terminal. These are the installed tools and how to use them:
 
-### Navegacion y busqueda
+### Navigation and search
 - `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
 - `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
 - `fd` instead of `find` — faster, gitignore-aware
 - `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
 
-### Contenido y procesamiento
+### Content and processing
 - `bat` instead of `cat` — syntax highlighting, paging, git integration
 - `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
 - `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
 - `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
 
-### Git y GitHub
+### Git and GitHub
 - `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
-- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configurado en .gitconfig)
+- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers (configured in .gitconfig)
 - `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
 
 ### Package managers
@@ -148,7 +148,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | PRDs, specs, roadmap, user stories, prioritization | `product-manager` |
 | Positioning, GTM, content, SEO, brand | `marketing-strategist` |
 | Discovery calls, proposals, battlecards, objections | `sales-representative` |
-| Visual design, UX flows, accessibility, design systems | `ui-ux-designer` (hermano with `frontend-developer` — designs first, then frontend-developer executes) |
+| Visual design, UX flows, accessibility, design systems | `ui-ux-designer` (sibling of `frontend-developer` — designs first, then frontend-developer executes) |
 
 ### Engineering
 
@@ -180,13 +180,13 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Trigger | Agent |
 |---|---|
 | Complex feature, new endpoint, new architecture | `backend-architect` |
-| Feature request ("crea un feature", "nuevo feature", "quiero construir X"), complex multi-file feature, architectural change | Ejecutar SDD Flow (abajo) — `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` |
-| Continue/resume feature ("continua con X", "seguí con X", "retoma X"), check feature status ("como va X", "en que quedo X") | Leer `specs/{change}/` — detectar fase y retomar SDD Flow |
+| Feature request ("crea un feature", "nuevo feature", "quiero construir X"), complex multi-file feature, architectural change | Run SDD Flow (below) — `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` |
+| Continue/resume feature ("continua con X", "seguí con X", "retoma X"), check feature status ("como va X", "en que quedo X") | Read `specs/{change}/` — detect phase and resume SDD Flow |
 | Recently modified code, diff for review | `code-reviewer` |
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
 | Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
-| React component, layout, responsive, CSS, SEO, structured data | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. They are hermanos — always together on UI) |
+| React component, layout, responsive, CSS, SEO, structured data | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. They are siblings — always together on UI) |
 | Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |
@@ -219,35 +219,35 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 
 DAG: `explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-**Artifacts** en `specs/{change-name}/`. Templates en `templates/`.
+**Artifacts** in `specs/{change-name}/`. Templates in `templates/`.
 
-#### Iniciar Feature Nuevo
+#### Start New Feature
 Trigger: "crea un feature X", "nuevo feature: X", "quiero construir X"
 
-1. **Init Check** — verificar `specs/.sdd-init.md`. Si no existe: crear `specs/`, detectar stack + test runner, guardar init con `strict_tdd`.
-2. **Explore** (inline) — leer codebase relevante. Identificar constraints, coupling, approaches. Output: `specs/{change}/explore.md`.
-3. **Propose** (inline) — one-pager. Template: `templates/sdd-proposal.md`. Output: `specs/{change}/proposal.md`. **⏸ HUMAN GATE: ¿aprobado?**
+1. **Init Check** — check `specs/.sdd-init.md`. If absent: create `specs/`, detect stack + test runner, save init with `strict_tdd`.
+2. **Explore** (inline) — read relevant codebase. Identify constraints, coupling, approaches. Output: `specs/{change}/explore.md`.
+3. **Propose** (inline) — one-pager. Template: `templates/sdd-proposal.md`. Output: `specs/{change}/proposal.md`. **⏸ HUMAN GATE: approved?**
 4. **Spec + Design** (parallel):
-   - Delegar `product-manager`: EARS requirements. Lee proposal + `templates/sdd-requirements.md`. Output: `specs/{change}/requirements.md`.
-   - Delegar `backend-architect`: ADR + data model + file plan. Lee proposal + `templates/sdd-design.md`. Output: `specs/{change}/design.md`.
-5. **⏸ HUMAN GATE: ¿spec y design aprobados?**
-6. **Tasks** — delegar `product-manager`: desglosa spec+design en T<n>. Boundary, Depends, TDD. Template: `templates/sdd-tasks.md`. Output: `specs/{change}/tasks.md`.
-7. **Apply** — delegar `backend-architect`: batches de 3 tareas. TDD RED→GREEN→REFACTOR. Marca [x] en tasks.md. Actualiza `specs/{change}/apply-progress.md` con template `templates/sdd-apply-progress.md`.
+   - Delegate `product-manager`: EARS requirements. Reads proposal + `templates/sdd-requirements.md`. Output: `specs/{change}/requirements.md`.
+   - Delegate `backend-architect`: ADR + data model + file plan. Reads proposal + `templates/sdd-design.md`. Output: `specs/{change}/design.md`.
+5. **⏸ HUMAN GATE: spec and design approved?**
+6. **Tasks** — delegate `product-manager`: break spec+design into T<n>. Boundary, Depends, TDD. Template: `templates/sdd-tasks.md`. Output: `specs/{change}/tasks.md`.
+7. **Apply** — delegate `backend-architect`: batches of 3 tasks. TDD RED→GREEN→REFACTOR. Mark [x] in tasks.md. Update `specs/{change}/apply-progress.md` with template `templates/sdd-apply-progress.md`.
 8. **Verify** (parallel):
-   - Delegar `code-reviewer`: diff vs spec, seguridad, traceability R<n>→test.
-   - Delegar `qa-engineer`: tests, boundary compliance, tasks [x].
-   - Consolidar en `specs/{change}/verify-report.md`. CRITICAL → volver a apply (max 2 ciclos).
-9. **Archive** (inline) — verify-report ✅. Escribir `specs/{change}/archive-report.md`. Mover a `specs/archive/{change}/`.
+   - Delegate `code-reviewer`: diff vs spec, security, traceability R<n>→test.
+   - Delegate `qa-engineer`: tests, boundary compliance, tasks [x].
+   - Consolidate in `specs/{change}/verify-report.md`. CRITICAL → back to apply (max 2 cycles).
+9. **Archive** (inline) — verify-report ✅. Write `specs/{change}/archive-report.md`. Move to `specs/archive/{change}/`.
 
-#### Continuar Feature
+#### Continue Feature
 Trigger: "continua con X", "seguí con X", "retoma X"
 
-Leer `specs/{change}/`, detectar fase según artifacts presentes, ejecutar fase. Si apply con `apply-progress.md`, saltar tareas [x].
+Read `specs/{change}/`, detect phase based on present artifacts, run that phase. If apply with `apply-progress.md`, skip [x] tasks.
 
-#### Estado de Feature
+#### Feature Status
 Trigger: "cómo va X?", "estado de X", "en qué quedó X"
 
-Contar `[x]` vs `[ ]` en tasks.md. Leer apply-progress.md y verify-report.md. Reportar: "Feature X: N/M tareas. Próximo paso: ..."
+Count `[x]` vs `[ ]` in tasks.md. Read apply-progress.md and verify-report.md. Report to the user in Spanish: "Feature X: N/M tareas. Próximo paso: ..."
 
 Trivial features (typo, 1-line fix, doc update): direct implementation, no SDD. The principal decides the route.
 

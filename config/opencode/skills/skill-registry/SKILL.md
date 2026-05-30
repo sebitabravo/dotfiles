@@ -9,36 +9,36 @@ metadata:
   version: "1.0"
 ---
 
-## Objetivo
+## Objective
 
-Mantener `~/.config/opencode/skill-registry.md` SIEMPRE actualizado sin depender de comandos manuales.
+Keep `~/.config/opencode/skill-registry.md` ALWAYS up to date without relying on manual commands.
 
-## Regla principal
+## Main Rule
 
-Antes de cualquier tarea de código:
+Before any code task:
 
-1. Verificar si el registry existe
-2. Verificar si está desactualizado contra los `SKILL.md`
-3. Si falta o está viejo, regenerar automáticamente
+1. Check whether the registry exists
+2. Check whether it is stale against the `SKILL.md` files
+3. If missing or outdated, regenerate automatically
 
-## Comando de regeneración
+## Regeneration Command
 
 ```bash
 node ~/.config/opencode/scripts/update-skill-registry.mjs
 ```
 
-## Criterio de "stale"
+## "Stale" Criteria
 
-El registry está stale si:
+The registry is stale if:
 
-- No existe `~/.config/opencode/skill-registry.md`
-- Algún `~/.config/opencode/skill/*/SKILL.md` tiene fecha de modificación más nueva
+- `~/.config/opencode/skill-registry.md` does not exist
+- Any `~/.config/opencode/skill/*/SKILL.md` has a newer modification date
 
-## Reglas
+## Rules
 
-- NO editar manualmente `skill-registry.md` (se pisa en la próxima regeneración)
-- SIEMPRE regenerar después de agregar, borrar o editar skills
-- Si la regeneración falla, informar error y continuar con los skills actuales
+- Do NOT manually edit `skill-registry.md` (it gets overwritten on the next regeneration)
+- ALWAYS regenerate after adding, deleting, or editing skills
+- If regeneration fails, report the error and continue with the current skills
 
 ## Keywords
 

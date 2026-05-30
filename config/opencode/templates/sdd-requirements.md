@@ -9,18 +9,18 @@
 
 ## Context
 
-<!-- Que problema resuelve este feature? Por que ahora? -->
+<!-- What problem does this feature solve? Why now? -->
 
 ## Functional Requirements (EARS)
 
-<!-- Notacion EARS: While/Action/Condition, When/Trigger, If/Condition -->
-<!-- R1, R2, R3... cada uno debe ser testeable -->
+<!-- EARS notation: While/Action/Condition, When/Trigger, If/Condition -->
+<!-- R1, R2, R3... each one must be testable -->
 
 ### R1 — {{REQUIREMENT_NAME}}
 
 **Type:** Ubiquitous | Event-Driven | State-Driven | Optional | Unwanted
 
-**Description:** <!-- El sistema DEBE... -->
+**Description:** <!-- The system SHALL... -->
 
 **Acceptance Criteria:**
 - [ ] {{CRITERION_1}}
@@ -35,7 +35,7 @@
 **Acceptance Criteria:**
 - [ ] {{CRITERION_1}}
 
-<!-- Agregar mas R<n> segun necesidad -->
+<!-- Add more R<n> as needed -->
 
 ## Non-Functional Requirements
 
@@ -43,7 +43,7 @@
 - <!-- e.g.: Response < 200ms p95 -->
 
 ### Security
-- <!-- e.g.: Input sanitizado contra XSS -->
+- <!-- e.g.: Input sanitized against XSS -->
 
 ### Accessibility
 - <!-- e.g.: WCAG 2.2 AA -->
@@ -58,8 +58,8 @@
 
 ## Out of Scope
 
-- <!-- Lo que NO se construye en este feature -->
+- <!-- What is NOT built in this feature -->
 
 ## References
 
-- <!-- Links a docs, APIs, issues relacionados -->
+- <!-- Links to docs, APIs, related issues -->
