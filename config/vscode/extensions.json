@@ -65,11 +65,6 @@
   "speech": [
     "ms-vscode.vscode-speech"
   ],
-  "ai": [
-    "anthropic.claude-code",
-    "google.geminicodeassist",
-    "openai.chatgpt"
-  ],
   "jupyter": [
     "ms-toolsai.jupyter",
     "ms-toolsai.jupyter-keymap",
