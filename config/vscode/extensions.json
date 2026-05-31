@@ -16,7 +16,8 @@
   "theme": [
     "zhuangtongfa.material-theme",
     "miguelsolorio.symbols",
-    "miguelsolorio.fluent-icons"
+    "miguelsolorio.fluent-icons",
+    "illixion.vscode-vibrancy-continued"
   ],
   "tools": [
     "wallabyjs.console-ninja",

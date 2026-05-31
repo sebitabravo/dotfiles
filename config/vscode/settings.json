@@ -48,7 +48,7 @@
   "terminal.integrated.fontFamily": "'FiraCode Nerd Font Mono', monospace",
   "terminal.integrated.fontSize": 12,
   "terminal.integrated.showExitAlert": false,
-  "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.gpuAcceleration": "off",
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.defaultProfile.windows": "PowerShell",
   "terminal.integrated.scrollback": 10000,
@@ -413,11 +413,35 @@
     }
   ],
   "workbench.colorCustomizations": {
-    "terminal.background": "#00000000"
+    "terminal.background": "#00000000",
+    "editorPane.background": "#23272e00",
+    "editorGroupHeader.tabsBackground": "#23272e00",
+    "editorGroupHeader.noTabsBackground": "#23272e00",
+    "breadcrumb.background": "#23272e00",
+    "editorGutter.background": "#23272e00",
+    "panel.background": "#23272e00",
+    "panelStickyScroll.background": "#23272e00",
+    "tab.activeBackground": "#23272e00",
+    "tab.unfocusedActiveBackground": "#23272e00",
+    "sideBar.background": "#23272e4d",
+    "sideBarTitle.background": "#23272e4d",
+    "sideBarStickyScroll.background": "#23272e4d",
+    "activityBar.background": "#23272e4d",
+    "editor.background": "#23272e4d",
+    "editorStickyScroll.background": "#23272e4d",
+    "editorStickyScrollGutter.background": "#23272e4d",
+    "tab.inactiveBackground": "#23272e4d",
+    "tab.unfocusedInactiveBackground": "#23272e4d",
+    "inlineChat.background": "#23272ee6",
+    "editorWidget.background": "#23272ee6",
+    "editorHoverWidget.background": "#23272ee6",
+    "editorSuggestWidget.background": "#23272ee6",
+    "notifications.background": "#23272ee6",
+    "notificationCenterHeader.background": "#23272ee6",
+    "menu.background": "#23272ee6",
+    "quickInput.background": "#23272ee6"
   },
-  "workbench.settings.applyToAllProfiles": [
-    "workbench.colorCustomizations"
-  ],
+  "workbench.settings.applyToAllProfiles": [],
   "editor.tokenColorCustomizations": {
     "textMateRules": [
       {
@@ -572,6 +596,13 @@
       "siblings_only": true
     }
   },
-  "geminicodeassist.inlineSuggestions.enableAuto": false,
-  "http.systemCertificates": true
+  "http.systemCertificates": true,
+  "vscode_vibrancy.type": "under-window",
+  "vscode_vibrancy.opacity": -1,
+  "vscode_vibrancy.theme": "Default Dark",
+  "vscode_vibrancy.backgroundOverride": "#23272e",
+  "vscode_vibrancy.preventFlash": true,
+  "vscode_vibrancy.enableAutoTheme": false,
+  "window.systemColorTheme": "dark",
+  "window.autoDetectColorScheme": false
 }
