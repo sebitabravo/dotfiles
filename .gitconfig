@@ -1,6 +1,6 @@
-[include]
-  path = ~/.gitconfig.local
-
+[user]
+	name = sebitabravo
+	email = sebastianalejandrobravocampos@gmail.com
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true

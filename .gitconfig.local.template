@@ -1,8 +1,0 @@
-# ~/.gitconfig.local — configuracion personal de Git
-# Este archivo NO se versiona en el repo. Crea tu copia:
-#   cp .gitconfig.local.template ~/.gitconfig.local
-
-# ── Identidad ──────────────────────────────────────────────
-[user]
-  name = Tu Nombre
-  email = tu@email.com
