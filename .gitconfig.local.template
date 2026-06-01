@@ -1,25 +1,8 @@
-# ~/.gitconfig.local — configuración personal de Git
-# Este archivo NO se versiona en el repo. Creá tu copia:
+# ~/.gitconfig.local — configuracion personal de Git
+# Este archivo NO se versiona en el repo. Crea tu copia:
 #   cp .gitconfig.local.template ~/.gitconfig.local
-#   # Editá con tus datos (nombre, email, llave SSH para firmar commits)
 
 # ── Identidad ──────────────────────────────────────────────
 [user]
   name = Tu Nombre
   email = tu@email.com
-
-# ── Firma de commits con SSH (opcional, recomendado) ───────
-# Descomentá las lineas de abajo para tener commits firmados
-# con el badge "Verified" en GitHub. Requiere Git 2.34+.
-# La llave .pub se registra como "Signing Key" en
-# GitHub > Settings > SSH and GPG keys (NO es la misma que la
-# authentication key — registrala aparte como signing key).
-#
-# [gpg]
-#   format = ssh
-# [user]
-#   signingkey = ~/.ssh/id_ed25519.pub
-# [commit]
-#   gpgsign = true
-# [tag]
-#   gpgsign = true

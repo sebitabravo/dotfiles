@@ -2,7 +2,7 @@
 
 ## `.gitconfig.local` — Configuracion personal
 
-El `.gitconfig` del repo esta pensado para ser compartido (aliases, delta, colores, etc.). Los datos personales (nombre, email, firma de commits) van en un archivo separado que NO se versiona.
+El `.gitconfig` del repo esta pensado para ser compartido (aliases, delta, colores, etc.). Los datos personales (nombre, email) van en un archivo separado que NO se versiona.
 
 ### Setup
 
@@ -10,33 +10,8 @@ El `.gitconfig` del repo esta pensado para ser compartido (aliases, delta, color
 # 1. Copia el template a tu home
 cp .gitconfig.local.template ~/.gitconfig.local
 
-# 2. Editalo con tus datos
-#    - Nombre y email (requerido)
-#    - Firma de commits SSH (opcional, recomendado)
+# 2. Editalo con tu nombre y email
 ```
-
-### Firma de commits con SSH (opcional)
-
-Si descomentas la seccion de firma en `~/.gitconfig.local`, tus commits aparecen con el badge "Verified" en GitHub:
-
-```
-[gpg]
-  format = ssh
-[user]
-  signingkey = ~/.ssh/id_ed25519.pub
-[commit]
-  gpgsign = true
-[tag]
-  gpgsign = true
-```
-
-**Requisitos:**
-- Git 2.34+
-- Registrar tu `id_ed25519.pub` como **Signing Key** en GitHub (Settings > SSH and GPG keys). Es independiente de la authentication key — registrala aparte.
-
-**Sin llave SSH?** Generala: `ssh-keygen -t ed25519 -C "tu@email.com"`
-
-**Revertir:** Comenta o elimina las lineas de firma en `~/.gitconfig.local`.
 
 ---
 
