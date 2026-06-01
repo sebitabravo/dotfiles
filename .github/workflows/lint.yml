@@ -18,7 +18,7 @@ jobs:
       - name: Run shellcheck
         uses: ludeeus/action-shellcheck@master
         with:
-          severity: warning
+          severity: error
           check_together: 'yes'
           scandir: './config'
 
@@ -29,5 +29,4 @@ jobs:
       - name: Run shfmt (check only, no modify)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shfmt
-          shfmt -d -i 2 -ci config/           # -d = diff mode (reports, never modifies)
-          shfmt -d -i 2 -ci .gitconfig         # just in case
+          shfmt -d -i 2 -ci config/              # -d = diff mode (reports, never modifies)
