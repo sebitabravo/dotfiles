@@ -20,6 +20,7 @@
 # No versionar información sensible
 .env
 .env.local
+.gitconfig.local
 secrets/
 
 # Archivos específicos de usuario que no deben compartirse
