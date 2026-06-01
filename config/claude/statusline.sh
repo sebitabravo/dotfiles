@@ -1,20 +1,20 @@
 #!/bin/bash
 
 # sebita theme colors (ANSI 256)
-PRIMARY='\033[38;5;110m'      # #7FB4CA azul claro
-ACCENT='\033[38;5;179m'       # #E0C15A dorado
-SECONDARY='\033[38;5;146m'    # #A3B5D6 azul gris
-MUTED='\033[38;5;242m'        # #5C6170 gris
-SUCCESS='\033[38;5;150m'      # #B7CC85 verde
-ERROR='\033[38;5;174m'        # #CB7C94 rosa/rojo
-PURPLE='\033[38;5;183m'       # #C99AD6 púrpura
+PRIMARY='\033[38;5;110m'   # #7FB4CA azul claro
+ACCENT='\033[38;5;179m'    # #E0C15A dorado
+SECONDARY='\033[38;5;146m' # #A3B5D6 azul gris
+MUTED='\033[38;5;242m'     # #5C6170 gris
+SUCCESS='\033[38;5;150m'   # #B7CC85 verde
+ERROR='\033[38;5;174m'     # #CB7C94 rosa/rojo
+PURPLE='\033[38;5;183m'    # #C99AD6 púrpura
 BOLD='\033[1m'
 STRIKE='\033[9m'
 NC='\033[0m'
 
 # Cache for MCP (don't call every 300ms)
 MCP_CACHE_FILE="/tmp/claude_mcp_cache"
-MCP_CACHE_TTL=120  # 2 minutes
+MCP_CACHE_TTL=120 # 2 minutes
 
 # Read JSON from stdin
 input=$(cat)
@@ -70,7 +70,7 @@ get_mcp_servers() {
   local ALL_SERVERS="$SERVERS"
 
   # Save to cache (all as "configured" - we can't check connection status easily)
-  echo "$ALL_SERVERS|" > "$MCP_CACHE_FILE"
+  echo "$ALL_SERVERS|" >"$MCP_CACHE_FILE"
   echo "$ALL_SERVERS|"
 }
 
@@ -85,7 +85,7 @@ format_mcp() {
 
   # Connected servers (green)
   if [ -n "$MCP_CONNECTED" ]; then
-    IFS=',' read -ra SERVERS <<< "$MCP_CONNECTED"
+    IFS=',' read -ra SERVERS <<<"$MCP_CONNECTED"
     for srv in "${SERVERS[@]}"; do
       if [ -n "$result" ]; then
         result+=" "
@@ -96,7 +96,7 @@ format_mcp() {
 
   # Disconnected servers (red + strikethrough)
   if [ -n "$MCP_DISCONNECTED" ]; then
-    IFS=',' read -ra SERVERS <<< "$MCP_DISCONNECTED"
+    IFS=',' read -ra SERVERS <<<"$MCP_DISCONNECTED"
     for srv in "${SERVERS[@]}"; do
       if [ -n "$result" ]; then
         result+=" "
@@ -120,7 +120,7 @@ DIR_NAME=$(basename "$DIR")
 # Git info
 BRANCH=""
 GIT_DIRTY=""
-if git rev-parse --git-dir > /dev/null 2>&1; then
+if git rev-parse --git-dir >/dev/null 2>&1; then
   BRANCH=$(git branch --show-current 2>/dev/null)
   if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
     GIT_DIRTY="*"
@@ -151,8 +151,8 @@ else
 fi
 
 BAR="${BAR_COLOR}["
-for ((i=0; i<FILLED; i++)); do BAR+="="; done
-for ((i=0; i<EMPTY; i++)); do BAR+="."; done
+for ((i = 0; i < FILLED; i++)); do BAR+="="; done
+for ((i = 0; i < EMPTY; i++)); do BAR+="."; done
 BAR+="]${NC}"
 
 # Build status line
@@ -178,7 +178,7 @@ LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 #   Qwen/DashScope, StepFun, MiMo/Xiaomi, Copilot, MiniMax (flat rate or throttling only)
 get_peak_warning() {
   local UTC_HOUR=$(date -u +%H)
-  local BJS_HOUR=$(( (UTC_HOUR + 8) % 24 ))  # Beijing time for CN providers
+  local BJS_HOUR=$(((UTC_HOUR + 8) % 24)) # Beijing time for CN providers
 
   # z.ai/GLM: daily 14:00-18:00 Beijing (06:00-10:00 UTC) — 3x quota
   if [ "$BJS_HOUR" -ge 14 ] && [ "$BJS_HOUR" -lt 18 ]; then
@@ -215,13 +215,13 @@ CAVEMAN_BADGE=""
 if [ -f "$CAVEMAN_FLAG" ]; then
   CAV_MODE=$(head -c 64 "$CAVEMAN_FLAG" 2>/dev/null | tr -d '\n\r' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
   case "$CAV_MODE" in
-    full)     CAVEMAN_BADGE="\033[38;5;172m🦴\033[0m" ;;
-    lite)     CAVEMAN_BADGE="\033[38;5;172m🦴 lite\033[0m" ;;
-    ultra)    CAVEMAN_BADGE="\033[38;5;172m🦴 ultra\033[0m" ;;
-    wenyan-lite)   CAVEMAN_BADGE="\033[38;5;172m📜 LITE\033[0m" ;;
-    wenyan)        CAVEMAN_BADGE="\033[38;5;172m📜\033[0m" ;;
-    wenyan-full)   CAVEMAN_BADGE="\033[38;5;172m📜 FULL\033[0m" ;;
-    wenyan-ultra)  CAVEMAN_BADGE="\033[38;5;172m📜 ULTRA\033[0m" ;;
+    full) CAVEMAN_BADGE="\033[38;5;172m🦴\033[0m" ;;
+    lite) CAVEMAN_BADGE="\033[38;5;172m🦴 lite\033[0m" ;;
+    ultra) CAVEMAN_BADGE="\033[38;5;172m🦴 ultra\033[0m" ;;
+    wenyan-lite) CAVEMAN_BADGE="\033[38;5;172m📜 LITE\033[0m" ;;
+    wenyan) CAVEMAN_BADGE="\033[38;5;172m📜\033[0m" ;;
+    wenyan-full) CAVEMAN_BADGE="\033[38;5;172m📜 FULL\033[0m" ;;
+    wenyan-ultra) CAVEMAN_BADGE="\033[38;5;172m📜 ULTRA\033[0m" ;;
   esac
 fi
 
