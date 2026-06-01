@@ -224,7 +224,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v engram &>/dev/null; then engram mem save --title \"Session checkpoint\" --content \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery --project dotfiles 2>/dev/null || true; fi"
+            "command": "if command -v engram >/dev/null 2>&1; then engram save \"Session checkpoint\" \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery 2>/dev/null || true; fi"
           }
         ]
       }
