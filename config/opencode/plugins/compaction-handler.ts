@@ -35,7 +35,7 @@ export const CompactionHandler: Plugin = async ({ $ }) => {
     "session.compacted": async (_input, _output) => {
       // Post-compaction: intentar guardar en Engram si esta disponible
       try {
-        await $`command -v engram >/dev/null 2>&1 && engram save "Compaction checkpoint" "Session compacted at $(date -u +%Y-%m-%dT%H:%M:%SZ)" --type discovery 2>/dev/null || true`
+        await $`command -v engram >/dev/null 2>&1 && engram save "Compaction checkpoint" "Session compacted at $(date -u +%Y-%m-%dT%H:%M:%SZ)" --type discovery --project session-checkpoints 2>/dev/null || true`
       } catch {
         // Engram no disponible — ignorar
       }
