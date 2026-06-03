@@ -9,19 +9,28 @@
 
 ## Intent
 
-<!-- Problem it solves. Why now. One paragraph. -->
+<!-- What problem does this solve? Why now? One paragraph. -->
 
 ## Scope
 
 ### In
-- <!-- What IS built -->
+- <!-- What IS being built -->
 
 ### Out
-- <!-- What is NOT built -->
+- <!-- What is NOT being built -->
 
 ## Approach
 
 <!-- How: patterns, tools, architecture direction. What NOT to do. -->
+
+## Constitution Alignment
+
+<!-- Verificar contra la constitución del proyecto ANTES de aprobar -->
+
+| Principle | Aligned? | Notes |
+|---|---|---|
+| {{PRINCIPLE_1}} | ✅ / ❌ / ⚠️ | {{NOTES}} |
+| {{PRINCIPLE_2}} | ✅ / ❌ / ⚠️ | {{NOTES}} |
 
 ## Rationale
 
@@ -34,7 +43,7 @@
 
 ## Affected Areas
 
-<!-- Areas of the codebase this touches. Affected modules, entry points, existing tests. -->
+<!-- Codebase areas this will touch. Affected modules, entry points, existing tests. -->
 
 ## References
 

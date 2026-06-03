@@ -117,9 +117,17 @@ Trivial tasks (typo, 1-line fix): execute inline. Max 4 parallel agents. If a fi
 
 ## SDD Flow (complex features)
 
-DAG: `explore → propose → spec ∥ design → tasks → apply → verify → archive`
+DAG: `[constitution] → explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-Artifacts in `specs/{change-name}/`. Templates in `templates/`. Details: `templates/sdd-flow.md`.
+- **Constitution** (opcional pre-step): Una vez por proyecto. Define principios no-negociables (`templates/sdd-constitution.md`). Cada feature posterior hace Constitution Check contra estos principios.
+- **Explore → Propose**: `templates/sdd-proposal.md` — problema, scope, alternativas, Constitution Check inicial.
+- **Spec ∥ Design**: `templates/sdd-requirements.md` + `templates/sdd-design.md` — user stories (P1/P2/P3, GWT), EARS, success criteria, technical context, architecture, complexity tracking.
+- **Tasks**: `templates/sdd-tasks.md` — fases (Setup → Foundational → US<n> → Polish), [P] paralelo, [US<n>] tags, checkpoints.
+- **Apply**: `templates/sdd-apply-progress.md` — TDD por task.
+- **Verify**: `templates/sdd-checklist.md` — verificación sistemática (CHK001–CHK041).
+- **Archive**: specs movidos a `specs/archived/`.
+
+Artifacts in `specs/{change-name}/`. Templates in `templates/`.
 
 Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial features: direct implementation, no SDD.
 

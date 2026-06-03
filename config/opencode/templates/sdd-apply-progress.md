@@ -16,11 +16,11 @@
 - `src/{{file}}.ts` — {{what_changed}}
 - `tests/{{file}}.test.ts` — {{what_changed}}
 
-**Notes:** <!-- Gotchas, decisions, deviations from the spec -->
+**Notes:** <!-- Gotchas, decisions, deviations from spec -->
 
 ---
 
-<!-- Add more batches as they are completed -->
+<!-- Add more batches as completed -->
 
 ## Current State
 
