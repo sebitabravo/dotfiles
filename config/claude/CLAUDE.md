@@ -117,6 +117,9 @@ Invoke proactively:
 | Docker, containers, multi-stage builds, compose | `docker-expert` |
 | GitHub Actions, workflows, CI/CD YAML | `github-actions-docs` |
 | FFmpeg, video/audio processing, media conversion | `ffmpeg` |
+| PPTX, slides, presentations, decks | `pptx` |
+| XLSX, Excel, spreadsheets, financial models, tabular data | `xlsx` |
+| DOCX, Word, academic documents, INACAP reports | `inacap` |
 
 ## Auto-Skills (use without waiting for slash command)
 
@@ -168,7 +171,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | CI/CD, Docker, GitOps, deployments | `deployment-engineer` |
 | Monitoring, logging, tracing, SLI/SLO, alerts | `observability-engineer` |
 | SOPs, vendor evaluation, processes, project status | `operations-manager` |
-| Documentation, API docs, READMEs, ADRs, changelogs | `technical-writer` |
+| Documentation, API docs, READMEs, ADRs, changelogs, PPTX, XLSX, DOCX, Office files | `technical-writer` |
 | Data analysis, metrics, dashboards, A/B testing | `data-analyst` |
 | Hiring, onboarding, JDs, policies, culture | `hr-people-ops` |
 | Customer onboarding, health scores, churn, retention | `customer-success` |
@@ -190,7 +193,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Slowness, N+1 queries, caching, profiling | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |
-| Docs, README, changelog, ADR | `technical-writer` |
+| Docs, README, changelog, ADR, PPTX, XLSX, DOCX | `technical-writer` |
 | Full PR review, quality, security | `code-reviewer` + `security-auditor` (parallel) |
 
 - Independent operations: run agents in parallel (max 4).

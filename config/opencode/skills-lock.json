@@ -1,4 +1,23 @@
 {
   "version": 1,
-  "skills": {}
+  "skills": {
+    "pptx": {
+      "source": "https://github.com/anthropics/skills/tree/main/pptx",
+      "installed": "2026-06-02",
+      "deps": {
+        "python": ["markitdown[pptx]", "Pillow", "python-pptx"],
+        "node": ["pptxgenjs@4.0.1"],
+        "system": ["libreoffice", "poppler"]
+      },
+      "node_modules": "skills/pptx/node_modules"
+    },
+    "xlsx": {
+      "source": "https://github.com/anthropics/skills/tree/main/xlsx",
+      "installed": "2026-06-02",
+      "deps": {
+        "python": ["openpyxl", "pandas"],
+        "system": ["libreoffice"]
+      }
+    }
+  }
 }

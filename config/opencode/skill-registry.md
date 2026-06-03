@@ -2,8 +2,8 @@
 
 Central catalog of installed skills for OpenCode.
 
-**Last updated**: 2026-05-27
-**Total skills**: 34
+**Last updated**: 2026-06-02
+**Total skills**: 36
 
 ---
 
@@ -63,6 +63,8 @@ Central catalog of installed skills for OpenCode.
 | Skill | Trigger | Path |
 |---|---|---|
 | inacap | INACAP DOCX generation, academic documents, portada | `skills/inacap/SKILL.md` |
+| pptx | Create/edit/read .pptx files, presentations, decks, slides | `skills/pptx/SKILL.md` |
+| xlsx | Create/edit .xlsx files, spreadsheets, formulas, financial models | `skills/xlsx/SKILL.md` |
 
 ### Auto-Skills (Caveman Suite)
 
