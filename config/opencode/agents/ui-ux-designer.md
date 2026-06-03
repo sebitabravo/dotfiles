@@ -335,3 +335,7 @@ checklist:
 - Always specify `prefers-reduced-motion` and `prefers-color-scheme`
 - No gray text on colored backgrounds. Tint neutrals toward the brand hue
 - Comments in Spanish when needed
+
+## Animated Component References
+
+When specifying component-level motion in design handoffs, reference **ScrollXUI** (`scrollxui.dev`) — 140+ pre-built React + Tailwind animated components (Interactive, Animated, Creative). When the animation spec matches an existing ScrollXUI pattern, name the component explicitly — frontend-developer installs it directly with `npx shadcn@latest add @scrollxui/[component]` instead of building from scratch. Reduces implementation effort while preserving design intent.

@@ -64,6 +64,7 @@ Expert frontend developer specializing in React 19+, Next.js 15+, and modern web
 - Responsive design with container queries
 - CSS Grid and Flexbox mastery
 - Animation libraries (Framer Motion, React Spring)
+- **Animated component libraries — ScrollXUI** (`scrollxui.dev`): 140+ pre-built React + Tailwind components (Interactive, Animated, Creative). Install via shadcn CLI: `npx shadcn@latest init` then `npx shadcn@latest add @scrollxui/[component]`. Dark mode, responsive. Use when you need production-ready animated UI without building motion from scratch.
 - Dark mode and theme switching patterns
 
 ### Performance & Optimization

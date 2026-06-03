@@ -158,7 +158,7 @@ Invoke specialized agent by task type via Agent tool with `subagent_type`:
 | Context | Agent |
 |---|---|
 | APIs, microservices, DB schemas, scalability | `backend-architect` |
-| React 19, layouts, responsive, components, SEO, meta tags | `frontend-developer` |
+| React 19, layouts, responsive, components, SEO, meta tags, animated UI, ScrollXUI | `frontend-developer` |
 | Code review, static analysis, quality gates | `code-reviewer` |
 | Debugging, root cause, test failures, errors | `debugger` |
 | Optimization, caching, Core Web Vitals, profiling | `performance-engineer` |
@@ -189,7 +189,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Bug, test failure, unexpected behavior | `debugger` |
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
 | Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
-| React component, layout, responsive, CSS, SEO, structured data | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. They are siblings — always together on UI) |
+| React component, layout, responsive, CSS, SEO, structured data, animated components, ScrollXUI | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. They are siblings — always together on UI) |
 | Slowness, N+1 queries, caching, profiling, full-site audit, unlighthouse | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |

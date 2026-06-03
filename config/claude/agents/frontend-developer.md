@@ -128,6 +128,32 @@ npx skills add https://github.com/greensock/gsap-skills  # official GSAP skill (
 - `gsap.matchMedia()` — responsive breakpoints + `prefers-reduced-motion`
 - Official skill provides full API docs. Reference it, don't guess.
 
+## Animated Component Libraries
+
+Pre-built React + Tailwind components with built-in motion. Use when you need production-ready animated UI fast, without writing GSAP/Framer Motion from scratch.
+
+**ScrollXUI** (`scrollxui.dev`) — 140+ components in three categories: Interactive, Animated, Creative. Tailwind-first, dark mode, responsive. Copy-paste or CLI install.
+
+```bash
+# shadcn required — init first if not already done
+npx shadcn@latest init
+
+# Install individual components
+npx shadcn@latest add @scrollxui/[component-name]
+
+# Configure registry in components.json for streamlined installs:
+# "url": "https://scrollxui.dev/registry/scrollxui.json"
+```
+
+**ScrollXUI vs GSAP**:
+| Scenario | Choice |
+|---|---|
+| Pre-built hero, card, button, section with animation | ScrollXUI — ship fast |
+| Custom scroll-driven timeline, SVG morphing, unique sequences | GSAP — full control |
+| ScrollXUI component + GSAP orchestration around it | Both |
+
+ScrollXUI ships an MCP server — if configured, browse and reference components directly from the AI assistant context.
+
 ## Chart & Data Visualization
 
 Match library to framework and complexity. ui-ux-designer specifies chart type + design rules; you implement.
