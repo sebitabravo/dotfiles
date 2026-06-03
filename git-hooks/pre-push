@@ -1,0 +1,68 @@
+#!/bin/bash
+# Global pre-push hook — bloquea push de commits basura
+# Registrado vía: git config --global core.hooksPath ~/.git-hooks
+#
+# Si el repo tiene su propio .git/hooks/pre-push, se encadena al final.
+
+REMOTE="$1"
+URL="$2"
+
+# Leer refs desde stdin (git push manda los refs por stdin)
+REFS=""
+while IFS= read -r line; do
+    REFS="$REFS$line\n"
+done
+
+# Extraer rangos de commits (local_sha..remote_sha)
+RANGES=$(echo "$REFS" | awk '{print $1".."$2}' 2>/dev/null)
+
+# --- Block 1: auto-save commits ---
+for range in $RANGES; do
+    if [ "$range" = ".." ]; then
+        continue  # branch delete, skip
+    fi
+    AUTO_SAVE_COMMITS=$(git log "$range" --oneline --grep="auto-save:" 2>/dev/null)
+    if [ -n "$AUTO_SAVE_COMMITS" ]; then
+        echo "" >&2
+        echo "⛔ PUSH BLOCKED: auto-save commits detectados" >&2
+        echo "" >&2
+        echo "$AUTO_SAVE_COMMITS" >&2
+        echo "" >&2
+        echo "   Estos commits son checkpoints automáticos de Claude Code." >&2
+        echo "   NO deben subirse al remote. Para limpiar:" >&2
+        echo "" >&2
+        echo "   git rebase -i HEAD~N  # squash o drop los auto-save" >&2
+        echo "   # o usa: ~/.claude/scripts/squash-auto-saves.sh" >&2
+        echo "" >&2
+        exit 1
+    fi
+done
+
+# --- Block 2: AI footprint (defense-in-depth) ---
+for range in $RANGES; do
+    if [ "$range" = ".." ]; then
+        continue
+    fi
+    FOOTPRINT=$(git log "$range" --oneline --grep="Co-Authored-By:" 2>/dev/null)
+    if [ -n "$FOOTPRINT" ]; then
+        echo "" >&2
+        echo "⛔ PUSH BLOCKED: AI footprint (Co-Authored-By) en commits" >&2
+        echo "" >&2
+        echo "$FOOTPRINT" >&2
+        echo "" >&2
+        echo "   Eliminá la línea Co-Authored-By de los commits antes de pushear." >&2
+        echo "   git rebase -i HEAD~N y editá los mensajes." >&2
+        echo "" >&2
+        exit 1
+    fi
+done
+
+# --- Chain to local hook if exists ---
+LOCAL_HOOK="${GIT_DIR:-.git}/hooks/pre-push"
+if [ -f "$LOCAL_HOOK" ] && [ "$(realpath "$LOCAL_HOOK" 2>/dev/null)" != "$(realpath "$0" 2>/dev/null)" ]; then
+    # Pasar los refs de vuelta por stdin al hook local
+    echo "$REFS" | "$LOCAL_HOOK" "$@"
+    exit $?
+fi
+
+exit 0

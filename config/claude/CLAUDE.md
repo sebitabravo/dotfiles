@@ -131,6 +131,19 @@ Artifacts in `specs/{change-name}/`. Templates in `templates/`.
 
 Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial features: direct implementation, no SDD.
 
+## Git Hygiene (non-negotiable)
+
+Estas reglas son defensa en profundidad. Hay hooks que las ENFORCEAN, pero la responsabilidad primaria es del agente.
+
+1. **NO AI FOOTPRINT**: Nunca escribas `Co-Authored-By`, `Co-authored-by`, ni variantes en commit messages. El hook `commit-msg` bloquea el commit, el hook `pre-push` bloquea el push.
+2. **NUNCA `--no-verify`**: Si el hook bloquea algo, CORREGÍ el problema, no by-passees el hook.
+3. **NUNCA pushees auto-save commits**: El hook `pre-push` los bloquea. Si ves `auto-save:` en `git log`, squashealos con `~/.claude/scripts/squash-auto-saves.sh` ANTES de pushear.
+4. **Siempre trabajá en branch**: Nunca commits directo a `main`/`master`. Usá feature branches.
+5. **Revisá `git log` antes de pushear**: `git log origin/main..HEAD --oneline`. Si algo no es profesional, arreglalo.
+6. **Commits atómicos y descriptivos**: Cada commit debe tener un propósito claro. Conventional Commits obligatorio.
+7. **Sin archivos temporales**: No commitees `.DS_Store`, `Thumbs.db`, `.tmp`, archivos de backup, o artefactos de build.
+8. **Push con conciencia**: Sabé EXACTAMENTE qué commits estás pusheando. Si hay duda, `git log --oneline -10` primero.
+
 ## Hard Rules
 
 1. One feature at a time.

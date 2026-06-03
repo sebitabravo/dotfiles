@@ -135,6 +135,16 @@ Artifacts in `specs/{change-name}/`. Templates in `templates/`.
 
 Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial features: direct implementation, no SDD.
 
+## Git Hygiene (non-negotiable)
+
+1. **NO AI FOOTPRINT**: Nunca escribas `Co-Authored-By` en commits. Hooks de git bloquean commit y push.
+2. **NUNCA `--no-verify`**: Si el hook bloquea, corregí el problema, no by-passees.
+3. **NUNCA pushees auto-save commits**: El hook `pre-push` los bloquea. Squashealos con `~/.claude/scripts/squash-auto-saves.sh`.
+4. **Siempre trabajá en branch**: No commits directo a `main`/`master`.
+5. **Revisá `git log` antes de pushear**: `git log origin/main..HEAD --oneline`.
+6. **Commits atómicos y descriptivos**: Conventional Commits obligatorio.
+7. **Push con conciencia**: Sabé qué estás pusheando. `git log --oneline -10` ante la duda.
+
 ## Hard Rules
 
 1. One feature at a time.

@@ -184,6 +184,10 @@
           },
           {
             "type": "command",
+            "command": "~/.claude/hooks/check-auto-save-stash.sh"
+          },
+          {
+            "type": "command",
             "command": "~/.claude/hooks/handoff-session-start.sh"
           }
         ]
@@ -194,7 +198,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "git -C \"$PWD\" add -A && git -C \"$PWD\" diff --cached --quiet || git -C \"$PWD\" commit -m \"auto-save: pre-compaction checkpoint\" 2>/dev/null || true"
+            "command": "git -C \"$PWD\" stash push -m \"auto-save: pre-compaction checkpoint\" 2>/dev/null || true"
           }
         ]
       }
@@ -204,7 +208,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '{\"hookSpecificOutput\":{\"additionalContext\":\"IMPORTANTE: Segui aplicando TODAS las reglas de CLAUDE.md y rules/common/*.md — NO AI FOOTPRINT, VERIFY FIRST (sin \\\"should work\\\"), EVIDENCE BEFORE CLAIMS, LEVERAGE≠RELY (ownership total, CI≠seguro), PRE-COMMIT LITMUS (3 preguntas), GOAL-DRIVEN (loop hasta verificado), STOP & WAIT. No relajes estas reglas post-compactacion.\"}}'"
+            "command": "printf '{\"hookSpecificOutput\":{\"additionalContext\":\"IMPORTANTE: Segui aplicando TODAS las reglas de CLAUDE.md y rules/common/*.md \u2014 NO AI FOOTPRINT, VERIFY FIRST (sin \\\"should work\\\"), EVIDENCE BEFORE CLAIMS, LEVERAGE\u2260RELY (ownership total, CI\u2260seguro), PRE-COMMIT LITMUS (3 preguntas), GOAL-DRIVEN (loop hasta verificado), STOP & WAIT. No relajes estas reglas post-compactacion.\"}}'"
           }
         ]
       }
@@ -218,6 +222,24 @@
             "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\" && case \"$file\" in *.ts|*.tsx|*.js|*.jsx|*.py|*.rb|*.go|*.rs|*.php) grep -n -E '(console\\.(log|warn|error|debug)|print\\(|var_dump|dd\\(|debugger|binding\\.pry|byebug)' \"$file\" 2>/dev/null && echo '[Hook] Debug statements detectados en '$file >&2 ;; esac || true"
           }
         ]
+      },
+      {
+        "matcher": "tool == \"Edit\" || tool == \"Write\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\" && if [ -f \"$file\" ]; then git -C \"$(dirname \"$file\")\" add \"$file\" 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "tool == \"Bash\" && tool_input.command.match(/git commit/)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git -C \"$PWD\" add -A 2>/dev/null && printf '{\"hookSpecificOutput\": {\"permissionDecision\": \"allow\", \"permissionDecisionReason\": \"Auto-staged all changes before commit\"}}' || echo '{\"hookSpecificOutput\": {\"permissionDecision\": \"allow\"}}'"
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -226,7 +248,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[PostToolUseFailure] Tool call fallo — revisar si requiere cambio de estrategia' >&2"
+            "command": "echo '[PostToolUseFailure] Tool call fallo \u2014 revisar si requiere cambio de estrategia' >&2"
           }
         ]
       }
@@ -234,6 +256,10 @@
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/stop-check-pending.sh"
+          },
           {
             "type": "command",
             "command": "if command -v engram >/dev/null 2>&1; then engram save \"Session checkpoint\" \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery --project session-checkpoints 2>/dev/null || true; fi"
