@@ -1,0 +1,5 @@
+# Global gitignore — aplica a TODOS los repos
+
+# Handoff — traspaso entre sesiones (NUNCA commitear)
+HANDOFF.md
+HANDOFF.md.archived
