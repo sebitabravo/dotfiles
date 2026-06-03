@@ -89,6 +89,53 @@ Output format:
 - CORS: explicit origins, not `*` with credentials
 - Security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options
 
+### Endpoint Discovery — OWASP Noir
+
+**Noir** (`owasp-noir.github.io/noir`) — OWASP official project, SAST tool in Crystal, MIT license, v1.0.0. Discovers endpoints, parameters, headers, cookies from source code across 50+ frameworks. Single binary, auto-detects language/framework — no config needed.
+
+**Key differentiator — LLM Fallback**: When native static rules don't cover a framework, Noir delegates to an LLM (OpenAI, Ollama) to fill the gap. No other SAST does this. Means it works on ANY framework, not just the 50+ with native rules.
+
+**Audit use cases**:
+- **Shadow API detection**: Find undocumented endpoints, hidden parameters, debug routes. Compare discovered surface against OpenAPI spec/API gateway config. Flag every endpoint not in the spec.
+- **Pre-audit surface mapping**: `noir -b <source_dir>` before manual review. Maps the full attack surface: all routes, all parameters, all headers accepted. Feeds into threat modeling.
+- **CI/CD integration**: GitHub Action available. Run on every PR. Fail the build if new unauthenticated endpoints appear or if the surface grows unexpectedly.
+- **AI-context for code review**: `noir --ai-context` outputs discovered endpoints in LLM-friendly format. Feed to this agent for context-aware security review — the agent sees every route, every parameter, every auth check (or lack thereof).
+- **Multi-format output**: JSON, YAML, OpenAPI 2.0/3.0, SARIF, HTML, Markdown, cURL, Postman, Mermaid. SARIF for GitHub Code Scanning integration.
+
+**Install**: `brew install noir` | Docker: `ghcr.io/owasp-noir/noir:latest`
+
+**Audit workflow**:
+1. `noir -b <source> --format json -o surface.json` — discover all endpoints
+2. Compare `surface.json` against documented API (OpenAPI spec, API gateway config)
+3. Flag: undocumented endpoints, unauthenticated routes, debug endpoints, hidden params
+4. `noir --ai-context` → feed to audit context for deep code review
+5. Integrate in CI: `noir -b . --format sarif` → GitHub Code Scanning
+
+### AI Toolchain Security — AgentShield
+
+**AgentShield** (`npx ecc-agentshield`) — OSS security auditor purpose-built for the AI agent config surface. Built at the Claude Code Hackathon (Cerebral Valley × Anthropic, Feb 2026). MIT license.
+
+**Why this matters**: CLAUDE.md, AGENTS.md, hooks, MCP server configs, and agent definitions are an underexplored attack surface. A malicious hook or overly permissive agent config can execute arbitrary commands, exfiltrate data, or inject prompts. Traditional SAST/DAST tools don't scan these surfaces. AgentShield does.
+
+**Scan categories** (102 static rules):
+1. **Secrets detection** — 14 pattern signatures (`sk-`, `ghp_`, `AKIA`, etc.)
+2. **Permission auditing** — Overly permissive tool access in agent configs
+3. **Hook injection analysis** — Malicious or unsafe hook commands
+4. **MCP server risk profiling** — Server-level threat assessment
+5. **Agent config review** — Misconfigured agent definitions
+
+**Dual-layer architecture**:
+- **Static scan** (`npx ecc-agentshield scan`): Fast, deterministic, 102 rules. CI-ready with exit code 2 on critical.
+- **Deep adversarial scan** (`npx ecc-agentshield scan --opus --stream`): Three Claude Opus 4.6 agents in a red-team/blue-team/auditor pipeline. Red finds exploit chains, blue evaluates defenses, auditor synthesizes ranked risk. Catches emergent exploit paths no static rule can find.
+
+**When to use**:
+- **Pre-commit**: Scan own CLAUDE.md/AGENTS.md before committing config changes
+- **CI gate**: `npx ecc-agentshield scan --json` in CI pipeline. Fail build on critical findings.
+- **Periodic audit**: Deep adversarial scan (`--opus`) monthly or after major config changes
+- **Third-party config review**: Audit CLAUDE.md/AGENTS.md from external repos before adopting
+
+**Output**: Terminal (A–F grade), JSON (CI pipelines), Markdown, HTML. 1282 tests, 98% coverage.
+
 ## Output Format
 For every audit, produce:
 

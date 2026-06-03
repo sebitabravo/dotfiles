@@ -154,6 +154,36 @@ npx shadcn@latest add @scrollxui/[component-name]
 
 ScrollXUI ships an MCP server — if configured, browse and reference components directly from the AI assistant context.
 
+## Google Stitch (stitch.withgoogle.com)
+
+Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party solo en OpenCode** (no disponible en Claude Code). Skills instalados en ambas plataformas.
+
+**Skills disponibles:**
+| Skill | Qué hace | Necesita MCP |
+|---|---|---|
+| `enhance-prompt` | Transforma ideas vagas en prompts Stitch-optimizados | No |
+| `taste-design` | Genera DESIGN.md con estándares anti-genérico | No |
+| `design-md` | Analiza proyectos Stitch y sintetiza DESIGN.md | Sí |
+| `stitch-generate-design` | Generación core: texto→diseño, edición, variantes | Sí |
+| `stitch-extract-design-md` | Extrae design system de código fuente (React, Vue, etc.) | No |
+| `stitch-manage-design-system` | Crea/aplica design systems en Stitch | Sí |
+| `stitch-react-components` | Convierte diseños Stitch a componentes Vite+React | No |
+
+**Pipeline diseño→código (con ui-ux-designer):**
+1. `ui-ux-designer` define dirección visual → DESIGN.md vía `taste-design`
+2. Si hay MCP (OpenCode): `stitch-generate-design` genera pantalla → `stitch-react-components` convierte a React
+3. Si NO hay MCP (Claude Code): frontend-developer implementa directo del DESIGN.md
+4. frontend-developer integra el output en el proyecto
+
+**Cuándo usar Stitch vs código manual:**
+| Escenario | Usar |
+|---|---|
+| Nueva pantalla desde cero, diseño complejo | Stitch (si MCP disponible) |
+| Landing page completa | Stitch (rápido, consistente) |
+| Modificar componente existente | Código manual |
+| Formulario simple, tabla de datos | Código manual |
+| Prototipo rápido para validar | Stitch |
+
 ## Chart & Data Visualization
 
 Match library to framework and complexity. ui-ux-designer specifies chart type + design rules; you implement.

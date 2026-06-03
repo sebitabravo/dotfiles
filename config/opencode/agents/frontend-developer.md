@@ -66,6 +66,7 @@ Expert frontend developer specializing in React 19+, Next.js 15+, and modern web
 - Animation libraries (Framer Motion, React Spring)
 - **Animated component libraries — ScrollXUI** (`scrollxui.dev`): 140+ pre-built React + Tailwind components (Interactive, Animated, Creative). Install via shadcn CLI: `npx shadcn@latest init` then `npx shadcn@latest add @scrollxui/[component]`. Dark mode, responsive. Use when you need production-ready animated UI without building motion from scratch.
 - Dark mode and theme switching patterns
+- **Google Stitch** (`stitch.withgoogle.com`): Google I/O May 2025. Genera pantallas desde texto vía MCP first-party. API key necesaria (`STITCH_API_KEY`). Skills: `stitch-generate-design` (texto→diseño), `stitch-react-components` (diseño→React+Vite+AST), `stitch-extract-design-md` (código→DESIGN.md), `enhance-prompt` (prompt engineering). Pipeline: ui-ux-designer define DESIGN.md → Stitch genera HTML → `stitch-react-components` convierte a componentes React → frontend-developer integra. Usar para pantallas nuevas desde cero, landing pages, prototipos rápidos. No usar para modificar componentes existentes o formularios simples.
 
 ### Performance & Optimization
 - Core Web Vitals optimization (LCP, FID, CLS)

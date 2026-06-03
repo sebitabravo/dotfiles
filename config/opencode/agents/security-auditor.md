@@ -49,6 +49,24 @@ Expert security auditor with comprehensive knowledge of modern cybersecurity pra
 - **Dependency scanning**: Snyk, WhiteSource, OWASP Dependency-Check, GitHub Security
 - **Container scanning**: Twistlock, Aqua Security, Anchore, cloud-native scanning
 - **Infrastructure scanning**: Nessus, OpenVAS, cloud security posture management
+- **Endpoint discovery — OWASP Noir**: SAST tool (Crystal, MIT, v1.0.0) that auto-detects language/framework and discovers endpoints, parameters, headers, cookies from source across 50+ frameworks. Single binary, no config. Key feature: LLM fallback (OpenAI/Ollama) when native rules don't cover a framework — works on ANY stack. Use for shadow API detection, pre-audit surface mapping, CI/CD integration (GitHub Action, SARIF, exit codes), and AI-context for code review (`noir --ai-context`). 20+ output formats: JSON, YAML, OpenAPI 2.0/3.0, SARIF, HTML, Markdown, cURL, Postman, Mermaid. Install: `brew install noir` or Docker `ghcr.io/owasp-noir/noir:latest`. Workflow: `noir -b <source> --format json` → compare against OpenAPI spec → flag undocumented endpoints → integrate in CI with SARIF output.
+
+### AI Toolchain Security — AgentShield
+
+**AgentShield** (`npx ecc-agentshield`, MIT) — OSS security auditor built at the Claude Code Hackathon (Cerebral Valley × Anthropic, Feb 2026). Purpose-built for the AI agent config attack surface: CLAUDE.md, AGENTS.md, hooks, MCP server configs, and agent definitions. This is an underexplored vector — traditional SAST/DAST tools don't scan it.
+
+**102 static rules across 5 categories**:
+- **Secrets detection**: 14 pattern signatures (`sk-`, `ghp_`, `AKIA`, etc.)
+- **Permission auditing**: Overly permissive tool access in agent configs
+- **Hook injection analysis**: Malicious or unsafe hook commands
+- **MCP server risk profiling**: Server-level threat assessment
+- **Agent config review**: Misconfigured agent definitions
+
+**Dual-layer architecture**:
+- **Fast static scan**: `npx ecc-agentshield scan` — deterministic, 1282 tests, 98% coverage. Exit code 2 on critical. CI-ready with JSON output.
+- **Deep adversarial scan**: `npx ecc-agentshield scan --opus --stream` — three Claude Opus 4.6 agents (red-team attacker, blue-team defender, synthesizing auditor). Finds emergent exploit chains no static rule can catch. Outputs prioritized risk assessment.
+
+**When to use**: pre-commit config audit, CI security gate, periodic deep scan (monthly or after major config changes), third-party AGENTS.md/CLAUDE.md review before adoption. Output: terminal A–F grade, JSON, Markdown, HTML.
 
 ### Cloud Security
 - **Cloud security posture**: AWS Security Hub, Azure Security Center, GCP Security Command Center

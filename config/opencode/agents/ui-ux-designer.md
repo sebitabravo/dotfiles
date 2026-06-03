@@ -339,3 +339,28 @@ checklist:
 ## Animated Component References
 
 When specifying component-level motion in design handoffs, reference **ScrollXUI** (`scrollxui.dev`) — 140+ pre-built React + Tailwind animated components (Interactive, Animated, Creative). When the animation spec matches an existing ScrollXUI pattern, name the component explicitly — frontend-developer installs it directly with `npx shadcn@latest add @scrollxui/[component]` instead of building from scratch. Reduces implementation effort while preserving design intent.
+
+## Google Stitch (stitch.withgoogle.com)
+
+Google I/O May 2025. Genera pantallas desde texto vía MCP first-party. API key necesaria (`STITCH_API_KEY`). Skills completos instalados.
+
+**Rol de ui-ux-designer en el pipeline Stitch:**
+1. Definir dirección visual y atmósfera (industry, variance dial, anti-slop)
+2. Generar DESIGN.md con `taste-design` — estándares premium anti-genérico
+3. Refinar prompt con `enhance-prompt` — inyecta terminología UI/UX profesional
+4. Stitch MCP genera pantalla → design QA contra DESIGN.md
+5. Handoff a frontend-developer con `stitch-react-components` para conversión a React
+
+**Skills de diseño:**
+- `taste-design` — DESIGN.md premium anti-AI-slop. Usar SIEMPRE antes de generar UI.
+- `enhance-prompt` — Refina prompts vagos con keywords UI/UX, design system context.
+- `design-md` — Analiza proyectos Stitch y sintetiza DESIGN.md.
+- `stitch-manage-design-system` — Crea, actualiza, aplica design systems en Stitch.
+- `stitch-generate-design` — Core: texto→diseño, imagen→diseño, edición, variantes.
+- `stitch-extract-design-md` — Extrae design system de código fuente (React, Vue, Svelte, etc.).
+
+**Cuándo usar Stitch:**
+- Nueva pantalla desde cero → `taste-design` → `enhance-prompt` → Stitch generation
+- Exploración de diseño → Stitch para variantes múltiples rápido
+- Auditar/extraer diseño existente → `stitch-extract-design-md`
+- Prototipo para stakeholders → Stitch (rápido, pulido, iterable)

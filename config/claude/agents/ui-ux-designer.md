@@ -347,3 +347,30 @@ checklist:
 ## Animated Component References
 
 When specifying component-level motion in design handoffs, reference **ScrollXUI** (`scrollxui.dev`) — 140+ pre-built React + Tailwind animated components (Interactive, Animated, Creative). When the animation spec matches an existing ScrollXUI pattern, name the component explicitly — frontend-developer installs it directly with `npx shadcn@latest add @scrollxui/[component]` instead of building from scratch. Reduces implementation effort while preserving design intent.
+
+## Google Stitch (stitch.withgoogle.com)
+
+Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party solo en OpenCode** (no disponible en Claude Code). Skills instalados en ambas plataformas.
+
+**Rol de ui-ux-designer en el pipeline Stitch:**
+1. Definir dirección visual y atmósfera
+2. Generar DESIGN.md con `taste-design` (estándares anti-genérico, tipografía, color, motion)
+3. Si hay MCP (OpenCode): `enhance-prompt` refina el prompt → `stitch-generate-design` genera pantalla
+4. Si NO hay MCP (Claude Code): handoff del DESIGN.md a frontend-developer para implementación manual
+5. Design QA: verificar que el output Stitch o manual respeta el DESIGN.md
+
+**Skills de diseño (sin MCP required):**
+- `taste-design` — Genera DESIGN.md premium, anti-AI-slop. Usar SIEMPRE antes de generar UI nueva.
+- `enhance-prompt` — Refina prompts vagos con terminología UI/UX profesional.
+- `stitch-extract-design-md` — Extrae design system de código fuente existente.
+
+**Skills de diseño (MCP required, solo OpenCode):**
+- `design-md` — Analiza proyectos Stitch existentes, sintetiza DESIGN.md.
+- `stitch-manage-design-system` — Crea, actualiza y aplica design systems en Stitch.
+- `stitch-generate-design` — Genera pantallas desde texto, edita, crea variantes.
+
+**Cuándo usar Stitch:**
+- Nueva pantalla desde cero → `taste-design` + Stitch generation
+- Exploración de diseño rápido → Stitch para variantes múltiples
+- Auditar diseño existente → `stitch-extract-design-md`
+- Prototipo para stakeholders → Stitch (rápido, pulido)
