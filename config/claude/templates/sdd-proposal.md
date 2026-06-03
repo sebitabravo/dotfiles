@@ -23,6 +23,15 @@
 
 <!-- How: patterns, tools, architecture direction. What NOT to do. -->
 
+## Constitution Alignment
+
+<!-- Verificar contra la constitución del proyecto ANTES de aprobar -->
+
+| Principle | Aligned? | Notes |
+|---|---|---|
+| {{PRINCIPLE_1}} | ✅ / ❌ / ⚠️ | {{NOTES}} |
+| {{PRINCIPLE_2}} | ✅ / ❌ / ⚠️ | {{NOTES}} |
+
 ## Rationale
 
 <!-- Why this approach over alternatives. Alternatives considered and rejected. -->
