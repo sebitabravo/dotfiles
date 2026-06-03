@@ -69,6 +69,7 @@ Install missing tools with `brew install <tool>`.
 
 ## Startup
 
+0. **Handoff check**: Si `HANDOFF.md` existe en el proyecto, el hook `SessionStart` lo inyecta automáticamente como contexto adicional y lo archiva como `HANDOFF.md.archived`. Si por alguna razón el hook no se ejecutó, leer `HANDOFF.md` manualmente.
 1. Read `rules/common/*.md` + `rules/npm-security.md`.
 2. If project has its own `CLAUDE.md`, read it — it overrides this file.
 3. Check `skill-registry.md` before coding. Skills auto-discovered from `skills/` directory.

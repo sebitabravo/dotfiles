@@ -73,6 +73,7 @@ Install missing tools with `brew install <tool>`.
 
 ## Startup
 
+0. **Handoff check**: Si `HANDOFF.md` existe en el proyecto, leerlo ANTES de continuar. Contiene objetivo, estado actual, archivos clave, cambios hechos, intentos fallidos y próximos pasos. No repitas trabajo ya hecho. OpenCode no tiene hooks automáticos — depende de que el usuario pida leerlo o que lo detectes vos.
 1. Read `rules/common/*.md` + `rules/npm-security.md`.
 2. If project has its own `AGENTS.md` or `CLAUDE.md`, read it — it overrides this file.
 3. Skills auto-discovered from `skills/` directory. Check `skill-registry.md` before coding.
