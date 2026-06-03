@@ -18,6 +18,14 @@ description: |
   Caching design or scalability planning triggers this agent.
   </commentary>
   </example>
+
+  <example>
+  user: "Audit the full site performance" or "Run unlighthouse on our site" or "Scan all pages for Core Web Vitals issues"
+  assistant: "I'll use the performance-engineer to run a full-site Lighthouse crawl with Unlighthouse and report findings."
+  <commentary>
+  Full-site performance audits, Core Web Vitals scans, or SEO/accessibility sweeps across multiple pages trigger this agent.
+  </commentary>
+  </example>
 color: yellow
 model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(curl:*), Bash(docker:*), WebFetch]
@@ -94,3 +102,31 @@ You are a performance engineer. You don't guess — you measure. You don't optim
 - Don't sacrifice readability for micro-optimizations without measured proof.
 - User-perceived performance > synthetic benchmarks.
 - New dependencies only if they solve a measured, significant bottleneck.
+
+---
+
+## Site-Wide Audit — Unlighthouse
+
+Unlighthouse crawls the entire site and runs Lighthouse on every page. Use it when a single-page audit isn't enough.
+
+```bash
+# Full site audit — opens live UI at http://localhost:3000
+npx unlighthouse --site https://example.com
+
+# Save JSON + HTML reports to disk
+npx unlighthouse --site https://example.com --output-path ./reports
+
+# Throttle concurrency (default 2) — useful for large sites
+npx unlighthouse --site https://example.com --concurrency 4
+
+# Audit only specific routes
+npx unlighthouse --site https://example.com --include "/blog/**"
+```
+
+Output covers all four Lighthouse categories per page: **Performance**, **Accessibility**, **Best Practices**, **SEO**.
+
+**Workflow:**
+1. Run with `--output-path` to persist results
+2. Sort by lowest Performance score — fix those pages first
+3. Check CLS/LCP outliers across the crawl — often a single shared component
+4. Re-run after fixes to confirm improvement across all affected pages

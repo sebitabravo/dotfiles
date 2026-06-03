@@ -190,7 +190,7 @@ Use agents PROACTIVELY, without waiting for the user to ask:
 | Auth logic, tokens, secrets, permissions | `security-auditor` |
 | Vulnerability discovery, pentesting, exploit analysis | `vulnerability-hunter` |
 | React component, layout, responsive, CSS, SEO, structured data | `ui-ux-designer` + `frontend-developer` (ui-ux-designer first for design direction, then frontend-developer for implementation. They are siblings — always together on UI) |
-| Slowness, N+1 queries, caching, profiling | `performance-engineer` |
+| Slowness, N+1 queries, caching, profiling, full-site audit, unlighthouse | `performance-engineer` |
 | CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
 | E2E tests, Playwright, regressions | `qa-engineer` |
 | Docs, README, changelog, ADR, PPTX, XLSX, DOCX | `technical-writer` |

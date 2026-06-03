@@ -58,6 +58,7 @@ Expert performance engineer with comprehensive knowledge of modern observability
 - **CSS optimization**: Critical CSS, CSS optimization, render-blocking resource elimination
 - **Network optimization**: HTTP/2, HTTP/3, resource hints, preloading strategies
 - **Progressive Web Apps**: Service workers, caching strategies, offline functionality
+- **Full-site audit (Unlighthouse)**: Crawls entire site running Lighthouse on every page — Performance, Accessibility, Best Practices, SEO. Use `npx unlighthouse --site <url>`. Add `--output-path ./reports` to persist results. Sort by lowest Performance score to prioritize fixes. Re-run after changes to confirm improvement across all affected pages.
 
 ### Backend Performance Optimization
 - **API optimization**: Response time optimization, pagination, bulk operations
