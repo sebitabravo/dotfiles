@@ -1,0 +1,26 @@
+#!/bin/bash
+# Global commit-msg hook — bloquea AI footprint en TODOS los repos
+# Registrado vía: git config --global core.hooksPath ~/.git-hooks
+#
+# Si el repo tiene su propio .git/hooks/commit-msg, se encadena al final.
+
+COMMIT_MSG_FILE="$1"
+
+# --- Block AI footprint ---
+if grep -qiE "Co-Authored-By:|co-authored-by:" "$COMMIT_MSG_FILE"; then
+    echo "" >&2
+    echo "❌ COMMIT BLOCKED: AI footprint detectado en el mensaje" >&2
+    echo "   Patrón: Co-Authored-By" >&2
+    echo "   Regla:  CLAUDE.md → 'No AI footprint' + 'Conventional Commits only'" >&2
+    echo "   Fix:    Eliminá la línea Co-Authored-By y volvé a commitear" >&2
+    echo "" >&2
+    exit 1
+fi
+
+# --- Chain to local hook if exists (and isn't ourselves) ---
+LOCAL_HOOK="${GIT_DIR:-.git}/hooks/commit-msg"
+if [ -f "$LOCAL_HOOK" ] && [ "$(realpath "$LOCAL_HOOK" 2>/dev/null)" != "$(realpath "$0" 2>/dev/null)" ]; then
+    exec "$LOCAL_HOOK" "$@"
+fi
+
+exit 0

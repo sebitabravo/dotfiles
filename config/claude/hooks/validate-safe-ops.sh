@@ -70,6 +70,10 @@ case "$BINARY" in
     if echo "$NO_QUOTES" | grep -qE '\breset\s+.*--hard(\s|$)'; then
       deny "git reset --hard bloqueado. Usa git stash o git checkout -- <file> para descartes selectivos."
     fi
+    # AI footprint en commit messages
+    if echo "$COMMAND" | grep -qiE 'Co-Authored-By:'; then
+      deny "git commit con Co-Authored-By bloqueado. Regla CLAUDE.md: No AI footprint."
+    fi
     ;;
   npm)
     # -g standalone (whitespace antes y despues, o fin de linea) — evita falsos positivos con paquetes que terminan en -g
@@ -77,7 +81,7 @@ case "$BINARY" in
       deny "npm install -g bloqueado. Usa npx para herramientas one-shot."
     fi
     ;;
-  pip | pip3)
+  pip|pip3)
     if echo "$FIRST_LINE" | grep -qE '\binstall\b.*--break-system-packages'; then
       deny "pip install --break-system-packages bloqueado. By-passea la proteccion del venv. Usa un venv o uv."
     fi
@@ -100,7 +104,7 @@ case "$BINARY" in
       deny "terraform destroy/apply -auto-approve bloqueado. Infraestructura como codigo requiere revision manual."
     fi
     ;;
-  mysql | psql | sqlite3 | mongo | mongosh | redis-cli | mariadb | cockroach | sqlplus | duckdb | clickhouse-client | bq | snowsql | mysqlsh)
+  mysql|psql|sqlite3|mongo|mongosh|redis-cli|mariadb|cockroach|sqlplus|duckdb|clickhouse-client|bq|snowsql|mysqlsh)
     # FIRST_LINE (con quotes) porque DROP TABLE suele ir dentro de -e "..." o -c "..."
     if echo "$FIRST_LINE" | grep -qiE '\bDROP\s+(TABLE|DATABASE|SCHEMA)\b'; then
       deny "DROP TABLE/DATABASE bloqueado. Ejecuta manualmente si es intencional."
@@ -111,7 +115,7 @@ case "$BINARY" in
       deny "dd bloqueado. Operacion de bajo nivel peligrosa."
     fi
     ;;
-  mkfs | mkfs.* | newfs | newfs_msdos)
+  mkfs|mkfs.*|newfs|newfs_msdos)
     deny "mkfs/newfs bloqueado. Formateo de filesystem es irreversible sin backup."
     ;;
 esac
