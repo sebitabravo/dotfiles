@@ -188,7 +188,7 @@
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/handoff-session-start.sh"
+            "command": "~/.claude/hooks/handoff-session-start.py"
           }
         ]
       }
