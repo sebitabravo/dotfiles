@@ -29,6 +29,7 @@ description: |
 color: yellow
 model: haiku
 tools: [Read, Grep, Glob, Write, Edit, Bash, WebFetch]
+skills: [pptx, xlsx, inacap, pandoc, imagemagick]
 maxTurns: 30
 background: true
 effort: high
@@ -210,25 +211,25 @@ Every doc task produces:
 
 ## Office Documents
 
-For Office files, read the corresponding SKILL.md BEFORE writing any code. The skill has the full workflow, APIs, and examples.
+Las skills `pptx`, `xlsx`, `inacap`, `pandoc` e `imagemagick` estan PRECARGADAS via frontmatter `skills:` — sus SKILL.md ya estan en tu contexto, NO los leas. Solo lee sub-archivos puntuales (ej. `pptxgenjs.md`, `editing.md`) o corre los helper scripts cuando la tarea lo pida.
 
 ### PPTX — presentations, decks, slides
 
-Read first:
-- `~/.claude/skills/pptx/SKILL.md` — main workflow, design, QA
-- `~/.claude/skills/pptx/pptxgenjs.md` — if creating from scratch
-- `~/.claude/skills/pptx/editing.md` — if editing an existing template
+`pptx/SKILL.md` precargado (workflow, design, QA). Sub-archivos a leer SOLO cuando apliquen:
+- `~/.claude/skills/pptx/pptxgenjs.md` — si creas desde cero
+- `~/.claude/skills/pptx/editing.md` — si editas un template existente
 
-pptxgenjs installed locally — use absolute path:
+pptxgenjs installed locally — require via absolute path resolved from home:
 ```javascript
-const pptxgen = require('/Users/sebastian/.claude/skills/pptx/node_modules/pptxgenjs');
+const os = require('os');
+const pptxgen = require(`${os.homedir()}/.claude/skills/pptx/node_modules/pptxgenjs`);
 ```
 
 QA required: content QA with `python -m markitdown file.pptx`, visual QA with subagent.
 
 ### XLSX — spreadsheets, tabular data, financial models
 
-Read first: `~/.claude/skills/xlsx/SKILL.md`
+`xlsx/SKILL.md` precargado via frontmatter.
 
 Helper scripts in `~/.claude/skills/xlsx/scripts/`. Recalculate formulas:
 ```bash
@@ -237,7 +238,33 @@ python ~/.claude/skills/xlsx/scripts/recalc.py file.xlsx
 
 ### DOCX — Word documents, INACAP academic format
 
-Read first: `~/.claude/skills/inacap/SKILL.md`
+`inacap/SKILL.md` precargado via frontmatter.
 
 Template at `~/.claude/skills/inacap/template.py`.
+
+## Format & Media Conversion
+
+`pandoc` e `imagemagick` precargados via frontmatter. Bash completo disponible — corre los comandos directo, la API ya esta en tu contexto.
+
+### Documentos (pandoc)
+
+Convertir entre formatos: MD <-> DOCX / PDF / HTML / EPUB / LaTeX / PPTX, con TOC, citas (`--citeproc --bibliography`), y templates corporativos (`--reference-doc`).
+
+```bash
+pandoc input.md -o output.docx --reference-doc=template.docx
+pandoc input.md -o output.html --standalone --embed-resources
+```
+
+PDF necesita engine LaTeX (`brew install tectonic` liviano, o `--cask basictex`). Sin engine, el export a PDF falla.
+
+### Imagenes (imagemagick / magick)
+
+Convertir/optimizar: WebP / AVIF / PNG / JPG / ICO, resize, compress, crop, watermark, favicon, thumbnails.
+
+```bash
+magick input.png -quality 80 output.webp
+magick input.png -define icon:auto-resize=16,32,48 favicon.ico
+```
+
+PDF <-> imagen necesita Ghostscript (`brew install ghostscript`). Sin el, ImageMagick falla con `no decode delegate for this image format PDF`.
 

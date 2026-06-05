@@ -205,16 +205,13 @@ fi
 [[ -d "$NVM_DIR/versions/node/$_nvm_default/bin" ]] && \
   export PATH="$NVM_DIR/versions/node/$_nvm_default/bin:$PATH"
 unset _nvm_default
+# Solo nvm necesita lazy-load. node/npm/npx/pnpm/pnpx vienen del PATH estático (línea 206).
+# Wrappers eliminados: causaban recursión infinita si _nvm_lazy_load no se cargaba en entornos no interactivos.
 _nvm_lazy_load() {
-  unfunction nvm node npm npx pnpm pnpx 2>/dev/null
+  unfunction nvm 2>/dev/null
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 }
 nvm()   { _nvm_lazy_load; nvm "$@"; }
-node()  { _nvm_lazy_load; node "$@"; }
-npm()   { _nvm_lazy_load; npm "$@"; }
-npx()   { _nvm_lazy_load; npx "$@"; }
-pnpm()  { _nvm_lazy_load; pnpm "$@"; }
-pnpx()  { _nvm_lazy_load; pnpx "$@"; }
 
 # Herd shell config — DESACTIVADO (registraba chpwd hook que cargaba nvm en cada cd)
 # [[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
@@ -238,15 +235,12 @@ source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-autosuggestions/zsh-autos
 
 # Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
 if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
-  fastfetch
+command -v fastfetch &>/dev/null && fastfetch
 fi
 
 
-# Herd injected PHP 8.4 configuration.
-export HERD_PHP_84_INI_SCAN_DIR="/Users/sebastian/Library/Application Support/Herd/config/php/84/"
-
 # pnpm
-export PNPM_HOME="/Users/sebastian/Library/pnpm"
+export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME/bin:"*) ;;
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;

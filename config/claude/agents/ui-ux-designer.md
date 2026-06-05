@@ -21,6 +21,7 @@ description: |
 color: purple
 model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+skills: [taste-design, enhance-prompt, stitch-extract-design-md]
 maxTurns: 40
 effort: high
 ---
@@ -359,7 +360,7 @@ Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party s
 4. Si NO hay MCP (Claude Code): handoff del DESIGN.md a frontend-developer para implementación manual
 5. Design QA: verificar que el output Stitch o manual respeta el DESIGN.md
 
-**Skills de diseño (sin MCP required):**
+**Skills de diseño (sin MCP required) — PRECARGADAS via frontmatter `skills:` (API ya en contexto):**
 - `taste-design` — Genera DESIGN.md premium, anti-AI-slop. Usar SIEMPRE antes de generar UI nueva.
 - `enhance-prompt` — Refina prompts vagos con terminología UI/UX profesional.
 - `stitch-extract-design-md` — Extrae design system de código fuente existente.

@@ -26,6 +26,8 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Parallels Desktop** - Virtualización de sistemas operativos
 - [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
 - [ ] **WhatsApp** - Cliente de mensajería
+- [ ] **TestFlight** - App para probar nuevas versiones de aplicaciones
+- [ ] **Apple Developer** - App para desarrolladores de Apple
 
 ---
 

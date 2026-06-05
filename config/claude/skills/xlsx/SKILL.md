@@ -71,7 +71,7 @@ A user may ask you to create, edit, or analyze the contents of an .xlsx file. Yo
 
 ## Important Requirements
 
-**LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the `scripts/recalc.py` script. The script automatically configures LibreOffice on first run, including in sandboxed environments where Unix sockets are restricted (handled by `scripts/office/soffice.py`)
+**Formula Recalculation**: If the recipient uses MS Excel, formulas recalculate automatically on open — no extra step needed. For headless verification or LibreOffice users, use `scripts/recalc.py` which auto-configures LibreOffice on first run (handles sandboxed environments via `scripts/office/soffice.py`). LibreOffice is **optional** — skip unless formulas must be verified programmatically before delivery.
 
 ## Reading and analyzing data
 

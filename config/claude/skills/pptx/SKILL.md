@@ -204,9 +204,9 @@ Report ALL issues found, including minor ones.
 
 ---
 
-## Converting to Images
+## Converting to Images (Optional)
 
-Convert presentations to individual slide images for visual inspection:
+Visual QA via slide images is **optional**: MS Office/PowerPoint renders slides natively on open. Only use this if you need programmatic visual inspection.
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.pptx
@@ -228,5 +228,5 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 - `pip install "markitdown[pptx]"` - text extraction
 - `pip install Pillow` - thumbnail grids
 - `pptxgenjs` - pre-installed locally in `skills/pptx/node_modules/`. Scripts run with `node script.js` from this skill dir. `require("pptxgenjs")` resolves automatically.
-- LibreOffice (`soffice`) - PDF conversion (auto-configured for sandboxed environments via `scripts/office/soffice.py`)
-- Poppler (`pdftoppm`) - PDF to images
+- LibreOffice (`soffice`) - PDF conversion for visual QA **only if needed** (MS Office renders natively on open). Auto-configured for sandboxed environments via `scripts/office/soffice.py`.
+- Poppler (`pdftoppm`) - PDF to images (only needed if using soffice for visual QA)

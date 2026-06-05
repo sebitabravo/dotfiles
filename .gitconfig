@@ -1,6 +1,7 @@
 [user]
-	name = sebitabravo
-	email = sebastianalejandrobravocampos@gmail.com
+	# Cambia estos valores por los tuyos (o setealos con: git config --global user.name "..." && git config --global user.email "...")
+	name = Tu Nombre
+	email = tu-email@ejemplo.com
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true
@@ -9,6 +10,8 @@
 [core]
 	commentChar = "#"
 	pager = delta
+	excludesFile = ~/.gitignore_global
+	hooksPath = ~/.git-hooks
 
 [interactive]
 	diffFilter = delta --color-only

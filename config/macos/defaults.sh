@@ -10,14 +10,8 @@ echo "=== Aplicando defaults de macOS ==="
 defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 echo "[OK] Window resize instant"
 
-defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
-echo "[OK] Window open/close animations disabled"
-
-defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
-echo "[OK] Focus ring animation disabled"
-
-defaults write NSGlobalDomain NSScrollViewRubberbanding -bool false
-echo "[OK] Rubber-band scrolling disabled"
+# Window animations: stock macOS (animations are part of the experience)
+# NSAutomaticWindowAnimationsEnabled kept at default (true)
 
 defaults write NSGlobalDomain NSDocumentRevisionsWindowTransformAnimation -bool false
 echo "[OK] Document revisions animation disabled"
@@ -25,33 +19,21 @@ echo "[OK] Document revisions animation disabled"
 defaults write NSGlobalDomain NSToolbarFullScreenAnimationDuration -float 0
 echo "[OK] Full-screen toolbar animation instant"
 
-defaults write NSGlobalDomain NSBrowserColumnAnimationSpeedMultiplier -float 0
-echo "[OK] Column view animation disabled"
+# Column view animation: stock macOS (smooth navigation feel)
 
-# ── Scroll ─────────────────────────────────────────────────────────
-defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
-echo "[OK] Smooth scrolling disabled"
-
-defaults write NSGlobalDomain AppleScrollerPagingBehavior -bool true
-echo "[OK] Click scroll bar = jump to position"
+# Scroll: stock macOS (smooth scrolling + elastic feel are iconic)
 
 # ── Quick Look ─────────────────────────────────────────────────────
 defaults write -g QLPanelAnimationDuration -float 0
 echo "[OK] Quick Look animation = 0"
 
-# Reduce GPU usage
-defaults write -g CGDisableCursorLocationMagnification -bool true
-echo "[OK] Cursor location magnification off"
+# Cursor magnification: stock macOS (no perf/security/stability impact)
 
 # ── Mission Control ────────────────────────────────────────────────
 defaults write com.apple.dock expose-animation-duration -float 0.1
 echo "[OK] Mission Control speed"
 
-defaults write com.apple.dock mru-spaces -bool false
-echo "[OK] Spaces never rearrange"
-
-defaults write com.apple.dock workspaces-auto-swoosh -bool false
-echo "[OK] Dock: no auto-switch space on app click"
+# Mission Control: stock macOS space ordering and auto-switch
 
 # ── Launchpad (removed in Tahoe 26.x — no-op there) ────────────────
 defaults write com.apple.dock springboard-show-duration -float 0.1
@@ -64,12 +46,6 @@ defaults write com.apple.dock springboard-page-duration -float 0
 echo "[OK] Launchpad page scroll instant"
 
 # ── Dock ───────────────────────────────────────────────────────────
-defaults write com.apple.dock autohide-time-modifier -float 0
-echo "[OK] Dock hide/show instant"
-
-defaults write com.apple.dock autohide-delay -float 0
-echo "[OK] Dock show delay = 0"
-
 defaults write com.apple.dock tilesize -int 48
 echo "[OK] Dock tile size = 48px"
 
@@ -82,9 +58,7 @@ echo "[OK] Minimize into app icon"
 defaults write com.apple.dock show-recents -bool false
 echo "[OK] No recent apps in Dock"
 
-defaults write com.apple.dock launchanim -bool false
-echo "[OK] App launch animation off"
-
+# App launch animation: stock macOS (bounce is iconic feedback)
 defaults write com.apple.dock scroll-to-open -bool true
 echo "[OK] Dock scroll to Exposé"
 
@@ -94,11 +68,7 @@ echo "[OK] Spring-load all Dock items"
 defaults write com.apple.dock showhidden -bool true
 echo "[OK] Dock show hidden app icons"
 
-defaults write com.apple.dock no-bouncing -bool true
-echo "[OK] Dock no bouncing icons"
-
-defaults write com.apple.dock autohide -bool true
-echo "[OK] Dock auto-hide"
+# Dock: stock macOS (visible, bouncing icons — iconic experience)
 
 defaults write com.apple.dock mouse-over-hilite-stack -bool true
 echo "[OK] Dock highlight stacks on hover"
@@ -199,13 +169,8 @@ echo "[OK] Desktop icon positions reset"
 defaults write com.apple.finder QLEnableTextSelection -bool true
 echo "[OK] Quick Look text selection"
 
-# Auto-remove trash items older than 30 days (saves disk on dev machines)
-defaults write com.apple.finder FXRemoveOldTrashItems -bool true
-echo "[OK] Finder auto-clean trash >30 days"
-
-# Hide desktop icons (clean workspace — accessible via Finder)
-defaults write com.apple.finder CreateDesktop -bool false
-echo "[OK] Finder desktop icons hidden"
+# Desktop icons stay visible (stock macOS experience)
+# Trash: stock behavior (user controls when to empty)
 
 # ── Network Browser ────────────────────────────────────────────────
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
@@ -257,8 +222,7 @@ echo "[OK] Spelling correction off"
 defaults write NSGlobalDomain WebAutomaticSpellingCorrectionEnabled -bool false
 echo "[OK] Web spelling correction off"
 
-defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
-echo "[OK] Full keyboard navigation"
+# Keyboard navigation: stock macOS (Tab = text fields only, not all controls)
 
 defaults write NSGlobalDomain NSAutomaticTextCompletionEnabled -bool false
 echo "[OK] Auto text completion off"
@@ -296,8 +260,7 @@ defaults write com.apple.screencapture disable-shadow -bool true
 echo "[OK] Screenshot shadows off"
 
 # ── Window Restoration ─────────────────────────────────────────────
-defaults write NSGlobalDomain NSQuitAlwaysKeepsWindow -bool false
-echo "[OK] No window restoration on app quit"
+# Window restoration: stock macOS (windows reopen on app relaunch)
 
 # ── Preview ────────────────────────────────────────────────────────
 defaults write com.apple.Preview NSQuitAlwaysKeepsWindow -bool false
@@ -325,8 +288,7 @@ echo "[OK] Mail inline attachments off"
 defaults write com.apple.mail PreferPlainText -bool true
 echo "[OK] Mail plain text compose"
 
-defaults write com.apple.mail SpellCheckingBehavior -string "NoSpellCheckingEnabled"
-echo "[OK] Mail spell checking off"
+# Mail spell check: stock macOS (spell checking is useful, no security impact)
 
 # ── Messages ───────────────────────────────────────────────────────
 defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
@@ -607,10 +569,6 @@ defaults write com.apple.notificationcenterui bannerTime -int 3
 echo "[OK] Notification banner time = 3s"
 
 # ── Login Window ───────────────────────────────────────────────────
-defaults write com.apple.loginwindow TALLogoutSavesState -bool false
-defaults write com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false
-echo "[OK] Login: no app restoration on reboot"
-
 defaults write com.apple.loginwindow SHOWFULLNAME -bool true
 echo "[OK] Login window show full name"
 
@@ -655,12 +613,6 @@ echo "[OK] Spotlight server suggestions disabled"
 defaults write com.apple.Spotlight MenuBarSpotlightIcon -bool false
 echo "[OK] Spotlight menu bar icon hidden"
 
-# ── Google Chrome ──────────────────────────────────────────────────
-# Disable two-finger back/forward swipe (prevents accidental history navigation)
-defaults write com.google.Chrome AppleEnableSwipeNavigateWithScrolls -bool false
-defaults write com.google.Chrome AppleEnableMouseSwipeNavigateWithScrolls -bool false
-echo "[OK] Chrome backswipe disabled"
-
 # ── Sound ──────────────────────────────────────────────────────────
 defaults write -g com.apple.sound.beep.feedback -int 0
 echo "[OK] Volume change feedback silent"
@@ -669,18 +621,9 @@ echo "[OK] Volume change feedback silent"
 chflags nohidden ~/Library
 echo "[OK] ~/Library visible"
 
-# ── Tahoe 26.x — Liquid Glass GPU relief ───────────────────────────
-# Reduce Transparency: fondos sólidos en vez de vidrio esmerilado
-# ~15-20% reducción de WindowServer CPU (crítico en Macs sin fan)
+# Tahoe Liquid Glass: stock macOS (transparency/glass aesthetic is iconic)
 defaults write com.apple.universalaccess reduceTransparency -bool true
-echo "[OK] Reduce Transparency ON"
-
-# ── Accessibility ─────────────────────────────────────────────────
-# Ctrl + Scroll = screen zoom
-defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
-defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
-defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
-echo "[OK] Accessibility: Ctrl+Scroll zoom"
+echo "[OK] Disable transparency (reduce motion on liquid glass)"
 
 # ── Reiniciar servicios ────────────────────────────────────────────
 killall Dock 2>/dev/null && echo "[OK] Dock restarted"
