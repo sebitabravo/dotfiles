@@ -7,6 +7,14 @@
     "playwright": {
       "type": "http",
       "url": "https://mcp.playwright.dev/mcp"
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
     }
   }
 }

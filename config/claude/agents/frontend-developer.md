@@ -23,7 +23,7 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(ls:*), Bash(cat:*), WebFetch]
 context: fork
 maxTurns: 50
-skills: [tanstack-query, e2e-testing, android-jetpack-compose, swift, unity-developer, ffmpeg, gsap-core, gsap-timeline, gsap-scrolltrigger, gsap-react, gsap-plugins, gsap-utils, gsap-performance, gsap-frameworks, enhance-prompt, stitch-extract-design-md, stitch-react-components]
+skills: [tanstack-query, e2e-testing, android-jetpack-compose, swift, unity-developer, ffmpeg]
 effort: xhigh
 ---
 
@@ -103,9 +103,8 @@ zig build run                              # unico comando de build+run
 
 ```bash
 npm install gsap @gsap/react
+npx skills add https://github.com/greensock/gsap-skills  # official GSAP skill (8 skills: core, timeline, scrolltrigger, plugins, react, utils, performance, frameworks)
 ```
-
-Las 8 skills GSAP (`gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, `gsap-react`, `gsap-plugins`, `gsap-utils`, `gsap-performance`, `gsap-frameworks`) estan PRECARGADAS via frontmatter `skills:` — la API completa ya esta en tu contexto. No la busques ni la instales: usala directo.
 
 **When to use GSAP vs Framer Motion vs CSS**:
 
@@ -127,7 +126,7 @@ Las 8 skills GSAP (`gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, `gsap-rea
 - `ScrollTrigger` — scroll-linked with scrub, pin, containerAnimation (horizontal scroll)
 - `useGSAP()` hook (React) — replaces useEffect, auto-cleanup, scope isolation
 - `gsap.matchMedia()` — responsive breakpoints + `prefers-reduced-motion`
-- Skills GSAP precargadas: API completa ya en contexto. Usala, no adivines.
+- Official skill provides full API docs. Reference it, don't guess.
 
 ## Animated Component Libraries
 
@@ -169,8 +168,6 @@ Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party s
 | `stitch-extract-design-md` | Extrae design system de código fuente (React, Vue, etc.) | No |
 | `stitch-manage-design-system` | Crea/aplica design systems en Stitch | Sí |
 | `stitch-react-components` | Convierte diseños Stitch a componentes Vite+React | No |
-
-Las 3 skills sin MCP (`enhance-prompt`, `stitch-extract-design-md`, `stitch-react-components`) estan PRECARGADAS via frontmatter `skills:` — API ya en contexto. Las que necesitan MCP (`design-md`, `stitch-generate-design`, `stitch-manage-design-system`) solo viven en OpenCode.
 
 **Pipeline diseño→código (con ui-ux-designer):**
 1. `ui-ux-designer` define dirección visual → DESIGN.md vía `taste-design`
@@ -233,6 +230,13 @@ Each page pattern from ui-ux-designer maps to specific components:
 - Responsive: mobile-first, breakpoints based on content, not devices
 - States: loading, empty, error, success, edge cases — ALL covered
 - Design decisions (color, typography, motion, UX writing, anti-slop) → delegate to `ui-ux-designer` before coding. This agent executes, not defines visual direction.
+- **Impeccable** — pre-design-QA anti-pattern detector. Run BEFORE handing off to `ui-ux-designer` for design review. Deterministic (no LLM, no API key). Catches 24 issues: typography, color, spacing, motion, anti-slop patterns.
+
+```bash
+npx impeccable detect src/              # scan directory
+npx impeccable detect --fast --json .   # regex-only, JSON output
+npx impeccable detect https://...       # scan URL (Puppeteer)
+```
 
 ## SEO
 - **Meta tags**: `<title>` 50-60 chars, primary keyword early, brand at end. `<meta name="description">` 150-160 chars, unique per page, call-to-action. Open Graph (`og:title`, `og:description`, `og:image` 1200x630px) and Twitter Card for social previews.

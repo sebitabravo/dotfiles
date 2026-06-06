@@ -99,6 +99,26 @@
         "RESOLVE_SCRIPT_API": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting",
         "PYTHONPATH": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting/Modules/"
       }
+    },
+    "codegraph": {
+      "type": "local",
+      "command": ["codegraph", "serve", "--mcp"],
+      "enabled": false
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://mcp.github.com/mcp",
+      "enabled": false
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/mcp-server-postgres", "$DATABASE_URL"],
+      "enabled": false
+    },
+    "brave-search": {
+      "type": "remote",
+      "url": "https://mcp.brave.com/mcp",
+      "enabled": false
     }
   },
   "permission": {
