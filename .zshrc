@@ -136,7 +136,8 @@ alias grep="rg --color=auto"
 alias mkdir="mkdir -p"
 alias cat='bat --paging=never'
 alias less='bat'
-alias z='zoxide query -i'
+# zoxide provee 'z' (jump por frecency) y 'zi' (seleccion interactiva) via init (~linea 151).
+# NO redefinir 'z' como alias: la expansion de alias gana sobre la funcion y rompe el jump.
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
 # Pyenv — lazy-load shims PATH + defer init (~300ms ahorro, elimina jitter)

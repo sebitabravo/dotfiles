@@ -4,6 +4,7 @@
 #
 # Si el repo tiene su propio .git/hooks/pre-push, se encadena al final.
 
+# shellcheck disable=SC2034 — positional args de git, documentan la firma del hook
 REMOTE="$1"
 URL="$2"
 
