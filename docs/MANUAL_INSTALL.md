@@ -59,6 +59,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
 - [ ] **Unity** - <https://unity.com/download/>
+- [ ] **Blender** - <https://www.blender.org/download/>
 
 ### IA & Coding Agents
 

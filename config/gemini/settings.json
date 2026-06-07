@@ -54,8 +54,8 @@
   },
   "hooks": {},
   "hooksConfig": {
-    "enabled": false,
-    "notifications": false
+    "enabled": true,
+    "notifications": true
   },
   "mcpServers": {
     "context7": {
@@ -92,7 +92,7 @@
   },
   "security": {
     "toolSandboxing": true,
-    "disableYoloMode": false,
+    "disableYoloMode": true,
     "disableAlwaysAllow": false,
     "enablePermanentToolApproval": true,
     "autoAddToPolicyByDefault": true,

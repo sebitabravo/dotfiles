@@ -48,14 +48,11 @@ brew "ffuf"
 brew "nuclei"
 brew "nikto"
 brew "john-jumbo"
-brew "exploitdb"
-
 brew "gitleaks"
 brew "trufflehog"
 brew "radare2"
 
 brew "binwalk"
-brew "wabt"
 brew "upx"
 
 # ============================================================================
@@ -63,4 +60,3 @@ brew "upx"
 # ============================================================================
 
 cask "dotnet-sdk"
-cask "libreoffice"

@@ -622,6 +622,8 @@ chflags nohidden ~/Library
 echo "[OK] ~/Library visible"
 
 # Tahoe Liquid Glass: stock macOS (transparency/glass aesthetic is iconic)
+# Tahoe (macOS 26) usa Liquid Glass — reduceTransparency puede causar artefactos visuales
+# Descomentar solo si tení macOS <26 o desactivaste Liquid Glass
 defaults write com.apple.universalaccess reduceTransparency -bool true
 echo "[OK] Disable transparency (reduce motion on liquid glass)"
 
@@ -629,7 +631,7 @@ echo "[OK] Disable transparency (reduce motion on liquid glass)"
 killall Dock 2>/dev/null && echo "[OK] Dock restarted"
 killall Finder 2>/dev/null && echo "[OK] Finder restarted"
 killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
-killall Clock 2>/dev/null || true
+killall "Clock" "WorldClockWidget" 2>/dev/null || true
 killall cfprefsd 2>/dev/null && echo "[OK] cfprefsd restarted"
 killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
 

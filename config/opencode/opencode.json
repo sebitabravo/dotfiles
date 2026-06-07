@@ -27,7 +27,7 @@
       ]
     }
   },
-  "autoupdate": false,
+  "autoupdate": true,
   "compaction": {
     "auto": true,
     "prune": true,
@@ -36,14 +36,6 @@
   "default_agent": "sebastian",
   "small_model": "opencode/deepseek-v4-flash-free",
   "mcp": {
-    "stitch": {
-      "type": "remote",
-      "url": "https://stitch.googleapis.com/mcp",
-      "enabled": true,
-      "headers": {
-        "X-Goog-Api-Key": "${STITCH_API_KEY}"
-      }
-    },
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
@@ -59,69 +51,22 @@
       "type": "local",
       "environment": {
         "ENGRAM_CLOUD_AUTOSYNC": "1",
-        "ENGRAM_CLOUD_TOKEN": "engram-local-token-32chars-xxxxx",
+        "ENGRAM_CLOUD_TOKEN": "${ENGRAM_CLOUD_TOKEN}",
         "ENGRAM_CLOUD_SERVER": "http://100.75.235.85:18080"
       }
     },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@playwright/mcp@latest"
-      ],
-      "enabled": false
-    },
-    "unity": {
+    "blender": {
       "type": "local",
       "command": [
         "uvx",
-        "--from",
-        "mcpforunityserver",
-        "mcp-for-unity",
-        "--transport",
-        "stdio"
+        "blender-mcp"
       ],
-      "enabled": false
-    },
-    "resolve": {
-      "type": "local",
-      "command": [
-        "uv",
-        "--directory",
-        "$HOME/Developer/resolve-claude-mcp",
-        "run",
-        "resolve-claude-mcp"
-      ],
-      "enabled": false,
-      "environment": {
-        "RESOLVE_SCRIPT_LIB": "/Applications/DaVinci Resolve.app/Contents/Libraries/Fusion/fusionscript.so",
-        "RESOLVE_SCRIPT_API": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting",
-        "PYTHONPATH": "/Applications/DaVinci Resolve.app/Contents/Resources/Developer/Scripting/Modules/"
-      }
-    },
-    "codegraph": {
-      "type": "local",
-      "command": ["codegraph", "serve", "--mcp"],
-      "enabled": false
-    },
-    "github": {
-      "type": "remote",
-      "url": "https://mcp.github.com/mcp",
-      "enabled": false
-    },
-    "postgres": {
-      "type": "local",
-      "command": ["npx", "-y", "@anthropic/mcp-server-postgres", "$DATABASE_URL"],
-      "enabled": false
-    },
-    "brave-search": {
-      "type": "remote",
-      "url": "https://mcp.brave.com/mcp",
       "enabled": false
     }
   },
   "permission": {
+    "edit": "allow",
+    "webfetch": "allow",
     "bash": {
       "sudo *": "deny",
       "npm install -g*": "deny",
@@ -134,8 +79,6 @@
       "helm delete*": "deny",
       "terraform destroy*": "deny",
       "terraform apply *-auto-approve*": "deny",
-      "npm install*": "ask",
-      "npm i *": "ask",
       "git commit*": "ask",
       "git push*": "ask",
       "git rebase*": "ask",
@@ -143,69 +86,7 @@
       "git checkout -f*": "ask",
       "rm -rf *": "ask",
       "rm -f *": "ask",
-      "git status*": "allow",
-      "git diff*": "allow",
-      "git add*": "allow",
-      "git checkout*": "allow",
-      "git branch*": "allow",
-      "git log*": "allow",
-      "git stash*": "allow",
-      "git fetch*": "allow",
-      "git pull*": "allow",
-      "npm *": "allow",
-      "npx *": "allow",
-      "pnpm *": "allow",
-      "bun *": "allow",
-      "yarn *": "allow",
-      "eza*": "allow",
-      "fd *": "allow",
-      "bat *": "allow",
-      "rg *": "allow",
-      "sd *": "allow",
-      "which *": "allow",
-      "brew *": "allow",
-      "python *": "allow",
-      "pip *": "allow",
-      "uvx *": "allow",
-      "uv *": "allow",
-      "cargo *": "allow",
-      "rustc *": "allow",
-      "go *": "allow",
-      "make *": "allow",
-      "docker *": "allow",
-      "gh *": "allow",
-      "code *": "allow",
-      "nvim *": "allow",
-      "cat *": "allow",
-      "ls *": "allow",
-      "mkdir *": "allow",
-      "cp *": "allow",
-      "mv *": "allow",
-      "touch *": "allow",
-      "chmod *": "allow",
-      "head *": "allow",
-      "tail *": "allow",
-      "wc *": "allow",
-      "grep *": "allow",
-      "find *": "allow",
-      "sed *": "allow",
-      "awk *": "allow",
-      "curl *": "allow",
-      "wget *": "allow",
-      "echo *": "allow",
-      "printf *": "allow",
-      "pwd": "allow",
-      "cd *": "allow",
-      "env": "allow",
-      "export *": "allow",
-      "source *": "allow",
-      "pytest *": "allow",
-      "jest *": "allow",
-      "vitest *": "allow",
-      "ng *": "allow",
-      "nx *": "allow",
-      "turbo *": "allow",
-      "*": "ask"
+      "*": "allow"
     },
     "read": {
       "*": "allow",
