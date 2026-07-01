@@ -196,6 +196,12 @@ get_peak_warning() {
     return
   fi
 
+  # DeepSeek V4 peak-valley (oficial, confirmado 2x exacto, lanza mid-July 2026)
+  if { [ "$UTC_HOUR" -ge 1 ] && [ "$UTC_HOUR" -lt 4 ]; } || { [ "$UTC_HOUR" -ge 6 ] && [ "$UTC_HOUR" -lt 10 ]; }; then
+    echo -e "${ACCENT}💸 2x${NC}"
+    return
+  fi
+
   # DeepSeek: daily 9:00-21:00 Beijing (01:00-13:00 UTC) — ~1.2x premium vs off-peak
   if [ "$BJS_HOUR" -ge 9 ] && [ "$BJS_HOUR" -lt 21 ]; then
     echo -e "${MUTED}⚠️ 1.2x${NC}"
