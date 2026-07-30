@@ -22,7 +22,7 @@ color: red
 model: opus
 tools: [Read, Grep, Glob]
 maxTurns: 40
-skills: [code-review, android-jetpack-compose, swift, android-clean-architecture, kotlin-coroutines-flows, mobile-app-testing, laravel-specialist, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, unity-developer, docker-expert, github-actions-docs, ffmpeg]
+skills: [code-review, android-jetpack-compose, swift, android-clean-architecture, kotlin-coroutines-flows, mobile-app-testing, laravel-specialist, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, unity-developer, docker-expert, github-actions-docs, ffmpeg, security-review, thermo-nuclear-code-quality-review, mutation-testing]
 effort: max
 background: true
 ---

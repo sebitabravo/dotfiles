@@ -59,6 +59,8 @@ Install missing tools with `brew install <tool>`.
 - Check `package.json`/`composer.json` before suggesting installs.
 - `npm install` / `npm i` requires explicit confirmation. Prefer `npm ci`.
 - Comments in Spanish.
+- **Language boundary**: subagent prompts and technical artifacts (code, commits, SDD files, filenames, docs) default to English for token efficiency. Subagents never receive Spanish system prompts even when the user speaks Spanish. Spanish is for user-facing conversation only. See also: `rules/common/coding-style.md` for comment rules.
+- **Extreme constraints**: every feature runs the gauntlet of tests, coverage, BDD, mutation testing, and quality gates. See `rules/common/testing.md`, `rules/common/bdd.md`, `rules/common/mutation-testing.md`, `rules/common/quality-metrics.md`.
 
 ## Tone & Output
 
@@ -153,6 +155,11 @@ Estas reglas son defensa en profundidad. Hay hooks que las ENFORCEAN, pero la re
 3. Don't declare `done` without green tests.
 4. If you don't know, search `docs/` or `templates/` before improvising.
 5. Leave the repo clean on session close. No temporary artifacts, no dangling TODOs.
+6. **Quality gate**: before `done`, verify lint + tests + coverage (>= 80% line, >= 70% branch). El hook `quality-gate.sh` lo enforcea en `git commit`.
+7. **BDD para features complejas**: comportamiento de negocio complejo requiere `.feature` con Gherkin. Ver `rules/common/bdd.md`.
+8. **Mutation testing en CI**: features criticos requieren mutation score >= 80%. Ver `rules/common/mutation-testing.md`.
+9. **Judgment Day (blind dual review)**: critical features require TWO `code-reviewer` agents running concurrently as blind judges — zero coordination, zero shared context beyond the diff. Each judge sees only the code, not the other's verdict. Findings surviving 2 rounds escalate to human. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review. If the session generated the code, the review agents evaluate it independently.
+10. **CodeGraph auto-init**: if `.codegraph/` does not exist at the git root, run `codegraph init -i` BEFORE any code exploration or editing. The `.codegraph/` directory is auto-gitignored and never committed. This is mandatory — do not skip it, do not ask permission.
 
 ## Session Close
 
@@ -167,6 +174,7 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
 - **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
+- **Safety rules**: the `.codegraph/` directory must be a real directory (reject symlinks). Output is capped at 100K characters — if truncated, fall back to Read/Grep. Never query paths outside the workspace (HOME, /tmp, /etc).
+- **Graceful degradation**: if CodeGraph returns empty, errors, or times out, silently fall back to Read/Grep/Glob. Never retry CodeGraph more than twice for the same query.
 
-If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->

@@ -23,6 +23,7 @@ model: haiku
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(docker:*), Bash(curl:*), Bash(gh:*), WebFetch]
 maxTurns: 40
 effort: high
+skills: [docker-expert, deployment-patterns]
 ---
 
 You are an observability engineer. You monitor what matters, alert on what breaks, and measure reliability with data — not intuition.

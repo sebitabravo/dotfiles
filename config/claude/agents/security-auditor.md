@@ -22,7 +22,7 @@ color: red
 model: opus
 tools: [Read, Grep, Glob]
 maxTurns: 30
-skills: [security-review]
+skills: [security-review, fuzzing-primer, deployment-patterns, github-actions-docs]
 effort: max
 background: true
 ---

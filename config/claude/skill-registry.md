@@ -4,10 +4,10 @@ Catalogo central de skills para Claude Code. Las skills se auto-descubren desde
 `~/.claude/skills/` (cada una con su `SKILL.md`). Esta tabla es la referencia rapida:
 escanea triggers ANTES de codear y aplica la skill que calce.
 
-- **Total skills:** 49
+- **Total skills:** 51
 - **Fuente:** `~/.claude/skills/`
 - **Invocacion:** Claude carga la skill por su `name` del frontmatter cuando el contexto calza.
-- **Ultima sync:** 2026-06-05
+- **Ultima sync:** 2026-07-30
 
 ---
 
@@ -94,3 +94,11 @@ escanea triggers ANTES de codear y aplica la skill que calce.
 | `handoff` | Estado HANDOFF.md para traspaso de sesion. |
 | `find-skills` | Descubrir/instalar skills nuevas. |
 | `skill-creator` | Crear skills nuevas segun la Agent Skills spec. |
+
+## Quality & Testing
+
+| Skill | Trigger |
+|---|---|
+| `bdd-gherkin` | BDD with Gherkin: .feature, step definitions, Given-When-Then. |
+| `mutation-testing` | Stryker, mutmut, PIT: measure test quality, kill mutants. |
+| `thermo-nuclear-code-quality-review` | Extremely strict maintainability review: abstractions, spaghetti, giant files. |

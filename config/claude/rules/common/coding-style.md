@@ -7,6 +7,12 @@
 - **Short functions**. One responsibility, one abstraction level. If the name needs "and", split it.
 - **Under 4 parameters**. More than that → use an object/DTO.
 - **No obvious comments**. Code should explain itself. Comments only for WHY, not WHAT.
+- **AI-generated noise is banned**. Remove any comment that duplicates what the code already says.
+  If the comment is longer than the code it describes, the code needs refactoring, not a comment.
+  No per-line narrations (`// loop over items`, `// check if null`, `// return result`).
+  No closing-brace annotations (`} // if`, `} // for`).
+  Only keep comments that explain: (a) design rationale, (b) non-obvious workarounds with issue references, (c) external references (RFC, Stack Overflow URL), (d) TODO/FIXME with context.
+  When in doubt, delete the comment. Trust the code.
 
 ## Structure
 

@@ -2,11 +2,26 @@
 
 ## Rules
 
-- **Every new feature requires tests**. No exceptions.
+- **ALL code requires tests. No exceptions.** Even a "hello world" has a test verifying it returns "hello world". The goal is code built to the highest standard with no errors, and tests are the only evidence of that.
 - **Every bug fix requires a regression test** that fails without the fix.
 - **Tests must be deterministic**. No `Math.random()`, no real-time dependencies.
 - **Fast tests**. If a test takes >2s, mock the slow dependency.
 - **No tests that depend on execution order**. Each test runs in isolation.
+- **If the project has no test runner configured, configure it BEFORE writing code**. No test runner is not an excuse to skip tests.
+
+## What requires tests
+
+- **ALL production code**: functions, endpoints, components, utilities, helpers, scripts.
+- **Trivial code too**: a `hello()` returning "hello" has a test `expect(hello()).toBe("hello")`.
+- **Config that affects behavior**: if it changes how the system behaves, it has a test.
+- **Bug fixes**: regression test that fails without the fix.
+
+## What does NOT require tests
+
+- **Documentation** (README, comments, ADRs).
+- **Static config** that does not affect behavior (format, style, metadata).
+- **Generated code** (ORM models, protobuf, OpenAPI stubs).
+- **Tests of tests** (do not test mocks, fixtures, or test helpers).
 
 ## What to test
 
@@ -14,12 +29,7 @@
 2. **Edge cases**: empty, null, boundaries, special characters.
 3. **Errors**: what happens when things fail, not just the happy path.
 4. **API contracts**: response schema, status codes, headers.
-
-## What NOT to test
-
-- Internal implementation (private methods, algorithm details that don't affect output).
-- Framework code (routing, basic ORM, framework serialization).
-- Tests of tests (don't test mocks, fixtures, or test helpers).
+5. **Trivial cases**: the simplest happy path. If `add(1, 1)` should return `2`, there is a test that verifies it.
 
 ## Structure
 
@@ -28,3 +38,25 @@
 - Test names describe expected behavior, not implementation.
   - Good: `it("returns 404 when user does not exist")`
   - Bad: `it("test getUser with invalid id")`
+
+## Coverage
+
+- **Line coverage >= 80%**. Non-negotiable floor for production code.
+- **Branch coverage >= 70%**. More important than line coverage.
+- **Function coverage >= 90%**. Every public function must have at least one test.
+- 100% coverage is NOT the goal. Coverage measures execution, not quality. See `mutation-testing.md`.
+- Exclude from coverage: tests, mocks, fixtures, config, migrations, generated code.
+- See `quality-metrics.md` for full thresholds and tools by language.
+
+## BDD / Gherkin
+
+- Complex features with business logic require tests in Gherkin format (`.feature`).
+- Do NOT apply to internal utilities, trivial CRUD, or purely technical refactors.
+- See `bdd.md` for full rules and `skills/bdd-gherkin` for the workflow.
+
+## Mutation Testing
+
+- Mutation testing measures test QUALITY, not just coverage.
+- **Mutation score >= 80%** on critical features.
+- Run in CI, not on every commit (it's expensive).
+- See `mutation-testing.md` for full rules and `skills/mutation-testing` for configuration.
