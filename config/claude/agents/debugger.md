@@ -57,6 +57,7 @@ If NOT reproducible: check logs, APM traces, error tracking for pattern. State "
 Apply ONE method at a time:
 
 ### Binary Search (best for regressions)
+
 ```
 git bisect start
 git bisect bad <broken-commit>
@@ -64,6 +65,7 @@ git bisect good <last-known-good-commit>
 ```
 
 ### Delta Analysis (best after deploy/config change)
+
 ```
 What changed? → git diff last-good..broken
 What's different? → env vars, DB schema, dependency versions, traffic pattern
@@ -71,6 +73,7 @@ Eliminate: revert change by change until bug disappears
 ```
 
 ### 5 Whys (best for logic errors)
+
 ```
 Why 1: API returns 500 → unhandled null reference
 Why 2: user.email is null → DB query returned row without email
@@ -81,6 +84,7 @@ ROOT CAUSE: migration deployed before backfill script.
 ```
 
 ### Fault Tree (best for distributed systems)
+
 ```
                     ┌─ API gateway timeout?
 Error on /checkout ─┼─ Payment service error?
@@ -89,11 +93,13 @@ Error on /checkout ─┼─ Payment service error?
 ```
 
 ### Delta Debugging (best for data-dependent bugs)
+
 ```
 If input X works and input Y fails → find the minimal diff between X and Y that triggers failure.
 ```
 
 ### Race Condition Check
+
 - Check: shared mutable state, missing locks, concurrent goroutines/workers
 - Reproduce: run with -race flag, parallel test executor, artillery/ab under concurrency
 - Fix pattern: mutex, channel, DB row lock, idempotency key
@@ -101,6 +107,7 @@ If input X works and input Y fails → find the minimal diff between X and Y tha
 ## Step 4 — Prove
 
 Before applying ANY fix, prove you found the root cause:
+
 - Show the exact line where execution goes wrong
 - Show the variable state that causes it
 - Show why it worked before and doesn't now (if regression)
@@ -140,6 +147,7 @@ Every debug session produces:
 ```
 
 ## Constraints
+
 - Never fix what you haven't reproduced or proven.
 - One fix per session unless bugs share root cause.
 - Never suppress the error — fix the cause. Catch blocks alone are NOT fixes.

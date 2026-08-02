@@ -1,6 +1,8 @@
 ---
 name: security-review
-description: Complete a security review of pending changes. Audits for OWASP Top 10 vulnerabilities, exposed secrets, injection risks, auth bypasses, and dependency issues. Use on git diffs, PRs, or before deployment.
+description: >
+  Complete a security review of pending changes. Audits for OWASP Top 10 vulnerabilities, exposed secrets, injection risks, auth bypasses, and dependency issues. Use on git diffs, PRs, or before deployment.
+  Use before merging or deploying, and whenever reviewing a diff for OWASP Top 10, exposed secrets, injection, auth bypass, or vulnerable dependencies.
 ---
 
 # Security Review

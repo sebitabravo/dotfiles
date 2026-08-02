@@ -1,6 +1,8 @@
 ---
 name: django-patterns
-description: Django and DRF patterns including ORM optimization, viewsets, serializers, caching, signals, middleware, and testing.
+description: >
+  Django and DRF patterns including ORM optimization, viewsets, serializers, caching, signals, middleware, and testing.
+  Use when writing or reviewing Django/DRF code: models, viewsets, serializers, querysets and N+1, signals, middleware, or Django tests.
 ---
 
 ## Project Structure

@@ -31,7 +31,10 @@ PRIVATE_PATTERNS=(
   "ghp_[a-zA-Z0-9]{36,}"         # GitHub personal access tokens (classic, >=36 chars)
   "github_pat_[a-zA-Z0-9_]{22,}" # GitHub fine-grained tokens
   "sk-[a-zA-Z0-9]{32,}"          # OpenAI keys
-  "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"  # email addresses
+  # Emails reales. Se excluyen los dominios reservados por RFC 2606 y los
+  # noreply de GitHub: son los placeholders que este mismo hook recomienda usar,
+  # y bloquear un PR por escribir user@example.com no protege nada.
+  "[a-zA-Z0-9._%+-]+@(?!example\.(com|org|net)|test\b|invalid\b|localhost\b|users\.noreply\.github\.com)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
   "AKIA[0-9A-Z]{16}"             # AWS access keys
   "xox[bprs]-[0-9A-Za-z-]+"     # Slack tokens
 )
@@ -39,14 +42,16 @@ PRIVATE_PATTERNS=(
 violations=""
 for pattern in "${PRIVATE_PATTERNS[@]}"; do
   # Use ggrep (GNU grep) if available, fall back to grep -E with basic patterns
+  # El '--' separa flags del patron: sin el, un patron que empieza con '-' se
+  # parsea como opciones y el match falla en silencio.
   if command -v ggrep &>/dev/null; then
-    match="$(echo "$cmd_str" | ggrep -oP "$pattern" 2>/dev/null | head -5 || true)"
+    match="$(echo "$cmd_str" | ggrep -oP -- "$pattern" 2>/dev/null | head -5 || true)"
   elif command -v rg &>/dev/null; then
     # ripgrep supports PCRE2 with --pcre2 flag
-    match="$(echo "$cmd_str" | rg -oP "$pattern" 2>/dev/null | head -5 || true)"
+    match="$(echo "$cmd_str" | rg -oP -- "$pattern" 2>/dev/null | head -5 || true)"
   else
     # Last resort: grep -E (limited, won't match all patterns)
-    match="$(echo "$cmd_str" | grep -oE "$pattern" 2>/dev/null | head -5 || true)"
+    match="$(echo "$cmd_str" | grep -oE -- "$pattern" 2>/dev/null | head -5 || true)"
   fi
   if [[ -n "$match" ]]; then
     while IFS= read -r line; do

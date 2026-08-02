@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "_comment": "Dependencias externas de las skills que necesitan mas que su SKILL.md. Las skills que NO aparecen aca solo necesitan el binario que su nombre indica (ffmpeg, pandoc, magick) o nada. Verificar con: bash scripts/check-skill-deps.sh",
+  "skills": {
+    "pptx": {
+      "source": "https://github.com/anthropics/skills/tree/main/pptx",
+      "deps": {
+        "python": ["markitdown[pptx]", "Pillow", "python-pptx"],
+        "node": ["pptxgenjs"],
+        "system": ["libreoffice", "poppler"]
+      },
+      "node_modules": "skills/pptx/node_modules",
+      "notes": "pptxgenjs se resuelve por ruta absoluta desde el home del agente, no desde el cwd del proyecto. QA de contenido usa markitdown."
+    },
+    "xlsx": {
+      "source": "https://github.com/anthropics/skills/tree/main/xlsx",
+      "deps": {
+        "python": ["openpyxl", "pandas"],
+        "system": ["libreoffice"]
+      },
+      "notes": "recalc.py necesita libreoffice (soffice) en PATH para recalcular formulas."
+    },
+    "inacap": {
+      "source": "local",
+      "deps": {
+        "python": ["python-docx"]
+      },
+      "notes": "Formato academico chileno. Los assets de portada viven en skills/inacap/assets/."
+    },
+    "wp-performance": {
+      "source": "local",
+      "deps": {
+        "system": ["wp-cli"],
+        "node": ["node>=18"]
+      },
+      "notes": "scripts/perf_inspect.mjs corre con node. wp-cli solo hace falta para los perfiles de doctor/profile."
+    },
+    "mutation-testing": {
+      "source": "local",
+      "deps": {
+        "node": ["@stryker-mutator/core"],
+        "python": ["mutmut"]
+      },
+      "notes": "Se instalan por proyecto, no globalmente. Corre en CI, nunca en cada commit."
+    },
+    "e2e-testing": {
+      "source": "local",
+      "deps": {
+        "node": ["@playwright/test"]
+      },
+      "notes": "Instalar por proyecto: npm i -D @playwright/test && npx playwright install"
+    }
+  },
+  "install": {
+    "macos": [
+      "brew install libreoffice poppler",
+      "uv pip install 'markitdown[pptx]' Pillow python-pptx openpyxl pandas python-docx"
+    ],
+    "debian": [
+      "sudo apt-get install -y libreoffice poppler-utils",
+      "uv pip install 'markitdown[pptx]' Pillow python-pptx openpyxl pandas python-docx"
+    ]
+  }
+}

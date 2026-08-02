@@ -120,4 +120,4 @@ features/support/
 
 In the SDD flow, `.feature` files are written in the **Spec** phase (along with user stories in GWT format). Step definitions are written in the **Apply** phase (TDD).
 
-See `rules/common/bdd.md` for the full rules.
+The conduct rule that decides *when* BDD applies lives in `rules/common/testing.md`; this skill is the full how-to.

@@ -1,6 +1,8 @@
 ---
 name: imagemagick
-description: ImageMagick (magick) for image conversion, resizing, compression, cropping, rotating, watermarking, format conversion (WebP/AVIF/PNG/JPG/ICO), favicon and thumbnail generation, PDF handling, and batch processing.
+description: >
+  ImageMagick (magick) for image conversion, resizing, compression, cropping, rotating, watermarking, format conversion (WebP/AVIF/PNG/JPG/ICO), favicon and thumbnail generation, PDF handling, and batch processing.
+  Use any time an image is converted, resized, compressed, cropped, watermarked, or turned into a favicon or thumbnail from the command line.
 ---
 
 ImageMagick 7 ships the `magick` command. Legacy `convert`/`mogrify` still work but emit deprecation warnings on v7 — prefer `magick` and `magick mogrify`.

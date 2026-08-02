@@ -1,6 +1,8 @@
 ---
 name: pandoc
-description: Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates, reference docs, citations/bibliography, table of contents, syntax highlighting, and metadata.
+description: >
+  Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates, reference docs, citations/bibliography, table of contents, syntax highlighting, and metadata.
+  Use any time a document is converted between formats (Markdown, DOCX, PDF, HTML, EPUB, LaTeX), or when a conversion needs templates, citations, or a TOC.
 ---
 
 Pandoc converts between markup formats. Source format inferred from input extension, target from `-o` extension (or force with `-f`/`-t`).

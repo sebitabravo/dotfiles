@@ -146,17 +146,17 @@ php artisan sail:install
 
 Instalar inteligencias artificiales IA:
 
-- Configurar con ChatGPT.
-
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 opencode auth login
 ```
 
 ```bash
-pnpm add -g @openai/codex
-pnpm add -g @google/gemini-cli
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+curl https://cursor.com/install -fsS | bash
+curl -fsSL https://antigravity.google/cli/install.sh | bash
 curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://gh.io/copilot-install | bash
 ```
 
 ---

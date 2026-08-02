@@ -1,6 +1,8 @@
 ---
 name: android-jetpack-compose
-description: Android development with Jetpack Compose including state management, navigation, Material 3, side effects, and Compose architecture patterns.
+description: >
+  Android development with Jetpack Compose including state management, navigation, Material 3, side effects, and Compose architecture patterns.
+  Use when writing or reviewing Compose UI: composables, state hoisting, navigation, Material 3 theming, or side effects (LaunchedEffect, DisposableEffect).
 ---
 
 ## Compose State

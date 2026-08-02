@@ -1,6 +1,8 @@
 ---
 name: kotlin-coroutines-flows
-description: Kotlin coroutines and Flow patterns including structured concurrency, channels, shared flows, state flows, and error handling.
+description: >
+  Kotlin coroutines and Flow patterns including structured concurrency, channels, shared flows, state flows, and error handling.
+  Use when writing or reviewing Kotlin coroutines and Flow: structured concurrency, scopes, StateFlow/SharedFlow, channels, or coroutine error handling.
 ---
 
 ## Coroutine Basics

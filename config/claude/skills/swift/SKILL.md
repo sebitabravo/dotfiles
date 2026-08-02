@@ -1,6 +1,8 @@
 ---
 name: swift
-description: iOS/macOS development with Swift, SwiftUI, SwiftData, async/await, Actors, and modern Apple platform patterns.
+description: >
+  iOS/macOS development with Swift, SwiftUI, SwiftData, async/await, Actors, and modern Apple platform patterns.
+  Use when writing or reviewing Swift for iOS/macOS: SwiftUI views, SwiftData models, async/await, or Actor isolation and concurrency warnings.
 ---
 
 ## SwiftUI Architecture

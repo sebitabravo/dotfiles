@@ -190,4 +190,4 @@ The change caused an infinite loop or extreme slowness. The test hung. Treat as 
 
 For critical features, use `continue-on-error: false` and set `thresholds.break` to block merge.
 
-See `rules/common/mutation-testing.md` for the full rules.
+The conduct rule that decides *when* mutation testing applies lives in `rules/common/testing.md`; this skill is the full how-to.

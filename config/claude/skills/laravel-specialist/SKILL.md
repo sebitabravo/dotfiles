@@ -1,6 +1,8 @@
 ---
 name: laravel-specialist
-description: Laravel 11+ patterns including Eloquent ORM, Sanctum auth, API resources, queues with Horizon, event broadcasting, Livewire, and Pest testing.
+description: >
+  Laravel 11+ patterns including Eloquent ORM, Sanctum auth, API resources, queues with Horizon, event broadcasting, Livewire, and Pest testing.
+  Use when writing or reviewing Laravel: Eloquent models and queries, Sanctum auth, API resources, queues and Horizon, broadcasting, Livewire, or Pest tests.
 ---
 
 ## Project Structure
@@ -261,3 +263,96 @@ describe('User Registration', function () {
 - Policies for authorization. Never check roles directly.
 - Pest over PHPUnit for readability.
 - `phpstan analyse` for static analysis.
+
+## Resource Controller
+
+Authorization and validation are wired in the constructor and the signature — not repeated in each method body.
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePostRequest;
+use App\Models\Post;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+
+class PostController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth')->except(['index', 'show']);
+        $this->authorizeResource(Post::class, 'post');
+    }
+
+    public function index(): View
+    {
+        $posts = Post::with('user')
+            ->published()
+            ->latest()
+            ->paginate(15);
+
+        return view('posts.index', compact('posts'));
+    }
+
+    public function store(StorePostRequest $request): RedirectResponse
+    {
+        $post = auth()->user()->posts()->create($request->validated());
+
+        return redirect()->route('posts.show', $post);
+    }
+}
+```
+
+Type-hinting the Form Request (`StorePostRequest`) runs validation before the method body executes. `authorizeResource` maps each RESTful method to its Policy method automatically.
+
+## Migrations
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('title');
+            $table->string('slug')->unique();
+            $table->text('content');
+            $table->timestamp('published_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['user_id', 'published_at']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('posts');
+    }
+};
+```
+
+- `foreignId()->constrained()` infers the referenced table; pair it with an explicit delete behaviour (`cascadeOnDelete`, `nullOnDelete`) so the intent is in the schema, not in application code.
+- Index the columns you actually filter and sort on together — a composite index only serves queries using a left-prefix of its columns.
+- Always write `down()`. A migration you cannot roll back is a one-way door.
+
+## Artisan reference
+
+| Task | Command |
+|---|---|
+| Resource controller | `php artisan make:controller UserController --resource` |
+| Model + migration | `php artisan make:model Post -m` |
+| Model + migration + controller + resource | `php artisan make:model Post -mcr` |
+| Run migrations | `php artisan migrate` |
+| Seeder | `php artisan make:seeder UserSeeder` |
+| Clear all caches | `php artisan optimize:clear` |
+| Run tests | `php artisan test` |

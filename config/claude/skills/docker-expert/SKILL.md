@@ -1,6 +1,8 @@
 ---
 name: docker-expert
-description: Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes, security hardening, and production best practices.
+description: >
+  Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes, security hardening, and production best practices.
+  Use when writing or reviewing a Dockerfile or compose file, shrinking an image, or hardening a container for production.
 ---
 
 ## Multi-Stage Builds

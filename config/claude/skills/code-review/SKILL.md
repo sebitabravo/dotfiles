@@ -44,11 +44,24 @@ Review in this order. Each dimension is an independent pass:
 - No commented-out code or dead code.
 - Testability: can this be tested easily?
 
-### 5. Testing
+### 5. Estructura y diseño
+- **Regla 1k líneas**: un PR no debería empujar un archivo de <1k a >1k líneas sin justificación fuerte. Si lo cruza, proponer descomponer primero.
+- **Anti-spaghetti growth**: nuevos ad-hoc conditionals, scattered special cases o one-off branches en flows no relacionados = flag de diseño, no nit.
+- **Simplificación radical**: si el comportamiento se puede mantener con menos conceptos, branches o capas, buscar ese path. Preferir el refactor que BORRA complejidad, no que la mueve.
+- **Boring over magic**: desconfiar de wrappers/identity helpers/pass-through que agregan indirección sin comprar claridad.
+- **Lógica en la capa correcta**: feature logic no debería filtrarse a shared paths. Usar utilities canónicas en vez de one-offs.
+
+### 6. Testing
 - Tests for the happy path.
 - Tests for at least 2 edge cases.
 - Tests for error behavior.
 - No tests that depend on execution order or mutable global state.
+
+## Precision gate
+
+Report a finding only if it is a real, user-impacting defect you would defend with concrete evidence. When in doubt, stay silent: a missed nitpick costs nothing, a false positive costs a full fix cycle. Style and preference findings are banned unless they obscure a defect.
+
+One exhaustive pass over the diff, then stop. A second pass only for hot paths (auth, payments, migrations, concurrency) or diffs over 400 changed lines. There is no loop-until-dry.
 
 ## Output
 
@@ -58,6 +71,8 @@ Emit findings in this format:
 path:line: <severity> <problem>. <fix suggestion>.
 ```
 
-Severities: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`.
+Severities: `BLOCKER`, `CRITICAL`, `WARNING`, `SUGGESTION`.
+
+Only BLOCKER and CRITICAL drive fixes. WARNING and SUGGESTION are reported once as informational and never block a merge.
 
 Don't emit praise. Don't comment on formatting if the linter covers it. Only actionable findings.

@@ -43,3 +43,12 @@ __pycache__/
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
+.codegraph/
+.claude/
+
+# Playwright MCP — logs y snapshots de sesion, no versionar
+.playwright-mcp/
+.claude-rdd/
+
+# Kill switch local de quality-gate.sh — decision por maquina, no por repo
+.claude-relaxed

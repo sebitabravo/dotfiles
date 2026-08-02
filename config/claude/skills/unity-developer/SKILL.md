@@ -1,6 +1,8 @@
 ---
 name: unity-developer
-description: Unity 6 LTS development with URP/HDRP, C# scripting patterns, performance optimization, addressables, and production best practices.
+description: >
+  Unity 6 LTS development with URP/HDRP, C# scripting patterns, performance optimization, addressables, and production best practices.
+  Use when writing or reviewing Unity C#: MonoBehaviour lifecycle, URP/HDRP rendering, addressables, or frame-time performance work.
 ---
 
 ## Project Structure

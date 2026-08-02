@@ -1,6 +1,8 @@
 ---
 name: golang-pro
-description: Go concurrency patterns, goroutines, channels, gRPC service definitions, microservices architecture, and production best practices.
+description: >
+  Go concurrency patterns, goroutines, channels, gRPC service definitions, microservices architecture, and production best practices.
+  Use when writing or reviewing Go: goroutines and channels, context propagation, gRPC services, or concurrency bugs like races and deadlocks.
 ---
 
 ## Project Structure

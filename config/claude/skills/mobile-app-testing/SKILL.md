@@ -1,6 +1,8 @@
 ---
 name: mobile-app-testing
-description: Mobile app testing strategies covering unit tests, integration tests, UI tests, snapshot tests, and CI pipelines for Android (Espresso) and iOS (XCTest).
+description: >
+  Mobile app testing strategies covering unit tests, integration tests, UI tests, snapshot tests, and CI pipelines for Android (Espresso) and iOS (XCTest).
+  Use when planning or writing mobile tests: Espresso or XCTest suites, snapshot tests, or a mobile CI pipeline.
 ---
 
 ## Android Testing

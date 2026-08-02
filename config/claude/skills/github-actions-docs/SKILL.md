@@ -1,6 +1,8 @@
 ---
 name: github-actions-docs
-description: GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management, and custom actions.
+description: >
+  GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management, and custom actions.
+  Use when writing or debugging a GitHub Actions workflow: jobs, matrix builds, caching, secrets, reusable workflows, or custom actions.
 ---
 
 ## Workflow Structure
