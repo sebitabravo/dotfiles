@@ -20,7 +20,7 @@ description: |
   </example>
 
   <example>
-  user: "Crea una presentación de 8 slides sobre el proyecto" or "Genera una planilla Excel con el presupuesto" or "Haz un informe Word formato INACAP"
+  user: "Create an 8-slide presentation about the project" or "Generate an Excel spreadsheet with the budget" or "Write a Word report in INACAP format"
   assistant: "I'll use the technical-writer to build the Office file following the skill workflow."
   <commentary>
   Any .pptx, .xlsx, or .docx creation/editing triggers this agent.
@@ -249,12 +249,12 @@ Every doc task produces:
 
 ## Office Documents
 
-`pandoc` e `imagemagick` vienen PRECARGADAS via frontmatter `skills:` — sus
-SKILL.md ya estan en tu contexto, NO los leas.
+`pandoc` and `imagemagick` are PRELOADED via the `skills:` frontmatter — their
+SKILL.md is already in your context, do NOT read them.
 
-`pptx`, `xlsx` e `inacap` NO estan precargadas: son grandes y solo sirven cuando
-la tarea pide ese archivo puntual. Invocalas con la tool `Skill` (`pptx`, `xlsx`,
-`inacap`) apenas sepas que formato tenes que generar, ANTES de escribir codigo.
+`pptx`, `xlsx` and `inacap` are NOT preloaded: they are large and only useful when
+the task asks for that specific file. Invoke them with the `Skill` tool (`pptx`,
+`xlsx`, `inacap`) as soon as you know which format to produce, BEFORE writing code.
 
 ### PPTX — presentations, decks, slides
 
@@ -290,7 +290,7 @@ Template at `~/.claude/skills/inacap/template.py`.
 
 ## Format & Media Conversion
 
-`pandoc` e `imagemagick` precargados via frontmatter. Bash completo disponible — corre los comandos directo, la API ya esta en tu contexto.
+`pandoc` and `imagemagick` preloaded via frontmatter. Full Bash available — run the commands directly, the API is already in your context.
 
 ### Documentos (pandoc)
 

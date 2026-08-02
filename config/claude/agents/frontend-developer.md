@@ -164,17 +164,17 @@ Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party s
 
 **Skills disponibles:**
 
-| Skill | Qué hace | Necesita MCP |
+| Skill | What it does | Needs MCP |
 | --- | --- | --- |
 | `enhance-prompt` | Transforma ideas vagas en prompts Stitch-optimizados | No |
-| `taste-design` | Genera DESIGN.md con estándares anti-genérico | No |
-| `design-md` | Analiza proyectos Stitch y sintetiza DESIGN.md | Sí |
-| `stitch-generate-design` | Generación core: texto→diseño, edición, variantes | Sí |
-| `stitch-extract-design-md` | Extrae design system de código fuente (React, Vue, etc.) | No |
-| `stitch-manage-design-system` | Crea/aplica design systems en Stitch | Sí |
-| `stitch-react-components` | Convierte diseños Stitch a componentes Vite+React | No |
+| `taste-design` | Generates DESIGN.md with anti-generic standards | No |
+| `design-md` | Analyzes Stitch projects and synthesizes DESIGN.md | Yes |
+| `stitch-generate-design` | Core generation: text->design, editing, variants | Yes |
+| `stitch-extract-design-md` | Extracts a design system from source code (React, Vue, etc.) | No |
+| `stitch-manage-design-system` | Creates/applies design systems in Stitch | Yes |
+| `stitch-react-components` | Converts Stitch designs into Vite+React components | No |
 
-**Pipeline diseño→código (con ui-ux-designer):**
+**Design->code pipeline (with ui-ux-designer):**
 
 1. `ui-ux-designer` define dirección visual → DESIGN.md vía `taste-design`
 2. Si hay MCP (OpenCode): `stitch-generate-design` genera pantalla → `stitch-react-components` convierte a React

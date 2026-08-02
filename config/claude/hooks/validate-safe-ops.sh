@@ -44,6 +44,39 @@ esac
 # Comando sin strings quoted — evita falsos positivos en mensajes de commit/heredocs
 NO_QUOTES_FULL=$(echo "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
 
+# Resuelve asignaciones simples ANTES de matchear, para que `f=.env; cat $f`
+# o `b=push; git $b --force` no escondan el objetivo detras de un nombre de
+# variable. Todo lo de mas abajo lee NO_QUOTES_FULL (HAYSTACK, SEGMENTS), asi
+# que resolver aca una sola vez cierra el mismo agujero en todos los checks.
+#
+# Best-effort, no un parser de shell: solo asignaciones planas `var=valor`
+# sin '$' ni backtick en el valor participan — eso ya es indireccion anidada
+# y queda fuera de este alcance. No hace falta ser exhaustivo, alcanza con
+# cerrar el caso simple que de verdad se usa para evadir.
+resolve_vars() {
+  local text="$1" assignments assignment var val safe_val padded
+  assignments=$(printf '%s\n' "$text" | grep -oE '\b[A-Za-z_][A-Za-z0-9_]*=[^][:space:];&|]+' || true)
+  [ -z "$assignments" ] && { printf '%s' "$text"; return 0; }
+  # Espacio final de centinela: '\b' (word boundary) no existe en BSD sed
+  # (macOS) — el mismo problema que ya documenta SEGMENTS mas abajo con \n.
+  # Se usa un grupo de captura sobre el caracter siguiente en vez de \b, y el
+  # espacio garantiza que ${var} al final del texto tambien tenga un limite
+  # con el que matchear.
+  padded="$text "
+  while IFS= read -r assignment; do
+    [ -z "$assignment" ] && continue
+    var="${assignment%%=*}"
+    val="${assignment#*=}"
+    case "$val" in
+      *'$'* | *'`'*) continue ;;
+    esac
+    safe_val=$(printf '%s' "$val" | sed 's/[&/\]/\\&/g')
+    padded=$(printf '%s' "$padded" | sed -E "s/\\\$\\{${var}\\}/${safe_val}/g; s/\\\$${var}([^A-Za-z0-9_])/${safe_val}\\1/g")
+  done <<< "$assignments"
+  printf '%s' "${padded% }"
+}
+NO_QUOTES_FULL=$(resolve_vars "$NO_QUOTES_FULL")
+
 # DOS NIVELES, a proposito.
 #
 #   deny — catastrofico e irreversible. No hay razon legitima para correrlo
@@ -174,22 +207,40 @@ ARTISAN_RAILS='(artisan[[:space:]]+migrate:(fresh|refresh|reset)|rails[[:space:]
 REMOTE_DSN='(postgres(ql)?|mysql|mongodb(\+srv)?|redis)://[^[:space:]]*'
 LOCAL_HOST='(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|host\.docker\.internal)'
 
-if echo "$COMMAND" | grep -qEi "$ORM_SCHEMA" || echo "$COMMAND" | grep -qEi "$ARTISAN_RAILS"; then
+# El cuerpo de un heredoc son DATOS, no comandos. Sin sacarlo, escribir
+# documentacion sobre estos comandos disparaba el bloqueo: un `python3 <<'EOF'`
+# que contenia el ejemplo del incidente quedaba bloqueado como si lo estuviera
+# ejecutando. Tercera vez hoy que el mismo error aparece — matchear texto citado
+# como si fuera ejecutable.
+# Solo se recorta para las reglas de ORM. Lo catastrofico (sudo, rm -rf /,
+# curl|bash) sigue evaluandose sobre el comando completo, porque ahi un heredoc
+# a `bash` SI seria ejecucion real.
+ORM_HAYSTACK=$(printf '%s' "$COMMAND" | awk '
+  /<<-?[A-Za-z_'"'"'"]/ { inhd=1; next }
+  inhd && /^[A-Za-z_]+$/ { inhd=0; next }
+  !inhd { print }
+')
+
+if echo "$ORM_HAYSTACK" | grep -qEi "$ORM_SCHEMA" || echo "$ORM_HAYSTACK" | grep -qEi "$ARTISAN_RAILS"; then
+  # Se usa ORM_HAYSTACK y NO se reasigna COMMAND: mas abajo el bloque de
+  # clientes de DB busca DROP TABLE sobre el comando ORIGINAL, y pisarlo aca
+  # dejaba esa regla mirando un texto ya recortado.
+
   # 1. Verbo destructivo sin vuelta atras.
-  if echo "$COMMAND" | grep -qEi "$ORM_DESTRUCTIVE" || echo "$COMMAND" | grep -qEi "$ARTISAN_RAILS"; then
+  if echo "$ORM_HAYSTACK" | grep -qEi "$ORM_DESTRUCTIVE" || echo "$ORM_HAYSTACK" | grep -qEi "$ARTISAN_RAILS"; then
     deny "Operacion de esquema destructiva bloqueada. Estos comandos dropean o vacian tablas aunque el nombre no lo diga. Antes de correrlo a mano: (1) confirma a que base apunta la conexion, (2) verifica que exista un backup restaurable, (3) declara el blast radius al usuario. Ver rules/common/destructive-operations.md."
   fi
 
   # 2. Destino remoto explicito en cualquier operacion de esquema.
-  if echo "$COMMAND" | grep -qEi "$REMOTE_DSN"; then
-    if ! echo "$COMMAND" | grep -qEi "://[^[:space:]@]*(@)?${LOCAL_HOST}"; then
+  if echo "$ORM_HAYSTACK" | grep -qEi "$REMOTE_DSN"; then
+    if ! echo "$ORM_HAYSTACK" | grep -qEi "://[^[:space:]@]*(@)?${LOCAL_HOST}"; then
       deny "Operacion de esquema apuntando a un host REMOTO. Asi se vacio una base de produccion: el comando parecia inofensivo y la URL apuntaba a prod. Corre el esquema contra local, o pedile al usuario que lo ejecute el mismo contra ese host."
     fi
   fi
 
   # 3. Destino en una variable sin resolver: no se puede saber a donde apunta.
   # Este es EXACTAMENTE el caso del incidente ($DATABASE_URL_UNPOOLED).
-  if echo "$COMMAND" | grep -qE '(--[a-z-]*(database-)?url[= ]|DATABASE_URL[A-Z_]*=)[^[:space:]]*\$'; then
+  if echo "$ORM_HAYSTACK" | grep -qE '(--[a-z-]*(database-)?url[= ]|DATABASE_URL[A-Z_]*=)[^[:space:]]*\$'; then
     deny "El destino de esta operacion de esquema viene de una variable sin resolver, asi que ni vos ni el hook saben a que base apunta. Ese es el caso exacto que vacio una Supabase de produccion: --shadow-database-url recibia una variable que apuntaba a prod, y la shadow database se resetea por diseño. VERIFICA primero a donde resuelve (sin imprimir credenciales) y decilo antes de correr nada."
   fi
 fi

@@ -10,13 +10,13 @@
 
 ## Summary
 
-<!-- Extraer del spec: requerimiento principal + enfoque técnico -->
+<!-- Pull from the spec: main requirement + technical approach -->
 
 ## Technical Context
 
 <!--
-  ACTION REQUIRED: Reemplazar con los detalles técnicos reales del proyecto.
-  Usar [NEEDS CLARIFICATION] donde no esté definido.
+  ACTION REQUIRED: replace with the real technical details of the project.
+  Use [NEEDS CLARIFICATION] wherever it is undefined.
 -->
 
 | Field | Value |
@@ -33,9 +33,9 @@
 
 ## Constitution Check
 
-*GATE: Debe pasar antes de Phase 0 research. Re-check después de Phase 1 design.*
+*GATE: must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-<!-- Verificar cada principio de la constitución del proyecto -->
+<!-- Verify each principle of the project's constitution -->
 
 | Principle | Status | Evidence |
 |---|---|---|
@@ -52,8 +52,8 @@
 ## Architecture
 
 ```
-<!-- Diagrama de componentes/directorios afectados -->
-<!-- Usar Mermaid cuando aplique: -->
+<!-- Diagram of affected components/directories -->
+<!-- Use Mermaid where it applies: -->
 <!--
 graph TD
     A[Controller] --> B[Service]
@@ -63,10 +63,10 @@ graph TD
 
 ## Data Model
 
-<!-- Interfaces, types, DB schemas. SIN lógica de negocio. -->
+<!-- Interfaces, types, DB schemas. NO business logic. -->
 
 ```typescript
-// Ejemplo: tipos/interfaces nuevos o modificados
+// Example: new or modified types/interfaces
 interface {{NAME}} {
   {{FIELD}}: {{TYPE}};
 }
@@ -74,15 +74,15 @@ interface {{NAME}} {
 
 ## Project Structure
 
-### Documentation (este feature)
+### Documentation (this feature)
 
 ```text
 specs/{{FEATURE_NAME}}/
-├── proposal.md          # Propuesta inicial (fase explore → propose)
-├── requirements.md      # Este archivo (fase spec)
-├── design.md            # Este archivo (fase design)
-├── tasks.md             # Fase tasks
-└── apply-progress.md    # Fase apply
+├── proposal.md          # Initial proposal (explore -> propose phase)
+├── requirements.md      # Spec phase
+├── design.md            # This file (design phase)
+├── tasks.md             # Tasks phase
+└── apply-progress.md    # Apply phase
 ```
 
 ### Source Code (repository root)
@@ -94,7 +94,7 @@ tests/
   {{path}}/{{file}}.test.ts  — {{what_it_covers}}
 ```
 
-**Structure Decision:** [Documentar la estructura seleccionada]
+**Structure Decision:** [Document the structure that was selected]
 
 ## Dependencies
 
@@ -104,7 +104,7 @@ tests/
 
 ## Complexity Tracking
 
-> **Llenar SOLO si el Constitution Check tiene violaciones que deben justificarse**
+> **Fill in ONLY if the Constitution Check has violations that need justification**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
@@ -118,4 +118,4 @@ tests/
 
 ## References
 
-- <!-- Patrones existentes en el codebase, docs externos, APIs -->
+- <!-- Existing patterns in the codebase, external docs, APIs -->

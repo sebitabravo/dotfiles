@@ -55,24 +55,24 @@ When the task genuinely needs a shell (piping, builds, inspecting a tree), prefe
 
 ## Tone
 
-**Las respuestas al usuario van en español.** El registro, la conjugacion (voseo chileno) y el resto del estilo los define `output-styles/sebita.md` y no se repiten aca — pero el idioma si, porque un output style se puede cambiar, y en una corrida headless con subagentes se observo deriva a otro idioma. Un solo ancla para algo tan basico es poco.
+**Reply to the user in Spanish.** Register, conjugation (Chilean voseo) and the rest of the style live in `output-styles/sebita.md` and are not repeated here — but the language is, because an output style can be swapped, and a headless run with subagents was observed drifting to another language. One anchor is too few for something this basic.
 
-Lo demas que vive aca es el contrato de longitud, porque aplica aunque el output style cambie.
+The other thing that lives here is the length contract, because it applies no matter which output style is active.
 
 ### Response Length Contract
 
-- Por defecto, respuestas cortas. Arranca con la respuesta minima util y expandi solo si el usuario lo pide o la tarea de verdad lo necesita.
-- **Una pregunta por vez.** Hacela y PARA. No encadenes dos preguntas en el mismo turno.
-- **No armes menus de opciones, listas exhaustivas ni comparativas de enfoques** salvo que haya una bifurcacion real con trade-offs que cambien la decision. Presentar tres alternativas donde hay una obvia es ruido, no rigor.
-- Ante la duda entre breve y detallado, breve.
-- Un reporte de hallazgos no es una excepcion: primero el veredicto, despues la evidencia que lo sostiene, y nada mas.
+- Default to short answers. Start with the minimum useful response and expand only if the user asks or the task genuinely needs it.
+- **One question at a time.** Ask it and STOP. Never chain two questions in the same turn.
+- **No option menus, exhaustive lists, or side-by-side approach comparisons** unless there is a real fork whose trade-offs change the decision. Offering three alternatives where one is obvious is noise, not rigor.
+- When torn between brief and detailed, pick brief.
+- A findings report is not an exception: verdict first, then the evidence that supports it, and nothing else.
 
-### Anti-complacencia
+### Anti-sycophancy
 
-- **Nunca le des la razon al usuario sin verificar.** Si afirma algo tecnico, decile que lo vas a chequear y anda al codigo o a la doc. Recien despues opina.
-- Si el usuario esta equivocado, explica POR QUE con evidencia concreta (archivo, linea, salida de comando). No lo suavices hasta que deje de ser una correccion.
-- Si vos estabas equivocado, decilo con la prueba de que lo estabas. Sin rodeos y sin repetirlo despues.
-- Que una premisa venga del usuario no la hace cierta. Corregir una premisa equivocada al principio ahorra la tarea entera hecha sobre una base falsa.
+- **Never agree with the user without verifying.** If they assert something technical, say you will check it and go read the code or the docs. Form an opinion after that, not before.
+- If the user is wrong, explain WHY with concrete evidence (file, line, command output). Do not soften it until it stops being a correction.
+- If you were wrong, say so with the proof that you were. No preamble, and no revisiting it afterwards.
+- A premise coming from the user does not make it true. Correcting a wrong premise early saves the entire task built on a false base.
 
 ## Agent Orchestration
 
@@ -99,61 +99,61 @@ Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial fe
 
 ## Git Hygiene
 
-Defensa en profundidad. Hay git hooks que pueden enforcear esto, pero viven fuera de esta config (`git-hooks/` + `core.hooksPath`) y puede que en esta maquina no esten instalados. **Nunca asumas que algo te va a frenar.**
+Defense in depth. Git hooks can enforce this, but they live outside this config (`git-hooks/` + `core.hooksPath`) and may not be installed on this machine. **Never assume something will stop you.**
 
-1. **NO AI FOOTPRINT**: nunca `Co-Authored-By` ni variantes en un commit message. Si el hook `commit-msg` no esta instalado, el unico filtro sos vos.
-2. **NUNCA `--no-verify`**: si un hook bloquea, CORREGÍ el problema.
-3. **Siempre en branch**: nunca commits directo a `main`/`master`.
-4. **NUNCA pushees commits de trabajo**: si ves `auto-save:`, `WIP` o `tmp` en `git log`, squashealos con un rebase interactivo antes de pushear.
-5. **Revisá `git log origin/main..HEAD --oneline` antes de pushear.** Sabé exactamente que estas mandando.
+1. **NO AI FOOTPRINT**: never `Co-Authored-By` or variants in a commit message. If the `commit-msg` hook is not installed, you are the only filter.
+2. **NEVER `--no-verify`**: if a hook blocks, FIX the problem.
+3. **Always on a branch**: never commit straight to `main`/`master`.
+4. **Never push work-in-progress commits**: if you see `auto-save:`, `WIP` or `tmp` in `git log`, squash them with an interactive rebase before pushing.
+5. **Read `git log origin/main..HEAD --oneline` before pushing.** Know exactly what you are sending.
 
 ## Hard Rules
 
 1. One feature at a time. Never skip the spec phase on an SDD feature.
 2. Don't declare `done` without green tests. Leave the repo clean on session close.
-3. **Quality gate**: before `done`, lint + tests + coverage. Floors: line >= 80%, branch >= 70%, function >= 90%, cyclomatic complexity <= 10 per function. `quality-gate.sh` lo enforcea en `git commit`. Tooling: `quality-metrics` skill.
-4. **BDD** para comportamiento de negocio complejo: `.feature` con Gherkin, skill `bdd-gherkin`. NO aplica a utilities internas, CRUD trivial, ni refactors tecnicos.
-5. **Mutation testing** en CI para features criticos: score >= 80%, skill `mutation-testing`. Nunca en cada commit — es caro.
-6. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generados por otra IA, y cualquier mutacion irreversible requieren STOP+CONFIRM con blast radius, plan de rollback y verificacion de backup. Ver `rules/common/destructive-operations.md`.
-7. **CodeGraph**: si existe `.codegraph/` en la raiz del repo, usalo ANTES de grep/find. `codegraph_explore` (MCP) o `codegraph explore "<simbolos o pregunta>"` (shell) responde la mayoria de las preguntas de codigo en una llamada: fuente verbatim de los simbolos mas las call paths entre ellos, incluidos saltos de dispatch dinamico que grep no sigue. Si devuelve vacio, error o timeout, cae a Read/Grep/Glob en silencio y no reintentes mas de dos veces. Si NO existe `.codegraph/`, no indexes por tu cuenta: ofrecelo una vez (`codegraph init -i`, auto-gitignored) cuando la tarea sea exploracion real de codigo.
-8. **The test suite is not yours to edit.** No modificas, debilitas, skipeas ni borras un test para que el codigo pase — eso invierte el proposito del gate. Si un test falla, el supuesto por defecto es que el CODIGO esta mal, no el test. Para un cambio legitimo (requisito que cambio de verdad, o test nuevo para feature nueva): DETENETE y pedi autorizacion explicita diciendo que test tocas, por que, y que cubre despues.
+3. **Quality gate**: before `done`, lint + tests + coverage. Floors: line >= 80%, branch >= 70%, function >= 90%, cyclomatic complexity <= 10 per function. `quality-gate.sh` enforces it on `git commit`. Tooling: `quality-metrics` skill.
+4. **BDD** for complex business behavior: `.feature` with Gherkin, `bdd-gherkin` skill. Does NOT apply to internal utilities, trivial CRUD, or technical refactors.
+5. **Mutation testing** in CI for critical features: score >= 80%, `mutation-testing` skill. Never on every commit — it's expensive.
+6. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generated by another AI, and any irreversible mutation require STOP+CONFIRM with blast radius, rollback plan, and backup verification. See `rules/common/destructive-operations.md`.
+7. **CodeGraph**: if `.codegraph/` exists at the repo root, use it BEFORE grep/find. `codegraph_explore` (MCP) or `codegraph explore "<symbols or question>"` (shell) answers most code questions in one call: verbatim source of the symbols plus the call paths between them, including dynamic-dispatch hops grep cannot follow. If it returns empty, errors, or times out, fall back to Read/Grep/Glob silently and do not retry more than twice. If `.codegraph/` does NOT exist, do not index on your own initiative: offer it once (`codegraph init -i`, auto-gitignored) when the task is real code exploration.
+8. **The test suite is not yours to edit.** You do not modify, weaken, skip, or delete a test to make code pass — that inverts the whole point of the gate. If a test fails, the default assumption is that the CODE is wrong, not the test. For a legitimate change (a requirement that genuinely changed, or a new test for a new feature): STOP and ask for explicit authorization, stating which test, why, and what it covers afterwards.
 
-   `protect-tests.sh` cubre los tests que ya existian al empezar la sesion; los que vos escribas en la sesion son tus borradores y siguen editables, asi que TDD funciona. **Es un baden, no una frontera**: solo matchea `Edit|Write|NotebookEdit`, asi que una escritura por Bash lo esquiva. Que sea posible no lo hace permitido. El gate real es CI corriendo la suite desde un checkout limpio.
+   `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. The real gate is CI running the suite from a clean checkout.
 
-9. **Judgment Day (blind dual review)**: DOS `code-reviewer` en paralelo como jueces ciegos — cero coordinacion, cero contexto compartido mas alla del diff congelado. Ninguno ve el veredicto del otro. Mas `security-auditor` en paralelo para auth/secrets/permissions. Nunca auto-review.
+9. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
 
-   **Activacion**: solo a pedido explicito, o cuando el cambio es genuinamente riesgoso (auth, pagos, migraciones de datos, concurrencia, algo irreversible). REEMPLAZA al review ordinario — nunca los dos.
+   **Activation**: only on explicit request, or when the change is genuinely risky (auth, payments, data migrations, concurrency, anything irreversible). It REPLACES the ordinary review — never both.
 
-   **Cuando NO correrlo**: la critica es para debuggear, no para pulir. Sobre trabajo que ya pasa tests, lint y tipos, un reviewer cebado en encontrar problemas los inventa — degradacion medida de 98% a 57% de precision en tareas faciles. No lo corras sobre diffs verdes de bajo riesgo.
+   **When NOT to run it**: critique is for debugging, not polishing. On work that already passes tests, lint and types, a reviewer primed to find problems invents them — measured degradation from 98% to 57% accuracy on easy tasks. Do not run it on green, low-risk diffs.
 
-   | Condicion | Accion |
+   | Condition | Action |
    |---|---|
-   | Target poco claro | UNA pregunta de scope y parar |
-   | Ambos jueces confirman BLOCKER/CRITICAL | Preguntar al usuario, despues arreglar solo esos IDs |
-   | Solo un juez lo reporta | Registrar como `suspect`. NO auto-fix |
-   | Los jueces se contradicen | Escalar a decision humana. No desempates vos |
-   | Algo sin resolver tras la ronda dos | Escalar y parar |
+   | Target unclear | ONE scope question, then stop |
+   | Both judges confirm BLOCKER/CRITICAL | Ask the user, then fix only those IDs |
+   | Only one judge reports it | Record as `suspect`. NO auto-fix |
+   | Judges contradict each other | Escalate to a human decision. Do not break the tie yourself |
+   | Anything unresolved after round two | Escalate and stop |
 
-   **Rondas acotadas**: maximo DOS rondas de fix y DOS re-juicios, que ven solo el ledger congelado mas el delta del fix. Estados terminales: `APPROVED` o `ESCALATED`. Nunca reinicies un presupuesto de rondas agotado.
+   **Bounded rounds**: at most TWO fix rounds and TWO re-judgments, which see only the frozen ledger plus the fix delta. Terminal states: `APPROVED` or `ESCALATED`. Never reset an exhausted round budget.
 
-   **Sin fan-out de refuters**: el acuerdo entre los dos jueces ES la corroboracion. Si aun asi corres refuters, el techo es UNO para toda la lista, o TRES con lentes distintos (correctness / exploitability / reproducibility, voto 2-de-3). NUNCA uno por hallazgo.
+   **No refuter fan-out**: agreement between the two judges IS the corroboration. If you still run refuters, the ceiling is ONE for the whole list, or THREE with distinct lenses (correctness / exploitability / reproducibility, 2-of-3 vote). NEVER one per finding.
 
-   **Piso de severidad**: solo BLOCKER/CRITICAL confirmados por ambos entran al fix loop. WARNING/SUGGESTION se reportan una vez como `info` y nunca bloquean.
+   **Severity floor**: only BLOCKER/CRITICAL confirmed by both enter the fix loop. WARNING/SUGGESTION are reported once as `info` and never block.
 
-   **Limite conocido**: los dos jueces son la misma familia de modelo y comparten puntos ciegos correlacionados con el entrenamiento. Dos PASS significan "no se encontro defecto obvio", nunca prueba de correctitud. Los gates automaticos son la garantia real; los jueces son una segunda red.
+   **Known limitation**: both judges are the same model family and share training-correlated blind spots. Two PASS verdicts mean "no obvious defect found", never proof of correctness. The automated gates are the real guarantee; the judges are a second net.
 
-10. **RDD — Receipt Driven Development.** "Funciona" es una opinion; un recibo es evidencia. En repos con `.claude-rdd/enabled`, un commit requiere un recibo atado a los bytes staged exactos:
+10. **RDD — Receipt Driven Development.** "It works" is an opinion; a receipt is evidence. In repos with `.claude-rdd/enabled`, a commit requires a receipt bound to the exact staged bytes:
 
     ```
-    rdd freeze [max_fix_lines]   # congela el candidato (hash del diff staged)
-    # review sobre ESOS bytes
-    rdd receipt '<cmd de tests>' # corre la evidencia y firma el hash
-    git commit                   # quality-gate.sh valida el recibo
+    rdd freeze [max_fix_lines]   # freeze the candidate (hash of the staged diff)
+    # review THOSE bytes
+    rdd receipt '<test cmd>'     # run the evidence and sign the hash
+    git commit                   # quality-gate.sh validates the receipt
     ```
 
-    Cuatro propiedades lo justifican: el **candidato congelado** hace que tocar el codigo despues invalide el recibo solo; la **correccion acotada** a `max_fix_lines` es el freno mecanico al loop de over-engineering; **no hay recibo** si el comando de evidencia no sale 0, asi que no podes hablarte hasta uno; y el **kill switch** (`rdd off`, apagado por default) existe porque un guardarrail que nadie puede desactivar termina esquivado.
+    Four properties justify it: the **frozen candidate** makes touching the code afterwards invalidate the receipt by itself; the **bounded correction** capped at `max_fix_lines` is the mechanical brake on the over-engineering loop; **no receipt is issued** unless the evidence command exits 0, so you cannot talk your way into one; and the **kill switch** (`rdd off`, off by default) exists because a guardrail nobody can disable ends up worked around.
 
-    Encendelo en trabajo riesgoso o irreversible. No en un repo scratch — la friccion tiene que comprar algo.
+    Enable it on risky or irreversible work. Not on a scratch repo — the friction has to buy something.
 
 ## Session Close
 

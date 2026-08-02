@@ -1,62 +1,64 @@
 ---
 name: handoff
-description: Crea un archivo HANDOFF.md con el estado actual del proyecto para un traspaso limpio entre sesiones. Usar cuando la sesión está larga, el modelo da vueltas con la misma solución, o antes de hacer /clear. El archivo se archiva automáticamente al iniciar la siguiente sesión.
+description: Creates a HANDOFF.md file with the current project state for a clean handoff between sessions. Use when the session is long, the model is going in circles on the same solution, or before running /clear. The file is archived automatically when the next session starts.
 ---
 
-# Handoff — Traspaso limpio entre sesiones
+# Handoff — clean transfer between sessions
 
-Genera un archivo `HANDOFF.md` en la raíz del proyecto con TODO el contexto necesario para que una sesión nueva continúe sin arrastrar basura.
+Writes a `HANDOFF.md` at the project root with ALL the context a fresh session needs to continue without dragging along the noise.
 
-## Cuándo usar
+## When to use it
 
-- Sesión larga (>30 min) y el modelo empieza a repetir patrones
-- 3+ intentos fallidos con la misma solución
-- Antes de hacer `/clear` o cerrar la sesión
-- Cuando el usuario dice "handoff", "traspaso", o "crea handoff"
+- Long session (>30 min) and the model starts repeating patterns
+- 3+ failed attempts at the same solution
+- Before running `/clear` or closing the session
+- When the user says "handoff", "traspaso", or "crea handoff"
 
-## Estructura del HANDOFF.md
+## HANDOFF.md structure
 
-Generar el archivo con ESTE formato exacto:
+Generate the file in THIS exact format. The headings stay in Spanish because the user reads them:
 
 ```markdown
-# Handoff — [fecha/hora]
+# Handoff — [date/time]
 
 ## Objetivo
-[Qué estamos tratando de lograr. Una frase clara. Sin ambigüedad.]
+[What we are trying to achieve. One clear sentence. No ambiguity.]
 
 ## Estado Actual
-[Dónde estamos. Qué funciona. Qué NO funciona. Sé honesto — esto es lo mas importante.]
+[Where we are. What works. What does NOT work. Be honest — this is the most important part.]
 
 ## Archivos Clave
-- `ruta/absoluta/archivo.ts` — qué es y por qué importa
-- `ruta/absoluta/otro.tsx` — qué es y por qué importa
+- `absolute/path/file.ts` — what it is and why it matters
+- `absolute/path/other.tsx` — what it is and why it matters
 
 ## Cambios Hechos
-- [Cambio 1] — por qué se hizo
-- [Cambio 2] — por qué se hizo
+- [Change 1] — why it was made
+- [Change 2] — why it was made
 
 ## Intentos Fallidos
-- [Intento 1] — por qué falló. NO repetir este approach.
-- [Intento 2] — por qué falló. NO repetir este approach.
+- [Attempt 1] — why it failed. Do NOT repeat this approach.
+- [Attempt 2] — why it failed. Do NOT repeat this approach.
 
 ## Próximos Pasos
-1. [Paso concreto 1]
-2. [Paso concreto 2]
-3. [Paso concreto 3]
+1. [Concrete step 1]
+2. [Concrete step 2]
+3. [Concrete step 3]
 
 ## Notas
-[Cualquier contexto extra: convenciones, decisiones, advertencias, estado de git]
+[Any extra context: conventions, decisions, warnings, git state]
 ```
 
-## Reglas
+Write the body content in Spanish — the handoff is read by the user, not only by the next session.
 
-- **Sin ficción.** Si algo no se probó, decir "no verificado".
-- **Fallos > éxitos.** Documentar lo que NO funcionó es más valioso que lo que sí.
-- **Rutas absolutas.** Nada de `./` o `../`.
-- **Sobrescribir sin miedo.** Si ya existe HANDOFF.md, pisarlo (es más fresco).
-- **No hagas commit de HANDOFF.md.** Es temporal. Está en .gitignore o debería estarlo.
+## Rules
 
-## Post-generación
+- **No fiction.** If something was not tested, write "no verificado".
+- **Failures > successes.** Documenting what did NOT work is worth more than what did.
+- **Absolute paths.** No `./` or `../`.
+- **Overwrite without fear.** If HANDOFF.md already exists, replace it (the new one is fresher).
+- **Do not commit HANDOFF.md.** It is temporary. It belongs in .gitignore.
 
-1. Decir explícitamente: "HANDOFF.md creado. Cerrá esta sesión y abrí una nueva. Leerá el handoff automáticamente."
-2. No seguir trabajando después de generar el handoff. El punto es CERRAR la sesión.
+## After generating
+
+1. Say explicitly: "HANDOFF.md creado. Cerrá esta sesión y abrí una nueva. Leerá el handoff automáticamente."
+2. Do not keep working after generating the handoff. The whole point is to CLOSE the session.

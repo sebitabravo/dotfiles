@@ -1,27 +1,27 @@
 # Testing
 
-## Cuando un test se pone rojo: orden de diagnóstico
+## When a test goes red: diagnosis order
 
-**El test tiene la razón hasta que se demuestre lo contrario.** Es la única parte del repo que codifica lo que el sistema DEBE hacer; el código solo dice lo que hace hoy. Cuando discrepan, el sospechoso por defecto es el código.
+**The test is right until proven otherwise.** It is the only part of the repo that encodes what the system MUST do; the code only says what it does today. When they disagree, the default suspect is the code.
 
-Recorré las hipótesis **en este orden** y no saltees ninguna:
+Walk the hypotheses **in this order** and skip none:
 
-1. **¿El código nuevo está mal?** Es el caso en la enorme mayoría. Leé el assert, entendé qué comportamiento esperaba, arreglá el código para que lo cumpla. **No toques el test.**
-2. **¿El código está bien pero rompió un contrato que otro código dependía?** El test está señalando un efecto colateral real. Adaptá tu implementación para no romperlo, o traelo a la conversación si el contrato tiene que cambiar de verdad.
-3. **¿El test es frágil, no incorrecto?** Depende del orden, del reloj, de un mock desactualizado, de un puerto ocupado. Arreglá la fragilidad **sin tocar lo que verifica**. Un test que pasa a verificar menos no se arregló, se apagó.
-4. **¿El test está mal escrito?** Recién acá. Existe: un assert que codificó un malentendido, o un requisito que cambió de verdad. **PARÁ Y PEDÍ AUTORIZACIÓN** diciendo qué test, por qué creés que está mal, y qué cubre después del cambio.
+1. **Is the new code wrong?** This is the case the vast majority of the time. Read the assert, understand which behavior it expected, fix the code to satisfy it. **Do not touch the test.**
+2. **Is the code fine but it broke a contract other code relied on?** The test is flagging a real side effect. Adapt your implementation so it holds, or bring it to the conversation if the contract genuinely has to change.
+3. **Is the test flaky, not wrong?** Order-dependent, clock-dependent, stale mock, busy port. Fix the flakiness **without touching what it verifies**. A test that starts verifying less was not fixed, it was muted.
+4. **Is the test itself wrong?** Only here. It happens: an assert that encoded a misunderstanding, or a requirement that truly changed. **STOP AND ASK FOR AUTHORIZATION**, stating which test, why you believe it is wrong, and what it covers after the change.
 
-**Nunca saltes directo al 4 porque es el camino más corto al verde.** Si el primer instinto es editar el assert, casi siempre significa que todavía no entendiste por qué falla.
+**Never jump straight to 4 because it is the shortest path to green.** If the first instinct is to edit the assert, it almost always means you have not understood why it fails yet.
 
-**Verde no es la meta, es la evidencia.** Un test comentado, con `skip`, con el assert relajado o con el timeout inflado produce el mismo verde que un test que pasa — y esa es exactamente la razón por la que no sirve como prueba.
+**Green is not the goal, it is the evidence.** A commented-out test, a `skip`, a relaxed assert or an inflated timeout produce the same green as a passing test — which is exactly why green alone does not count as proof.
 
-## Antes de decir "listo"
+## Before saying "done"
 
-Tres preguntas. Cualquier "no" significa que no terminaste:
+Three questions. Any "no" means you are not finished:
 
-1. **¿Corrí los tests después del último cambio?** No antes: después. Un cambio posterior a la corrida invalida la corrida.
-2. **¿Vi el resultado con mis ojos, no lo asumí?** "Debería pasar" no es una corrida.
-3. **Si el cambio es visible (UI, layout, texto, estilo), ¿lo miré?** Un cambio visual se verifica viéndolo — screenshot o navegador. Deducir que un layout quedó bien porque el CSS "parece correcto" es lo que convierte un arreglo en veinte idas y vueltas.
+1. **Did I run the tests after the last change?** Not before: after. A change made after the run invalidates the run.
+2. **Did I see the result with my own eyes, or assume it?** "Should pass" is not a run.
+3. **If the change is visible (UI, layout, text, styling), did I look at it?** A visual change is verified by seeing it — screenshot or browser. Deducing that a layout is fine because the CSS "looks right" is what turns one fix into twenty round-trips.
 
 ## Rules
 

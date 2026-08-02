@@ -1,31 +1,31 @@
 ---
 name: tanstack-query
-description: Patrones criticos de TanStack Query v5 — query keys, caching, mutations, SSR, optimistic updates. Usar cuando se escriba data fetching, mutations, o cache en React.
+description: Critical TanStack Query v5 patterns — query keys, caching, mutations, SSR, optimistic updates. Use when writing data fetching, mutations, or cache logic in React.
 ---
 
-# TanStack Query — Patrones Criticos
+# TanStack Query — Critical Patterns
 
-Reglas extraidas de audit de 20+ patrones en codebase legacy. Solo lo que causa bugs reales.
+Rules extracted from auditing 20+ patterns in a legacy codebase. Only what causes real bugs.
 
 ## Query Keys
 
-### Array siempre, jerarquico, con dependencias
+### Always an array, hierarchical, with dependencies
 
 ```tsx
-// MAL: string plana, sin dependencias
+// BAD: string plana, sin dependencias
 useQuery({ queryKey: 'todos', queryFn: fetchTodos })
 
-// MAL: falta variable en key — colision de cache entre usuarios
+// BAD: falta variable en key — colision de cache entre usuarios
 useQuery({ queryKey: ['posts'], queryFn: () => fetchPostsByUser(userId) })
 
-// BIEN: array jerarquico, todas las dependencias incluidas
+// GOOD: hierarchical array, every dependency included
 useQuery({
   queryKey: ['todos', { status: 'done', page: 1 }],
   queryFn: () => fetchTodos({ status: 'done', page: 1 }),
 })
 ```
 
-**Regla**: si el `queryFn` usa una variable, esa variable va en el `queryKey`. Sin excepcion.
+**Rule**: if the `queryFn` uses a variable, that variable belongs in the `queryKey`. No exceptions.
 
 ### Query Key Factories (10+ queries)
 
@@ -48,7 +48,7 @@ queryClient.invalidateQueries({ queryKey: todoKeys.detail(5) }) // uno
 
 ## Caching
 
-### staleTime segun volatilidad
+### staleTime by volatility
 
 | Tipo de dato | staleTime |
 |---|---|
@@ -59,41 +59,41 @@ queryClient.invalidateQueries({ queryKey: todoKeys.detail(5) }) // uno
 | Estatico | `Infinity` |
 
 ```tsx
-// Default sensato, override por query
+// Sensible default, override per query
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60 * 1000 } },
 })
 ```
 
-Dato stale se devuelve instantaneo. Refetch en background. `staleTime: 0` (default) = refetch en cada mount.
+Stale data returns instantly. Refetch happens in the background. `staleTime: 0` (default) = refetch on every mount.
 
-### gcTime — retencion post-unmount
+### gcTime — retention after unmount
 
 ```tsx
 // Rutas frecuentes: mantener en cache
 useQuery({ queryKey: ['dashboard'], queryFn: ..., gcTime: 30 * 60 * 1000 })
 
-// Datos grandes vistos una vez: liberar rapido
+// Large data viewed once: release quickly
 useQuery({ queryKey: ['report', id], queryFn: ..., gcTime: 2 * 60 * 1000 })
 ```
 
-Default 5 min. Para SSR: nunca `gcTime: 0` (minimo 2000ms para hidratacion).
+Default 5 min. For SSR: never `gcTime: 0` (2000ms minimum for hydration).
 
-### Invalidacion dirigida, no broad
+### Targeted invalidation, not broad
 
 ```tsx
-// MAL: invalida todo
+// BAD: invalida todo
 queryClient.invalidateQueries()
 
-// MAL: invalida de mas
+// BAD: invalida de mas
 queryClient.invalidateQueries({ queryKey: ['todos'] })
 
-// BIEN: invalidacion exacta + relacionadas
+// GOOD: invalidacion exacta + relacionadas
 queryClient.invalidateQueries({ queryKey: ['todos', todoId] })
 queryClient.invalidateQueries({ queryKey: ['todos', 'list'] })
 ```
 
-Usar `exact: true` para una sola query. Usar predicate para casos complejos.
+Use `exact: true` for a single query. Use a predicate for complex cases.
 
 ## Mutations
 
@@ -118,11 +118,11 @@ const mutation = useMutation({
 })
 ```
 
-### Cancelar queries antes de mutar
+### Cancel queries before mutating
 
-Siempre `cancelQueries` en `onMutate` antes de un update optimista. Previene que un refetch pendiente sobrescriba el cambio optimista.
+Always `cancelQueries` inside `onMutate` before an optimistic update. Stops an in-flight refetch from overwriting the optimistic change.
 
-### Invalidar relacionadas post-mutation
+### Invalidate related queries after a mutation
 
 ```tsx
 onSuccess: (data, { postId }) => {
@@ -132,7 +132,7 @@ onSuccess: (data, { postId }) => {
 }
 ```
 
-Pensar en TODAS las queries que muestran datos afectados por la mutacion.
+Think about EVERY query that displays data the mutation touches.
 
 ## SSR — Dehydrate/Hydrate
 
@@ -141,7 +141,7 @@ Pensar en TODAS las queries que muestran datos afectados por la mutacion.
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 
 export default async function PostsPage() {
-  const queryClient = new QueryClient()                          // uno por request
+  const queryClient = new QueryClient()                          // one per request
   await queryClient.prefetchQuery(postQueries.list())
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -158,9 +158,9 @@ export function PostList() {
 }
 ```
 
-- Nuevo `QueryClient` por request (evita leaks entre usuarios).
+- A new `QueryClient` per request (avoids leaks between users).
 - `staleTime > 0` en server (previene refetch inmediato en cliente).
-- Serializar con cuidado: `JSON.stringify` es vulnerable a XSS. Usar serializer seguro.
+- Serialize carefully: `JSON.stringify` is XSS-prone. Use a safe serializer.
 
 ## Query Cancellation
 
@@ -175,9 +175,9 @@ useQuery({
 })
 ```
 
-Query key vieja se cancela automaticamente. Previene race conditions en search-as-you-type.
+The old query key is cancelled automatically. Prevents race conditions in search-as-you-type.
 
-## Errores con Suspense
+## Errors with Suspense
 
 ```tsx
 import { useQueryErrorResetBoundary } from '@tanstack/react-query'
@@ -207,16 +207,16 @@ function QueryErrorBoundary({ children }) {
 >
 ```
 
-Poner `staleTime` en el prefetch para que no refetche inmediato. Delay de 100ms para hover rapido.
+Set `staleTime` on the prefetch so it does not refetch immediately. 100ms delay for fast hover.
 
 ## Cheatsheet
 
 | Problema | Causa probable | Fix |
 |---|---|---|
 | Datos stale entre usuarios | Falta variable en queryKey | `queryKey: ['x', userId]` |
-| Refetch en cada navegacion | `staleTime: 0` (default) | `staleTime: 5 * 60 * 1000` |
+| Refetch on every navigation | `staleTime: 0` (default) | `staleTime: 5 * 60 * 1000` |
 | UI lenta post-mutacion | Esperando refetch | Optimistic update |
-| Mutacion no refresca UI | Falta invalidateQueries | Invalidar todas las queries afectadas |
+| Mutation does not refresh the UI | Missing invalidateQueries | Invalidate every affected query |
 | Memory leak en SPA | `gcTime: Infinity` | `gcTime` segun frecuencia de visita |
 | SSR flash de loading | Cliente refetcha tras hydrate | `staleTime > 0` en server |
 | Search input laggy | Requests viejas no canceladas | Pasar `signal` a fetch |

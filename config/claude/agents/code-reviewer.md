@@ -58,40 +58,40 @@ the change touches, invoke the matching one via the `Skill` tool:
 | `.swift` | `swift` |
 | `Dockerfile`, compose | `docker-expert` |
 | `.github/workflows/` | `github-actions-docs` |
-| tests móviles (Espresso/XCTest) | `mobile-app-testing` |
-| `.ts`/`.tsx` | `typescript`, `react-19`, `tailwind-4`, `nextjs` según aplique |
+| mobile tests (Espresso/XCTest) | `mobile-app-testing` |
+| `.ts`/`.tsx` | `typescript`, `react-19`, `tailwind-4`, `nextjs` as applicable |
 
-**Por que se resuelve y no se precarga.** Precargar las 19 costaba 28k tokens en
-CADA review, y en un PR de Laravel eso significa arrastrar Unity, ffmpeg y
-Jetpack Compose como ruido. Un reviewer con 28k de manuales irrelevantes tiene
-menos atencion para el diff, no mas contexto util: la señal se diluye entre
-paginas que no aplican. Cargar la que corresponde, cuando corresponde, es lo que
-hace el review fino.
+**Why it is resolved and not preloaded.** Preloading all 19 cost 28k tokens on
+EVERY review, and on a Laravel PR that means dragging Unity, ffmpeg and Jetpack
+Compose along as noise. A reviewer carrying 28k of irrelevant manuals has less
+attention for the diff, not more useful context: the signal dilutes across pages
+that do not apply. Loading the right one, when it applies, is what makes the
+review sharp.
 
-Si el diff cruza dos stacks, invoca las dos. Si no matchea ninguna, segui sin
-skill de stack — no fuerces una que no aplica.
+If the diff spans two stacks, invoke both. If it matches none, continue without a
+stack skill — do not force one that does not apply.
 
 ## Review Framework
 
-### Las cuatro lentes (aplicalas en orden)
+### The four lenses (apply them in order)
 
-Un pase generico encuentra lo obvio y se pierde lo que no estaba mirando. Pasa
-el diff por las cuatro lentes por separado; cada una pregunta algo distinto y lo
-que una da por sentado es justo lo que otra interroga.
+A single generic pass finds the obvious and misses whatever it was not looking
+for. Run the diff through the four lenses separately; each asks something
+different, and what one takes for granted is exactly what another interrogates.
 
-| Lente | Pregunta central | Busca |
+| Lens | Core question | Looks for |
 | --- | --- | --- |
-| **R1 Risk** | ¿Que puede explotar alguien? | limites de privilegio, exposicion de datos, inyeccion, authz, secretos, superficie nueva |
-| **R2 Readability** | ¿El proximo que lo lea entiende la intencion? | naming, complejidad, niveles de abstraccion mezclados, comentarios que mienten |
-| **R3 Reliability** | ¿Los tests probarian que esto se rompio? | cobertura del comportamiento nuevo, asserts que verifican el efecto y no la llamada, casos borde, determinismo |
-| **R4 Resilience** | ¿Que pasa cuando la dependencia falla? | fallbacks, retry/backoff, timeouts, degradacion, errores tragados, estado parcial |
+| **R1 Risk** | What could someone exploit? | privilege boundaries, data exposure, injection, authz, secrets, new surface |
+| **R2 Readability** | Will the next reader grasp the intent? | naming, complexity, mixed abstraction levels, comments that lie |
+| **R3 Reliability** | Would the tests prove this broke? | coverage of the new behavior, asserts that check the effect and not the call, edge cases, determinism |
+| **R4 Resilience** | What happens when the dependency fails? | fallbacks, retry/backoff, timeouts, degradation, swallowed errors, partial state |
 
-R1 y R3 son obligatorias en todo review. R2 y R4 aplican cuando el diff toca
-codigo que se va a mantener o que depende de algo externo (red, disco, cola, otro
-servicio).
+R1 and R3 are mandatory on every review. R2 and R4 apply when the diff touches
+code that will be maintained or that depends on something external (network,
+disk, queue, another service).
 
-Una lente que no encuentra nada se reporta como limpia. No inventes un hallazgo
-para que la lente "rinda": eso es exactamente lo que convierte un review en ruido.
+A lens that finds nothing is reported as clean. Do not invent a finding so the
+lens "produces": that is exactly what turns a review into noise.
 
 ### Data Flow Analysis (for security-sensitive code)
 
@@ -146,9 +146,9 @@ Mark these as `[AUTO]` in findings table. Include exact fix in the report so no 
 
 Beyond the checklist above, apply these strict design rules on every review:
 
-- **Regla 1k líneas**: a PR should not push a file from <1k to >1k lines without strong justification. If it crosses, flag it and propose decomposing first.
+- **1k-line rule**: a PR should not push a file from <1k to >1k lines without strong justification. If it crosses, flag it and propose decomposing first.
 - **Anti-spaghetti growth**: new ad-hoc conditionals, scattered special cases, or one-off branches in unrelated flows = design flag, not a nit.
-- **Simplificación radical**: if the behavior can be achieved with fewer concepts, branches, or layers, push for that path. Prefer the refactor that DELETES complexity over the one that rearranges it.
+- **Radical simplification**: if the behavior can be achieved with fewer concepts, branches, or layers, push for that path. Prefer the refactor that DELETES complexity over the one that rearranges it.
 - **Boring over magic**: flag wrappers/identity helpers/pass-through that add indirection without buying clarity.
 - **Logic in the right layer**: feature logic should not leak into shared paths. Reuse canonical utilities instead of one-offs.
 

@@ -1,129 +1,129 @@
 # {{PROJECT_NAME}}
 
 <!--
-COMO USAR ESTE TEMPLATE
-  1. Copialo a la raiz del proyecto como CLAUDE.md
-  2. Llena solo lo que el agente NO puede deducir leyendo el codigo
-  3. Borra las secciones que no apliquen — un template a medio llenar es peor que uno corto
-  4. Objetivo: menos de 150 lineas. Se carga en CADA sesion, cada linea se paga siempre
+HOW TO USE THIS TEMPLATE
+  1. Copy it to the project root as CLAUDE.md
+  2. Fill in only what the agent CANNOT deduce by reading the code
+  3. Delete sections that don't apply — a half-filled template is worse than a short one
+  4. Target: under 150 lines. It loads in EVERY session; every line is paid for every time
 
-REGLA DE ORO — el test de derivabilidad:
-  Antes de escribir una linea, pregunta: "¿un agente leyendo el codigo lo descubriria solo?"
-    SI  -> no lo escribas (stack, estructura de carpetas, scripts del package.json, firmas de API)
-    NO  -> escribilo (por que existe, que reglas de negocio son inviolables, que rompe en produccion)
+GOLDEN RULE — the derivability test:
+  Before writing a line, ask: "would an agent reading the code figure this out on its own?"
+    YES -> don't write it (stack, folder structure, package.json scripts, API signatures)
+    NO  -> write it (why it exists, which business rules are inviolable, what breaks in production)
 
-  El codigo dice QUE hace el sistema. Este archivo dice POR QUE, y que pasa si lo rompes.
+  The code says WHAT the system does. This file says WHY, and what happens if you break it.
 -->
 
-## Que es esto
+## What this is
 
-<!-- 2-4 lineas. El negocio, no la tecnologia. Alguien ajeno al proyecto tiene que entender que problema resuelve. -->
+<!-- 2-4 lines. The business, not the technology. Someone outside the project must understand what problem it solves. -->
 
-{{Una o dos frases: que problema real resuelve y para quien.}}
+{{One or two sentences: what real problem it solves and for whom.}}
 
-**Usuario objetivo**: {{quien lo usa, en que contexto, con que nivel tecnico}}
+**Target user**: {{who uses it, in what context, with what technical level}}
 
-**Como gana plata / cual es la metrica que importa**: {{revenue, retencion, tiempo ahorrado, cumplimiento normativo... lo que define el exito}}
+**How it makes money / the metric that matters**: {{revenue, retention, time saved, regulatory compliance... whatever defines success}}
 
-## Reglas de dominio (inviolables)
+## Domain rules (inviolable)
 
 <!--
-Las reglas de NEGOCIO que el codigo debe respetar siempre, y que no son evidentes leyendolo.
-Si se rompe una de estas, hay consecuencia real: plata perdida, multa, dato corrupto, usuario dañado.
-Numeralas. Se especifico. Nada de "manejar bien los errores".
+The BUSINESS rules the code must always respect, and that are not obvious from reading it.
+Breaking one has a real consequence: money lost, a fine, corrupted data, a harmed user.
+Number them. Be specific. No "handle errors properly".
 
-Ejemplos del formato correcto:
-  1. Un pedido NUNCA se despacha sin pago confirmado. El estado `paid` es el unico que habilita `dispatch()`.
-  2. Los precios se guardan en centavos (integer). Nunca float — un redondeo de 0.01 en 10k transacciones es una diferencia contable real.
-  3. Un usuario no puede ver datos de otro tenant. Toda query lleva `WHERE tenant_id = ?`. Sin excepcion.
-  4. Las boletas emitidas no se editan ni se borran. Correccion = nota de credito. Es requisito del SII.
+Examples of the right format:
+  1. An order is NEVER dispatched without confirmed payment. The `paid` state is the only one that enables `dispatch()`.
+  2. Prices are stored in cents (integer). Never float — a 0.01 rounding across 10k transactions is a real accounting gap.
+  3. A user cannot see another tenant's data. Every query carries `WHERE tenant_id = ?`. No exceptions.
+  4. Issued invoices are never edited or deleted. A correction is a credit note. It is a tax authority requirement.
 -->
 
-1. {{regla}}
-2. {{regla}}
-3. {{regla}}
+1. {{rule}}
+2. {{rule}}
+3. {{rule}}
 
-## Que NO construir (anti-objetivos)
+## What NOT to build (anti-goals)
 
 <!--
-Decisiones ya tomadas de que queda FUERA. Evita que el agente "ayude" agregando cosas que no queres.
-Incluye el por que: sin la razon, el agente lo interpreta como un pendiente en vez de una decision.
+Decisions already made about what stays OUT. Prevents the agent from "helping" by adding things you don't want.
+Include the why: without the reason, the agent reads it as a pending item instead of a decision.
 
-Ejemplos:
-  - NO multi-idioma. Mercado unico Chile, agregar i18n ahora es complejidad sin retorno.
-  - NO panel de admin propio. Se usa Retool, decision tomada para no mantener CRUD interno.
-  - NO microservicios. Monolito modular hasta 50k usuarios, esta medido y alcanza.
+Examples:
+  - NO multi-language. Single market, adding i18n now is complexity with no return.
+  - NO in-house admin panel. Retool is used instead; decided so we don't maintain an internal CRUD.
+  - NO microservices. Modular monolith up to 50k users — measured, and it holds.
 -->
 
-- NO {{cosa}} — {{por que}}
-- NO {{cosa}} — {{por que}}
+- NO {{thing}} — {{why}}
+- NO {{thing}} — {{why}}
 
-## Glosario de dominio
+## Domain glossary
 
 <!--
-Terminos del negocio que aparecen en el codigo y significan algo especifico aca.
-Solo los que un dev nuevo malinterpretaria. Si el termino es obvio, no lo pongas.
+Business terms that appear in the code and mean something specific here.
+Only the ones a new dev would misread. If the term is obvious, leave it out.
 
-Ejemplos:
-  | Termino | Significa aca |
-  | "cliente" | La empresa que contrata, NO el usuario final. El usuario final es "beneficiario". |
-  | "activo" | Pago al dia Y con sesion en los ultimos 30 dias. Un usuario pago pero inactivo NO es "activo". |
-  | "ciclo" | Periodo de facturacion, no el ciclo de vida del pedido. |
+Examples:
+  | Term | Means here |
+  | "customer" | The company that signs the contract, NOT the end user. The end user is "beneficiary". |
+  | "active" | Paid up AND with a session in the last 30 days. A paying but idle user is NOT "active". |
+  | "cycle" | Billing period, not the order lifecycle. |
 -->
 
-| Termino | Significa aca |
+| Term | Means here |
 |---|---|
-| {{termino}} | {{definicion precisa}} |
+| {{term}} | {{precise definition}} |
 
 ## Gotchas
 
 <!--
-Cosas que parecen un bug pero son intencionales, y trampas que ya costaron tiempo.
-Cada una evita que el agente "arregle" algo que funciona, o que repita un error conocido.
+Things that look like a bug but are intentional, and traps that already cost time.
+Each one stops the agent from "fixing" something that works, or repeating a known mistake.
 
-Ejemplos:
-  - `sync_legacy()` corre secuencial a proposito. El proveedor tira 429 con concurrencia. No lo paralelices.
-  - Los tests de `billing/` necesitan `TZ=America/Santiago`. Con otra timezone fallan por el corte de medianoche.
-  - El campo `status` tiene un valor `pending_v1` que parece muerto — lo usan 300 registros historicos. No lo saques.
+Examples:
+  - `sync_legacy()` runs sequentially on purpose. The provider returns 429 under concurrency. Do not parallelize it.
+  - Tests in `billing/` need `TZ=America/Santiago`. Under another timezone they fail on the midnight boundary.
+  - The `status` field has a `pending_v1` value that looks dead — 300 historical records use it. Do not remove it.
 -->
 
 - {{gotcha}}
 - {{gotcha}}
 
-## Comandos no obvios
+## Non-obvious commands
 
 <!--
-Solo los que el agente NO puede sacar del package.json / Makefile / pyproject.toml.
-Si es `npm test`, no lo escribas. Si requiere un flag raro, una variable de entorno o un orden especifico, si.
+Only the ones the agent CANNOT get from package.json / Makefile / pyproject.toml.
+If it's `npm test`, don't write it. If it needs an odd flag, an env var, or a specific order, do.
 
-Ejemplos:
-  | Para | Comando |
-  | Correr tests de integracion | `docker compose up -d db && TZ=America/Santiago npm run test:int` |
-  | Regenerar tipos del schema | `npm run db:types` (despues de CADA migracion, sino el build falla en CI) |
-  | Seed de datos realistas | `npm run seed -- --profile=demo` |
+Examples:
+  | For | Command |
+  | Run integration tests | `docker compose up -d db && TZ=America/Santiago npm run test:int` |
+  | Regenerate schema types | `npm run db:types` (after EVERY migration, or the CI build fails) |
+  | Seed realistic data | `npm run seed -- --profile=demo` |
 -->
 
-| Para | Comando |
+| For | Command |
 |---|---|
-| {{tarea}} | `{{comando}}` |
+| {{task}} | `{{command}}` |
 
-## Setup del entorno
+## Environment setup
 
-<!-- Solo lo que no esta en el README o que el README dice mal. Variables requeridas, servicios externos, credenciales. Borra esta seccion si el README ya alcanza. -->
+<!-- Only what is not in the README, or what the README gets wrong. Required variables, external services, credentials. Delete this section if the README already covers it. -->
 
-{{requisitos no obvios}}
+{{non-obvious requirements}}
 
 ---
 
 <!--
-QUE NO PONER ACA (el agente ya lo sabe o lo deduce):
-  - El stack (lo dice package.json / go.mod / pyproject.toml)
-  - La estructura de carpetas (la ve con ls)
-  - Como funciona React/Django/Laravel (lo sabe)
-  - "escribi codigo limpio", "manejo de errores", "agrega tests" (esta en las reglas globales)
-  - Documentacion de API copiada del codigo (se desactualiza y miente)
-  - Reglas que el linter ya enforcea (redundante — el linter gana igual)
+WHAT NOT TO PUT HERE (the agent already knows it or derives it):
+  - The stack (package.json / go.mod / pyproject.toml says it)
+  - The folder structure (it sees it with ls)
+  - How React/Django/Laravel works (it knows)
+  - "write clean code", "handle errors", "add tests" (that's in the global rules)
+  - API documentation copied from the code (it goes stale and lies)
+  - Rules the linter already enforces (redundant — the linter wins anyway)
 
-Si el agente hace algo mal repetidamente y la regla YA esta escrita aca, el archivo es muy largo
-y la regla se pierde en el ruido. Recorta antes de agregar.
+If the agent repeatedly gets something wrong and the rule is ALREADY written here, the file is too long
+and the rule is lost in the noise. Trim before adding.
 -->

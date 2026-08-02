@@ -1,10 +1,10 @@
 # Constitution — {{PROJECT_NAME}}
 
-> **Qué es:** Principios no-negociables que definen cómo se construye software en este proyecto. Cada PR, feature, y decisión técnica DEBE alinearse con estos principios.
+> **What it is:** Non-negotiable principles defining how software is built in this project. Every PR, feature, and technical decision MUST align with them.
 >
-> **Cuándo se usa:** Antes de cualquier feature, el Constitution Check verifica que la propuesta no viole estos principios. Si una violación es necesaria, se documenta en Complexity Tracking.
+> **When it's used:** Before any feature, the Constitution Check verifies the proposal does not violate these principles. If a violation is necessary, it goes documented in Complexity Tracking.
 >
-> **Basado en:** Spec Kit constitution template. Adaptado al flujo SDD.
+> **Based on:** Spec Kit constitution template, adapted to the SDD flow.
 
 ---
 
@@ -17,24 +17,24 @@
 
 ---
 
-## Core Principles *(5+, cada uno no-negociable)*
+## Core Principles *(5+, each non-negotiable)*
 
 <!--
-  Cada principio DEBE ser accionable (no "be excellent"),
-  verificable (se puede chequear con tooling automático),
-  y NO-NEGOCIABLE (si se viola, requiere justificación explícita).
+  Each principle MUST be actionable (not "be excellent"),
+  verifiable (checkable with automated tooling),
+  and NON-NEGOTIABLE (violating it requires explicit justification).
 -->
 
 ### I. {{PRINCIPLE_NAME}}
 
-**Statement:** [Qué significa, en una frase clara y directa]
+**Statement:** [What it means, in one clear and direct sentence]
 
-**Rationale:** [Por qué existe este principio. Qué problema previene.]
+**Rationale:** [Why this principle exists. What problem it prevents.]
 
 **Verification:**
-- [ ] [Cómo se verifica automáticamente — lint rule, test pattern, CI gate]
+- [ ] [How it is verified automatically — lint rule, test pattern, CI gate]
 
-**Non-Negotiable:** [Qué NO se permite bajo ninguna circunstancia sin Complexity Tracking]
+**Non-Negotiable:** [What is NOT allowed under any circumstance without Complexity Tracking]
 
 ---
 
@@ -93,34 +93,34 @@
 ## Additional Constraints
 
 ### Security
-- [Requerimientos mínimos de seguridad — ej: OWASP Top 10, secrets en vault, 2FA en cuentas]
+- [Minimum security requirements — e.g. OWASP Top 10, secrets in a vault, 2FA on accounts]
 
 ### Performance
-- [Métricas mínimas aceptables — ej: LCP < 2.5s, API p95 < 200ms]
+- [Minimum acceptable metrics — e.g. LCP < 2.5s, API p95 < 200ms]
 
 ### Accessibility
-- [Estándar mínimo — ej: WCAG 2.2 AA en todos los componentes]
+- [Minimum standard — e.g. WCAG 2.2 AA on every component]
 
 ### Data Privacy
-- [Política de datos — ej: No PII en logs, GDPR compliance para datos de EU]
+- [Data policy — e.g. no PII in logs, GDPR compliance for EU data]
 
 ---
 
 ## Development Workflow
 
-### Quality Gates *(todos los PRs DEBEN pasar)*
+### Quality Gates *(every PR MUST pass)*
 
-1. [Gate 1: ej: Tests pasan — `npm test` exit 0]
-2. [Gate 2: ej: Linter limpio — `npm run lint` sin warnings]
-3. [Gate 3: ej: Type check — `tsc --noEmit`]
-4. [Gate 4: ej: Code review — al menos 1 approve]
-5. [Gate 5: ej: Constitution Check — sin violaciones no justificadas]
+1. [Gate 1: e.g. tests pass — `npm test` exit 0]
+2. [Gate 2: e.g. clean linter — `npm run lint` with no warnings]
+3. [Gate 3: e.g. type check — `tsc --noEmit`]
+4. [Gate 4: e.g. code review — at least 1 approval]
+5. [Gate 5: e.g. Constitution Check — no unjustified violations]
 
 ### Branch Strategy
-- [Convención de branches — ej: `feature/{{name}}`, `fix/{{name}}`]
+- [Branch convention — e.g. `feature/{{name}}`, `fix/{{name}}`]
 
 ### Commit Convention
-- [Formato — ej: Conventional Commits, sin AI footprint]
+- [Format — e.g. Conventional Commits, no AI footprint]
 
 ---
 
@@ -128,21 +128,21 @@
 
 ### Amendment Process
 
-1. Proponer cambio vía PR a `specs/constitution-amendment-{{description}}.md`
-2. Discusión con equipo (mínimo 48h)
-3. Aprobación requiere [N] approves
-4. Version bump según semver de constitution
+1. Propose the change via PR to `specs/constitution-amendment-{{description}}.md`
+2. Team discussion (48h minimum)
+3. Approval requires [N] approvals
+4. Version bump per the constitution's semver
 
 ### Version Policy
 
-| Cambio | Bump |
+| Change | Bump |
 |---|---|
-| Nuevo principio, relaja constraint | MAJOR |
-| Refuerza principio existente | MINOR |
-| Clarificación, typo | PATCH |
+| New principle, or a relaxed constraint | MAJOR |
+| Strengthens an existing principle | MINOR |
+| Clarification, typo | PATCH |
 
 ### Compliance Review
 
-- Cada feature: Constitution Check en proposal y design
-- Mensual: auditoría de PRs mergeados contra principios
-- Trimestral: revisión completa de la constitución (¿sigue vigente?)
+- Every feature: Constitution Check at proposal and design
+- Monthly: audit merged PRs against the principles
+- Quarterly: full review of the constitution (is it still current?)

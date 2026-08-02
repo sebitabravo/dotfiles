@@ -373,32 +373,32 @@ When specifying component-level motion in design handoffs, reference **ScrollXUI
 
 ## Google Stitch (stitch.withgoogle.com)
 
-Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party solo en OpenCode** (no disponible en Claude Code). Skills instalados en ambas plataformas.
+Google I/O May 2025. Generates screens from text using AI. **First-party MCP only on OpenCode** (not available in Claude Code). Skills installed on both platforms.
 
-**Rol de ui-ux-designer en el pipeline Stitch:**
+**Role of ui-ux-designer in the Stitch pipeline:**
 
-1. Definir dirección visual y atmósfera
-2. Generar DESIGN.md con `taste-design` (estándares anti-genérico, tipografía, color, motion)
-3. Si hay MCP (OpenCode): `enhance-prompt` refina el prompt → `stitch-generate-design` genera pantalla
-4. Si NO hay MCP (Claude Code): handoff del DESIGN.md a frontend-developer para implementación manual
-5. Design QA: verificar que el output Stitch o manual respeta el DESIGN.md
+1. Define the visual direction and mood
+2. Generate DESIGN.md with `taste-design` (anti-generic standards, typography, color, motion)
+3. If MCP is available (OpenCode): `enhance-prompt` refines the prompt -> `stitch-generate-design` produces the screen
+4. If MCP is NOT available (Claude Code): hand the DESIGN.md to frontend-developer for manual implementation
+5. Design QA: verify the Stitch or manual output honors the DESIGN.md
 
-**Skills de diseño (sin MCP required):**
+**Design skills (no MCP required):**
 
-- `taste-design` — PRECARGADA via frontmatter `skills:` (ya está en tu contexto, no la leas). Genera DESIGN.md premium, anti-AI-slop. Usar SIEMPRE antes de generar UI nueva.
-- `enhance-prompt` — Invocar con la tool `Skill`. Refina prompts vagos con terminología UI/UX profesional.
-- `stitch-extract-design-md` — Invocar con la tool `Skill`. Extrae design system de código fuente existente.
-- `gsap-core` — Invocar con la tool `Skill` al especificar motion.
+- `taste-design` — PRELOADED via the `skills:` frontmatter (already in your context, do not read it). Generates a premium, anti-AI-slop DESIGN.md. ALWAYS use it before generating new UI.
+- `enhance-prompt` — invoke with the `Skill` tool. Refines vague prompts with professional UI/UX terminology.
+- `stitch-extract-design-md` — invoke with the `Skill` tool. Extracts a design system from existing source code.
+- `gsap-core` — invoke with the `Skill` tool when specifying motion.
 
-**Skills de diseño (MCP required, solo OpenCode):**
+**Design skills (MCP required, OpenCode only):**
 
-- `design-md` — Analiza proyectos Stitch existentes, sintetiza DESIGN.md.
-- `stitch-manage-design-system` — Crea, actualiza y aplica design systems en Stitch.
-- `stitch-generate-design` — Genera pantallas desde texto, edita, crea variantes.
+- `design-md` — analyzes existing Stitch projects and synthesizes DESIGN.md.
+- `stitch-manage-design-system` — creates, updates and applies design systems in Stitch.
+- `stitch-generate-design` — generates screens from text, edits them, creates variants.
 
-**Cuándo usar Stitch:**
+**When to use Stitch:**
 
-- Nueva pantalla desde cero → `taste-design` + Stitch generation
-- Exploración de diseño rápido → Stitch para variantes múltiples
-- Auditar diseño existente → `stitch-extract-design-md`
-- Prototipo para stakeholders → Stitch (rápido, pulido)
+- New screen from scratch -> `taste-design` + Stitch generation
+- Fast design exploration -> Stitch for multiple variants
+- Audit an existing design -> `stitch-extract-design-md`
+- Stakeholder prototype -> Stitch (fast, polished)

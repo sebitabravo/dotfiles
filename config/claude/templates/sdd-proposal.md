@@ -25,7 +25,7 @@
 
 ## Constitution Alignment
 
-<!-- Verificar contra la constitución del proyecto ANTES de aprobar -->
+<!-- Verify against the project constitution BEFORE approving -->
 
 | Principle | Aligned? | Notes |
 |---|---|---|

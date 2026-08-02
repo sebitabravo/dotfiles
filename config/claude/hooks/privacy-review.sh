@@ -31,10 +31,6 @@ PRIVATE_PATTERNS=(
   "ghp_[a-zA-Z0-9]{36,}"         # GitHub personal access tokens (classic, >=36 chars)
   "github_pat_[a-zA-Z0-9_]{22,}" # GitHub fine-grained tokens
   "sk-[a-zA-Z0-9]{32,}"          # OpenAI keys
-  # Emails reales. Se excluyen los dominios reservados por RFC 2606 y los
-  # noreply de GitHub: son los placeholders que este mismo hook recomienda usar,
-  # y bloquear un PR por escribir user@example.com no protege nada.
-  "[a-zA-Z0-9._%+-]+@(?!example\.(com|org|net)|test\b|invalid\b|localhost\b|users\.noreply\.github\.com)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
   "AKIA[0-9A-Z]{16}"             # AWS access keys
   "xox[bprs]-[0-9A-Za-z-]+"     # Slack tokens
 )
@@ -60,6 +56,25 @@ for pattern in "${PRIVATE_PATTERNS[@]}"; do
     done <<< "$match"
   fi
 done
+
+# Emails reales, aparte del loop de arriba porque necesitan exclusion de
+# dominios (RFC 2606 + noreply de GitHub, que son justo los placeholders que
+# este mismo hook recomienda usar). La version anterior metia la exclusion
+# como negative lookahead '(?!...)' dentro del patron: ggrep/rg lo soportan
+# via PCRE, pero el ultimo recurso (grep -E, ERE puro) no — el patron entero
+# fallaba en silencio ahi, y el detector de emails quedaba mudo en cualquier
+# maquina sin ggrep ni rg instalados.
+# Match simple + filtro por separado funciona igual en los tres grep, porque
+# ninguno de los dos pasos necesita lookahead.
+EMAIL_PATTERN="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+EMAIL_EXCLUDE='@(example\.(com|org|net)|test|invalid|localhost|users\.noreply\.github\.com)($|[^A-Za-z0-9_])'
+email_match="$(echo "$cmd_str" | grep -oE -- "$EMAIL_PATTERN" 2>/dev/null | grep -vE -- "$EMAIL_EXCLUDE" | head -5 || true)"
+if [[ -n "$email_match" ]]; then
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    violations+="  - Found: $line"$'\n'
+  done <<< "$email_match"
+fi
 
 if [[ -n "$violations" ]]; then
   {

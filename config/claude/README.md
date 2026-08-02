@@ -5,8 +5,8 @@ Configuracion de Claude Code con agentes especializados, reglas, skills, hooks y
 ## Sync rapido
 
 ```bash
-cp -R ~/Developer/dotfiles/config/claude/{*.{json,md,sh},agents,skills,commands,hooks,rules,templates,scripts,output-styles} ~/.claude/
-chmod +x ~/.claude/hooks/*.sh
+cp -R ~/Developer/dotfiles/config/claude/{*.{json,md,sh},agents,skills,hooks,rules,templates,scripts,output-styles} ~/.claude/
+chmod +x ~/.claude/hooks/*.sh ~/.claude/hooks/lib/*.sh
 ```
 
 ## Que hay

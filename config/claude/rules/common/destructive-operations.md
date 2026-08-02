@@ -4,31 +4,25 @@
 
 **Before ANY destructive or irreversible operation, STOP and CONFIRM with the user.** This is defense-in-depth. Even if you're "pretty sure" -- confirm.
 
-## El peligro no está en el verbo, está en el destino
+## The danger is not in the verb, it is in the target
 
-`DROP TABLE` es obvio y cualquier lista lo atrapa. El daño real lo hacen los comandos que **suenan inofensivos**.
+`DROP TABLE` is obvious and any blocklist catches it. The real damage comes from commands that **sound harmless**.
 
-Caso documentado (r/Anthropic, 2026): un agente corrió
+Documented case (r/Anthropic, 2026): an agent ran a Prisma schema-diff command passing `$DATABASE_URL_UNPOOLED` as the shadow-database URL, and emptied a production Supabase in 10 minutes. The subcommand reads like a comparison. But the *shadow database* is disposable **by design** and Prisma resets it, and that variable pointed at production. The agent detected the damage itself and reported it — after doing it.
 
-```
-prisma migrate diff ... --shadow-database-url $DATABASE_URL_UNPOOLED
-```
+**The lesson is not to add that subcommand to a blocklist.** A blocklist is always one incident behind, because the next command will be named differently. The lesson is that before any schema operation you must **verify three things**, and all three are checkable:
 
-y vació una Supabase de producción en 10 minutos. `migrate diff` se lee como una comparación. Pero la *shadow database* es descartable **por diseño** y Prisma la resetea, y esa variable apuntaba a producción. El agente detectó el daño solo y lo reportó — después de hacerlo.
+1. **Where does it point?** If the target comes from a variable, you do not know which database it hits until you resolve it. Resolve it — without printing credentials — and say so out loud before running anything.
+2. **Does this flag delete?** `--force`, `--force-reset`, `--accept-data-loss` exist precisely to authorize data loss. If the command needs one, the command destroys.
+3. **Is there a restorable backup?** Not "backups are configured": one you know how to restore.
 
-**La lección no es agregar `migrate diff` a una blocklist.** Una blocklist siempre va un incidente atrás, porque el próximo comando se va a llamar distinto. La lección es que antes de cualquier operación de esquema tenés que **corroborar tres cosas**, y son verificables:
+`validate-safe-ops.sh` enforces this for known ORMs (Prisma, Drizzle, Sequelize, TypeORM, Knex, Alembic, Atlas, artisan, rails). **The hook covers what someone already saw break; the three questions cover what has not broken yet.**
 
-1. **¿A dónde apunta?** Si el destino sale de una variable (`$DATABASE_URL`, `$DB_URL_UNPOOLED`), no sabés a qué base va hasta resolverla. Resolvela — sin imprimir credenciales — y decilo en voz alta antes de correr nada.
-2. **¿Este flag borra?** `--force`, `--force-reset`, `--accept-data-loss` existen precisamente para autorizar pérdida de datos. Si el comando necesita uno, el comando destruye.
-3. **¿Hay backup restaurable?** No "hay backups configurados": uno que sepas restaurar.
+## Verifying is not the same as blocking
 
-`validate-safe-ops.sh` enforcea esto para los ORMs conocidos (Prisma, Drizzle, Sequelize, TypeORM, Knex, Alembic, Atlas, artisan, rails). **El hook cubre lo que alguien ya vio romperse; las tres preguntas cubren lo que todavía no.**
+The goal of this file is not to restrict the model — it is to make it **corroborate its own result**. A guardrail that only forbids slows you down without teaching anything and ends up worked around. One that forces you to prove where you are about to write, what you are about to delete, and how you would revert it, lets you move faster precisely because you no longer have to second-guess.
 
-## Verificar no es lo mismo que trabar
-
-El objetivo de este archivo no es restringir al modelo — es que **corrobore su propio resultado**. Un guardarraíl que solo prohíbe te frena sin enseñarte nada y termina esquivado. Uno que te obliga a demostrar dónde vas a escribir, qué vas a borrar y cómo lo revertís, te deja ir más rápido justamente porque ya no tenés que dudar.
-
-Por eso el trabajo normal pasa sin fricción (`prisma migrate dev`, `rails db:migrate`, `db push` contra localhost) y lo que frena es puntualmente lo irreversible o lo que apunta a un destino que nadie verificó.
+That is why normal work passes without friction (a plain dev migration, a plain deploy migration, a schema push against localhost) and what stops is specifically the irreversible, or anything aimed at a target nobody verified.
 
 ## Database Operations (HIGHEST RISK)
 
