@@ -20,6 +20,9 @@ The table below is the subset where working from memory most reliably produces a
 | Writing `.feature` files, Given-When-Then, step definitions | `bdd-gherkin` |
 | Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
 | Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
+| Investigating WordPress slowness, profiling wp-cli/Query Monitor, autoloaded options | `wp-performance` |
+| Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
+| GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
 
 ## Context
 

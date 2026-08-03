@@ -23,7 +23,7 @@ model: sonnet
 tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(ls:*), Bash(cat:*), WebFetch]
 context: fork
 maxTurns: 50
-skills: [tanstack-query, e2e-testing, android-jetpack-compose, swift, unity-developer, ffmpeg, gsap-core, gsap-react, gsap-scrolltrigger, gsap-timeline, gsap-utils, stitch-react-components, taste-design, react-19, tailwind-4]
+skills: [tanstack-query, e2e-testing, android-jetpack-compose, swift, unity-developer, ffmpeg, gsap-core, gsap-react, gsap-scrolltrigger, gsap-timeline, gsap-utils, gsap-frameworks, gsap-plugins, stitch-react-components, taste-design, react-19, tailwind-4, nextjs, typescript, laravel-inertia-react]
 effort: xhigh
 ---
 
