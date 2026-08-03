@@ -51,9 +51,17 @@ CHANGED=$(
 # `packages/api/src/`, el codigo de produccion no matcheaba y el hook se
 # saltaba entero — falso verde justo en los repos mas grandes.
 # Se permiten hasta 2 segmentos de prefijo (backend/app, packages/api/src).
+#
+# generated/, __mocks__/|mocks/|fixtures/ y *.d.ts quedan afuera porque
+# rules/common/testing.md los excluye explicitamente: "Generated code (ORM
+# models, protobuf, OpenAPI stubs)" y "Tests of tests (do not test mocks,
+# fixtures, or test helpers)". Un .d.ts puro son solo declaraciones de tipos,
+# sin comportamiento en runtime que un test pueda verificar — cae bajo
+# "Static config that does not affect behavior". El hook bloqueaba estos tres
+# casos sin que la regla que dice implementar los pidiera.
 SRC=$(echo "$CHANGED" |
   grep -E '^([^/]+/){0,2}(src|app|lib|internal|pkg)/' |
-  grep -vE '(^|/)(tests?|specs?|__tests__|e2e|features|node_modules|vendor|migrations)/|\.(test|spec)\.|_test\.|(^|/)test_' || true)
+  grep -vE '(^|/)(tests?|specs?|__tests__|e2e|features|node_modules|vendor|migrations|generated|__mocks__|mocks|fixtures)/|\.(test|spec)\.|_test\.|(^|/)test_|\.d\.ts$' || true)
 [ -z "$SRC" ] && exit 0
 
 MISSING=""

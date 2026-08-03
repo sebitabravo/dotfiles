@@ -41,18 +41,20 @@ case "$PERMISSION_MODE" in
   bypassPermissions | auto) AUTONOMOUS=true ;;
 esac
 
-# Comando sin strings quoted — evita falsos positivos en mensajes de commit/heredocs
-NO_QUOTES_FULL=$(echo "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
-
-# Resuelve asignaciones simples ANTES de matchear, para que `f=.env; cat $f`
-# o `b=push; git $b --force` no escondan el objetivo detras de un nombre de
-# variable. Todo lo de mas abajo lee NO_QUOTES_FULL (HAYSTACK, SEGMENTS), asi
-# que resolver aca una sola vez cierra el mismo agujero en todos los checks.
+# Resuelve asignaciones simples ANTES de pelar comillas y ANTES de matchear,
+# para que `f=.env; cat $f`, `f=.env; cat "$f"` o `b=push; git $b --force` no
+# escondan el objetivo detras de un nombre de variable. Todo lo de mas abajo
+# lee NO_QUOTES_FULL (HAYSTACK, SEGMENTS), asi que resolver aca una sola vez
+# cierra el mismo agujero en todos los checks.
 #
 # Best-effort, no un parser de shell: solo asignaciones planas `var=valor`
 # sin '$' ni backtick en el valor participan — eso ya es indireccion anidada
-# y queda fuera de este alcance. No hace falta ser exhaustivo, alcanza con
-# cerrar el caso simple que de verdad se usa para evadir.
+# y queda fuera de este alcance. Un valor citado con espacios (`x="reset
+# --force"`) tampoco se resuelve completo — el detector de asignaciones corta
+# en el primer espacio — pero no abre un bypass nuevo: si no resuelve, el
+# patron original simplemente no matchea nada, como si la variable no
+# existiera. No hace falta ser exhaustivo, alcanza con cerrar el caso simple
+# que de verdad se usa para evadir.
 resolve_vars() {
   local text="$1" assignments assignment var val safe_val padded
   assignments=$(printf '%s\n' "$text" | grep -oE '\b[A-Za-z_][A-Za-z0-9_]*=[^][:space:];&|]+' || true)
@@ -71,11 +73,26 @@ resolve_vars() {
       *'$'* | *'`'*) continue ;;
     esac
     safe_val=$(printf '%s' "$val" | sed 's/[&/\]/\\&/g')
+    # Las formas citadas van PRIMERO y absorben las comillas junto con la
+    # referencia: `"$f"` pasa a `.env`, no a `".env"`. Esto tiene que correr
+    # ANTES del pelado de comillas de mas abajo (NO_QUOTES_FULL) — si
+    # resolviera despues, `"$f"` ya habria perdido su contenido entero al
+    # pelar comillas (el patron de comillas no distingue una referencia a
+    # variable de un string cualquiera) y no quedaria nada que resolver.
+    # Si resolviera antes pero dejara las comillas puestas (`".env"`), el
+    # pelado posterior igual las destruye — por eso las comillas se comen
+    # aca, no se preservan.
+    padded=$(printf '%s' "$padded" | sed -E "s/\"\\\$\\{${var}\\}\"/${safe_val}/g; s/\"\\\$${var}\"/${safe_val}/g; s/'\\\$\\{${var}\\}'/${safe_val}/g; s/'\\\$${var}'/${safe_val}/g")
     padded=$(printf '%s' "$padded" | sed -E "s/\\\$\\{${var}\\}/${safe_val}/g; s/\\\$${var}([^A-Za-z0-9_])/${safe_val}\\1/g")
   done <<< "$assignments"
   printf '%s' "${padded% }"
 }
-NO_QUOTES_FULL=$(resolve_vars "$NO_QUOTES_FULL")
+# Corre sobre $COMMAND crudo, no sobre texto ya pelado de comillas — ver el
+# comentario dentro de resolve_vars. NO_QUOTES_FULL se reconstruye pelando
+# comillas DESPUES de resolver, para que la referencia citada ya haya sido
+# consumida y no quede nada que el pelador pueda destruir.
+COMMAND_VARS_RESOLVED=$(resolve_vars "$COMMAND")
+NO_QUOTES_FULL=$(echo "$COMMAND_VARS_RESOLVED" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
 
 # DOS NIVELES, a proposito.
 #
