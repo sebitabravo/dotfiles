@@ -176,20 +176,20 @@ Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party s
 
 **Design->code pipeline (with ui-ux-designer):**
 
-1. `ui-ux-designer` define dirección visual → DESIGN.md vía `taste-design`
-2. Si hay MCP (OpenCode): `stitch-generate-design` genera pantalla → `stitch-react-components` convierte a React
-3. Si NO hay MCP (Claude Code): frontend-developer implementa directo del DESIGN.md
-4. frontend-developer integra el output en el proyecto
+1. `ui-ux-designer` defines visual direction -> DESIGN.md via `taste-design`
+2. If MCP is available (OpenCode): `stitch-generate-design` generates the screen -> `stitch-react-components` converts it to React
+3. If MCP is NOT available (Claude Code): frontend-developer implements directly from DESIGN.md
+4. frontend-developer integrates the output into the project
 
-**Cuándo usar Stitch vs código manual:**
+**When to use Stitch vs manual code:**
 
-| Escenario | Usar |
+| Scenario | Use |
 | --- | --- |
-| Nueva pantalla desde cero, diseño complejo | Stitch (si MCP disponible) |
-| Landing page completa | Stitch (rápido, consistente) |
-| Modificar componente existente | Código manual |
-| Formulario simple, tabla de datos | Código manual |
-| Prototipo rápido para validar | Stitch |
+| New screen from scratch, complex design | Stitch (if MCP available) |
+| Full landing page | Stitch (fast, consistent) |
+| Modifying an existing component | Manual code |
+| Simple form, data table | Manual code |
+| Quick prototype to validate | Stitch |
 
 ## Chart & Data Visualization
 

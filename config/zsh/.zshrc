@@ -139,6 +139,12 @@ alias less='bat'
 alias z='zoxide query -i'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
+# Receipt Driven Development — CLAUDE.md instruye 'rdd freeze'/'rdd receipt'
+# directo, sin ruta. quality-gate.sh usa la ruta absoluta y no lo necesita,
+# pero seguir la instruccion tal cual esta escrita fallaba con
+# 'command not found' porque el script no estaba en el PATH.
+alias rdd="$HOME/.claude/scripts/rdd.sh"
+
 # Pyenv — lazy-load shims PATH + defer init (~300ms ahorro, elimina jitter)
 export PATH="$HOME/.pyenv/shims:$PATH"
 pyenv() {

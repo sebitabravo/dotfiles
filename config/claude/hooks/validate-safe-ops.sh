@@ -215,11 +215,57 @@ LOCAL_HOST='(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|host\.docker\.internal)'
 # Solo se recorta para las reglas de ORM. Lo catastrofico (sudo, rm -rf /,
 # curl|bash) sigue evaluandose sobre el comando completo, porque ahi un heredoc
 # a `bash` SI seria ejecucion real.
-ORM_HAYSTACK=$(printf '%s' "$COMMAND" | awk '
-  /<<-?[A-Za-z_'"'"'"]/ { inhd=1; next }
-  inhd && /^[A-Za-z_]+$/ { inhd=0; next }
-  !inhd { print }
+#
+# Tres etapas, en este orden, y el orden importa:
+#
+#   1. Recortar el cuerpo del heredoc SOBRE $COMMAND CRUDO, tolerando un
+#      delimitador citado (`<<'EOF'`, `<<"EOF"`). Si esto corriera despues
+#      del pelado de comillas, `<<'EOF'` ya habria perdido el 'EOF' entero
+#      (el pelador de comillas no distingue un delimitador citado de un
+#      string comun) y el heredoc dejaria de detectarse — el cuerpo entero
+#      se colaba sin recortar. Bug real, lo probe antes de este comentario.
+#   2. Pelar comillas DESPUES: `git commit -m "fix: prisma migrate reset
+#      docs"` no debe disparar el bloqueo — mismo problema que el heredoc,
+#      con comillas en vez de heredoc.
+#   3. Resolver variables (resolve_vars) al final, para que `x=reset; prisma
+#      migrate $x --force` no se escape de estas reglas. Se resuelve aparte
+#      de NO_QUOTES_FULL: ese ya paso por resolve_vars ANTES del recorte de
+#      heredoc, con lo cual un heredoc citado ya viene destruido cuando
+#      resolve_vars actua sobre el.
+#
+# El awk anterior tenia ademas tres bugs de verdad, no cosmeticos:
+#   - `next` en la linea de apertura descartaba esa linea ENTERA, incluido el
+#     comando que la precede a `<<EOF` — `prisma migrate diff ... <<EOF`
+#     desaparecia por completo, exactamente el caso del incidente.
+#   - el cierre exigia `^[A-Za-z_]+$` (sin digitos): un delimitador como
+#     `<<EOF1` nunca cerraba y todo lo que seguia quedaba recortado para
+#     siempre.
+#   - `<<` tambien es shift aritmetico (`$((a<<b))`): sin distinguirlo,
+#     cualquier `a<<b` abria un heredoc fantasma que tapaba el resto del
+#     comando.
+# Este awk imprime la linea de apertura, captura el delimitador real (con o
+# sin comillas, letras y digitos) y lo usa para el cierre, y no trata `<<`
+# como heredoc si esta dentro de un `$((` sin cerrar todavia.
+ORM_NO_HEREDOC=$(printf '%s' "$COMMAND" | awk '
+  inhd {
+    if ($0 == delim) { inhd = 0 }
+    next
+  }
+  match($0, /<<-?["'"'"']?[A-Za-z_][A-Za-z0-9_]*["'"'"']?/) {
+    before = substr($0, 1, RSTART - 1)
+    n_open = gsub(/\$\(\(/, "&", before)
+    n_close = gsub(/\)\)/, "&", before)
+    if (n_open > n_close) { print; next }
+    delim = substr($0, RSTART, RLENGTH)
+    gsub(/^<<-?["'"'"']?|["'"'"']?$/, "", delim)
+    inhd = 1
+    print
+    next
+  }
+  { print }
 ')
+ORM_HAYSTACK=$(printf '%s' "$ORM_NO_HEREDOC" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+ORM_HAYSTACK=$(resolve_vars "$ORM_HAYSTACK")
 
 if echo "$ORM_HAYSTACK" | grep -qEi "$ORM_SCHEMA" || echo "$ORM_HAYSTACK" | grep -qEi "$ARTISAN_RAILS"; then
   # Se usa ORM_HAYSTACK y NO se reasigna COMMAND: mas abajo el bloque de

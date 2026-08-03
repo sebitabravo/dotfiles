@@ -20,9 +20,9 @@ description: |
   </example>
 color: red
 model: opus
-tools: [Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(gh pr diff:*), Bash(gh pr view:*)]
+tools: [Read, Grep, Glob, Skill, Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(gh pr diff:*), Bash(gh pr view:*)]
 maxTurns: 40
-skills: [code-review, android-jetpack-compose, swift, android-clean-architecture, kotlin-coroutines-flows, mobile-app-testing, laravel-specialist, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, unity-developer, docker-expert, github-actions-docs, ffmpeg, security-review, thermo-nuclear-code-quality-review, mutation-testing]
+skills: [code-review, security-review, thermo-nuclear-code-quality-review, mutation-testing]
 effort: max
 background: true
 ---
