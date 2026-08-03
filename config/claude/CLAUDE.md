@@ -11,7 +11,9 @@
 
 **Before starting real work, check the available-skills list in your system prompt.** It is authoritative and always current, so there is never a reason to reconstruct a skill's content from memory. Match on file context (extensions, paths) and task context; more than one skill can apply.
 
-The table below is the subset where working from memory most reliably produces a confidently wrong answer:
+The routing table below tells you which skill to load for which task. Load proactively — do not wait for the user to name it.
+
+When a task matches a row below, load that skill via the `Skill` tool — do not work from memory and do not wait to be asked. The user does not invoke skills manually; routing happens here.
 
 | Task involves | Skill |
 |---|---|
@@ -23,6 +25,12 @@ The table below is the subset where working from memory most reliably produces a
 | Investigating WordPress slowness, profiling wp-cli/Query Monitor, autoloaded options | `wp-performance` |
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
+| Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
+| Designing or optimizing a prompt, choosing a model tier, setting up evals | `prompt-engineering` |
+| Finding/installing a skill for a task the user describes | `find-skills` |
+| Creating a new agent skill, adding agent instructions, documenting a pattern | `skill-creator` |
+| Session is long, model is looping, or before /clear | `handoff` |
+| Analyzing a Stitch project into a DESIGN.md design system | `design-md` |
 
 ## Context
 
