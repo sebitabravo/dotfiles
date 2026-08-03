@@ -51,6 +51,21 @@ sys_binary() {
 
 echo "Verificando dependencias de skills..."
 
+# Version minima de python por skill. python3 -c "import X" solo prueba que el
+# modulo importa con LA version de python3 que resuelva el PATH — no dice nada
+# si el script de la skill usa sintaxis mas nueva (ej: 'match', 3.10+). pptx y
+# xlsx traen scripts/office/validate.py con 'match', y el python3 de sistema
+# en macOS suele ser 3.9.x: import pasaba, pero validate.py fallaba con
+# SyntaxError recien al ejecutarse, en medio de la tarea.
+PY_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo "0.0")
+while IFS=$'\t' read -r skill min_py; do
+  [ -z "$skill" ] || [ -z "$min_py" ] && continue
+  if [ "$(printf '%s\n' "$min_py" "$PY_VERSION" | sort -V | head -1)" != "$min_py" ]; then
+    missing=$((missing + 1))
+    echo "  FALTA  python $min_py+ (system python3 es $PY_VERSION)  (skill: $skill)"
+  fi
+done < <(jq -r '.skills | to_entries[] | select(.value.python_version) | [.key, .value.python_version] | @tsv' "$LOCK")
+
 while IFS=$'\t' read -r skill kind dep; do
   [ -z "$skill" ] && continue
   case "$kind" in

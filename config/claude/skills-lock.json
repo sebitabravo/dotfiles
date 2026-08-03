@@ -9,8 +9,9 @@
         "node": ["pptxgenjs"],
         "system": ["libreoffice", "poppler"]
       },
+      "python_version": "3.10",
       "node_modules": "skills/pptx/node_modules",
-      "notes": "pptxgenjs se resuelve por ruta absoluta desde el home del agente, no desde el cwd del proyecto. QA de contenido usa markitdown."
+      "notes": "pptxgenjs se resuelve por ruta absoluta desde el home del agente, no desde el cwd del proyecto. QA de contenido usa markitdown. scripts/office/validate.py usa 'match', requiere python 3.10+ — el system python3 de macOS suele ser 3.9; invocalo con un python mas nuevo (uv run --python 3.11, o el que 'uv python list' tenga instalado)."
     },
     "xlsx": {
       "source": "https://github.com/anthropics/skills/tree/main/xlsx",
@@ -18,7 +19,8 @@
         "python": ["openpyxl", "pandas"],
         "system": ["libreoffice"]
       },
-      "notes": "recalc.py necesita libreoffice (soffice) en PATH para recalcular formulas."
+      "python_version": "3.10",
+      "notes": "recalc.py necesita libreoffice (soffice) en PATH para recalcular formulas. scripts/office/validate.py usa 'match', requiere python 3.10+ — mismo aviso que pptx."
     },
     "inacap": {
       "source": "local",
