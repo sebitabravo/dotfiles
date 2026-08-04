@@ -1,11 +1,115 @@
 {
+  "description": "Sebita safety, privacy, handoff, and lightweight verification hooks.",
   "hooks": {
-    "Notification": [
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "true"
+            "command": "bash ~/.codex/hooks/secret-detect.sh",
+            "timeout": 5,
+            "statusMessage": "Checking prompt for secrets"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/session-start.py",
+            "timeout": 5,
+            "additionalContextLimit": 6000,
+            "statusMessage": "Loading handoff context"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/refresh-skill-registry.sh",
+            "timeout": 30,
+            "statusMessage": "Refreshing skill registry"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/pre-compact.sh",
+            "timeout": 5,
+            "statusMessage": "Preparing compaction"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/post-compact.sh",
+            "timeout": 5,
+            "statusMessage": "Restoring working context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/validate-safe-ops.sh",
+            "timeout": 15,
+            "statusMessage": "Checking command safety"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/privacy-review.sh",
+            "timeout": 5,
+            "statusMessage": "Checking outbound privacy"
+          }
+        ]
+      },
+      {
+        "matcher": "^apply_patch$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/protect-tests.sh",
+            "timeout": 5,
+            "statusMessage": "Checking protected files"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/detect-debug.sh",
+            "timeout": 10,
+            "statusMessage": "Checking changed code"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/stop-check.sh",
+            "timeout": 180,
+            "statusMessage": "Running project QA before completion"
           }
         ]
       }

@@ -1,0 +1,7 @@
+# Heavy engineering profile. Install as ~/.codex/work.config.toml.
+model = "gpt-5.6-sol"
+# Sol is reserved for deliberate, high-value engineering sessions.
+model_reasoning_effort = "high"
+model_verbosity = "medium"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"

@@ -62,6 +62,11 @@ fi
 DEBUG_FOUND=""
 for file in $CHANGED_FILES; do
   if [ -f "$file" ]; then
+    # Hook infrastructure prints JSON on stdout/stderr by contract. It is not
+    # a production debug statement, so never report it as console.log/print.
+    case "$file" in
+      */hooks/*) continue ;;
+    esac
     if grep -nE '(console\.(log|warn|error|debug)|print\(|var_dump|dd\(|debugger|binding\.pry|byebug)' "$file" 2>/dev/null | grep -qE '^\s*[0-9]+:\s*(console|print|var_dump|dd|debugger|binding|byebug)'; then
       DEBUG_FOUND="${DEBUG_FOUND}\n  - $file"
     fi

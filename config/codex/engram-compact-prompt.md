@@ -11,4 +11,7 @@ After that sentence, summarize:
 - Remaining next steps
 - Relevant files changed
 
+Keep human decisions and discoveries distinct from automated SDD or registry
+artifacts. Automated artifacts must use `capture_prompt=false` when saved.
+
 Keep it concise and high-signal.
