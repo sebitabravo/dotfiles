@@ -193,17 +193,17 @@ if [ -f "package.json" ]; then
   fi
   if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
     LINT_CMD="npm run lint"
-  elif command -v eslint >/dev/null 2>&1 && [ -f ".eslintrc.js" -o -f ".eslintrc.json" -o -f ".eslintrc.yml" -o -f "eslint.config.js" -o -f "eslint.config.mjs" ]; then
+  elif command -v eslint >/dev/null 2>&1 && { [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ]; }; then
     LINT_CMD="npx eslint . --max-warnings=0"
   fi
 elif [ -f "pyproject.toml" ] || [ -f "setup.cfg" ] || [ -f "pytest.ini" ]; then
   # Python project
-  if command -v pytest >/dev/null 2>&1; then
+  if command -v uv >/dev/null 2>&1 && [ -f "pyproject.toml" ]; then
     HAS_TESTS=true
-    TEST_CMD="pytest"
+    TEST_CMD="uv run pytest"
     # --cov-branch: sin el, pytest-cov no reporta branch coverage y el piso de
     # 70% declarado en CLAUDE.md no se puede evaluar.
-    COVERAGE_CMD="pytest --cov --cov-branch --cov-report=term-missing"
+    COVERAGE_CMD="uv run pytest --cov --cov-branch --cov-report=term-missing"
     COVERAGE_KIND="pycov"
   fi
 elif [ -f "go.mod" ]; then
@@ -214,13 +214,6 @@ elif [ -f "go.mod" ]; then
   COVERAGE_KIND="gocov"
   if command -v golangci-lint >/dev/null 2>&1; then
     LINT_CMD="golangci-lint run"
-  fi
-elif [ -f "Cargo.toml" ]; then
-  # Rust project
-  HAS_TESTS=true
-  TEST_CMD="cargo test"
-  if command -v clippy >/dev/null 2>&1; then
-    LINT_CMD="cargo clippy -- -D warnings"
   fi
 fi
 

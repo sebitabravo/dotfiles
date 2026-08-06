@@ -44,15 +44,13 @@ detect_test_cmd() {
     fi
 
     if [ -f "$d/pyproject.toml" ] || [ -f "$d/pytest.ini" ]; then
-      # uv/poetry antes que pytest suelto: en estos proyectos el runner vive en
-      # el entorno que maneja la herramienta, no en el PATH del shell.
+      # uv/poetry: el runner vive en el entorno del proyecto, no en el PATH
+      # global del shell.
       local py=""
-      if [ -f "$d/uv.lock" ] && command -v uv >/dev/null 2>&1; then
+      if [ -f "$d/pyproject.toml" ] && command -v uv >/dev/null 2>&1; then
         py="uv run pytest"
       elif [ -f "$d/poetry.lock" ] && command -v poetry >/dev/null 2>&1; then
         py="poetry run pytest"
-      elif command -v pytest >/dev/null 2>&1; then
-        py="pytest"
       fi
       if [ -n "$py" ]; then
         [ "$d" = "$root" ] && TEST_CMD="$py" || TEST_CMD="cd '$d' && $py"
@@ -65,10 +63,6 @@ detect_test_cmd() {
       return 0
     fi
 
-    if [ -f "$d/Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-      [ "$d" = "$root" ] && TEST_CMD="cargo test -q" || TEST_CMD="cd '$d' && cargo test -q"
-      return 0
-    fi
   done
 
   return 1

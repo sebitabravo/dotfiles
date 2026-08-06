@@ -65,10 +65,12 @@ BASENAME=$(basename "$FILE_PATH")
 IS_TEST=false
 case "$BASENAME" in
   *.test.* | *.spec.*) IS_TEST=true ;; # JS/TS: foo.test.ts, foo.spec.tsx
-  *_test.go | *_test.py | *_test.rb | *_test.exs) IS_TEST=true ;;
+  *_test.go | *_test.py | *_test.rb | *_test.exs | *_test.dart) IS_TEST=true ;;
   test_*.py) IS_TEST=true ;; # pytest
   *Test.java | *Tests.java | *Test.kt | *Tests.kt) IS_TEST=true ;;
   *Spec.scala | *Test.cs | *Tests.cs) IS_TEST=true ;;
+  *Test.php | *Tests.php) IS_TEST=true ;; # PHPUnit / Pest
+  *Test.swift | *Tests.swift) IS_TEST=true ;; # XCTest
   *.feature) IS_TEST=true ;;  # Gherkin
   conftest.py) IS_TEST=true ;; # fixtures pytest
 esac

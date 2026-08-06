@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # check-skill-deps.sh — verifica las dependencias externas declaradas en skills-lock.json.
 #
-# Las skills de Office (pptx/xlsx/inacap) fallan con errores cripticos cuando falta
-# libreoffice o un paquete de python. Esto lo dice antes, no en medio de una tarea.
+# Las dependencias declaradas deben poder verificarse antes de una tarea; las
+# dependencias que solo viven dentro de un proyecto se informan, no se instalan.
 #
 # Uso: bash scripts/check-skill-deps.sh [--quiet]
 set -uo pipefail
@@ -28,35 +28,22 @@ report() {
   echo "  FALTA  $1  (skill: $2)"
 }
 
-# Los nombres de import de python no siempre coinciden con el del paquete.
+# Los nombres declarativos suelen coincidir con el import en el lock activo.
 py_module() {
-  case "$1" in
-    "markitdown[pptx]") echo "markitdown" ;;
-    python-pptx) echo "pptx" ;;
-    python-docx) echo "docx" ;;
-    Pillow) echo "PIL" ;;
-    *) echo "$1" ;;
-  esac
+  echo "$1"
 }
 
-# libreoffice se invoca como 'soffice' en la mayoria de las instalaciones.
+# Algunos locks pueden declarar un nombre distinto al binario; los locks
+# actuales usan nombres ejecutables directamente.
 sys_binary() {
-  case "$1" in
-    libreoffice) echo "soffice" ;;
-    poppler) echo "pdftoppm" ;;
-    "node>=18") echo "node" ;;
-    *) echo "$1" ;;
-  esac
+  echo "$1"
 }
 
 echo "Verificando dependencias de skills..."
 
 # Version minima de python por skill. python3 -c "import X" solo prueba que el
-# modulo importa con LA version de python3 que resuelva el PATH — no dice nada
-# si el script de la skill usa sintaxis mas nueva (ej: 'match', 3.10+). pptx y
-# xlsx traen scripts/office/validate.py con 'match', y el python3 de sistema
-# en macOS suele ser 3.9.x: import pasaba, pero validate.py fallaba con
-# SyntaxError recien al ejecutarse, en medio de la tarea.
+# modulo importa con la version de python3 que resuelva el PATH; una skill puede
+# tener requisitos adicionales dentro del propio proyecto.
 PY_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo "0.0")
 while IFS=$'\t' read -r skill min_py; do
   [ -z "$skill" ] || [ -z "$min_py" ] && continue
@@ -90,10 +77,5 @@ if [ "$missing" -eq 0 ]; then
 fi
 
 echo
-echo "$missing dependencia(s) faltante(s). Comandos de instalacion:"
-if [ "$(uname -s)" = "Darwin" ]; then
-  jq -r '.install.macos[] | "  " + .' "$LOCK"
-else
-  jq -r '.install.debian[] | "  " + .' "$LOCK"
-fi
+echo "$missing dependencia(s) faltante(s). No se instala nada automaticamente; revisa el entorno del proyecto o reporta la limitacion del host."
 exit 1
