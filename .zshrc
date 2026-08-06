@@ -5,8 +5,8 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+# El PATH no se toca en este archivo. Vive en .zshenv (setup_user_path) porque
+# los shells no interactivos tambien lo necesitan.
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -125,23 +125,23 @@ myip() {
 }
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 alias ports="lsof -iTCP -sTCP:LISTEN -n -P"
-alias ls='eza --git --group-directories-first --icons'
-alias l='eza --git --group-directories-first --icons'
-alias ll='eza --long --header --icons --git --group-directories-first -alF'
-alias la='eza --git --group-directories-first --icons -a'
-alias lt='eza --git --level=2 --icons --group-directories-first -T'
-alias ltl='eza --git --group-directories-first --icons -TL'
-alias lsn='eza --long --header --icons --git --group-directories-first --no-permissions --no-user --time-style=relative'
+alias ls='eza --git --group-directories-first --icons=auto'
+alias l='eza --git --group-directories-first --icons=auto'
+alias ll='eza --long --header --icons=auto --git --group-directories-first -al --classify=auto'
+alias la='eza --git --group-directories-first --icons=auto -a'
+alias lt='eza --git --level=2 --icons=auto --group-directories-first -T'
+alias ltl='eza --git --group-directories-first --icons=auto -TL'
+alias lsn='eza --long --header --icons=auto --git --group-directories-first --no-permissions --no-user --time-style=relative'
 alias grep="rg --color=auto"
 alias mkdir="mkdir -p"
 alias cat='bat --paging=never'
 alias less='bat'
-# zoxide provee 'z' (jump por frecency) y 'zi' (seleccion interactiva) via init (~linea 151).
-# NO redefinir 'z' como alias: la expansion de alias gana sobre la funcion y rompe el jump.
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
+alias rdd="$HOME/.claude/scripts/rdd.sh"
+# zoxide provee 'z' (jump por frecency) y 'zi' (seleccion interactiva) via init.
+# NO redefinir 'z' como alias: la expansion de alias gana sobre la funcion y rompe el jump.
 
-# Pyenv — lazy-load shims PATH + defer init (~300ms ahorro, elimina jitter)
-export PATH="$HOME/.pyenv/shims:$PATH"
+# Pyenv — defer init (~300ms ahorro, elimina jitter). Los shims ya estan en el PATH.
 pyenv() {
   unfunction pyenv
   eval "$(command pyenv init - zsh)"
@@ -152,37 +152,14 @@ pyenv() {
 eval "$(zoxide init zsh)"
 
 # fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
-# fd as backend: faster, gitignore-aware. Ctrl-R history via atuin.
+# fd as backend: faster, gitignore-aware. Ctrl-R lo toma fzf-history-widget.
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 source <(fzf --zsh) 2>/dev/null
 
-# atuin — shell history SQLite + fuzzy search (replaces Ctrl-R)
-eval "$(atuin init zsh)" 2>/dev/null
-
-# Console Ninja
-PATH=~/.console-ninja/.bin:$PATH
-
-# Claude Code and VS Code paths
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="/usr/local/bin:$PATH"
-
-# Android SDK
-export ANDROID_HOME=$HOME/Library/Android/sdk
-[[ -d "$ANDROID_HOME" ]] && {
-  export PATH="$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
-}
-
-# Go Lang
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
-
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
-
-# opencode
-export PATH="$HOME/.opencode/bin:$PATH"
 
 # Engram Cloud (NAS via Tailscale) — set token in ~/.engram-cloud.env
 [[ -f "$HOME/.engram-cloud.env" ]] && source "$HOME/.engram-cloud.env"
@@ -191,23 +168,9 @@ export PATH="$HOME/.opencode/bin:$PATH"
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
   export HERD_PHP_84_INI_SCAN_DIR="$HOME/Library/Application Support/Herd/config/php/84/"
 
-# Herd NVM — PATH estático (0ms) + lazy-load nvm.sh solo cuando se necesita
-# Para auto-switch de version segun .nvmrc usa 'nvm use' manualmente, o
-# instala 'fnm'/'vfox' (Rust nativos, lazy-friendly).
-export NVM_DIR="$HOME/Library/Application Support/Herd/config/nvm"
-# Agrega bin del default al PATH inmediatamente — node disponible para scripts de pnpm global
-_nvm_default=$(cat "$NVM_DIR/alias/default" 2>/dev/null)
-if [[ -f "$NVM_DIR/alias/$_nvm_default" ]]; then
-  _nvm_default=$(cat "$NVM_DIR/alias/$_nvm_default")
-else
-  # Alias es un patron de version (ej: "24") — resolver contra versiones instaladas
-  _nvm_default=$(ls "$NVM_DIR/versions/node/" 2>/dev/null | grep "^v${_nvm_default}\." | sort -V | tail -1)
-fi
-[[ -d "$NVM_DIR/versions/node/$_nvm_default/bin" ]] && \
-  export PATH="$NVM_DIR/versions/node/$_nvm_default/bin:$PATH"
-unset _nvm_default
-# Solo nvm necesita lazy-load. node/npm/npx/pnpm/pnpx vienen del PATH estático (línea 206).
-# Wrappers eliminados: causaban recursión infinita si _nvm_lazy_load no se cargaba en entornos no interactivos.
+# Herd NVM — el PATH de la version default lo resuelve .zshenv. Solo nvm en si
+# necesita lazy-load; node/npm/npx vienen del PATH estatico.
+# Para auto-switch segun .nvmrc corre 'nvm use' a mano, o instala fnm/vfox.
 _nvm_lazy_load() {
   unfunction nvm 2>/dev/null
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -218,32 +181,13 @@ nvm()   { _nvm_lazy_load; nvm "$@"; }
 # [[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
 #   builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
 
-# Herd PHP binary
-[[ -d "$HOME/Library/Application Support/Herd/bin" ]] && \
-  export PATH="$HOME/Library/Application Support/Herd/bin":$PATH
-
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # p10k transient prompt
 typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
 
-# zsh-syntax-highlighting — colorea comandos mientras escribis (debe ir al final)
-source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2>/dev/null
-
-# zsh-autosuggestions — sugerencias grises basadas en historial
-source "${HOMEBREW_PREFIX:-$(brew --prefix)}/share/zsh-autosuggestions/zsh-autosuggestions.zsh" 2>/dev/null
-
 # Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
 if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
 command -v fastfetch &>/dev/null && fastfetch
 fi
-
-
-# pnpm
-export PNPM_HOME="$HOME/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME/bin:"*) ;;
-  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
-esac
-# pnpm end
