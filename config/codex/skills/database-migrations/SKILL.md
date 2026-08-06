@@ -1,6 +1,6 @@
 ---
 name: database-migrations
-description: Safe database migration patterns: zero-downtime, backward-compatible, rollback-ready. Use when writing migrations, reviewing schema changes, or planning data backfills.
+description: "Safe database migration patterns: zero-downtime, backward-compatible, rollback-ready. Use when writing migrations, reviewing schema changes, or planning data backfills."
 ---
 
 # Database Migrations

@@ -1,17 +1,26 @@
 ---
 name: npm-security
-description: NPM supply chain hardening — 17 practices covering postinstall blocking, git dependency bans, version cooldown, lockfile integrity, dependency confusion, provenance, and 2FA. Use when installing packages, auditing dependencies, configuring a package manager, reviewing a lockfile, or responding to a supply chain advisory.
+description:
+  NPM supply chain hardening — 17 practices covering postinstall blocking, git
+  dependency bans, version cooldown, lockfile integrity, dependency confusion,
+  provenance, and 2FA. Use when installing packages, auditing dependencies,
+  configuring a package manager, reviewing a lockfile, or responding to a supply
+  chain advisory.
 ---
 
 # NPM Security — Supply Chain Hardening
 
-Based on [lirantal/npm-security-best-practices](https://github.com/lirantal/npm-security-best-practices). 17 practices. Each one: what it protects, how it is exploited, how to mitigate.
+Based on
+[lirantal/npm-security-best-practices](https://github.com/lirantal/npm-security-best-practices).
+17 practices. Each one: what it protects, how it is exploited, how to mitigate.
 
 ---
 
 ## 1. Block postinstall scripts
 
-**Vector**: `postinstall` runs arbitrary code on install. Attacks: Shai-Hulud (2025), Nx (2025), event-stream (2018), TanStack (May 2026 — 42 packages, 84 versions).
+**Vector**: `postinstall` runs arbitrary code on install. Attacks: Shai-Hulud
+(2025), Nx (2025), event-stream (2018), TanStack (May 2026 — 42 packages, 84
+versions).
 
 **Mitigation**:
 
@@ -40,7 +49,9 @@ onlyBuiltDependencies:
 
 ## 2. Block git dependencies
 
-**Vector**: `"dep": "git+https://malicious.com/repo.git"` in package.json. Bypasses the registry, evades security scanning, may include `.npmrc` that re-enables lifecycle scripts.
+**Vector**: `"dep": "git+https://malicious.com/repo.git"` in package.json.
+Bypasses the registry, evades security scanning, may include `.npmrc` that
+re-enables lifecycle scripts.
 
 **Mitigation** (npm CLI 11.10.0+):
 
@@ -56,7 +67,9 @@ blockExoticSubdeps: true
 
 ## 3. Cooldown on new versions
 
-**Vector**: malicious package published, installed within <3 hours. LiteLLM/Telnyx (March 2026): 119k+ malicious downloads in <3h. TanStack: propagation in hours.
+**Vector**: malicious package published, installed within <3 hours.
+LiteLLM/Telnyx (March 2026): 119k+ malicious downloads in <3h. TanStack:
+propagation in hours.
 
 **Mitigation**:
 
@@ -93,7 +106,9 @@ cooldown:
 
 ## 4. Lockfile integrity
 
-**Vector**: malicious PR modifies the `resolved` URL and `integrity` hash in the lockfile. Package installed from the attacker's server with a hash that matches the malicious payload.
+**Vector**: malicious PR modifies the `resolved` URL and `integrity` hash in the
+lockfile. Package installed from the attacker's server with a hash that matches
+the malicious payload.
 
 **Mitigation**:
 
@@ -110,8 +125,6 @@ npm install --save-dev lockfile-lint
 npx lockfile-lint --path package-lock.json --type npm --allowed-hosts npm yarn --validate-https
 ```
 
-pnpm is not susceptible to this vector by lockfile design.
-
 ---
 
 ## 5. Deterministic installation
@@ -125,7 +138,8 @@ pnpm install --frozen-lockfile
 bun install --frozen-lockfile
 ```
 
-**Always commit lockfiles** (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`).
+**Always commit lockfiles** (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+`bun.lock`).
 
 ---
 
@@ -146,7 +160,8 @@ NPQ_PKG_MGR=bun npq install fastify
 MARSHALL_DISABLE_SNYK=1 npq install express
 ```
 
-Checks: vulnerabilities (Snyk), package age, typosquatting, provenance, new binaries, install scripts, trampoline maintenance.
+Checks: vulnerabilities (Snyk), package age, typosquatting, provenance, new
+binaries, install scripts, trampoline maintenance.
 
 ### Socket Firewall (sfw)
 
@@ -157,13 +172,15 @@ sfw pnpm add express
 sfw pip install requests
 ```
 
-Real-time firewall. Intercepts package manager commands. Blocks packages flagged by Socket's deep analysis.
+Real-time firewall. Intercepts package manager commands. Blocks packages flagged
+by Socket's deep analysis.
 
 ---
 
 ## 7. No blind upgrades
 
-**Vector**: mass `npm update`. Attacks: colors.js (2022), node-ipc (2022) — legitimate maintainers inserted malware in new versions.
+**Vector**: mass `npm update`. Attacks: colors.js (2022), node-ipc (2022) —
+legitimate maintainers inserted malware in new versions.
 
 **Alternatives**:
 
@@ -177,7 +194,8 @@ Dependabot/Snyk/Renovate with cooldown configured.
 
 ## 8. npx hardening
 
-**Vector**: `npx` downloads and runs packages without verification. If the package is compromised, immediate execution.
+**Vector**: `npx` downloads and runs packages without verification. If the
+package is compromised, immediate execution.
 
 **Mitigation**: pre-install in a lockfile-verified workspace, force offline.
 
@@ -192,8 +210,15 @@ npx --include-workspace-root --workspace $HOME/mcp --no --offline @modelcontextp
 
 ```json
 {
-  "command": "npx",
-  "args": ["--include-workspace-root", "--workspace", "$HOME/mcp", "--no", "--offline", "..."]
+	"command": "npx",
+	"args": [
+		"--include-workspace-root",
+		"--workspace",
+		"$HOME/mcp",
+		"--no",
+		"--offline",
+		"..."
+	]
 }
 ```
 
@@ -201,7 +226,8 @@ npx --include-workspace-root --workspace $HOME/mcp --no --offline @modelcontextp
 
 ## 9. No secrets in .env
 
-**Vector**: `.env` with plaintext secrets. Accidental commit = exposed secret. Manual rotation.
+**Vector**: `.env` with plaintext secrets. Accidental commit = exposed secret.
+Manual rotation.
 
 **Alternatives**:
 
@@ -221,7 +247,8 @@ Use 1Password CLI, Infisical, Doppler, HashiCorp Vault.
 
 ## 10. Shrink the dependency tree
 
-**Vector**: every dependency = attack surface. An average `node_modules` has >1000 packages.
+**Vector**: every dependency = attack surface. An average `node_modules`
+has >1000 packages.
 
 **Principle**: prefer Node/JavaScript built-ins over external dependencies.
 
@@ -233,7 +260,7 @@ const unique = [...new Set(array)];
 const response = await fetch(url);
 
 // Instead of lodash.isempty
-const isEmpty = obj => Object.keys(obj).length === 0;
+const isEmpty = (obj) => Object.keys(obj).length === 0;
 
 // Instead of left-pad
 const padded = str.padStart(10);
@@ -243,7 +270,8 @@ const padded = str.padStart(10);
 
 ## 11. Verify the package before installing
 
-**Vector**: the npmjs.com page omits git/HTTPS dependencies. The displayed code may differ from the installed tarball.
+**Vector**: the npmjs.com page omits git/HTTPS dependencies. The displayed code
+may differ from the installed tarball.
 
 ```bash
 npm pack <pkg> --dry-run        # inspect before installing
@@ -254,7 +282,8 @@ npm pack <pkg> && tar -tzf <pkg>-<version>.tgz  # review actual content
 
 ## 12. Prevent dependency confusion
 
-**Vector**: attacker publishes to the public registry a package with the same name as your internal package, with a higher version. The resolver picks it.
+**Vector**: attacker publishes to the public registry a package with the same
+name as your internal package, with a higher version. The resolver picks it.
 
 **Mitigation**:
 
@@ -267,7 +296,7 @@ npm pack <pkg> && tar -tzf <pkg>-<version>.tgz  # review actual content
   ```yaml
   npmScopes:
     yourcompany:
-      npmRegistryServer: "https://npm.yourcompany.com/"
+      npmRegistryServer: 'https://npm.yourcompany.com/'
   ```
 - Claim internal unscoped names as placeholders in the public registry
 
@@ -298,7 +327,8 @@ Cryptographic proof of build origin. Requires npm CLI 9.5.0+.
 
 ## 15. Publish with OIDC
 
-Eliminates long-lived tokens. Trusted publishing with short-lived tokens scoped to specific workflows. Configure at npmjs.com → Trusted Publishers.
+Eliminates long-lived tokens. Trusted publishing with short-lived tokens scoped
+to specific workflows. Configure at npmjs.com → Trusted Publishers.
 
 ---
 
@@ -312,14 +342,15 @@ Evaluate: health score, security, popularity, maintenance, community.
 
 ## 17. pnpm trust policy
 
-**Vector**: a package published with OIDC/provenance is suddenly published without it. Signal of takeover.
+**Vector**: a package published with OIDC/provenance is suddenly published
+without it. Signal of takeover.
 
 ```yaml
 # pnpm-workspace.yaml (pnpm 10.21+)
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - 'chokidar@4.0.3'
-trustPolicyIgnoreAfter: 43200  # minutes (pnpm 10.27+)
+trustPolicyIgnoreAfter: 43200 # minutes (pnpm 10.27+)
 ```
 
 ---
@@ -327,9 +358,12 @@ trustPolicyIgnoreAfter: 43200  # minutes (pnpm 10.27+)
 ## Rules for Codex
 
 1. **`npm install` / `npm i` BLOCKED without confirmation.**
-2. **`npm install -g` BLOCKED.** Use `npx` or `pnpm dlx`.
+2. **`npm install -g` BLOCKED.** Use `npx`, `pnpm dlx`, `bunx`, or a project-local
+   `npm exec`.
 3. **`npm ci` preferred** for deterministic installs.
-4. **Prefer `pnpm`** as the default package manager (blocks postinstall by default).
+4. **Preference `bun` > `pnpm` > `npm`** when you get to choose. An existing
+   project's lockfile overrides that and is not yours to change: `bun.lock`,
+   `pnpm-lock.yaml` and `package-lock.json` each pin their manager.
 5. **Always verify `package.json`/lockfile** before suggesting an install.
 6. **Never commit secrets.** Use vault references.
 7. **Lockfile always committed.**

@@ -268,11 +268,19 @@ def python_runner(root: Path) -> tuple[Optional[Runner], Optional[str]]:
 
     for candidate in (root / ".venv/bin/python", root / "venv/bin/python"):
         if candidate.is_file() and os.access(candidate, os.X_OK):
-            return Runner((str(candidate), "-m", "pytest", "-q"), f"{candidate} -m pytest -q"), None
-    pytest = shutil.which("pytest")
-    if pytest:
-        return Runner((pytest, "-q"), f"{pytest} -q"), None
-    return None, "se detectó un proyecto Python, pero pytest no está disponible"
+            probe = subprocess.run(
+                (str(candidate), "-c", "import pytest"),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if probe.returncode == 0:
+                return Runner((str(candidate), "-m", "pytest", "-q"), f"{candidate} -m pytest -q"), None
+
+    if shutil.which("uv") and (root / "pyproject.toml").exists():
+        return Runner(("uv", "run", "pytest", "-q"), "uv run pytest -q"), None
+
+    return None, "se detectó un proyecto Python, pero no hay un runner de tests en su entorno"
 
 
 def standard_runner(root: Path) -> tuple[Optional[Runner], Optional[str]]:

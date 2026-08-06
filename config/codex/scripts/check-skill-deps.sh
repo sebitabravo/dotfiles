@@ -40,7 +40,7 @@ fi
 
 if [ "$missing" -gt 0 ]; then
   echo
-  echo "$missing prerequisite or metadata issue(s) found. Install/fix them before enabling optional automation." >&2
+  echo "$missing prerequisite or metadata issue(s) found. Fix them before enabling optional automation; this checker never installs." >&2
   exit 1
 fi
 

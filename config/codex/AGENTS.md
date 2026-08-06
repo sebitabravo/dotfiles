@@ -86,3 +86,18 @@ configured in Codex.
 - For implementation work, report changed files and verification commands.
 - For reviews, report findings first with severity and `path:line` references.
 - Keep the final answer concise. Stop when the requested work is complete.
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the
+repo root), use it before grep/find or broad file reads when you need to
+understand or locate code:
+
+- **MCP tool** (when available): `codegraph_explore` returns relevant verbatim
+  source and call paths in one call.
+- **Shell** (always available): `codegraph explore "<symbol names or question>"`.
+
+If there is no `.codegraph/` directory, skip CodeGraph entirely; indexing is
+the user's decision.
+<!-- CODEGRAPH_END -->

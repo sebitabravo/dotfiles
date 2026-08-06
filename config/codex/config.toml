@@ -55,6 +55,15 @@ args = ["mcp", "--tools=agent"]
 startup_timeout_sec = 20
 tool_timeout_sec = 60
 
+# Local code intelligence and call-graph exploration. CodeGraph resolves the
+# nearest per-project `.codegraph/` index from the MCP client's rootUri or the
+# tool's explicit projectPath; it does not index repositories automatically.
+[mcp_servers.codegraph]
+command = "codegraph"
+args = ["serve", "--mcp"]
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+
 # Engram's Codex plugin adds the same memory protocol and lifecycle integration
 # that is enabled in Codex. The plugin files remain in Codex's local cache.
 [marketplaces.engram]

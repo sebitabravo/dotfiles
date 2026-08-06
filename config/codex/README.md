@@ -58,9 +58,14 @@ configuraciones de Claude y Codex siguen siendo independientes.
 
 ## Instalación
 
-Haz backup de tu configuración local antes de sincronizar. El `config.toml`
-local puede contener plugins, apps, providers o MCP específicos de tu máquina;
-mézclalos conscientemente en vez de sobrescribirlos sin revisar.
+Haz backup de tu configuración local antes de sincronizar.
+
+**`config.toml` NO se copia sobre una instalación existente.** El archivo local
+no es solo configuración: Codex guarda ahí estado de runtime que no se puede
+regenerar — los `trusted_hash` de `[hooks.state]`, el `trust_level` de cada
+proyecto, el registro de plugins del app y los bloques de Computer Use. La
+versión del repo es la base portable para una máquina nueva; en una que ya
+funciona, mezclá a mano solo las claves que cambiaron.
 
 ```bash
 DOTFILES="$HOME/Developer/dotfiles"
@@ -69,8 +74,9 @@ USER_SKILLS_DIR="$HOME/.agents/skills"
 
 mkdir -p "$CODEX_HOME_DIR/agents" "$CODEX_HOME_DIR/hooks" "$CODEX_HOME_DIR/rules" "$CODEX_HOME_DIR/themes" "$CODEX_HOME_DIR/scripts" "$USER_SKILLS_DIR"
 
-# Revisa/guarda tu config local antes de este paso.
-cp "$DOTFILES/config/codex/config.toml" "$CODEX_HOME_DIR/config.toml"
+# Solo en una maquina nueva. Si ~/.codex/config.toml ya existe, NO lo pises:
+# contiene estado de runtime (hooks.state, trust_level, plugins) irrecuperable.
+[ -f "$CODEX_HOME_DIR/config.toml" ] || cp "$DOTFILES/config/codex/config.toml" "$CODEX_HOME_DIR/config.toml"
 cp "$DOTFILES/config/codex/AGENTS.md" "$CODEX_HOME_DIR/AGENTS.md"
 cp "$DOTFILES/config/codex/hooks.json" "$CODEX_HOME_DIR/hooks.json"
 cp "$DOTFILES/config/codex/engram-compact-prompt.md" "$CODEX_HOME_DIR/engram-compact-prompt.md"
@@ -109,7 +115,8 @@ CODEX_PROTECT_EXISTING_TESTS=1 codex
 
 - `stop-check.sh` ejecuta `qa-gate.py` antes de cerrar un turno. Para cambios de
   código de aplicación, tests o manifests, corre `git diff --check` y el runner
-  nativo detectado (`npm test`, `pytest`, `go test ./...`, `cargo test`, etc.).
+  nativo detectado (`npm test`, `uv run pytest` cuando el proyecto lo
+  declara, `go test ./...`,`cargo test`, etc.).
   Si falla, expira, no existe un runner o hay whitespace inválido, devuelve
   `decision: "block"` y Codex continúa para corregirlo.
 - Cambios de infraestructura en `config/codex/` no se fuerzan a pasar por un
@@ -153,6 +160,26 @@ La configuración base registra `engram mcp`, carga el protocolo desde
 `engram-instructions.md` y usa `engram-compact-prompt.md` después de compaction.
 Reinicia Codex y confirma que `codex mcp list` muestre `engram` como `enabled`.
 Si el binario no está instalado, instala Engram antes de iniciar Codex.
+
+### CodeGraph
+
+CodeGraph se configura como servidor MCP local mediante `codegraph serve
+--mcp`. El MCP queda declarado en `config.toml`; el binario debe estar
+disponible en `PATH` (`codegraph --version`). La configuración es equivalente a
+Claude Code y no duplica índices: CodeGraph usa el índice `.codegraph/` más
+cercano al proyecto. No se debe ejecutar `codegraph init` automáticamente; esa
+es una decisión explícita por repositorio.
+
+Validación rápida:
+
+```bash
+codegraph --version
+codex mcp list
+codegraph status --json /ruta/al/proyecto
+```
+
+Para habilitar análisis en un repositorio concreto, inicializa su índice una
+sola vez con `codegraph init /ruta/al/proyecto` y luego reinicia el cliente MCP.
 
 ## Perfiles
 
