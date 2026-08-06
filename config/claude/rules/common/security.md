@@ -20,7 +20,7 @@
 ## Severity levels
 
 | Level | Condition | Action |
-|---|---|---|
+| --- | --- | --- |
 | **Critical** | Secret exposed in code/commit | Rotate immediately, purge git history |
 | **High** | SQL injection, XSS, auth bypass | Fix before deploy |
 | **Medium** | Vulnerable dependency, missing rate limiting | Fix this iteration |
@@ -35,11 +35,24 @@
 ## Dependencies & supply chain
 
 - Before installing: verify the package is legitimate (typo-squatting).
-- Keep dependencies updated. `npm audit`, `pip audit`, `cargo audit`.
+- Keep dependencies updated. Use the audit script declared by the project; for
+  JavaScript projects prefer `npm audit` or `bun audit` or `cargo audit` or `pip-audit`.
 - Minimum necessary amount. Fewer dependencies = smaller attack surface.
+- **Package manager preference: `bun` > `pnpm` > `npm`.** Both bun and pnpm 10+
+  block lifecycle scripts by default and support a publish-age cooldown, which is
+  why they come first.
+- **An existing project's lockfile overrides that preference and is not yours to
+  change.** `bun.lock` means bun, `pnpm-lock.yaml` means pnpm, `package-lock.json`
+  means npm, `uv.lock` means uv. Switching re-resolves the entire dependency tree,
+  which is itself a supply-chain event. Client and employer repos pinned to npm
+  stay on npm.
 - `npm install` / `npm i` requires explicit confirmation. Prefer `npm ci`.
-- `npm install -g` is BLOCKED. Use `npx` or `pnpm dlx`.
-- Prefer `pnpm` as default package manager (blocks postinstall by default).
+- `npm install -g` is BLOCKED. Use `npx`, `pnpm dlx`, `bunx`, or a project-local
+  `npm exec`.
+- When a project forces npm, the hardening in `~/.npmrc` is what replaces what
+  bun/pnpm give for free: `ignore-scripts=true`, `allow-git=none`,
+  `min-release-age=3`. Never override those per-project. npm 12+ blocks install
+  scripts by default; until this host runs 12+, that `.npmrc` is the equivalent.
 - 3-day cooldown before adopting a newly published version.
 - Audit before installing a new package: `npq --dry-run`.
 - Full 17-practice hardening guide: invoke the `npm-security` skill.
