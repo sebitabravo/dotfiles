@@ -105,6 +105,25 @@ Estas apps se instalan desde la App Store de macOS:
 
 ## ⚙️ Configuraciones Post-Instalación
 
+### Sincronizar el repo con el home
+
+Las configs de los agentes viven en el repo (`config/claude/`) pero las
+herramientas leen el home (`~/.claude/`). Son copias, no symlinks, así que
+divergen solas: llegó a haber 67 archivos distintos entre ambas, con la copia
+desplegada **más nueva** que el repo.
+
+```bash
+./scripts/sync.sh            # qué difiere, sin tocar nada (exit 1 si hay drift)
+./scripts/sync.sh deploy     # repo -> home, al instalar o tras editar el repo
+./scripts/sync.sh pull       # home -> repo, para capturar cambios hechos en vivo
+./scripts/sync.sh deploy -n  # dry-run
+```
+
+Sincroniza solo lo que git ya trackea, así que el estado runtime del home
+(`cache/`, `projects/`, `history.jsonl`, `plugins/`) queda fuera sin tener que
+enumerarlo. Rutas cubiertas: `~/.claude`, `~/.config/opencode`, `~/.codex`,
+`~/.config/fastfetch`, `~/.git-hooks` y los dotfiles de la raíz.
+
 ### Identidad de Git (obligatorio en máquina nueva)
 
 El `.gitconfig` del repo NO trae nombre ni email: los toma por `[include]` desde
