@@ -4,21 +4,38 @@ Configuracion de Claude Code con agentes especializados, reglas, skills, hooks y
 
 ## Sync rapido
 
+`rsync --delete`, no `cp -R`: con `cp` una skill que borrás del repo sobrevive
+para siempre en `~/.claude/skills/` y el agente la sigue viendo.
+
 ```bash
-cp -R ~/Developer/dotfiles/config/claude/{*.{json,md,sh},agents,skills,hooks,rules,templates,scripts,output-styles} ~/.claude/
+DOTFILES="$HOME/Developer/dotfiles/config/claude"
+
+for d in agents skills hooks rules templates scripts output-styles; do
+  rsync -aL --delete --exclude __pycache__ --exclude .DS_Store "$DOTFILES/$d/" "$HOME/.claude/$d/"
+done
+cp -p "$DOTFILES"/*.{json,md,sh} "$HOME/.claude/"
 chmod +x ~/.claude/hooks/*.sh ~/.claude/hooks/lib/*.sh
 ```
+
+`-L` resuelve symlinks: `config/opencode/rules/common` apunta a
+`config/claude/rules/common`, y sin `-L` rsync copia el enlace en vez del
+contenido y deja el destino apuntando a una ruta que no existe.
+
+**`settings.json` lleva hooks inyectados por apps externas** (Orca escribe en
+`PermissionRequest`, `SubagentStart`, `TeammateIdle` y otros). Están mezclados en
+la versión del repo. Si instalás otra app que escriba ahí, injertá sus entradas
+al repo antes del próximo sync o el sync se las come.
 
 ## Que hay
 
 | Categoria | Cantidad | Detalle |
 |---|---|---|
 | Agentes | 22 | Ingenieria (backend-architect, code-reviewer, debugger, deployment-engineer, frontend-developer, observability-engineer, performance-engineer, product-manager, qa-engineer, security-auditor, technical-writer, ui-ux-designer, vulnerability-hunter, data-analyst) + Negocio (ceo-strategist, cfo-finance, customer-success, hr-people-ops, legal-compliance, marketing-strategist, operations-manager, sales-representative) |
-| Skills | 62 | Engineering, Backend, Mobile, Frontend/Animation, Design/Stitch, Media/Documents, Core/Workflow, Quality/Testing |
+| Skills | 60 | Engineering, Backend, Mobile, Frontend/Animation, Design/Stitch, Media/Documents, Core/Workflow, Quality/Testing |
 | Rules | 6 | `coding-style.md`, `git-workflow.md`, `testing.md`, `security.md`, `context-management.md`, `destructive-operations.md`. BDD, mutation testing, quality metrics, arquitectura y npm-security viven ahora como skills (`bdd-gherkin`, `mutation-testing`, `quality-metrics`, `architecture-patterns`, `npm-security`) |
 | Hooks | 12 scripts + `scripts/rdd.sh` y `scripts/check-skill-deps.sh` | `PreToolUse` (validate-safe-ops, privacy-review, quality-gate, protect-tests), `UserPromptSubmit` (secret-detect), `SessionStart` (check-auto-save-stash, handoff-session-start), `PostCompact`, `PostToolUse` (detect-debug), `PostToolUseFailure`, `Stop` (qa-checklist, gauntlet-stop, stop-check-pending, handoff-stop), `SessionEnd` |
 | SDD Templates | 7 | constitution, proposal, requirements, design, tasks, apply-progress, checklist |
-| MCP | 3 | context7, codegraph, playwright |
+| MCP | 2 | context7, codegraph |
 | Plugins | 3 | caveman, engram, warp |
 | Modelos | opusplan / opus (advisor) / haiku (subagentes) | |
 

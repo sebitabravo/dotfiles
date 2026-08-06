@@ -204,6 +204,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -220,6 +230,15 @@
           {
             "type": "command",
             "command": "command -v codegraph >/dev/null 2>&1 && codegraph prompt-hook || true"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
           }
         ]
       }
@@ -259,6 +278,16 @@
             "async": true
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -269,6 +298,16 @@
             "type": "command",
             "command": "echo '[PostToolUseFailure] Tool call fallo — revisar si requiere cambio de estrategia' >&2",
             "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
           }
         ]
       }
@@ -294,6 +333,15 @@
             "command": "~/.claude/hooks/handoff-stop.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -302,6 +350,62 @@
           {
             "type": "command",
             "command": "if command -v engram >/dev/null 2>&1; then engram save \"Session checkpoint\" \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery --project session-checkpoints 2>/dev/null || true; fi"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
+            "timeout": 10
           }
         ]
       }
