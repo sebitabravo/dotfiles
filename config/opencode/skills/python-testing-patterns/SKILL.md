@@ -1,7 +1,12 @@
 ---
 name: python-testing-patterns
-description: Python testing patterns with pytest, fixtures, mocking, parametrize, TDD workflow, and test organization best practices.
+description:
+  Python testing patterns with pytest, fixtures, mocking, parametrize, TDD
+  workflow, and test organization best practices.
 ---
+
+This skill assumes the test dependency is declared by the project. Run it via
+`uv run pytest`; never assume a global test executable exists on the host.
 
 ## Test Structure
 

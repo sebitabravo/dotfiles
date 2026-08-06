@@ -16,8 +16,8 @@
    - **NPM hardening:** See `rules/npm-security.md` for the full 17-practice supply chain hardening guide.
    - **Key rules:**
      - `npm install`/`npm i` requires explicit confirmation. Prefer `npm ci`.
-     - `npm install -g` is BLOCKED. Use `npx` or `pnpm dlx`.
-     - Prefer `pnpm` as default package manager (blocks postinstall by default).
+     - `npm install -g` is BLOCKED. Use `npx` or a project-local `npm exec` command or `pnpm dlx`.
+     - Preference `bun` > `pnpm` > `npm` when you get to choose. An existing project's lockfile overrides that and is not yours to change.
      - Always verify `package.json`/lockfile before suggesting installs.
      - 3-day cooldown for new packages.
      - Audit before installing: `npq --dry-run` for new packages.

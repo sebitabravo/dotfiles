@@ -1,6 +1,8 @@
 ---
 name: caveman-commit
-description: Auto-skill that generates conventional commit messages from staged changes. Triggers on commit-related tasks.
+description:
+  Auto-skill that generates conventional commit messages from staged changes.
+  Triggers on commit-related tasks.
 ---
 
 ## Conventional Commit Format
@@ -15,19 +17,19 @@ description: Auto-skill that generates conventional commit messages from staged 
 
 ## Types
 
-| Type | Usage |
-|------|-------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `refactor` | Code restructure (no behavior change) |
-| `perf` | Performance improvement |
-| `test` | Adding or updating tests |
-| `docs` | Documentation only |
-| `style` | Formatting, whitespace (no logic change) |
-| `chore` | Build, CI, tooling, dependencies |
-| `ci` | CI/CD configuration |
-| `build` | Build system or external deps |
-| `revert` | Revert a previous commit |
+| Type       | Usage                                    |
+| ---------- | ---------------------------------------- |
+| `feat`     | New feature                              |
+| `fix`      | Bug fix                                  |
+| `refactor` | Code restructure (no behavior change)    |
+| `perf`     | Performance improvement                  |
+| `test`     | Adding or updating tests                 |
+| `docs`     | Documentation only                       |
+| `style`    | Formatting, whitespace (no logic change) |
+| `chore`    | Build, CI, tooling, dependencies         |
+| `ci`       | CI/CD configuration                      |
+| `build`    | Build system or external deps            |
+| `revert`   | Revert a previous commit                 |
 
 ## Rules
 
@@ -37,7 +39,8 @@ description: Auto-skill that generates conventional commit messages from staged 
 4. **Write imperative mood**: "add feature" not "added feature".
 5. **Subject line**: max 72 chars, no period.
 6. **Body**: explain WHY, not WHAT. Wrap at 72 chars.
-7. **Breaking changes**: `feat(api)!: change authentication flow` + `BREAKING CHANGE:` in footer.
+7. **Breaking changes**: `feat(api)!: change authentication flow` +
+   `BREAKING CHANGE:` in footer.
 
 ## Examples
 

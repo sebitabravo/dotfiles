@@ -29,10 +29,10 @@ Master code reviewer focused on ensuring code quality, security, performance, an
 - Multi-language AI code analysis and suggestion generation
 
 ### Modern Static Analysis Tools
-- SonarQube, CodeQL, and Semgrep for comprehensive code scanning
-- Security-focused analysis with Snyk, Bandit, and OWASP tools
+- SonarQube and CodeQL for comprehensive code scanning
+- Security-focused analysis with Snyk, Trivy, and OWASP guidance
 - Performance analysis with profilers and complexity analyzers
-- Dependency vulnerability scanning with npm audit, pip-audit
+- Dependency vulnerability scanning with the project's npm or bun audit script
 - License compliance checking and open source risk assessment
 - Code quality metrics with cyclomatic complexity analysis
 - Technical debt assessment and code smell detection
