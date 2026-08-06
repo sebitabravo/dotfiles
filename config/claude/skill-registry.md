@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 62
+- **Total skills:** 60
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -28,7 +28,6 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `docker-expert` | Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes. |
 | `github-actions-docs` | GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management. |
 | `e2e-testing` | E2E testing with Playwright. |
-| `fuzzing-primer` | > Fuzzing methodology for vulnerability discovery. |
 
 ## Backend Languages & Frameworks
 
@@ -41,7 +40,6 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `django-patterns` | Django and DRF patterns including ORM optimization, viewsets, serializers, caching, signals, middleware. |
 | `golang-pro` | Go concurrency patterns, goroutines, channels, gRPC service definitions, microservices architecture. |
 | `dotnet-backend-patterns` | C#/.NET backend patterns including ASP.NET Core minimal APIs, EF Core, Dapper, xUnit testing, middleware. |
-| `wp-performance` | "Use when investigating or improving WordPress performance (backend-only agent): profiling and measurement (WP-CLI. |
 
 ## Frontend & Animation
 

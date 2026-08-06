@@ -1,8 +1,10 @@
 ---
 name: github-actions-docs
 description: >
-  GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management, and custom actions.
-  Use when writing or debugging a GitHub Actions workflow: jobs, matrix builds, caching, secrets, reusable workflows, or custom actions.
+  GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix
+  builds, caching, secrets management, and custom actions. Use when writing or
+  debugging a GitHub Actions workflow: jobs, matrix builds, caching, secrets,
+  reusable workflows, or custom actions.
 ---
 
 ## Workflow Structure
@@ -40,7 +42,7 @@ jobs:
 - uses: actions/setup-node@v4
   with:
     node-version: 22
-    cache: pnpm  # or npm, yarn
+    cache: pnpm # or npm, yarn
 ```
 
 ### Docker Layers
@@ -131,6 +133,7 @@ jobs:
 ```
 
 Configure in GitHub: Settings > Environments > Add protection rules:
+
 - Required reviewers
 - Wait timer
 - Branch restrictions
@@ -159,7 +162,7 @@ steps:
 ```yaml
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true  # Cancel older runs on same branch
+  cancel-in-progress: true # Cancel older runs on same branch
 ```
 
 ## Conditional Steps
@@ -202,19 +205,21 @@ steps:
 //   result:
 //     description: 'Result'
 
-import * as core from '@actions/core'
-import * as github from '@actions/github'
+import * as core from '@actions/core';
+import * as github from '@actions/github';
 
-const token = core.getInput('token')
-const octokit = github.getOctokit(token)
-const result = await octokit.rest.repos.listCommits({ owner, repo })
-core.setOutput('result', JSON.stringify(result.data))
+const token = core.getInput('token');
+const octokit = github.getOctokit(token);
+const result = await octokit.rest.repos.listCommits({ owner, repo });
+core.setOutput('result', JSON.stringify(result.data));
 ```
 
 ## Rules
 
-- Pin action versions with SHA, not just tags: `uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`
+- Pin action versions with SHA, not just tags:
+  `uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`
 - `--frozen-lockfile` in CI. No `npm install`.
+- `npm ci` in CI. No mutable install.
 - Set `timeout-minutes` on every job.
 - Use OIDC over stored secrets when possible.
 - Concurrency groups to prevent parallel deploys.

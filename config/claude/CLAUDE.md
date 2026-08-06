@@ -22,7 +22,6 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Writing `.feature` files, Given-When-Then, step definitions | `bdd-gherkin` |
 | Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
 | Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
-| Investigating WordPress slowness, profiling wp-cli/Query Monitor, autoloaded options | `wp-performance` |
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
 | Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
@@ -42,7 +41,7 @@ To keep the window usable: delegate file-heavy exploration to subagents (20 file
 
 **Native tools first.** For reading a file, searching content, or listing paths, use `Read` / `Grep` / `Glob` — no permission prompt, structured output, and the harness tracks file state through them.
 
-When the task genuinely needs a shell (piping, builds, inspecting a tree), prefer the modern replacement: `eza` over `ls`, `fd` over `find`, `rg` over `grep`, `bat` over `cat`, `sd` over `sed`, `uv` over `pip`, `bun` over `npm`/`node`. Available with no default to replace: `jq`, `fzf`, `gh`, `delta`, `lazygit`, `brew`, `ffmpeg`, `magick`, `helm`, `actionlint`, `btop`. Install missing ones with `brew install <tool>`.
+When the task genuinely needs a shell (piping, builds, inspecting a tree), prefer the modern replacement: `eza` over `ls`, `fd` over `find`, `rg` over `grep`, `bat` over `cat`, `sd` over `sed`, `uv` over `pip`, `bun` over `npm`/`node`. Available with no default to replace: `jq`, `fzf`, `gh`, `delta`, `brew`, `ffmpeg`, `magick`, `helm`, `actionlint`, `btop`. If a utility is absent, do not install it automatically: use the project's local runner or report the host limitation.
 
 `z` (zoxide) is a shell function and does NOT exist in the Bash tool. Use absolute paths instead of changing directory — `cd` in a compound command can also trigger a permission prompt.
 

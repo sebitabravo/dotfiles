@@ -1,6 +1,6 @@
 ---
 name: mutation-testing
-description: Mutation testing to measure test quality. Configure Stryker (JS/TS), mutmut (Python), PIT (Java), Infection (PHP), and others. Run mutants, interpret the score, and write tests that kill surviving mutants. Use when tests pass but there is low confidence they detect real bugs, or on critical features where test quality is vital.
+description: Mutation testing to measure test quality. Configure Stryker for JavaScript/TypeScript, PIT for Java, Infection for PHP, and other project-local runners. Run mutants, interpret the score, and write tests that kill surviving mutants. Use when tests pass but there is low confidence they detect real bugs, or on critical features where test quality is vital.
 ---
 
 # Mutation Testing
@@ -64,37 +64,6 @@ npx stryker init
 Run:
 ```bash
 npx stryker run
-```
-
-### Python — mutmut
-
-```bash
-pip install mutmut
-```
-
-`setup.cfg` or `mutmut_config.py`:
-```ini
-[mutmut]
-paths_to_mutate=src/
-tests_dir=tests/
-runner=pytest
-```
-
-Run:
-```bash
-mutmut run
-mutmut results          # view surviving mutants
-mutmut show <id>        # inspect a specific mutant
-mutmut show all         # view all
-```
-
-### Python (alt) — cosmic-ray
-
-```bash
-pip install cosmic-ray
-cosmic-ray init config.toml
-cosmic-ray exec config.toml
-cosmic-ray report config.toml
 ```
 
 ### Java — PIT (Pitest)

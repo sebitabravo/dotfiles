@@ -1,66 +1,20 @@
 {
   "version": 1,
-  "_comment": "Dependencias externas de las skills que necesitan mas que su SKILL.md. Las skills que NO aparecen aca solo necesitan el binario que su nombre indica (ffmpeg, pandoc, magick) o nada. Verificar con: bash scripts/check-skill-deps.sh",
+  "_comment": "Solo se declaran dependencias que el agente puede resolver dentro del proyecto. Las skills sin entrada no requieren un binario global del host.",
   "skills": {
-    "pptx": {
-      "source": "https://github.com/anthropics/skills/tree/main/pptx",
-      "deps": {
-        "python": ["markitdown[pptx]", "Pillow", "python-pptx"],
-        "node": ["pptxgenjs"],
-        "system": ["libreoffice", "poppler"]
-      },
-      "python_version": "3.10",
-      "node_modules": "skills/pptx/node_modules",
-      "notes": "pptxgenjs se resuelve por ruta absoluta desde el home del agente, no desde el cwd del proyecto. QA de contenido usa markitdown. scripts/office/validate.py usa 'match', requiere python 3.10+ — el system python3 de macOS suele ser 3.9; invocalo con un python mas nuevo (uv run --python 3.11, o el que 'uv python list' tenga instalado)."
-    },
-    "xlsx": {
-      "source": "https://github.com/anthropics/skills/tree/main/xlsx",
-      "deps": {
-        "python": ["openpyxl", "pandas"],
-        "system": ["libreoffice"]
-      },
-      "python_version": "3.10",
-      "notes": "recalc.py necesita libreoffice (soffice) en PATH para recalcular formulas. scripts/office/validate.py usa 'match', requiere python 3.10+ — mismo aviso que pptx."
-    },
-    "inacap": {
-      "source": "local",
-      "deps": {
-        "python": ["python-docx"]
-      },
-      "notes": "Formato academico chileno. Los assets de portada viven en skills/inacap/assets/."
-    },
-    "wp-performance": {
-      "source": "local",
-      "deps": {
-        "system": ["wp-cli"],
-        "node": ["node>=18"]
-      },
-      "notes": "scripts/perf_inspect.mjs corre con node. wp-cli solo hace falta para los perfiles de doctor/profile."
-    },
     "mutation-testing": {
       "source": "local",
       "deps": {
-        "node": ["@stryker-mutator/core"],
-        "python": ["mutmut"]
+        "node": ["@stryker-mutator/core"]
       },
-      "notes": "Se instalan por proyecto, no globalmente. Corre en CI, nunca en cada commit."
+      "notes": "Se instala por proyecto y corre en CI, nunca en cada commit. El flujo soportado en este host es JavaScript/TypeScript mediante npm o bun."
     },
     "e2e-testing": {
       "source": "local",
       "deps": {
         "node": ["@playwright/test"]
       },
-      "notes": "Instalar por proyecto: npm i -D @playwright/test && npx playwright install"
+      "notes": "Instalar por proyecto con npm y ejecutar el navegador desde el entorno del proyecto."
     }
-  },
-  "install": {
-    "macos": [
-      "brew install libreoffice poppler",
-      "uv pip install 'markitdown[pptx]' Pillow python-pptx openpyxl pandas python-docx"
-    ],
-    "debian": [
-      "sudo apt-get install -y libreoffice poppler-utils",
-      "uv pip install 'markitdown[pptx]' Pillow python-pptx openpyxl pandas python-docx"
-    ]
   }
 }

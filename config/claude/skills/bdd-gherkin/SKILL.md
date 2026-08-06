@@ -85,7 +85,7 @@ Feature: Volume discount
 |---|---|---|
 | JavaScript/TypeScript | Cucumber.js | `npm i -D @cucumber/cucumber` |
 | Python | Behave | `pip install behave` |
-| Python (alt) | pytest-bdd | `pip install pytest-bdd` |
+| Python (alt) | pytest-bdd | `uv add --dev pytest-bdd` |
 | Go | godog | `go get github.com/cucumber/godog` |
 | Java | Cucumber JVM | `pom.xml` with cucumber-jvm |
 | Ruby | Cucumber Ruby | `gem install cucumber` |

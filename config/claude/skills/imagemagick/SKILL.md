@@ -122,7 +122,9 @@ magick input.png -resize 180x180 apple-touch-icon.png
 
 ### PDF
 
-PDF read/write needs Ghostscript (`brew install ghostscript`). Without it ImageMagick fails with `no decode delegate for this image format PDF`.
+PDF read/write needs an external delegate that is not part of the host base.
+Do not install it automatically; use a project-provided converter or report the
+limitation.
 
 ```bash
 # Images -> single PDF
