@@ -19,6 +19,9 @@
 #
 # Setea TEST_CMD (vacio si no se pudo determinar).
 
+# TEST_CMD lo consume quien sourcea este archivo (gauntlet-stop.sh), no se usa
+# aca adentro. shellcheck no cruza archivos y lo reporta como variable muerta.
+# shellcheck disable=SC2034
 detect_test_cmd() {
   local root="${1:-$PWD}"
   TEST_CMD=""

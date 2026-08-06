@@ -53,8 +53,37 @@ echo "$NO_QUOTES" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]
 # para cualquier commit que el gate acabara de bloquear.
 echo "$COMMAND" | grep -qE '(--merge|-m\s+"merge)' && exit 0
 
-# Detect project root and test runner
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+# Detect project root and test runner.
+#
+# El repo a evaluar es al que apunta EL COMANDO, no el cwd de este hook. Con
+# worktrees no son el mismo: `cd /otro/worktree && git commit` se evaluaba con
+# el estado del worktree de la sesion — mal repo, mal test runner, y el kill
+# switch `.claude-relaxed` leido del lado equivocado. Corta en ambos sentidos:
+# bloquea commits validos y deja pasar los que deberia frenar.
+#
+# Se resuelve del comando en el mismo orden en que bash lo aplicaria: primero
+# un `cd <path>` inicial, despues `git -C <path>`, que gana porque git lo
+# aplica sobre el cwd ya cambiado.
+TARGET_DIR=$(echo "$input" | jq -r '.cwd // ""')
+[ -n "$TARGET_DIR" ] || TARGET_DIR="$PWD"
+
+CD_PATH=$(echo "$COMMAND" | sed -nE "s/^[[:space:]]*cd[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\2\3\4/p")
+[ -n "$CD_PATH" ] && case "$CD_PATH" in
+  /*) TARGET_DIR="$CD_PATH" ;;
+  ~*) TARGET_DIR="${CD_PATH/#\~/$HOME}" ;;
+  *) TARGET_DIR="$TARGET_DIR/$CD_PATH" ;;
+esac
+
+# El sed de BSD (macOS) no entiende \b, asi que el limite de palabra se escribe
+# a mano. Sin eso el patron no matcheaba nunca y `git -C` caia al cwd.
+GIT_C_PATH=$(echo "$COMMAND" | sed -nE "s/.*(^|[^[:alnum:]_])git[[:space:]]+-C[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\3\4\5/p")
+[ -n "$GIT_C_PATH" ] && case "$GIT_C_PATH" in
+  /*) TARGET_DIR="$GIT_C_PATH" ;;
+  ~*) TARGET_DIR="${GIT_C_PATH/#\~/$HOME}" ;;
+  *) TARGET_DIR="$TARGET_DIR/$GIT_C_PATH" ;;
+esac
+
+ROOT=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || echo "$TARGET_DIR")
 cd "$ROOT" 2>/dev/null || exit 0
 
 # Kill switch por repo. Mismo patron que RDD y por la misma razon: un guardarrail

@@ -4,7 +4,10 @@
 #
 # Si el repo tiene su propio .git/hooks/pre-push, se encadena al final.
 
-# shellcheck disable=SC2034 — positional args de git, documentan la firma del hook
+# Los positional args de git no se usan, pero documentan la firma del hook.
+# La directiva va sola en su linea: shellcheck parsea el resto como key=value y
+# cualquier prosa detras del codigo dispara SC1125.
+# shellcheck disable=SC2034
 REMOTE="$1"
 URL="$2"
 
