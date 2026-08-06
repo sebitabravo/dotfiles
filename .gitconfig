@@ -1,11 +1,9 @@
-[user]
-	name = Tu Nombre
-	email = tu-email@ejemplo.com
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
+
 [core]
 	commentChar = "#"
 	pager = delta
@@ -19,16 +17,27 @@
 	navigate = true
 	side-by-side = true
 	line-numbers = true
+
 [init]
-  defaultBranch = main
+	defaultBranch = main
+
 [color]
-  ui = auto
-  diff = auto
-  status = auto
-  branch = auto
-  interactive = auto
+	ui = auto
+	diff = auto
+	status = auto
+	branch = auto
+	interactive = auto
+
 [alias]
 	graph = log --oneline --graph --all
-	ls = !eza --git --group-directories-first --icons
-  ll = !eza --git --group-directories-first --icons -l
-  la = !eza --git --group-directories-first --icons -la
+	ls = !eza --git --group-directories-first --icons=auto
+	ll = !eza --git --group-directories-first --icons=auto -l
+	la = !eza --git --group-directories-first --icons=auto -la
+
+# Identidad (nombre/email/signingkey) en ~/.gitconfig.local, fuera del repo.
+# Crearlo al instalar en una maquina nueva — ver docs/MANUAL_INSTALL.md.
+# VA AL FINAL A PROPOSITO: git aplica en orden de lectura y gana el ultimo, asi
+# que desde aca ~/.gitconfig.local puede sobrescribir cualquier clave de arriba,
+# no solo agregar identidad.
+[include]
+	path = ~/.gitconfig.local
