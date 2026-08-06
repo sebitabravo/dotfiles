@@ -8,21 +8,28 @@
 REMOTE="$1"
 URL="$2"
 
+ZERO_SHA="0000000000000000000000000000000000000000"
+BLOCKED=0
+ALL_REFS=""
+
 # Leer refs desde stdin (git push manda los refs por stdin)
-REFS=""
-while IFS= read -r line; do
-    REFS="$REFS$line\n"
-done
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+    ALL_REFS="$ALL_REFS$local_ref $local_sha $remote_ref $remote_sha\n"
 
-# Extraer rangos de commits (local_sha..remote_sha)
-RANGES=$(printf '%b' "$REFS" | awk '{print $4".."$2}' 2>/dev/null)
-
-# --- Block 1: auto-save commits ---
-for range in $RANGES; do
-    if [ "$range" = ".." ]; then
-        continue  # branch delete, skip
+    if [ "$local_sha" = "$ZERO_SHA" ]; then
+        continue  # branch delete, nada que chequear
     fi
-    AUTO_SAVE_COMMITS=$(git log "$range" --oneline --grep="auto-save:" 2>/dev/null)
+
+    if [ "$remote_sha" = "$ZERO_SHA" ]; then
+        # Rama nueva — no hay range remoto..local válido, comparar contra
+        # lo que ya existe en cualquier remote-tracking ref conocido.
+        REV_ARGS=("$local_sha" --not --remotes)
+    else
+        REV_ARGS=("$remote_sha..$local_sha")
+    fi
+
+    # --- Block 1: auto-save commits ---
+    AUTO_SAVE_COMMITS=$(git log --oneline --grep="auto-save:" "${REV_ARGS[@]}" 2>/dev/null)
     if [ -n "$AUTO_SAVE_COMMITS" ]; then
         echo "" >&2
         echo "⛔ PUSH BLOCKED: auto-save commits detectados" >&2
@@ -35,16 +42,11 @@ for range in $RANGES; do
         echo "   git rebase -i HEAD~N  # squash o drop los auto-save" >&2
         echo "   # o usa: ~/.claude/scripts/squash-auto-saves.sh" >&2
         echo "" >&2
-        exit 1
+        BLOCKED=1
     fi
-done
 
-# --- Block 2: AI footprint (defense-in-depth) ---
-for range in $RANGES; do
-    if [ "$range" = ".." ]; then
-        continue
-    fi
-    FOOTPRINT=$(git log "$range" --oneline --grep="Co-Authored-By:" 2>/dev/null)
+    # --- Block 2: AI footprint (defense-in-depth) ---
+    FOOTPRINT=$(git log --oneline --grep="Co-Authored-By:" "${REV_ARGS[@]}" 2>/dev/null)
     if [ -n "$FOOTPRINT" ]; then
         echo "" >&2
         echo "⛔ PUSH BLOCKED: AI footprint (Co-Authored-By) en commits" >&2
@@ -54,15 +56,19 @@ for range in $RANGES; do
         echo "   Eliminá la línea Co-Authored-By de los commits antes de pushear." >&2
         echo "   git rebase -i HEAD~N y editá los mensajes." >&2
         echo "" >&2
-        exit 1
+        BLOCKED=1
     fi
 done
+
+if [ "$BLOCKED" = "1" ]; then
+    exit 1
+fi
 
 # --- Chain to local hook if exists ---
 LOCAL_HOOK="${GIT_DIR:-.git}/hooks/pre-push"
 if [ -f "$LOCAL_HOOK" ] && [ "$(realpath "$LOCAL_HOOK" 2>/dev/null)" != "$(realpath "$0" 2>/dev/null)" ]; then
     # Pasar los refs de vuelta por stdin al hook local
-    echo "$REFS" | "$LOCAL_HOOK" "$@"
+    printf '%b' "$ALL_REFS" | "$LOCAL_HOOK" "$@"
     exit $?
 fi
 

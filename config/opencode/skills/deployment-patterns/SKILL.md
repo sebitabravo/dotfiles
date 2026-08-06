@@ -1,6 +1,8 @@
 ---
 name: deployment-patterns
-description: CI/CD patterns, Docker best practices, GitOps workflows, deployment strategies (blue-green, canary, rolling), and infrastructure-as-code conventions.
+description:
+  CI/CD patterns, Docker best practices, GitOps workflows, deployment strategies
+  (blue-green, canary, rolling), and infrastructure-as-code conventions.
 ---
 
 ## Docker Patterns
@@ -11,8 +13,9 @@ description: CI/CD patterns, Docker best practices, GitOps workflows, deployment
 # Build stage
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json pnpm-lock.yaml ./
 RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN npm ci
 COPY . .
 RUN pnpm build
 
@@ -35,8 +38,8 @@ services:
     build:
       context: .
       target: builder
-    ports: ["3000:3000"]
-    volumes: [".:/app", "/app/node_modules"]
+    ports: ['3000:3000']
+    volumes: ['.:/app', '/app/node_modules']
     environment:
       DATABASE_URL: postgres://user:pass@db:5432/app
     depends_on:
@@ -48,9 +51,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: app
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes: ['pgdata:/var/lib/postgresql/data']
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ['CMD-SHELL', 'pg_isready -U user']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -110,23 +113,23 @@ jobs:
 ### Preview Deployments
 
 ```yaml
-  preview:
-    needs: validate
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo "Deploy preview for PR #${{ github.event.number }}"
-      - run: ./scripts/deploy-preview.sh
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Preview: https://pr-${{ github.event.number }}.preview.example.com'
-            })
+preview:
+  needs: validate
+  if: github.event_name == 'pull_request'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: echo "Deploy preview for PR #${{ github.event.number }}"
+    - run: ./scripts/deploy-preview.sh
+    - uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: 'Preview: https://pr-${{ github.event.number }}.preview.example.com'
+          })
 ```
 
 ## Deployment Strategies
@@ -182,6 +185,7 @@ spec:
 
 - Multi-stage Docker builds. Non-root user. Minimal base image.
 - `--frozen-lockfile` in CI. No `npm install`.
+- `npm ci` in CI. No mutable install.
 - Health checks on all services.
 - Automated rollback on error thresholds.
 - Preview deployments for every PR.

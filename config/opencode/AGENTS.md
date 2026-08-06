@@ -12,38 +12,44 @@
 Use modern CLI tools. Never fall back to Unix defaults.
 
 ### Navigation and search
+
 - `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
 - `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
 - `fd` instead of `find` — faster, gitignore-aware
 - `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
 
 ### Content and processing
+
 - `bat` instead of `cat` — syntax highlighting, paging, git integration
 - `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
 - `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
 - `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
 
 ### Git and GitHub
+
 - `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
 - `delta` for git diff pager — side-by-side, syntax highlighting, line numbers
-- `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
 
 ### Package managers
+
 - `uv` instead of `pip` — `uv pip install`, `uv run`, `uv sync`
 - `bun` instead of `node`/`npm` — `bun install`, `bun run`, `bun test`
 - `brew` for macOS package management
 
 ### Media
+
 - `ffmpeg` for media conversion, compression, processing
 - `imagemagick` (`magick`, `convert`) for image manipulation
 
 ### Infra
+
 - `helm` for Kubernetes package management
 - `actionlint` for GitHub Actions workflow validation
 - `btop` for system monitoring (CPU, memory, disks, network)
 - `fastfetch` for system info display
 
-Install missing tools with `brew install <tool>`.
+If a utility is absent, do not install it automatically: use the project's
+local runner or report the host limitation.
 
 ## Rules (non-negotiable)
 
@@ -85,7 +91,7 @@ Use agents PROACTIVELY via Agent tool with `subagent_type`. Agents self-document
 ### Engineering triggers
 
 | Trigger | Agent |
-|---|---|
+| --- | --- |
 | Complex feature, new endpoint, architecture | `backend-architect` |
 | Feature request (spec → design → tasks → apply → verify) | SDD Flow: `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` |
 | Continue/resume feature, check feature status | Read `specs/{change}/` → detect phase → resume |
@@ -104,7 +110,7 @@ Use agents PROACTIVELY via Agent tool with `subagent_type`. Agents self-document
 ### Business triggers
 
 | Trigger | Agent |
-|---|---|
+| --- | --- |
 | Business strategy, pivots, vision, fundraising | `ceo-strategist` |
 | Financial modeling, runway, pricing, taxes | `cfo-finance` |
 | Contracts, NDAs, compliance, privacy, legal | `legal-compliance` |

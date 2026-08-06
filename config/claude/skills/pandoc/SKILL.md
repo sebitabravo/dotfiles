@@ -1,6 +1,8 @@
 ---
 name: pandoc
-description: Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates, reference docs, citations/bibliography, table of contents, syntax highlighting, and metadata.
+description: >
+  Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates, reference docs, citations/bibliography, table of contents, syntax highlighting, and metadata.
+  Use any time a document is converted between formats (Markdown, DOCX, PDF, HTML, EPUB, LaTeX), or when a conversion needs templates, citations, or a TOC.
 ---
 
 Pandoc converts between markup formats. Source format inferred from input extension, target from `-o` extension (or force with `-f`/`-t`).
@@ -131,7 +133,9 @@ Or pass inline: `--metadata title="X"` / `-V key=value` for template variables.
 
 ## Rules
 
-- PDF output needs a LaTeX engine. macOS: `brew install --cask basictex` (then `tlmgr`) or `brew install tectonic` (lighter, self-fetching). Without it, PDF export fails.
+- PDF output needs a LaTeX engine that is not installed in the host base. Do not
+  install one automatically; use a project-provided engine or report the
+  limitation and deliver HTML/DOCX instead.
 - For Word/PowerPoint styling, edit a `--reference-doc`, don't fight raw output.
 - `--embed-resources --standalone` for a single portable HTML file (email, archive).
 - `--extract-media` when importing DOCX, or images get lost.

@@ -1,6 +1,8 @@
 ---
 name: python-design-patterns
-description: Python design patterns, SOLID principles, composition over inheritance, dependency injection, and idiomatic Python architecture.
+description: >
+  Python design patterns, SOLID principles, composition over inheritance, dependency injection, and idiomatic Python architecture.
+  Use when designing or refactoring Python architecture: choosing composition over inheritance, applying SOLID, wiring dependency injection, or splitting an overloaded class.
 ---
 
 ## SOLID in Python

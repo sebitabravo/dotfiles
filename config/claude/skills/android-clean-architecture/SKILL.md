@@ -1,6 +1,8 @@
 ---
 name: android-clean-architecture
-description: Android Clean Architecture with MVVM, use cases, repository pattern, dependency injection with Hilt, and layered module structure.
+description: >
+  Android Clean Architecture with MVVM, use cases, repository pattern, dependency injection with Hilt, and layered module structure.
+  Use when structuring an Android app into layers, writing use cases or repositories, wiring Hilt, or reviewing Android module boundaries.
 ---
 
 ## Module Structure

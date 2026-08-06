@@ -32,8 +32,8 @@ Preguntar (si no estan en el contexto):
 | Asignatura | `"Aseguramiento de Calidad"` |
 | Titulo | `"Analisis de Calidad ISO 25010 — Zoom"` |
 | Subtitulo (opcional) | `""` |
-| Profesor | `"Roberto Conejeros Gomez"` |
-| Integrantes | `["Sebastian Bravo", "Luis Loyola"]` |
+| Profesor | `"<Nombre del profesor>"` |
+| Integrantes | `["<Integrante 1>", "<Integrante 2>"]` |
 | Fecha | `"Mayo 2026"` |
 | Sede | `"INACAP Santiago Centro"` |
 | Instrucciones del profesor | pegar texto, adjuntar PDF, o describir |

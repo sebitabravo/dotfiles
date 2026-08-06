@@ -4,6 +4,7 @@
 # Taps
 tap "oven-sh/bun"
 tap "gentleman-programming/tap"
+tap "hudochenkov/sshpass"
 
 # ============================================================================
 # CLI Tools - Solo las herramientas que uso
@@ -15,12 +16,12 @@ brew "go"
 brew "xz"
 brew "git-lfs"
 brew "git-delta"
-brew "lazygit"
 brew "fastfetch"
 brew "gh"
 brew "actionlint"
 brew "helm"
-brew "shfmt"
+brew "trivy"
+brew "sshpass"
 brew "bat"
 brew "eza"
 brew "zoxide"
@@ -33,27 +34,15 @@ brew "uv"
 brew "mole"
 brew "btop"
 brew "engram"
-brew "zsh-autosuggestions"
-brew "zsh-syntax-highlighting"
-brew "atuin"
 brew "ffmpeg"
 brew "imagemagick"
 brew "pandoc"
-
-brew "gobuster"
-brew "amass"
-brew "subfinder"
+brew "librsvg"
 
 brew "ffuf"
 brew "nuclei"
 brew "nikto"
-brew "john-jumbo"
 brew "gitleaks"
-brew "trufflehog"
-brew "radare2"
-
-brew "binwalk"
-brew "upx"
 
 # ============================================================================
 # Applications (Casks)

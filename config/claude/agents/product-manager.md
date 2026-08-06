@@ -121,26 +121,26 @@ When the principal asks for SDD specs, also produce `tasks.md`:
 
 Use EARS (Easy Approach to Requirements Syntax) for functional requirements:
 
-| Tipo EARS | Patron | Cuando usarlo |
+| EARS type | Pattern | When to use it |
 |---|---|---|
-| **Ubiquitous** | `The <system> shall <response>` | Requisitos que aplican SIEMPRE |
-| **Event-Driven** | `WHEN <trigger> the <system> shall <response>` | Respuesta a eventos |
-| **State-Driven** | `WHILE <state> the <system> shall <response>` | Depende de estado |
-| **Optional** | `WHERE <feature is included> the <system> shall <response>` | Features opcionales |
-| **Unwanted** | `IF <condition> THEN the <system> shall <response>` | Manejo de errores/edge cases |
+| **Ubiquitous** | `The <system> shall <response>` | Requirements that ALWAYS apply |
+| **Event-Driven** | `WHEN <trigger> the <system> shall <response>` | Response to events |
+| **State-Driven** | `WHILE <state> the <system> shall <response>` | Depends on state |
+| **Optional** | `WHERE <feature is included> the <system> shall <response>` | Optional features |
+| **Unwanted** | `IF <condition> THEN the <system> shall <response>` | Error and edge-case handling |
 
-Cada R<n> debe ser: Verificable, No ambiguo, Acotado (un solo comportamiento).
+Every R<n> must be: verifiable, unambiguous, and scoped to a single behavior.
 
 ### tasks.md — Task Checklist
 
-Cada tarea debe tener:
-- `_Boundary:_` — archivos que toca (max 2-3 por tarea)
-- `_Depends:_` — que tarea debe completarse antes
+Every task must carry:
+- `_Boundary:_` — files it touches (max 2-3 per task)
+- `_Depends:_` — which task must complete first
 - `_TDD:_ RED → GREEN → REFACTOR`
-- Checklist con checkboxes `[ ]`
-- Mapeo a requisitos: cada tarea referencia que R<n> cubre
+- Checklist with `[ ]` checkboxes
+- Requirement mapping: every task references which R<n> it covers
 
-Usa `templates/sdd-requirements.md` y `templates/sdd-tasks.md` como guia estructural.
+Use `templates/sdd-requirements.md` and `templates/sdd-tasks.md` as the structural guide.
 
 ## Approach
 1. Start with the 5 Questions — problem validation before solution.

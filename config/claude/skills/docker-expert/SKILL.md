@@ -1,6 +1,10 @@
 ---
 name: docker-expert
-description: Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes, security hardening, and production best practices.
+description: >
+  Docker patterns including multi-stage builds, compose orchestration, image
+  optimization, networking, volumes, security hardening, and production best
+  practices. Use when writing or reviewing a Dockerfile or compose file,
+  shrinking an image, or hardening a container for production.
 ---
 
 ## Multi-Stage Builds
@@ -11,7 +15,7 @@ description: Docker patterns including multi-stage builds, compose orchestration
 FROM node:22-alpine AS base
 RUN corepack enable pnpm
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json pnpm-lock.yaml ./
 
 FROM base AS deps
 RUN pnpm install --frozen-lockfile --prod
@@ -56,7 +60,7 @@ CMD ["python", "-m", "app.main"]
 
 ```dockerfile
 # Layer caching: copy dependency files first
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 
@@ -71,11 +75,11 @@ coverage
 
 ### Size Comparison
 
-| Base | Size |
-|------|------|
-| `node:22` | ~1.1GB |
-| `node:22-slim` | ~250MB |
-| `node:22-alpine` | ~180MB |
+| Base                         | Size   |
+| ---------------------------- | ------ |
+| `node:22`                    | ~1.1GB |
+| `node:22-slim`               | ~250MB |
+| `node:22-alpine`             | ~180MB |
 | `gcr.io/distroless/nodejs22` | ~130MB |
 
 ## Docker Compose
@@ -88,7 +92,7 @@ services:
     build:
       context: .
       target: builder
-    ports: ["3000:3000"]
+    ports: ['3000:3000']
     volumes:
       - .:/app
       - app_node_modules:/app/node_modules
@@ -105,19 +109,19 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: app_dev
-    ports: ["5432:5432"]
+    ports: ['5432:5432']
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ['CMD-SHELL', 'pg_isready -U user']
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: ['6379:6379']
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
 
 volumes:
@@ -143,7 +147,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
-    volumes: []  # No bind mounts in prod
+    volumes: [] # No bind mounts in prod
 ```
 
 ## Networking
@@ -160,7 +164,7 @@ services:
 networks:
   frontend:
   backend:
-    internal: true  # No external access
+    internal: true # No external access
 ```
 
 ## Security Hardening
@@ -220,6 +224,7 @@ docker compose logs --since 1h app
 - Alpine or distroless for minimal attack surface.
 - Health checks on all services.
 - `--frozen-lockfile` during build. No `npm install` in production image.
+- `npm ci` during build. No mutable install in production image.
 - Explicit `depends_on` with health checks.
 - Named volumes for persistent data.
 - No bind mounts in production.

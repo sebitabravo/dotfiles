@@ -221,9 +221,9 @@ CAVEMAN_BADGE=""
 if [ -f "$CAVEMAN_FLAG" ]; then
   CAV_MODE=$(head -c 64 "$CAVEMAN_FLAG" 2>/dev/null | tr -d '\n\r' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
   case "$CAV_MODE" in
-    full) CAVEMAN_BADGE="\033[38;5;172m🦴\033[0m" ;;
+    full) CAVEMAN_BADGE="\033[38;5;172m🦴 full\033[0m" ;;
     lite) CAVEMAN_BADGE="\033[38;5;172m🦴 lite\033[0m" ;;
-    ultra) CAVEMAN_BADGE="\033[38;5;172m🦴 ultra\033[0m" ;;
+    ultra) CAVEMAN_BADGE="\033[38;5;172m🦴\033[0m" ;;
     wenyan-lite) CAVEMAN_BADGE="\033[38;5;172m📜 LITE\033[0m" ;;
     wenyan) CAVEMAN_BADGE="\033[38;5;172m📜\033[0m" ;;
     wenyan-full) CAVEMAN_BADGE="\033[38;5;172m📜 FULL\033[0m" ;;

@@ -85,7 +85,7 @@ Feature: Volume discount
 |---|---|---|
 | JavaScript/TypeScript | Cucumber.js | `npm i -D @cucumber/cucumber` |
 | Python | Behave | `pip install behave` |
-| Python (alt) | pytest-bdd | `pip install pytest-bdd` |
+| Python (alt) | pytest-bdd | `uv add --dev pytest-bdd` |
 | Go | godog | `go get github.com/cucumber/godog` |
 | Java | Cucumber JVM | `pom.xml` with cucumber-jvm |
 | Ruby | Cucumber Ruby | `gem install cucumber` |
@@ -120,4 +120,4 @@ features/support/
 
 In the SDD flow, `.feature` files are written in the **Spec** phase (along with user stories in GWT format). Step definitions are written in the **Apply** phase (TDD).
 
-See `rules/common/bdd.md` for the full rules.
+The conduct rule that decides *when* BDD applies lives in `rules/common/testing.md`; this skill is the full how-to.

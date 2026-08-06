@@ -28,6 +28,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **WhatsApp** - Cliente de mensajería
 - [ ] **TestFlight** - App para probar nuevas versiones de aplicaciones
 - [ ] **Apple Developer** - App para desarrolladores de Apple
+- [ ] **Telegram** - Cliente de mensajería
 
 ---
 
@@ -60,12 +61,13 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
 - [ ] **Unity** - <https://unity.com/download/>
 - [ ] **Blender** - <https://www.blender.org/download/>
+- [ ] **Orca** - <https://www.onorca.dev>
+- [ ] **
 
 ### IA & Coding Agents
 
-- [ ] **GitHub Copilot App** - <https://github.com/github/app>
-- [ ] **Codex** - <https://openai.com/es-419/codex/>
-- [ ] **Cowork** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
+- [ ] **ChatGPT** - <https://chatgpt.com/download/>
+- [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
 
 ### Browsers
 
@@ -79,6 +81,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **VoiceInk** - <https://tryvoiceink.com/> — Whisper small/base
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Notion** - <https://www.notion.so/desktop>
+- [ ] **Spotify** - <https://open.spotify.com/download>
 
 ### Media & Content
 
@@ -96,10 +99,55 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Steam** - <https://store.steampowered.com/about/> - Habilitar beta Update
 - [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download/>
 - [ ] **Prism Launcher** - <https://prismlauncher.org/>
+- [ ] **Roblox** - <https://www.roblox.com/download>
 
 ---
 
 ## ⚙️ Configuraciones Post-Instalación
+
+### Identidad de Git (obligatorio en máquina nueva)
+
+El `.gitconfig` del repo NO trae nombre ni email: los toma por `[include]` desde
+`~/.gitconfig.local`, que queda fuera del repo. Sin este archivo los commits
+salen sin autor.
+
+```bash
+cat > ~/.gitconfig.local <<'EOF'
+[user]
+ name = tu-usuario
+ email = tu-email@ejemplo.com
+EOF
+```
+
+### Firma de commits con SSH (opcional, da el badge Verified)
+
+Reusa tu llave SSH existente — no hace falta GPG. Requiere git 2.34+.
+
+```bash
+printf '%s %s\n' "$(git config --get user.email)" "$(cat ~/.ssh/id_ed25519.pub)" \
+  > ~/.ssh/allowed_signers
+chmod 600 ~/.ssh/allowed_signers
+
+cat >> ~/.gitconfig.local <<'EOF'
+[gpg]
+ format = ssh
+[gpg "ssh"]
+ allowedSignersFile = ~/.ssh/allowed_signers
+[user]
+ signingkey = ~/.ssh/id_ed25519.pub
+[commit]
+ gpgsign = true
+[tag]
+ gpgsign = true
+EOF
+
+# La .pub va como Signing Key, APARTE de la authentication key.
+gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(scutil --get LocalHostName) signing"
+```
+
+`allowed_signers` es lo que permite verificar firmas en local: sin ese archivo
+`git log --format=%G?` devuelve `N` aunque el commit esté firmado. GitHub no lo
+usa — verifica contra la Signing Key registrada.
 
 ### Node.js (con nvm)
 
@@ -107,7 +155,12 @@ Estas apps se instalan desde la App Store de macOS:
 nvm install 24
 nvm use 24
 nvm alias default 24
+
+# pnpm es el fallback cuando un proyecto no puede usar bun.
 corepack enable pnpm
+
+# Hardening de npm — para los proyectos que obligan a usarlo (repos de empresa
+# pinneados a package-lock.json). Equivale a los defaults de npm 12+.
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
@@ -146,17 +199,17 @@ php artisan sail:install
 
 Instalar inteligencias artificiales IA:
 
-- Configurar con ChatGPT.
-
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 opencode auth login
 ```
 
 ```bash
-pnpm add -g @openai/codex
-pnpm add -g @google/gemini-cli
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+curl https://cursor.com/install -fsS | bash
+curl -fsSL https://antigravity.google/cli/install.sh | bash
 curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://gh.io/copilot-install | bash
 ```
 
 ---

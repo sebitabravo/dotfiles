@@ -1,6 +1,8 @@
 ---
 name: ffmpeg
-description: FFmpeg commands for video/audio conversion, compression, trimming, merging, filters, subtitle handling, and batch processing.
+description: >
+  FFmpeg commands for video/audio conversion, compression, trimming, merging, filters, subtitle handling, and batch processing.
+  Use any time a video or audio file is converted, compressed, trimmed, merged, subtitled, or batch-processed from the command line.
 ---
 
 ## Common Operations

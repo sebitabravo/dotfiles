@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "_comment": "Solo se declaran dependencias que el agente puede resolver dentro del proyecto. Las skills sin entrada no requieren un binario global del host.",
+  "skills": {
+    "mutation-testing": {
+      "source": "local",
+      "deps": {
+        "node": ["@stryker-mutator/core"]
+      },
+      "notes": "Se instala por proyecto y corre en CI, nunca en cada commit. El flujo soportado en este host es JavaScript/TypeScript mediante npm o bun."
+    },
+    "e2e-testing": {
+      "source": "local",
+      "deps": {
+        "node": ["@playwright/test"]
+      },
+      "notes": "Instalar por proyecto con npm y ejecutar el navegador desde el entorno del proyecto."
+    }
+  }
+}

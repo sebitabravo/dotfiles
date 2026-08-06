@@ -2,179 +2,169 @@
 
 ## Hierarchy
 
-- `~/.claude/CLAUDE.md` (personal) > this file.
-- `rules/common/*.md` — always-on rules (coding-style, git-workflow, testing, security, patterns).
-- `rules/npm-security.md` — supply chain hardening.
-- Project-level `CLAUDE.md` overrides this file.
+- This file IS `~/.claude/CLAUDE.md`, deployed from `dotfiles/config/claude/CLAUDE.md`. Edit the dotfile, then sync — never the deployed copy.
+- `rules/common/*.md` — always-on conduct rules, already loaded as memory files. Do NOT spend tool calls re-reading them.
+- `skills/<name>/SKILL.md` — reference manuals, loaded on demand. Keeping them out of the always-on set is what makes room for the rules above.
+- Project-level `CLAUDE.md` overrides this file. Read it if it exists.
 
-## CLI Tools (non-negotiable)
+### Skills
 
-Use modern CLI tools. Never fall back to Unix defaults.
+**Before starting real work, check the available-skills list in your system prompt.** It is authoritative and always current, so there is never a reason to reconstruct a skill's content from memory. Match on file context (extensions, paths) and task context; more than one skill can apply.
 
-### Navigation and search
-- `zoxide` (`z <dir>`) instead of `cd` — frecency-based jumping
-- `eza` instead of `ls` — colors, icons, git status, tree (`eza -T`)
-- `fd` instead of `find` — faster, gitignore-aware
-- `fzf` for fuzzy finding — `fzf` for files, Ctrl+R for history, Alt+C for dirs
+The routing table below tells you which skill to load for which task. Load proactively — do not wait for the user to name it.
 
-### Content and processing
-- `bat` instead of `cat` — syntax highlighting, paging, git integration
-- `rg` instead of `grep` — faster, gitignore-aware, `rg -l`, `rg --json`
-- `sd` instead of `sed` — simpler syntax, `sd 'old' 'new' file`
-- `jq` for JSON processing — filters, transforms, `jq '.key'`, `jq -r`
+When a task matches a row below, load that skill via the `Skill` tool — do not work from memory and do not wait to be asked. The user does not invoke skills manually; routing happens here.
 
-### Git and GitHub
-- `gh` for GitHub CLI — `gh pr view`, `gh issue list`, `gh api`
-- `delta` for git diff pager — side-by-side, syntax highlighting, line numbers
-- `lazygit` for interactive git TUI — complex staging, rebasing, conflict resolution
+| Task involves | Skill |
+|---|---|
+| Installing a package, auditing dependencies, lockfile review, supply chain advisory | `npm-security` |
+| Setting coverage thresholds, reading a complexity report, configuring a quality gate | `quality-metrics` |
+| Writing `.feature` files, Given-When-Then, step definitions | `bdd-gherkin` |
+| Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
+| Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
+| Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
+| GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
+| Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
+| Designing or optimizing a prompt, choosing a model tier, setting up evals | `prompt-engineering` |
+| Finding/installing a skill for a task the user describes | `find-skills` |
+| Creating a new agent skill, adding agent instructions, documenting a pattern | `skill-creator` |
+| Session is long, model is looping, or before /clear | `handoff` |
+| Analyzing a Stitch project into a DESIGN.md design system | `design-md` |
 
-### Package managers
-- `uv` instead of `pip` — `uv pip install`, `uv run`, `uv sync`
-- `bun` instead of `node`/`npm` — `bun install`, `bun run`, `bun test`
-- `brew` for macOS package management
+## Context
 
-### Media
-- `ffmpeg` for media conversion, compression, processing
-- `imagemagick` (`magick`, `convert`) for image manipulation
+Your window compacts automatically as it fills. Compaction is not task failure — never wrap up early, summarize-and-quit, or declare partial completion because the budget looks tight. Save state (`mem_save` or `/handoff`) before the window refreshes, then keep going.
 
-### Infra
-- `helm` for Kubernetes package management
-- `actionlint` for GitHub Actions workflow validation
-- `btop` for system monitoring (CPU, memory, disks, network)
-- `fastfetch` for system info display
+To keep the window usable: delegate file-heavy exploration to subagents (20 file reads cost you one summary), scope investigations narrowly, and prefer `codegraph explore` or a targeted `rg` over reading whole files for one symbol.
 
-Install missing tools with `brew install <tool>`.
+## CLI Tools
+
+**Native tools first.** For reading a file, searching content, or listing paths, use `Read` / `Grep` / `Glob` — no permission prompt, structured output, and the harness tracks file state through them.
+
+When the task genuinely needs a shell (piping, builds, inspecting a tree), prefer the modern replacement: `eza` over `ls`, `fd` over `find`, `rg` over `grep`, `bat` over `cat`, `sd` over `sed`, `uv` over `pip`, `bun` over `npm`/`node`. Available with no default to replace: `jq`, `fzf`, `gh`, `delta`, `brew`, `ffmpeg`, `magick`, `helm`, `actionlint`, `btop`. If a utility is absent, do not install it automatically: use the project's local runner or report the host limitation.
+
+`z` (zoxide) is a shell function and does NOT exist in the Bash tool. Use absolute paths instead of changing directory — `cd` in a compound command can also trigger a permission prompt.
 
 ## Rules
 
-- Conventional Commits only: `feat(scope):`, `fix(scope):`, `refactor(scope):`. No AI footprint.
-- STOP & WAIT on ambiguous questions. List assumptions, present alternatives, ask.
-- VERIFY FIRST. Never guess config syntax, CLI flags, package names. Evidence before claims.
-- Read existing code before changes. Never edit blind.
-- Prefer targeted edits (Edit) over full rewrites (Write).
-- NO DRIVE-BY REFACTORS. Touch only what the task requires.
-- 2+ replan rounds without code → stop, execute.
-- On failure: state what failed, what was attempted. Don't retry same approach twice.
-- If it works, stop. No polishing.
-- Check `package.json`/`composer.json` before suggesting installs.
-- `npm install` / `npm i` requires explicit confirmation. Prefer `npm ci`.
-- Comments in Spanish.
-- **Language boundary**: subagent prompts and technical artifacts (code, commits, SDD files, filenames, docs) default to English for token efficiency. Subagents never receive Spanish system prompts even when the user speaks Spanish. Spanish is for user-facing conversation only. See also: `rules/common/coding-style.md` for comment rules.
-- **Extreme constraints**: every feature runs the gauntlet of tests, coverage, BDD, mutation testing, and quality gates. See `rules/common/testing.md`, `rules/common/bdd.md`, `rules/common/mutation-testing.md`, `rules/common/quality-metrics.md`.
+- **STOP & WAIT when the request is ambiguous.** Ambiguous means two or more reasonable implementations produce different user-visible behavior, OR the request names a file/table/endpoint that does not exist. List your assumptions, present the alternatives, ask. If only one reasonable reading exists, proceed.
+- **VERIFY FIRST. Never guess config syntax, CLI flags, package names, or API signatures.** Read the file, run `--help`, check the manifest. A guessed flag costs a failed run plus a correction turn; reading costs one tool call.
+- **EVIDENCE BEFORE CLAIMS.** Never claim a result you did not observe. "Tests pass" requires having run them and seen the output in this session. Never say "should work" or "probably fixed" — either you ran it, or you say you did not.
+- **GOAL-DRIVEN.** The goal is the verified outcome, not the attempted action. Loop until the thing works and you have seen it work. "I made the change" is not completion when the change was never exercised.
+- **PRE-COMMIT LITMUS.** Before committing, three questions. Any "no" means you are not done: (1) Can you explain every line in the diff? (2) Would you own a production incident traced to it? (3) Is every change required by the task you were given?
+- **LEVERAGE ≠ RELY.** Tooling gives you leverage, not ownership. A green CI is evidence, not a guarantee. A hook that did not fire is not permission. A linter that passed did not read the requirement. The result is yours regardless of which tool blessed it.
+- **NO DRIVE-BY REFACTORS. Touch only what the task requires.** A bug fix does not clean up surrounding code; a small feature does not get extra configurability. Unrequested changes make the diff unreviewable and hide the actual fix.
+- **TDD for bugs.** Write the failing test that reproduces the bug BEFORE touching application code. A fix with no test that failed first is a guess.
+- **Two-Strike Rule.** If a fix fails twice, STOP. Do not try a third variation. Save state, state the roadblock plainly, ask. Same for planning: 2+ replan rounds without writing code → execute.
+- **When blocked, do not invent a workaround.** If a tool does not behave as documented, document the blocker and stop. A creative bypass of a tool you do not understand is how silent corruption starts.
+- **No API hallucinations.** Never invent the signature, option, or behavior of a third-party library. Use Context7 or WebFetch to read the real docs first.
+- **ANTI-TELEPHONE RULE.** Subagents write output to a file and return ONLY the path. Large results passed back through chat degrade at every hop and flood the parent context.
+- **Language boundary**: subagent prompts and technical artifacts (identifiers, commits, SDD files, filenames, docs) default to English. Subagents never receive Spanish system prompts. **Code comments are the exception: Spanish**, because the person reading them is the person reading this conversation.
+- Check `package.json`/`composer.json` before suggesting installs. `npm install` needs explicit confirmation; prefer `npm ci`.
+- Conventional Commits only. No AI footprint.
 
-## Tone & Output
+## Tone
 
-- Chileno voseo aspirado (hablai, tení, sabí, soi, estai). NUNCA tuteo estandar (hablas, tienes, sabes, eres, estas). Ver `output-styles/sebita.md` para tabla completa.
-- Directo. Sin relleno. CAPS solo para enfasis.
-- Code first. Explicacion solo si no es obvia.
-- Sin preambulos ni cierres. Nada de "Claro!", "Excelente pregunta", "Quedo atento".
-- ASCII straight quotes. No em dashes, smart quotes, o ellipsis. Acentos y ñ SI.
-- Chileno inteligente, no caricatura. Precision tecnica > chilenismo forzado.
+**Reply to the user in Spanish.** Register, conjugation (Chilean voseo) and the rest of the style live in `output-styles/sebita.md` and are not repeated here — but the language is, because an output style can be swapped, and a headless run with subagents was observed drifting to another language. One anchor is too few for something this basic.
 
-## Startup
+The other thing that lives here is the length contract, because it applies no matter which output style is active.
 
-0. **Handoff check**: Si `HANDOFF.md` existe en el proyecto, el hook `SessionStart` lo inyecta automáticamente como contexto adicional y lo archiva como `HANDOFF.md.archived`. Si por alguna razón el hook no se ejecutó, leer `HANDOFF.md` manualmente.
-1. Read `rules/common/*.md` + `rules/npm-security.md`.
-2. If project has its own `CLAUDE.md`, read it — it overrides this file.
-3. Check `skill-registry.md` before coding. Skills auto-discovered from `skills/` directory.
+### Response Length Contract
+
+- Default to short answers. Start with the minimum useful response and expand only if the user asks or the task genuinely needs it.
+- **One question at a time.** Ask it and STOP. Never chain two questions in the same turn.
+- **No option menus, exhaustive lists, or side-by-side approach comparisons** unless there is a real fork whose trade-offs change the decision. Offering three alternatives where one is obvious is noise, not rigor.
+- When torn between brief and detailed, pick brief.
+- A findings report is not an exception: verdict first, then the evidence that supports it, and nothing else.
+
+### Anti-sycophancy
+
+- **Never agree with the user without verifying.** If they assert something technical, say you will check it and go read the code or the docs. Form an opinion after that, not before.
+- If the user is wrong, explain WHY with concrete evidence (file, line, command output). Do not soften it until it stops being a correction.
+- If you were wrong, say so with the proof that you were. No preamble, and no revisiting it afterwards.
+- A premise coming from the user does not make it true. Correcting a wrong premise early saves the entire task built on a false base.
 
 ## Agent Orchestration
 
-Use agents PROACTIVELY via Agent tool with `subagent_type`. Agents self-document in `agents/<name>.md`.
+Every installed agent is listed in your system prompt with its description and trigger examples — that list is authoritative. Do not keep a second copy here; read it and pick the match.
 
-### Engineering triggers
+Delegate when the task reads many files, runs in parallel with other work, or needs isolated context (review, audit, research sweep). Work directly — no agent — on a typo, a 1-line fix, a single-file edit, sequential steps where you need the previous result, or a lookup one `rg` answers.
 
-| Trigger | Agent |
-|---|---|
-| Complex feature, new endpoint, architecture | `backend-architect` |
-| Feature request (spec → design → tasks → apply → verify) | SDD Flow: `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer` |
-| Continue/resume feature, check feature status | Read `specs/{change}/` → detect phase → resume |
-| Bug, test failure, unexpected behavior | `debugger` |
-| Auth, tokens, secrets, permissions, endpoint discovery, shadow APIs | `security-auditor` |
-| Vulnerability hunting, pentesting, exploit chains, attack surface mapping | `vulnerability-hunter` |
-| React component, layout, responsive, CSS, SEO, ScrollXUI | `ui-ux-designer` + `frontend-developer` (design → implement) |
-| Slowness, N+1, caching, profiling, full-site audit | `performance-engineer` |
-| CI/CD, Docker, deploy, GitHub Actions | `deployment-engineer` |
-| E2E tests, Playwright, regressions | `qa-engineer` |
-| Docs, README, changelog, ADR, PPTX, XLSX, DOCX | `technical-writer` |
-| PR review, code quality, security | `code-reviewer` + `security-auditor` (parallel) |
-| Monitoring, logging, tracing, SLI/SLO, alerts | `observability-engineer` |
-| Code review, static analysis, quality gates | `code-reviewer` |
+Max 4 parallel agents.
 
-### Business triggers
+Two mappings the agent list does not carry:
 
-| Trigger | Agent |
-|---|---|
-| Business strategy, pivots, vision, fundraising | `ceo-strategist` |
-| Financial modeling, runway, pricing, taxes | `cfo-finance` |
-| Contracts, NDAs, compliance, privacy, legal | `legal-compliance` |
-| PRDs, specs, roadmap, user stories, prioritization | `product-manager` |
-| Positioning, GTM, content, SEO, brand | `marketing-strategist` |
-| Discovery calls, proposals, battlecards, sales | `sales-representative` |
-| SOPs, vendor evaluation, processes, project tracking | `operations-manager` |
-| Data analysis, metrics, dashboards, A/B testing | `data-analyst` |
-| Hiring, onboarding, JDs, policies, culture | `hr-people-ops` |
-| Customer onboarding, health scores, churn, retention | `customer-success` |
-| Visual design, UX flows, accessibility, design systems | `ui-ux-designer` |
+- **Feature request** (spec → design → tasks → apply → verify): SDD Flow, `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`.
+- **Resume a feature**: read `specs/{change}/`, detect the phase, continue. No agent needed.
 
-Trivial tasks (typo, 1-line fix): execute inline. Max 4 parallel agents. If a fix fails twice: STOP, save context, request reset.
-
-## SDD Flow (complex features)
+## SDD Flow (complex features only)
 
 DAG: `[constitution] → explore → propose → spec ∥ design → tasks → apply → verify → archive`
 
-- **Constitution** (opcional pre-step): Una vez por proyecto. Define principios no-negociables (`templates/sdd-constitution.md`). Cada feature posterior hace Constitution Check contra estos principios.
-- **Explore → Propose**: `templates/sdd-proposal.md` — problema, scope, alternativas, Constitution Check inicial.
-- **Spec ∥ Design**: `templates/sdd-requirements.md` + `templates/sdd-design.md` — user stories (P1/P2/P3, GWT), EARS, success criteria, technical context, architecture, complexity tracking.
-- **Tasks**: `templates/sdd-tasks.md` — fases (Setup → Foundational → US<n> → Polish), [P] paralelo, [US<n>] tags, checkpoints.
-- **Apply**: `templates/sdd-apply-progress.md` — TDD por task.
-- **Verify**: `templates/sdd-checklist.md` — verificación sistemática (CHK001–CHK041).
-- **Archive**: specs movidos a `specs/archived/`.
-
-Artifacts in `specs/{change-name}/`. Templates in `templates/`.
+Artifacts in `specs/{change-name}/`, one template per phase in `templates/`: `sdd-constitution` (once per project, defines non-negotiable principles), `sdd-proposal`, `sdd-requirements` + `sdd-design`, `sdd-tasks`, `sdd-apply-progress`, `sdd-checklist` (CHK001–CHK041). Archived specs move to `specs/archived/`.
 
 Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial features: direct implementation, no SDD.
 
-## Git Hygiene (non-negotiable)
+**Project context**: a project without its own `CLAUDE.md` gives you no domain knowledge — you will infer the stack correctly and the business rules wrong. If it lacks one and the work touches business logic, offer to create it from `templates/project-claude-md.md`: inviolable domain rules, glossary, anti-goals, gotchas.
 
-Estas reglas son defensa en profundidad. Hay hooks que las ENFORCEAN, pero la responsabilidad primaria es del agente.
+## Git Hygiene
 
-1. **NO AI FOOTPRINT**: Nunca escribas `Co-Authored-By`, `Co-authored-by`, ni variantes en commit messages. El hook `commit-msg` bloquea el commit, el hook `pre-push` bloquea el push.
-2. **NUNCA `--no-verify`**: Si el hook bloquea algo, CORREGÍ el problema, no by-passees el hook.
-3. **NUNCA pushees auto-save commits**: El hook `pre-push` los bloquea. Si ves `auto-save:` en `git log`, squashealos con `~/.claude/scripts/squash-auto-saves.sh` ANTES de pushear.
-4. **Siempre trabajá en branch**: Nunca commits directo a `main`/`master`. Usá feature branches.
-5. **Revisá `git log` antes de pushear**: `git log origin/main..HEAD --oneline`. Si algo no es profesional, arreglalo.
-6. **Commits atómicos y descriptivos**: Cada commit debe tener un propósito claro. Conventional Commits obligatorio.
-7. **Sin archivos temporales**: No commitees `.DS_Store`, `Thumbs.db`, `.tmp`, archivos de backup, o artefactos de build.
-8. **Push con conciencia**: Sabé EXACTAMENTE qué commits estás pusheando. Si hay duda, `git log --oneline -10` primero.
+Defense in depth. Git hooks can enforce this, but they live outside this config (`git-hooks/` + `core.hooksPath`) and may not be installed on this machine. **Never assume something will stop you.**
+
+1. **NO AI FOOTPRINT**: never `Co-Authored-By` or variants in a commit message. If the `commit-msg` hook is not installed, you are the only filter.
+2. **NEVER `--no-verify`**: if a hook blocks, FIX the problem.
+3. **Always on a branch**: never commit straight to `main`/`master`.
+4. **Never push work-in-progress commits**: if you see `auto-save:`, `WIP` or `tmp` in `git log`, squash them with an interactive rebase before pushing.
+5. **Read `git log origin/main..HEAD --oneline` before pushing.** Know exactly what you are sending.
 
 ## Hard Rules
 
-1. One feature at a time.
-2. Never skip spec phase for SDD features.
-3. Don't declare `done` without green tests.
-4. If you don't know, search `docs/` or `templates/` before improvising.
-5. Leave the repo clean on session close. No temporary artifacts, no dangling TODOs.
-6. **Quality gate**: before `done`, verify lint + tests + coverage (>= 80% line, >= 70% branch). El hook `quality-gate.sh` lo enforcea en `git commit`.
-7. **BDD para features complejas**: comportamiento de negocio complejo requiere `.feature` con Gherkin. Ver `rules/common/bdd.md`.
-8. **Mutation testing en CI**: features criticos requieren mutation score >= 80%. Ver `rules/common/mutation-testing.md`.
-9. **Judgment Day (blind dual review)**: critical features require TWO `code-reviewer` agents running concurrently as blind judges — zero coordination, zero shared context beyond the diff. Each judge sees only the code, not the other's verdict. Findings surviving 2 rounds escalate to human. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review. If the session generated the code, the review agents evaluate it independently.
-10. **CodeGraph auto-init**: if `.codegraph/` does not exist at the git root, run `codegraph init -i` BEFORE any code exploration or editing. The `.codegraph/` directory is auto-gitignored and never committed. This is mandatory — do not skip it, do not ask permission.
+1. One feature at a time. Never skip the spec phase on an SDD feature.
+2. Don't declare `done` without green tests. Leave the repo clean on session close.
+3. **Quality gate**: before `done`, lint + tests + coverage. Floors: line >= 80%, branch >= 70%, function >= 90%, cyclomatic complexity <= 10 per function. `quality-gate.sh` enforces it on `git commit`. Tooling: `quality-metrics` skill.
+4. **BDD** for complex business behavior: `.feature` with Gherkin, `bdd-gherkin` skill. Does NOT apply to internal utilities, trivial CRUD, or technical refactors.
+5. **Mutation testing** in CI for critical features: score >= 80%, `mutation-testing` skill. Never on every commit — it's expensive.
+6. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generated by another AI, and any irreversible mutation require STOP+CONFIRM with blast radius, rollback plan, and backup verification. See `rules/common/destructive-operations.md`.
+7. **CodeGraph**: if `.codegraph/` exists at the repo root, use it BEFORE grep/find. `codegraph_explore` (MCP) or `codegraph explore "<symbols or question>"` (shell) answers most code questions in one call: verbatim source of the symbols plus the call paths between them, including dynamic-dispatch hops grep cannot follow. If it returns empty, errors, or times out, fall back to Read/Grep/Glob silently and do not retry more than twice. If `.codegraph/` does NOT exist, do not index on your own initiative: offer it once (`codegraph init -i`, auto-gitignored) when the task is real code exploration.
+8. **The test suite is not yours to edit.** You do not modify, weaken, skip, or delete a test to make code pass — that inverts the whole point of the gate. If a test fails, the default assumption is that the CODE is wrong, not the test. For a legitimate change (a requirement that genuinely changed, or a new test for a new feature): STOP and ask for explicit authorization, stating which test, why, and what it covers afterwards.
+
+   `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. The real gate is CI running the suite from a clean checkout.
+
+9. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
+
+   **Activation**: only on explicit request, or when the change is genuinely risky (auth, payments, data migrations, concurrency, anything irreversible). It REPLACES the ordinary review — never both.
+
+   **When NOT to run it**: critique is for debugging, not polishing. On work that already passes tests, lint and types, a reviewer primed to find problems invents them — measured degradation from 98% to 57% accuracy on easy tasks. Do not run it on green, low-risk diffs.
+
+   | Condition | Action |
+   |---|---|
+   | Target unclear | ONE scope question, then stop |
+   | Both judges confirm BLOCKER/CRITICAL | Ask the user, then fix only those IDs |
+   | Only one judge reports it | Record as `suspect`. NO auto-fix |
+   | Judges contradict each other | Escalate to a human decision. Do not break the tie yourself |
+   | Anything unresolved after round two | Escalate and stop |
+
+   **Bounded rounds**: at most TWO fix rounds and TWO re-judgments, which see only the frozen ledger plus the fix delta. Terminal states: `APPROVED` or `ESCALATED`. Never reset an exhausted round budget.
+
+   **No refuter fan-out**: agreement between the two judges IS the corroboration. If you still run refuters, the ceiling is ONE for the whole list, or THREE with distinct lenses (correctness / exploitability / reproducibility, 2-of-3 vote). NEVER one per finding.
+
+   **Severity floor**: only BLOCKER/CRITICAL confirmed by both enter the fix loop. WARNING/SUGGESTION are reported once as `info` and never block.
+
+   **Known limitation**: both judges are the same model family and share training-correlated blind spots. Two PASS verdicts mean "no obvious defect found", never proof of correctness. The automated gates are the real guarantee; the judges are a second net.
+
+10. **RDD — Receipt Driven Development.** "It works" is an opinion; a receipt is evidence. In repos with `.claude-rdd/enabled`, a commit requires a receipt bound to the exact staged bytes:
+
+    ```
+    rdd freeze [max_fix_lines]   # freeze the candidate (hash of the staged diff)
+    # review THOSE bytes
+    rdd receipt '<test cmd>'     # run the evidence and sign the hash
+    git commit                   # quality-gate.sh validates the receipt
+    ```
+
+    Four properties justify it: the **frozen candidate** makes touching the code afterwards invalidate the receipt by itself; the **bounded correction** capped at `max_fix_lines` is the mechanical brake on the over-engineering loop; **no receipt is issued** unless the evidence command exits 0, so you cannot talk your way into one; and the **kill switch** (`rdd off`, off by default) exists because a guardrail nobody can disable ends up worked around.
+
+    Enable it on risky or irreversible work. Not on a scratch repo — the friction has to buy something.
 
 ## Session Close
 
-1. Run verification (tests, linters). Confirm exit 0.
-2. Remove temporary artifacts, debug statements, dangling TODOs.
-3. If using Engram: `mem_session_summary`.
-
-<!-- CODEGRAPH_START -->
-## CodeGraph
-
-In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
-
-- **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
-- **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
-- **Safety rules**: the `.codegraph/` directory must be a real directory (reject symlinks). Output is capped at 100K characters — if truncated, fall back to Read/Grep. Never query paths outside the workspace (HOME, /tmp, /etc).
-- **Graceful degradation**: if CodeGraph returns empty, errors, or times out, silently fall back to Read/Grep/Glob. Never retry CodeGraph more than twice for the same query.
-
-<!-- CODEGRAPH_END -->
+Verificacion en verde (tests, linters, exit 0). Sin artefactos temporales, debug statements ni TODOs colgando. Con Engram: `mem_session_summary`.

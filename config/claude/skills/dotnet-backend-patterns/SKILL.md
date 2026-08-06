@@ -1,6 +1,8 @@
 ---
 name: dotnet-backend-patterns
-description: C#/.NET backend patterns including ASP.NET Core minimal APIs, EF Core, Dapper, xUnit testing, middleware, and dependency injection.
+description: >
+  C#/.NET backend patterns including ASP.NET Core minimal APIs, EF Core, Dapper, xUnit testing, middleware, and dependency injection.
+  Use when writing or reviewing C#/.NET backend code: minimal APIs, EF Core or Dapper queries, DI registration, middleware, or xUnit tests.
 ---
 
 ## Project Structure

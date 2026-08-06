@@ -105,8 +105,6 @@ npm install --save-dev lockfile-lint
 npx lockfile-lint --path package-lock.json --type npm --allowed-hosts npm yarn --validate-https
 ```
 
-pnpm is not susceptible to this vector by lockfile design.
-
 ---
 
 ## 5. Deterministic installation
@@ -148,6 +146,7 @@ Checks: vulnerabilities (Snyk), package age, typosquatting, provenance, new bina
 ```bash
 npm install -g sfw
 sfw npm install express
+sfw bun add express
 sfw pnpm add express
 sfw pip install requests
 ```
@@ -255,15 +254,19 @@ npm pack <pkg> && tar -tzf <pkg>-<version>.tgz  # review actual content
 
 - Use scoped names: `@yourcompany/internal-tool`
 - `.npmrc`:
+
   ```
   @yourcompany:registry=https://npm.yourcompany.com/
   ```
+
 - Yarn (`.yarnrc.yml`):
+
   ```yaml
   npmScopes:
     yourcompany:
       npmRegistryServer: "https://npm.yourcompany.com/"
   ```
+
 - Claim internal unscoped names as placeholders in the public registry
 
 ---
@@ -322,9 +325,11 @@ trustPolicyIgnoreAfter: 43200  # minutes (pnpm 10.27+)
 ## Rules for OpenCode
 
 1. **`npm install` / `npm i` requires explicit confirmation.**
-2. **`npm install -g` BLOCKED.** Use `npx` or `pnpm dlx`.
+2. **`npm install -g` BLOCKED.** Use `npx`, `pnpm dlx`, `bunx`, or a project-local `npm exec`.
 3. **`npm ci` preferred** for deterministic installs.
-4. **Prefer `pnpm`** as the default package manager (blocks postinstall by default).
+4. **Preference `bun` > `pnpm` > `npm`** when you get to choose. An existing
+   project's lockfile overrides that and is not yours to change: `bun.lock`,
+   `pnpm-lock.yaml` and `package-lock.json` each pin their manager.
 5. **Always verify `package.json`/lockfile** before suggesting an install.
 6. **Never commit secrets.** Use vault references.
 7. **Lockfile always committed.**

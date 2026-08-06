@@ -2,8 +2,8 @@
 
 Central catalog of installed skills for OpenCode.
 
-**Last updated**: 2026-06-02
-**Total skills**: 36
+**Last updated**: 2026-08-05
+**Total skills**: 40
 
 ---
 
@@ -18,7 +18,7 @@ Central catalog of installed skills for OpenCode.
 ### Engineering Skills
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | tanstack-query | TanStack Query v5, data fetching, mutations, caching | `skills/tanstack-query/SKILL.md` |
 | api-design | REST API design, endpoints, OpenAPI, versioning | `skills/api-design/SKILL.md` |
 | security-review | OWASP Top 10, auth patterns, dependency auditing | `skills/security-review/SKILL.md` |
@@ -28,12 +28,11 @@ Central catalog of installed skills for OpenCode.
 | e2e-testing | Playwright, page objects, visual regression, CI | `skills/e2e-testing/SKILL.md` |
 | docker-expert | Multi-stage builds, compose, security hardening | `skills/docker-expert/SKILL.md` |
 | github-actions-docs | CI/CD pipelines, matrix builds, reusable workflows | `skills/github-actions-docs/SKILL.md` |
-| fuzzing-primer | AFL++, ffuf, parameter discovery, vulnerability hunting | `skills/fuzzing-primer/SKILL.md` |
 
 ### Backend Language Skills
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | python-design-patterns | SOLID, composition, DI, idiomatic Python | `skills/python-design-patterns/SKILL.md` |
 | python-testing-patterns | pytest, fixtures, mocking, TDD, parametrize | `skills/python-testing-patterns/SKILL.md` |
 | laravel-specialist | Eloquent, Sanctum, Horizon, Livewire, Pest | `skills/laravel-specialist/SKILL.md` |
@@ -44,7 +43,7 @@ Central catalog of installed skills for OpenCode.
 ### Mobile Skills
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | android-jetpack-compose | Compose state, navigation, Material 3 | `skills/android-jetpack-compose/SKILL.md` |
 | android-clean-architecture | MVVM, Hilt, repository pattern, use cases | `skills/android-clean-architecture/SKILL.md` |
 | swift | SwiftUI, SwiftData, async/await, Actors | `skills/swift/SKILL.md` |
@@ -61,7 +60,7 @@ Central catalog of installed skills for OpenCode.
 ### Academic
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | inacap | INACAP DOCX generation, academic documents, portada | `skills/inacap/SKILL.md` |
 | pptx | Create/edit/read .pptx files, presentations, decks, slides | `skills/pptx/SKILL.md` |
 | xlsx | Create/edit .xlsx files, spreadsheets, formulas, financial models | `skills/xlsx/SKILL.md` |
@@ -69,7 +68,7 @@ Central catalog of installed skills for OpenCode.
 ### Auto-Skills (Caveman Suite)
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | caveman-commit | Auto-generate conventional commits from staged changes | `skills/caveman-commit/SKILL.md` |
 | caveman-review | Code review: quality, security, architecture | `skills/caveman-review/SKILL.md` |
 | compress | Compress markdown/memory content | `skills/compress/SKILL.md` |
@@ -78,13 +77,26 @@ Central catalog of installed skills for OpenCode.
 ### Core Skills (Original)
 
 | Skill | Trigger | Path |
-|---|---|---|
+| --- | --- | --- |
 | branch-pr | Branch creation, PR workflow, conventional commits | `skills/branch-pr/SKILL.md` |
 | find-skills | Contextual skill loading | `skills/find-skills/SKILL.md` |
 | skill-creator | Create new skills, agent instructions | `skills/skill-creator/SKILL.md` |
 | skill-registry | Registry maintenance | `skills/skill-registry/SKILL.md` |
 | systematic-debugging | Systematic debugging methodology | `skills/systematic-debugging/SKILL.md` |
 | verification-before-completion | Evidence gate before declaring done | `skills/verification-before-completion/SKILL.md` |
+
+### Additional local skills
+
+| Skill | Trigger | Path |
+| --- | --- | --- |
+| design-md | Synthesize Stitch design systems into DESIGN.md | `skills/design-md/SKILL.md` |
+| enhance-prompt | Enhance Stitch UI prompts | `skills/enhance-prompt/SKILL.md` |
+| handoff | Create a clean HANDOFF.md between sessions | `skills/handoff/SKILL.md` |
+| stitch::extract-design-md | Extract a design system from frontend source | `skills/stitch-extract-design-md/SKILL.md` |
+| stitch::generate-design | Generate Stitch screens and variants | `skills/stitch-generate-design/SKILL.md` |
+| stitch::manage-design-system | Manage Stitch design systems | `skills/stitch-manage-design-system/SKILL.md` |
+| react:components | Convert Stitch designs into React components | `skills/stitch-react-components/SKILL.md` |
+| taste-design | Enforce the local semantic design system | `skills/taste-design/SKILL.md` |
 
 ---
 

@@ -1,19 +1,32 @@
 #!/bin/bash
-# Stop hook — chequea cambios sin commitear y stashes pendientes
+# Stop hook — chequea cambios sin commitear y stashes pendientes.
+#
+# Stop dispara una vez por TURNO, no al cerrar sesion, y durante cualquier
+# trabajo real siempre hay archivos sin commitear: el aviso salia en todas las
+# respuestas. Se emite una sola vez por sesion (marcador por session_id) y se
+# re-arma si aparecen stashes de auto-save, que si son urgentes.
+INPUT=$(cat 2>/dev/null || echo "")
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
+
 cd "$PWD" 2>/dev/null || exit 0
+git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  UNSTAGED=$(git diff --name-only 2>/dev/null | head -10)
-  STAGED=$(git diff --cached --name-only 2>/dev/null | head -10)
-  STASHES=$(git stash list --grep="auto-save:" 2>/dev/null)
+UNSTAGED=$(git diff --name-only 2>/dev/null | head -10)
+STAGED=$(git diff --cached --name-only 2>/dev/null | head -10)
+STASHES=$(git stash list --grep="auto-save:" 2>/dev/null)
 
-  if [ -n "$UNSTAGED" ] || [ -n "$STAGED" ] || [ -n "$STASHES" ]; then
-    echo "" >&2
-    echo "⚠️  CAMBIOS PENDIENTES al cerrar sesión en $PWD:" >&2
-    [ -n "$UNSTAGED" ] && echo "   🔴 Archivos sin stage: $(echo "$UNSTAGED" | wc -l | tr -d ' ')" >&2
-    [ -n "$STAGED" ] && echo "   🟡 Archivos staged (sin commit): $(echo "$STAGED" | wc -l | tr -d ' ')" >&2
-    [ -n "$STASHES" ] && echo "   📦 Auto-save stashes pendientes: $(echo "$STASHES" | wc -l | tr -d ' ')" >&2
-    echo "" >&2
-  fi
+[ -z "$UNSTAGED" ] && [ -z "$STAGED" ] && [ -z "$STASHES" ] && exit 0
+
+MARKER="${TMPDIR:-/tmp}/claude-pending-hint-${SESSION_ID:-nosession}"
+if [ -f "$MARKER" ] && [ -z "$STASHES" ]; then
+  exit 0
 fi
+: >"$MARKER"
+
+echo "" >&2
+echo "⚠️  CAMBIOS PENDIENTES en $PWD:" >&2
+[ -n "$UNSTAGED" ] && echo "   🔴 Archivos sin stage: $(echo "$UNSTAGED" | wc -l | tr -d ' ')" >&2
+[ -n "$STAGED" ] && echo "   🟡 Archivos staged (sin commit): $(echo "$STAGED" | wc -l | tr -d ' ')" >&2
+[ -n "$STASHES" ] && echo "   📦 Auto-save stashes pendientes: $(echo "$STASHES" | wc -l | tr -d ' ')" >&2
+echo "" >&2
 exit 0

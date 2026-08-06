@@ -26,13 +26,7 @@ secrets/
 .vscode/
 *.local.json
 *.local.env
-
-# OpenCode — estado local y artifacts
-.opencode/
 *.log
-
-# Codex — estado local
-.codex/
 
 # Node.js (scripts de validacion, plugins)
 node_modules/
@@ -43,3 +37,13 @@ __pycache__/
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
+
+# IA
+.playwright-mcp/
+.claude-rdd/
+.codegraph/
+.claude/
+.opencode/
+.codex/
+.claude-relaxed
+.atl
