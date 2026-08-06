@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # sebita theme colors (ANSI 256)
+# shellcheck disable=SC2034  # paleta completa del tema; no todas se usan hoy
 PRIMARY='\033[38;5;110m'   # #7FB4CA azul claro
 ACCENT='\033[38;5;179m'    # #E0C15A dorado
 SECONDARY='\033[38;5;146m' # #A3B5D6 azul gris
@@ -12,9 +13,6 @@ BOLD='\033[1m'
 STRIKE='\033[9m'
 NC='\033[0m'
 
-# Cache for MCP (don't call every 300ms)
-MCP_CACHE_FILE="/tmp/claude_mcp_cache"
-MCP_CACHE_TTL=120 # 2 minutes
 
 # Read JSON from stdin
 input=$(cat)
@@ -39,80 +37,6 @@ else
 fi
 [ "$CTX_PERCENT" -gt 100 ] && CTX_PERCENT=100
 [ "$CTX_PERCENT" -lt 0 ] && CTX_PERCENT=0
-
-# Function to get MCP servers from config
-get_mcp_servers() {
-  # Check cache first
-  if [ -f "$MCP_CACHE_FILE" ]; then
-    CACHE_AGE=$(($(date +%s) - $(stat -f %m "$MCP_CACHE_FILE" 2>/dev/null || echo 0)))
-    if [ "$CACHE_AGE" -lt "$MCP_CACHE_TTL" ]; then
-      cat "$MCP_CACHE_FILE"
-      return
-    fi
-  fi
-
-  # Read MCP servers from ~/.claude.json config
-  local CURRENT_DIR
-  CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir // ""')
-
-  # Get servers from current project first, fallback to home
-  local SERVERS=""
-
-  if [ -n "$CURRENT_DIR" ]; then
-    SERVERS=$(jq -r ".projects[\"$CURRENT_DIR\"].mcpServers // {} | keys[]" ~/.claude.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-  fi
-
-  # Fallback to home config if current project has no MCP
-  if [ -z "$SERVERS" ]; then
-    SERVERS=$(jq -r ".projects[\"$HOME\"].mcpServers // {} | keys[]" ~/.claude.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-  fi
-
-  local ALL_SERVERS="$SERVERS"
-
-  # Save to cache (all as "configured" - we can't check connection status easily)
-  echo "$ALL_SERVERS|" >"$MCP_CACHE_FILE"
-  echo "$ALL_SERVERS|"
-}
-
-# Get MCP status
-MCP_DATA=$(get_mcp_servers)
-MCP_CONNECTED=$(echo "$MCP_DATA" | cut -d'|' -f1)
-MCP_DISCONNECTED=$(echo "$MCP_DATA" | cut -d'|' -f2)
-
-# Format MCP display
-format_mcp() {
-  local result=""
-
-  # Connected servers (green)
-  if [ -n "$MCP_CONNECTED" ]; then
-    IFS=',' read -ra SERVERS <<<"$MCP_CONNECTED"
-    for srv in "${SERVERS[@]}"; do
-      if [ -n "$result" ]; then
-        result+=" "
-      fi
-      result+="${SUCCESS}${srv}${NC}"
-    done
-  fi
-
-  # Disconnected servers (red + strikethrough)
-  if [ -n "$MCP_DISCONNECTED" ]; then
-    IFS=',' read -ra SERVERS <<<"$MCP_DISCONNECTED"
-    for srv in "${SERVERS[@]}"; do
-      if [ -n "$result" ]; then
-        result+=" "
-      fi
-      result+="${ERROR}${STRIKE}${srv}${NC}"
-    done
-  fi
-
-  if [ -z "$result" ]; then
-    echo "${MUTED}no mcp${NC}"
-  else
-    echo "$result"
-  fi
-}
-
-MCP_DISPLAY=$(format_mcp)
 
 # Directory name
 DIR_NAME=$(basename "$DIR")
@@ -177,8 +101,9 @@ LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 # Providers WITHOUT peak/surge pricing: OpenAI, Gemini, Mistral, Groq, xAI, Kimi/Moonshot,
 #   Qwen/DashScope, StepFun, MiMo/Xiaomi, Copilot, MiniMax (flat rate or throttling only)
 get_peak_warning() {
-  local UTC_HOUR=$(date -u +%H)
-  local BJS_HOUR=$(((UTC_HOUR + 8) % 24)) # Beijing time for CN providers
+  local UTC_HOUR
+  UTC_HOUR=$(date -u +%H)
+  local BJS_HOUR=$(((10#$UTC_HOUR + 8) % 24)) # Beijing time for CN providers
 
   # z.ai/GLM: daily 14:00-18:00 Beijing (06:00-10:00 UTC) — 3x quota
   if [ "$BJS_HOUR" -ge 14 ] && [ "$BJS_HOUR" -lt 18 ]; then
@@ -188,8 +113,9 @@ get_peak_warning() {
 
   # Anthropic: 1.5-2x throttling, weekdays 5am-11am PT (09:00-15:00 CLT)
   # Was peak throttling, removed May 2026 but may return.
-  local PT_HOUR=$(TZ="America/Los_Angeles" date +%-H)
-  local PT_DOW=$(TZ="America/Los_Angeles" date +%u)
+  local PT_HOUR PT_DOW
+  PT_HOUR=$(TZ="America/Los_Angeles" date +%-H)
+  PT_DOW=$(TZ="America/Los_Angeles" date +%u)
   local PT_H=$((10#$PT_HOUR))
   if [ "$PT_DOW" -le 5 ] && [ "$PT_H" -ge 5 ] && [ "$PT_H" -lt 11 ]; then
     echo -e "${ACCENT}💸 2x${NC}"
