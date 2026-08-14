@@ -320,6 +320,20 @@ if echo "$NO_QUOTES_FULL" | grep -qE "$RM_RECURSIVE"; then
   ask "rm -rf es irreversible. Revisa el path exacto antes de aprobar."
 fi
 
+# Borrar un test por Bash. protect-tests.sh solo ve Edit|Write|NotebookEdit, y la
+# regla de arriba solo mira `rm -rf`: un `rm tests/foo.test.ts` pelado no lo veia
+# NADIE. Ese es exactamente el caso que motivo protect-tests.sh — un agente que
+# borra sus propios tests durante un refactor porque estorbaban.
+# Es `ask`, no `deny`: borrar un test obsoleto es legitimo, pero lo autoriza el
+# usuario (Hard Rule 8), no el agente por su cuenta.
+# `\brm\b` y no `\brm\s+`: con \s+ el espacio posterior a rm quedaba consumido y
+# el separador que exigen las alternativas de abajo ya no estaba disponible, asi
+# que `rm test_login.py` (el argumento pegado al comando) se escapaba entero.
+RM_TEST='\brm\b[^|;&]*((\.|_)(test|spec)\.|[[:space:]/]test_|[[:space:]/](tests?|specs?|__tests__|__snapshots__|features|e2e)/|(Test|Tests|Spec)\.(java|kt|cs|scala|php|swift)|\.(snap|ambr|feature)([[:space:]]|$))'
+if echo "$NO_QUOTES_FULL" | grep -qE "$RM_TEST"; then
+  ask "Estas borrando cobertura de tests. Hard Rule 8: un test no se elimina para que el codigo pase. Si el requisito cambio de verdad, deci que test es, por que, y que queda cubierto despues."
+fi
+
 if echo "$NO_QUOTES_FULL" | grep -qE '\bchmod\s+(-R\s+)?777\b'; then
   ask "chmod 777 deja el archivo escribible por cualquiera. Aprobalo solo si es un directorio descartable; si no, usa 644/755/700."
 fi

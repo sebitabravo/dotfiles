@@ -294,6 +294,12 @@ name as your internal package, with a higher version. The resolver picks it.
   @yourcompany:registry=https://npm.yourcompany.com/
   ```
 - Claim internal unscoped names as placeholders in the public registry
+- Yarn (`.yarnrc.yml`):
+  ```yaml
+  npmScopes:
+    yourcompany:
+      npmRegistryServer: 'https://npm.yourcompany.com/'
+  ```
 
 ---
 
@@ -332,6 +338,21 @@ to specific workflows. Configure at npmjs.com → Trusted Publishers.
 Before adopting a package: `https://security.snyk.io/package/npm/<name>`
 
 Evaluate: health score, security, popularity, maintenance, community.
+
+---
+
+## 17. pnpm trust policy
+
+**Vector**: a package published with OIDC/provenance is suddenly published
+without it. Signal of takeover.
+
+```yaml
+# pnpm-workspace.yaml (pnpm 10.21+)
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - 'chokidar@4.0.3'
+trustPolicyIgnoreAfter: 43200 # minutes (pnpm 10.27+)
+```
 
 ---
 

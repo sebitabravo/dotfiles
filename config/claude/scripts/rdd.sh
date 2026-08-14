@@ -115,12 +115,25 @@ cmd_receipt() {
     exit 1
   fi
 
-  local evidence_cmd="${1:-}"
-  [ -n "$evidence_cmd" ] || die "falta la evidencia. Uso: rdd receipt '<comando de tests>'"
+  # argv, NO eval. Con eval, `rdd receipt 'npm test || true'` emitia recibo con
+  # la suite en rojo: el `||` armaba una segunda capa de comando y el exit 0 lo
+  # ponia el `true`, no los tests. Eso rompia la propiedad que justifica RDD
+  # entera — "no se emite recibo salvo que la evidencia salga 0".
+  # Como argv, `||` y `true` llegan como argumentos literales a npm y falla.
+  [ "$#" -gt 0 ] || die "falta la evidencia. Uso: rdd receipt <comando de tests>  (ej: rdd receipt npm test)"
 
+  # Los metacaracteres van literales a proposito: se buscan como texto, no se expanden.
+  # shellcheck disable=SC2016
+  case "$*" in
+    *'|'* | *';'* | *'&'* | *'$('* | *'`'*)
+      die "la evidencia trae metacaracteres de shell. Pasala como argv (rdd receipt npm test), no como string: un operador ahi puede fabricar el exit 0 que el recibo dice haber verificado."
+      ;;
+  esac
+
+  local evidence_cmd="$*"
   echo "corriendo evidencia: $evidence_cmd"
   local out rc
-  out=$(eval "$evidence_cmd" 2>&1)
+  out=$("$@" 2>&1)
   rc=$?
   printf '%s\n' "$out" | tail -20
 
@@ -133,7 +146,7 @@ cmd_receipt() {
   cat >"$RECEIPT" <<EOF
 {
   "candidate_hash": "$frozen",
-  "evidence_command": "$(printf '%s' "$evidence_cmd" | sed 's/"/\\"/g')",
+  "evidence_command": "$(printf '%s' "$evidence_cmd" | sed 's/\\/\\\\/g; s/"/\\"/g')",
   "evidence_exit_code": $rc,
   "lines_changed": $now_lines,
   "issued_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -204,7 +217,7 @@ case "${1:-}" in
 rdd.sh — Receipt Driven Development
 
   rdd freeze [max_fix_lines]   congela los bytes staged (default: techo 40)
-  rdd receipt '<cmd tests>'    corre la evidencia y emite el recibo
+  rdd receipt <cmd tests>      corre la evidencia y emite el recibo (argv, sin comillas)
   rdd verify                   exit 0 autorizado / 1 sin recibo / 2 otros bytes
   rdd status                   estado actual
   rdd on | rdd off             kill switch por repo

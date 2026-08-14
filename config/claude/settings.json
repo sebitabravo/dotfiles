@@ -146,11 +146,30 @@
       "Edit(**/*.pem)",
       "Read(**/*.key)",
       "Edit(**/*.key)",
+      "Edit(**/*.p12)",
+      "Edit(**/*.pfx)",
+      "Edit(**/credentials.json)",
+      "Edit(**/secrets/**)",
+      "Edit(**/id_rsa)",
+      "Edit(**/id_ed25519)",
+      "Edit(**/id_ecdsa)",
+      "Edit(**/.netrc)",
+      "Edit(~/.gnupg/**)",
+      "Edit(**/*.ppk)",
+      "Edit(**/*.pvk)",
+      "Edit(**/id_dsa)",
+      "Edit(**/id_ed25519_sk)",
+      "Edit(**/id_ecdsa_sk)",
       "Read(**/*.p12)",
       "Read(**/*.pfx)",
+      "Read(**/*.ppk)",
+      "Read(**/*.pvk)",
       "Read(**/id_rsa)",
       "Read(**/id_ed25519)",
       "Read(**/id_ecdsa)",
+      "Read(**/id_dsa)",
+      "Read(**/id_ed25519_sk)",
+      "Read(**/id_ecdsa_sk)",
       "Read(**/.netrc)",
       "Read(**/.npmrc)",
       "Read(**/.pypirc)",
@@ -253,6 +272,10 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/handoff-session-start.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/compact-resume.py"
           }
         ]
       }
@@ -262,7 +285,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '{\"hookSpecificOutput\":{\"additionalContext\":\"IMPORTANTE: Segui aplicando TODAS las reglas de CLAUDE.md y rules/common/*.md — NO AI FOOTPRINT, VERIFY FIRST (sin \\\"should work\\\"), EVIDENCE BEFORE CLAIMS, LEVERAGE≠RELY (ownership total, CI≠seguro), PRE-COMMIT LITMUS (3 preguntas), GOAL-DRIVEN (loop hasta verificado), STOP & WAIT. No relajes estas reglas post-compactacion.\"}}'"
+            "command": "printf '{\"systemMessage\":\"Contexto compactado. Las reglas de CLAUDE.md siguen vigentes; el protocolo de reanudacion se reinyecta en SessionStart (compact-resume.py).\"}'"
           }
         ]
       }

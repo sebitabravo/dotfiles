@@ -71,8 +71,26 @@ while IFS=$'\t' read -r skill kind dep; do
   esac
 done < <(jq -r '.skills | to_entries[] | .key as $s | .value.deps // {} | to_entries[] | .key as $k | .value[] | [$s, $k, .] | @tsv' "$LOCK")
 
+# Frontmatter de cada skill. Un SKILL.md sin `name:` o sin `description:` no lo
+# carga el harness: la skill queda instalada, invisible, y no falla nunca de
+# forma ruidosa. Chequear las deps de una skill que no carga no sirve de nada.
+SKILLS_ROOT="${SKILLS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/skills}"
+if [ -d "$SKILLS_ROOT" ]; then
+  invalid=0
+  while IFS= read -r skill_file; do
+    if ! grep -q '^name:' "$skill_file" || ! grep -q '^description:' "$skill_file"; then
+      echo "  invalid  frontmatter incompleto: ${skill_file#"$SKILLS_ROOT/"}"
+      invalid=$((invalid + 1))
+    fi
+  done < <(find "$SKILLS_ROOT" -name SKILL.md -maxdepth 2 -type f)
+  if [ "$invalid" -gt 0 ]; then
+    echo "$invalid skill(s) con frontmatter invalido: sin 'name:' y 'description:' el harness no las carga."
+    missing=$((missing + invalid))
+  fi
+fi
+
 if [ "$missing" -eq 0 ]; then
-  echo "OK — todas las dependencias de sistema y python estan presentes."
+  echo "OK — dependencias presentes y frontmatter de skills valido."
   exit 0
 fi
 

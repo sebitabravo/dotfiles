@@ -17,9 +17,11 @@ cp -p "$DOTFILES"/*.{json,md,sh} "$HOME/.claude/"
 chmod +x ~/.claude/hooks/*.sh ~/.claude/hooks/lib/*.sh
 ```
 
-`-L` resuelve symlinks: `config/opencode/rules/common` apunta a
-`config/claude/rules/common`, y sin `-L` rsync copia el enlace en vez del
-contenido y deja el destino apuntando a una ruta que no existe.
+`-L` resuelve symlinks copiando el contenido en vez del enlace. Hoy no queda
+ninguno en `config/claude/` (el unico era `config/opencode/rules/common`, que se
+fue con opencode), asi que el flag no cambia nada — se deja porque el dia que
+vuelva a haber uno, sin `-L` el destino queda apuntando a una ruta inexistente y
+el sync reporta exito igual.
 
 **`settings.json` lleva hooks inyectados por apps externas** (Orca escribe en
 `PermissionRequest`, `SubagentStart`, `TeammateIdle` y otros). Están mezclados en

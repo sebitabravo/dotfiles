@@ -73,6 +73,9 @@ case "$BASENAME" in
   *Test.swift | *Tests.swift) IS_TEST=true ;; # XCTest
   *.feature) IS_TEST=true ;;  # Gherkin
   conftest.py) IS_TEST=true ;; # fixtures pytest
+  # Un snapshot ES la assertion: reescribirlo hace pasar cualquier output.
+  # Es la forma mas barata de poner la suite en verde sin arreglar nada.
+  *.snap | *.ambr) IS_TEST=true ;;
 esac
 
 # Directorios de test. Requiere el separador / a ambos lados para no capturar
@@ -81,6 +84,7 @@ if [ "$IS_TEST" = false ]; then
   case "/$FILE_PATH" in
     */tests/* | */test/* | */__tests__/* | */spec/* | */specs/* | */features/*) IS_TEST=true ;;
     */e2e/* | */integration-tests/* | */cypress/* | */playwright/*) IS_TEST=true ;;
+    */__snapshots__/*) IS_TEST=true ;;
   esac
 fi
 

@@ -1,5 +1,0 @@
-{
-  "version": 1,
-  "_comment": "No se declaran dependencias globales: las skills de Office y pentesting del host fueron retiradas. Las dependencias de proyecto se gestionan en el repositorio que las usa.",
-  "skills": {}
-}

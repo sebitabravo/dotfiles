@@ -232,5 +232,8 @@ OS: <>, Browser: <>, Version: <>, Commit: <>
 - Don't test implementation details (private methods, internal state shape).
 - One assertion per test when possible. Multi-assert only for related state changes.
 - No flaky tests: no `sleep()`, no time-based assertions, no random data without seed.
+- No order dependence between tests. Each test sets up its own state.
+- No real credentials, no production services, no live third-party calls. Mock everything external.
 - Tests must be deterministic. Same input = same result. Always.
 - Never skip a failing test. Fix it or delete it. Skipped tests are debt.
+- Don't change production code unless the user explicitly asks for an implementation fix.

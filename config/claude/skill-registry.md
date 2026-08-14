@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 61
+- **Total skills:** 63
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -101,7 +101,9 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `branch-pr` | > Branch creation, PR workflow, and conventional commits. |
 | `systematic-debugging` | Use for bugs, test failures, unexpected behavior, and performance incidents. |
 | `verification-before-completion` | Use before claiming "done", "fixed", "passing", or before commit/PR. Requires fresh verification evidence. |
+| `sdd-workflow` | Spec-Driven Development para features complejas: Explore, Proposal, Requirements, Design, Tasks, Apply, Verify, con gates humanos y scaffolding. |
 | `handoff` | Crea un archivo HANDOFF.md con el estado actual del proyecto para un traspaso limpio entre sesiones. |
+| `cavecrew` | Protocolo de delegación a subagentes: escriben resultados a `/tmp/cavecrew/<tarea>-result.md` y devuelven solo el path. |
 | `find-skills` | Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X". |
 | `skill-creator` | > Creates new AI agent skills following the Agent Skills spec. |
 | `prompt-engineering` | > Designing and optimizing prompts for LLMs — chain-of-thought, few-shot, XML structuring, model-tier calibration. |

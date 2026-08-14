@@ -197,185 +197,234 @@ if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
 fi
 
 
-# Detect test runner and lint
-HAS_TESTS=false
-TEST_CMD=""
-LINT_CMD=""
-COVERAGE_CMD=""
-COVERAGE_KIND=""
+# Detect test runner and lint.
+#
+# Primero se prueba en la raiz del repo (comportamiento historico, intacto
+# para proyectos de un solo paquete: dir="." no antepone ningun "cd", los
+# comandos y mensajes quedan byte-a-byte iguales a como eran antes).
+#
+# Si la raiz no tiene marcador de proyecto es probable que sea un monorepo
+# (ej. backend/ con pyproject.toml + landing/ con package.json, cada uno con
+# su propio runner). Se buscan subdirectorios de primer nivel que el commit
+# este tocando (STAGED_DIRS) y que ademas tengan marcador de proyecto, para no
+# correr la suite de un paquete que el commit ni toco.
+detect_project_at() {
+  # Setea HAS_TESTS/TEST_CMD/LINT_CMD/COVERAGE_CMD/COVERAGE_KIND para el
+  # directorio $1 (relativo a ROOT, "." para la raiz). No cambia el cwd del
+  # script: los comandos generados llevan su propio "cd" cuando dir != ".".
+  local dir="$1" prefix=""
+  [ "$dir" != "." ] && prefix="cd \"$dir\" && "
 
-if [ -f "package.json" ]; then
-  # JS/TS project.
-  # HAS_TESTS se marca junto con TEST_CMD: antes se marcaba true y el TEST_CMD
-  # quedaba vacio si el runner no era vitest/jest (ej. "test": "node --test"),
-  # asi que el gate no corria nada y dejaba pasar el commit como si fuera verde.
-  if jq -e '.scripts.test' package.json >/dev/null 2>&1; then
+  HAS_TESTS=false
+  TEST_CMD=""
+  LINT_CMD=""
+  COVERAGE_CMD=""
+  COVERAGE_KIND=""
+
+  if [ -f "$dir/package.json" ]; then
+    # JS/TS project.
+    # HAS_TESTS se marca junto con TEST_CMD: antes se marcaba true y el TEST_CMD
+    # quedaba vacio si el runner no era vitest/jest (ej. "test": "node --test"),
+    # asi que el gate no corria nada y dejaba pasar el commit como si fuera verde.
+    if jq -e '.scripts.test' "$dir/package.json" >/dev/null 2>&1; then
+      HAS_TESTS=true
+      TEST_CMD="${prefix}npm test"
+      # --coverage.reporter=text fuerza la tabla de istanbul aunque el proyecto
+      # tenga configurado otro reporter (lcov/html no traen porcentajes al stdout,
+      # y sin ellos el parseo de abajo no ve nada y el piso no se aplica).
+      if jq -r '.scripts.test' "$dir/package.json" | grep -qE 'vitest|jest'; then
+        COVERAGE_CMD="${prefix}npm test -- --coverage --coverage.reporter=text"
+        COVERAGE_KIND="istanbul"
+      fi
+    fi
+    if jq -e '.scripts.lint' "$dir/package.json" >/dev/null 2>&1; then
+      LINT_CMD="${prefix}npm run lint"
+    elif command -v eslint >/dev/null 2>&1 && { [ -f "$dir/.eslintrc.js" ] || [ -f "$dir/.eslintrc.json" ] || [ -f "$dir/.eslintrc.yml" ] || [ -f "$dir/eslint.config.js" ] || [ -f "$dir/eslint.config.mjs" ]; }; then
+      LINT_CMD="${prefix}npx eslint . --max-warnings=0"
+    fi
+  elif [ -f "$dir/pyproject.toml" ] || [ -f "$dir/setup.cfg" ] || [ -f "$dir/pytest.ini" ]; then
+    # Python project
+    if command -v uv >/dev/null 2>&1 && [ -f "$dir/pyproject.toml" ]; then
+      HAS_TESTS=true
+      TEST_CMD="${prefix}uv run pytest"
+      # --cov-branch: sin el, pytest-cov no reporta branch coverage y el piso de
+      # 70% declarado en CLAUDE.md no se puede evaluar.
+      COVERAGE_CMD="${prefix}uv run pytest --cov --cov-branch --cov-report=term-missing"
+      COVERAGE_KIND="pycov"
+    fi
+  elif [ -f "$dir/go.mod" ]; then
+    # Go project
     HAS_TESTS=true
-    TEST_CMD="npm test"
-    # --coverage.reporter=text fuerza la tabla de istanbul aunque el proyecto
-    # tenga configurado otro reporter (lcov/html no traen porcentajes al stdout,
-    # y sin ellos el parseo de abajo no ve nada y el piso no se aplica).
-    if jq -r '.scripts.test' package.json | grep -qE 'vitest|jest'; then
-      COVERAGE_CMD="npm test -- --coverage --coverage.reporter=text"
-      COVERAGE_KIND="istanbul"
+    TEST_CMD="${prefix}go test ./..."
+    COVERAGE_CMD="${prefix}go test -cover ./..."
+    COVERAGE_KIND="gocov"
+    if command -v golangci-lint >/dev/null 2>&1; then
+      LINT_CMD="${prefix}golangci-lint run"
     fi
   fi
-  if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
-    LINT_CMD="npm run lint"
-  elif command -v eslint >/dev/null 2>&1 && { [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ]; }; then
-    LINT_CMD="npx eslint . --max-warnings=0"
-  fi
-elif [ -f "pyproject.toml" ] || [ -f "setup.cfg" ] || [ -f "pytest.ini" ]; then
-  # Python project
-  if command -v uv >/dev/null 2>&1 && [ -f "pyproject.toml" ]; then
-    HAS_TESTS=true
-    TEST_CMD="uv run pytest"
-    # --cov-branch: sin el, pytest-cov no reporta branch coverage y el piso de
-    # 70% declarado en CLAUDE.md no se puede evaluar.
-    COVERAGE_CMD="uv run pytest --cov --cov-branch --cov-report=term-missing"
-    COVERAGE_KIND="pycov"
-  fi
-elif [ -f "go.mod" ]; then
-  # Go project
-  HAS_TESTS=true
-  TEST_CMD="go test ./..."
-  COVERAGE_CMD="go test -cover ./..."
-  COVERAGE_KIND="gocov"
-  if command -v golangci-lint >/dev/null 2>&1; then
-    LINT_CMD="golangci-lint run"
-  fi
+}
+
+STAGED_FILES_FOR_DETECT=$(git diff --cached --name-only 2>/dev/null)
+STAGED_DIRS_FOR_DETECT=$(printf '%s\n' "$STAGED_FILES_FOR_DETECT" | awk -F/ '{print $1}' | sort -u)
+
+# Documentacion (README, ADRs, informes) no requiere tests per
+# rules/common/testing.md ("Que NO requiere tests"). Si TODOS los archivos
+# staged son .md, el gate de test-runner no aplica: no hay codigo que probar.
+if [ -n "$STAGED_FILES_FOR_DETECT" ] && ! printf '%s\n' "$STAGED_FILES_FOR_DETECT" | grep -qv '\.md$'; then
+  echo "[quality-gate] Commit solo-documentacion (.md) — sin gate de tests." >&2
+  exit 0
 fi
 
-# Sin test runner NO se pasa.
-#
-# Antes esto avisaba y salia 0, con lo cual el gate castigaba tener tests rotos
-# y premiaba no tener tests: exactamente al reves de lo que la regla pide. El
-# stderr decia "ALL code requires tests. No exceptions" y a la linea siguiente
-# dejaba commitear igual, o sea era un cartel, no una puerta.
-if [ "$HAS_TESTS" = false ]; then
-  if [ "$RELAXED" = true ]; then
-    echo "[quality-gate] sin test runner; $RELAX_FILE presente, se deja pasar." >&2
-    exit 0
-  fi
-  block "no hay test runner en este proyecto y ALL code requires tests (rules/common/testing.md).
+detect_project_at "."
+PROJECT_DIRS=(".")
+if [ "$HAS_TESTS" = false ] && [ -z "$LINT_CMD" ]; then
+  MONO_DIRS=()
+  while IFS= read -r d; do
+    [ -z "$d" ] && continue
+    [ -d "$d" ] || continue
+    if [ -f "$d/package.json" ] || [ -f "$d/pyproject.toml" ] || [ -f "$d/setup.cfg" ] || [ -f "$d/pytest.ini" ] || [ -f "$d/go.mod" ]; then
+      MONO_DIRS+=("$d")
+    fi
+  done <<< "$STAGED_DIRS_FOR_DETECT"
+  [ "${#MONO_DIRS[@]}" -gt 0 ] && PROJECT_DIRS=("${MONO_DIRS[@]}")
+fi
+
+for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
+  detect_project_at "$PROJECT_DIR"
+  LABEL="$PROJECT_DIR"
+  [ "$LABEL" = "." ] && LABEL="raiz"
+
+  # Sin test runner NO se pasa.
+  #
+  # Antes esto avisaba y salia 0, con lo cual el gate castigaba tener tests rotos
+  # y premiaba no tener tests: exactamente al reves de lo que la regla pide. El
+  # stderr decia "ALL code requires tests. No exceptions" y a la linea siguiente
+  # dejaba commitear igual, o sea era un cartel, no una puerta.
+  if [ "$HAS_TESTS" = false ]; then
+    if [ "$RELAXED" = true ]; then
+      echo "[quality-gate] [$LABEL] sin test runner; $RELAX_FILE presente, se deja pasar." >&2
+      continue
+    fi
+    block "[$LABEL] no hay test runner en este proyecto y ALL code requires tests (rules/common/testing.md).
 [quality-gate] Configura uno ANTES de escribir codigo de produccion. Si este repo es un scratch
 [quality-gate] o un spike, creá el kill switch: touch $RELAX_FILE"
-fi
+  fi
 
-# 1. Lint (if available)
-if [ -n "$LINT_CMD" ]; then
-  LINT_OUTPUT=$($LINT_CMD 2>&1) || block "lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
-fi
+  # 1. Lint (if available)
+  if [ -n "$LINT_CMD" ]; then
+    # eval y no $LINT_CMD a secas: sin eval, el "cd dir &&" de los proyectos de
+    # subdirectorio llega como argumentos literales en vez de ejecutarse.
+    LINT_OUTPUT=$(eval "$LINT_CMD" 2>&1) || block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
+  fi
 
-# 2. Tests + coverage, UNA sola corrida.
-# Antes corria TEST_CMD y despues COVERAGE_CMD, que re-ejecuta la misma suite
-# entera: dos corridas completas en cada intento de commit, con timeout de 120s.
-# COVERAGE_CMD es TEST_CMD con un flag, asi que si existe reemplaza a TEST_CMD
-# y de la misma salida se saca el porcentaje.
-RUN_CMD="${COVERAGE_CMD:-$TEST_CMD}"
-TEST_OUTPUT=""
-if [ -n "$RUN_CMD" ]; then
-  # eval y no $RUN_CMD a secas: sin eval, redirecciones y operadores del string
-  # llegaban a npm como argumentos literales y la medicion nunca corria.
-  TEST_OUTPUT=$(eval "$RUN_CMD" 2>&1) || block "tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
-fi
+  # 2. Tests + coverage, UNA sola corrida.
+  # Antes corria TEST_CMD y despues COVERAGE_CMD, que re-ejecuta la misma suite
+  # entera: dos corridas completas en cada intento de commit, con timeout de 120s.
+  # COVERAGE_CMD es TEST_CMD con un flag, asi que si existe reemplaza a TEST_CMD
+  # y de la misma salida se saca el porcentaje.
+  RUN_CMD="${COVERAGE_CMD:-$TEST_CMD}"
+  TEST_OUTPUT=""
+  if [ -n "$RUN_CMD" ]; then
+    TEST_OUTPUT=$(eval "$RUN_CMD" 2>&1) || block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+  fi
 
-# 3. Coverage — bloqueante, por metrica.
-#
-# La version anterior hacia `grep -oE '[0-9]+%' | head -1`: agarraba el PRIMER
-# porcentaje del output, que con suerte era line coverage y podia ser cualquier
-# otro numero. Branch y function no se miraban nunca, asi que dos de los tres
-# pisos declarados en CLAUDE.md no existian.
-#
-# Cuando una metrica no se puede medir se dice, en vez de darla por buena: un
-# gate que finge medir es peor que no tener gate, porque compra confianza falsa.
-if [ -n "$COVERAGE_CMD" ]; then
-  COVERAGE_OUTPUT="$TEST_OUTPUT"
-  COV_LINE=""; COV_BRANCH=""; COV_FUNC=""
+  # 3. Coverage — bloqueante, por metrica.
+  #
+  # La version anterior hacia `grep -oE '[0-9]+%' | head -1`: agarraba el PRIMER
+  # porcentaje del output, que con suerte era line coverage y podia ser cualquier
+  # otro numero. Branch y function no se miraban nunca, asi que dos de los tres
+  # pisos declarados en CLAUDE.md no existian.
+  #
+  # Cuando una metrica no se puede medir se dice, en vez de darla por buena: un
+  # gate que finge medir es peor que no tener gate, porque compra confianza falsa.
+  if [ -n "$COVERAGE_CMD" ]; then
+    COVERAGE_OUTPUT="$TEST_OUTPUT"
+    COV_LINE=""; COV_BRANCH=""; COV_FUNC=""
 
-  case "${COVERAGE_KIND:-}" in
-    istanbul)
-      # Tabla de istanbul (vitest/jest):
-      #   File      | % Stmts | % Branch | % Funcs | % Lines |
-      #   All files |   85.71 |    72.22 |   90.00 |   85.71 |
-      ALL_FILES=$(echo "$COVERAGE_OUTPUT" | grep -E '^[[:space:]]*All files' | head -1)
-      if [ -n "$ALL_FILES" ]; then
-        COV_BRANCH=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$3); print $3}')
-        COV_FUNC=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$4); print $4}')
-        COV_LINE=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$5); print $5}')
-      fi
-      ;;
-    pycov)
-      # pytest-cov: la fila TOTAL trae line coverage. Branch solo aparece con
-      # --cov-branch, que se agrega al comando mas arriba.
-      COV_LINE=$(echo "$COVERAGE_OUTPUT" | grep -E '^TOTAL' | grep -oE '[0-9]+(\.[0-9]+)?%' | tail -1 | tr -d '%')
-      ;;
-    gocov)
-      # go test -cover: "coverage: 87.5% of statements", una linea por paquete.
-      # Se toma la menor: el paquete peor cubierto es el que manda.
-      COV_LINE=$(echo "$COVERAGE_OUTPUT" | grep -oE 'coverage: [0-9]+(\.[0-9]+)?%' |
-        grep -oE '[0-9]+(\.[0-9]+)?' | sort -n | head -1)
-      ;;
-  esac
+    case "${COVERAGE_KIND:-}" in
+      istanbul)
+        # Tabla de istanbul (vitest/jest):
+        #   File      | % Stmts | % Branch | % Funcs | % Lines |
+        #   All files |   85.71 |    72.22 |   90.00 |   85.71 |
+        ALL_FILES=$(echo "$COVERAGE_OUTPUT" | grep -E '^[[:space:]]*All files' | head -1)
+        if [ -n "$ALL_FILES" ]; then
+          COV_BRANCH=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$3); print $3}')
+          COV_FUNC=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$4); print $4}')
+          COV_LINE=$(echo "$ALL_FILES" | awk -F'|' '{gsub(/ /,"",$5); print $5}')
+        fi
+        ;;
+      pycov)
+        # pytest-cov: la fila TOTAL trae line coverage. Branch solo aparece con
+        # --cov-branch, que se agrega al comando mas arriba.
+        COV_LINE=$(echo "$COVERAGE_OUTPUT" | grep -E '^TOTAL' | grep -oE '[0-9]+(\.[0-9]+)?%' | tail -1 | tr -d '%')
+        ;;
+      gocov)
+        # go test -cover: "coverage: 87.5% of statements", una linea por paquete.
+        # Se toma la menor: el paquete peor cubierto es el que manda.
+        COV_LINE=$(echo "$COVERAGE_OUTPUT" | grep -oE 'coverage: [0-9]+(\.[0-9]+)?%' |
+          grep -oE '[0-9]+(\.[0-9]+)?' | sort -n | head -1)
+        ;;
+    esac
 
-  below() { [ -n "$1" ] && awk -v p="$1" -v m="$2" 'BEGIN { exit !(p < m) }'; }
+    below() { [ -n "$1" ] && awk -v p="$1" -v m="$2" 'BEGIN { exit !(p < m) }'; }
 
-  COV_FAIL=""
-  below "$COV_LINE" "$MIN_LINE" && COV_FAIL="${COV_FAIL}  line ${COV_LINE}% < ${MIN_LINE}%"$'\n'
-  below "$COV_BRANCH" "$MIN_BRANCH" && COV_FAIL="${COV_FAIL}  branch ${COV_BRANCH}% < ${MIN_BRANCH}%"$'\n'
-  below "$COV_FUNC" "$MIN_FUNC" && COV_FAIL="${COV_FAIL}  function ${COV_FUNC}% < ${MIN_FUNC}%"$'\n'
+    COV_FAIL=""
+    below "$COV_LINE" "$MIN_LINE" && COV_FAIL="${COV_FAIL}  line ${COV_LINE}% < ${MIN_LINE}%"$'\n'
+    below "$COV_BRANCH" "$MIN_BRANCH" && COV_FAIL="${COV_FAIL}  branch ${COV_BRANCH}% < ${MIN_BRANCH}%"$'\n'
+    below "$COV_FUNC" "$MIN_FUNC" && COV_FAIL="${COV_FAIL}  function ${COV_FUNC}% < ${MIN_FUNC}%"$'\n'
 
-  if [ -n "$COV_FAIL" ]; then
-    if [ "$RELAXED" = true ]; then
-      printf '[quality-gate] cobertura bajo el piso (%s presente, no bloquea):\n%s' "$RELAX_FILE" "$COV_FAIL" >&2
-    else
-      block "cobertura bajo el piso:
+    if [ -n "$COV_FAIL" ]; then
+      if [ "$RELAXED" = true ]; then
+        printf '[quality-gate] [%s] cobertura bajo el piso (%s presente, no bloquea):\n%s' "$LABEL" "$RELAX_FILE" "$COV_FAIL" >&2
+      else
+        block "[$LABEL] cobertura bajo el piso:
 ${COV_FAIL}[quality-gate] Agrega tests. Kill switch para este repo: touch $RELAX_FILE"
+      fi
+    fi
+
+    # Metricas que el runner no reporto. Se avisa para que no se lean como verdes.
+    UNMEASURED=""
+    [ -z "$COV_LINE" ] && UNMEASURED="$UNMEASURED line"
+    [ -z "$COV_BRANCH" ] && UNMEASURED="$UNMEASURED branch"
+    [ -z "$COV_FUNC" ] && UNMEASURED="$UNMEASURED function"
+    [ -n "$UNMEASURED" ] &&
+      echo "[quality-gate] [$LABEL] NO MEDIDO (el runner no lo reporta):$UNMEASURED — no lo cuentes como verde." >&2
+
+  fi
+
+  # 4. Complejidad ciclomatica.
+  #
+  # CLAUDE.md declara un techo de 10 por funcion y hasta ahora NADA lo medía: era
+  # la unica de las cuatro metricas sin ningun mecanismo detras. Se usa la
+  # herramienta del lenguaje si esta instalada; si no esta, se dice, en vez de
+  # dejar pasar el commit como si el techo se hubiera verificado.
+  COMPLEXITY_OUTPUT=""
+  COMPLEXITY_OVER=""
+  if [ -f "$PROJECT_DIR/go.mod" ] && command -v gocyclo >/dev/null 2>&1; then
+    COMPLEXITY_OUTPUT=$(cd "$PROJECT_DIR" && gocyclo -over "$MAX_COMPLEXITY" . 2>/dev/null || true)
+    [ -n "$COMPLEXITY_OUTPUT" ] && COMPLEXITY_OVER=yes
+  elif { [ -f "$PROJECT_DIR/pyproject.toml" ] || [ -f "$PROJECT_DIR/setup.cfg" ]; } && command -v radon >/dev/null 2>&1; then
+    # radon cc -n C marca bloques con complejidad >= 11, que es justo el techo + 1.
+    COMPLEXITY_OUTPUT=$(cd "$PROJECT_DIR" && radon cc -n C -s . 2>/dev/null || true)
+    [ -n "$COMPLEXITY_OUTPUT" ] && COMPLEXITY_OVER=yes
+  elif [ -f "$PROJECT_DIR/package.json" ] && [ -n "$LINT_CMD" ]; then
+    # En JS/TS la regla `complexity` de eslint es el camino: si el proyecto ya la
+    # tiene configurada, el lint de arriba ya fallo por ella y no hay nada que
+    # duplicar aca. Si no la tiene, se avisa una vez.
+    if ! (cd "$PROJECT_DIR" && rg -q 'complexity' .eslintrc* eslint.config.* 2>/dev/null); then
+      echo "[quality-gate] [$LABEL] NO MEDIDO: complejidad ciclomatica. Agrega la regla eslint:" >&2
+      echo "[quality-gate]   'complexity': ['error', { max: $MAX_COMPLEXITY }]" >&2
     fi
   fi
 
-  # Metricas que el runner no reporto. Se avisa para que no se lean como verdes.
-  UNMEASURED=""
-  [ -z "$COV_LINE" ] && UNMEASURED="$UNMEASURED line"
-  [ -z "$COV_BRANCH" ] && UNMEASURED="$UNMEASURED branch"
-  [ -z "$COV_FUNC" ] && UNMEASURED="$UNMEASURED function"
-  [ -n "$UNMEASURED" ] &&
-    echo "[quality-gate] NO MEDIDO (el runner no lo reporta):$UNMEASURED — no lo cuentes como verde." >&2
-
-fi
-
-# 4. Complejidad ciclomatica.
-#
-# CLAUDE.md declara un techo de 10 por funcion y hasta ahora NADA lo medía: era
-# la unica de las cuatro metricas sin ningun mecanismo detras. Se usa la
-# herramienta del lenguaje si esta instalada; si no esta, se dice, en vez de
-# dejar pasar el commit como si el techo se hubiera verificado.
-COMPLEXITY_OUTPUT=""
-COMPLEXITY_OVER=""
-if [ -f "go.mod" ] && command -v gocyclo >/dev/null 2>&1; then
-  COMPLEXITY_OUTPUT=$(gocyclo -over "$MAX_COMPLEXITY" . 2>/dev/null || true)
-  [ -n "$COMPLEXITY_OUTPUT" ] && COMPLEXITY_OVER=yes
-elif { [ -f "pyproject.toml" ] || [ -f "setup.cfg" ]; } && command -v radon >/dev/null 2>&1; then
-  # radon cc -n C marca bloques con complejidad >= 11, que es justo el techo + 1.
-  COMPLEXITY_OUTPUT=$(radon cc -n C -s . 2>/dev/null || true)
-  [ -n "$COMPLEXITY_OUTPUT" ] && COMPLEXITY_OVER=yes
-elif [ -f "package.json" ] && [ -n "$LINT_CMD" ]; then
-  # En JS/TS la regla `complexity` de eslint es el camino: si el proyecto ya la
-  # tiene configurada, el lint de arriba ya fallo por ella y no hay nada que
-  # duplicar aca. Si no la tiene, se avisa una vez.
-  if ! rg -q 'complexity' .eslintrc* eslint.config.* 2>/dev/null; then
-    echo "[quality-gate] NO MEDIDO: complejidad ciclomatica. Agrega la regla eslint:" >&2
-    echo "[quality-gate]   'complexity': ['error', { max: $MAX_COMPLEXITY }]" >&2
+  if [ -n "$COMPLEXITY_OVER" ]; then
+    if [ "$RELAXED" = true ]; then
+      echo "[quality-gate] [$LABEL] complejidad sobre $MAX_COMPLEXITY ($RELAX_FILE presente, no bloquea)." >&2
+    else
+      block "[$LABEL] hay funciones con complejidad ciclomatica > $MAX_COMPLEXITY. Extrae metodos." "$COMPLEXITY_OUTPUT"
+    fi
   fi
-fi
-
-if [ -n "$COMPLEXITY_OVER" ]; then
-  if [ "$RELAXED" = true ]; then
-    echo "[quality-gate] complejidad sobre $MAX_COMPLEXITY ($RELAX_FILE presente, no bloquea)." >&2
-  else
-    block "hay funciones con complejidad ciclomatica > $MAX_COMPLEXITY. Extrae metodos." "$COMPLEXITY_OUTPUT"
-  fi
-fi
+done
 
 # 5. Scope creep detection
 # Warn if a single commit touches files in 4+ unrelated top-level directories.

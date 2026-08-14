@@ -28,7 +28,7 @@ esac
 
 # Ancla al inicio de linea (con indentacion opcional) para no marcar la palabra
 # dentro de un string, un comentario o un nombre de funcion.
-FOUND=$(grep -nE '^[[:space:]]*(console\.(log|warn|error|debug)|print\(|var_dump\(|dd\(|debugger|binding\.pry|byebug)' "$FILE_PATH" 2>/dev/null || true)
+FOUND=$(grep -nE '^[[:space:]]*(console\.(log|warn|error|debug)|print\(|var_dump\(|dd\(|debugger|binding\.pry|byebug|pdb\.set_trace|breakpoint\(\))' "$FILE_PATH" 2>/dev/null || true)
 
 if [ -n "$FOUND" ]; then
   echo "[detect-debug] Debug statements en $FILE_PATH:" >&2
