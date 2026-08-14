@@ -474,9 +474,5 @@
   "autoMemoryEnabled": false,
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "enableFileCheckpointing": true,
-  "memoryPruning": true,
-  "mcpPriority": "project-first",
-  "maxBudgetPerSession": "2.0",
-  "includeGitHistoryContext": "last-5"
+  "fileCheckpointingEnabled": true
 }
