@@ -30,6 +30,7 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Creating a new agent skill, adding agent instructions, documenting a pattern | `skill-creator` |
 | Session is long, model is looping, or before /clear | `handoff` |
 | Analyzing a Stitch project into a DESIGN.md design system | `design-md` |
+| Stripping C2PA/AI metadata from owned files, invisible-Unicode hygiene in text, cleaning provenance marks on content the user owns | `remove-ai-marks` |
 
 ## Context
 

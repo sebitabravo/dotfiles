@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 60
+- **Total skills:** 61
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -92,6 +92,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `pptx` | "Use this skill any time a .pptx file is involved in any way — as input, output, or both. |
 | `xlsx` | "Use this skill any time a spreadsheet file is the primary input or output. |
 | `inacap` | > Genera documentos academicos formato INACAP en DOCX (python-docx). |
+| `remove-ai-marks` | > Strip AI provenance marks (Unicode, C2PA/metadata) from owned files and text. |
 
 ## Core & Workflow
 
