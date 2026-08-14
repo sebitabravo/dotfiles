@@ -267,12 +267,67 @@ detect_project_at() {
 STAGED_FILES_FOR_DETECT=$(git diff --cached --name-only 2>/dev/null)
 STAGED_DIRS_FOR_DETECT=$(printf '%s\n' "$STAGED_FILES_FOR_DETECT" | awk -F/ '{print $1}' | sort -u)
 
-# Documentacion (README, ADRs, informes) no requiere tests per
-# rules/common/testing.md ("Que NO requiere tests"). Si TODOS los archivos
-# staged son .md, el gate de test-runner no aplica: no hay codigo que probar.
-if [ -n "$STAGED_FILES_FOR_DETECT" ] && ! printf '%s\n' "$STAGED_FILES_FOR_DETECT" | grep -qv '\.md$'; then
-  echo "[quality-gate] Commit solo-documentacion (.md) — sin gate de tests." >&2
-  exit 0
+# Documentacion y config estatica no requieren tests per
+# rules/common/testing.md ("What does NOT require tests").
+#
+# Whitelist CERRADA: si TODOS los archivos staged caen en la lista, no hay
+# codigo que probar y el gate de tests no aplica. Lo que NO esta en la lista
+# sigue pasando por el gate — una extension desconocida no abre un hueco
+# silencioso, al reves: bloquea como siempre.
+#
+# NO se listan .sh ni .py aunque vivan en .github/scripts (los scripts
+# requieren tests), ni Dockerfile/Makefile (afectan comportamiento).
+is_docs_or_config() {
+  local f="$1"
+  local base="${f##*/}"
+
+  # PRIMERO la lista negra, porque las reglas de abajo la taparian: un
+  # package.json matchea *.json y un Cargo.lock matchea *.lock.
+  #
+  # Manifiestos y lockfiles NO son config estatica: son el arbol de
+  # dependencias, o sea el comportamiento. Un bump de version no toca una
+  # linea de codigo propio y rompe la build igual — es exactamente el commit
+  # donde la suite tiene que correr, no el que hay que eximir.
+  case "$base" in
+    package.json | package-lock.json | npm-shrinkwrap.json) return 1 ;;
+    bun.lock | bun.lockb | pnpm-lock.yaml | yarn.lock) return 1 ;;
+    pyproject.toml | poetry.lock | uv.lock | requirements.txt | Pipfile | Pipfile.lock) return 1 ;;
+    Cargo.toml | Cargo.lock | go.mod | go.sum) return 1 ;;
+    composer.json | composer.lock | Gemfile | Gemfile.lock) return 1 ;;
+    # tsconfig cambia como compila el proyecto; jest/vitest/eslint definen que
+    # y como se verifica. Eximirlos deja que se relaje el propio gate sin que
+    # nada lo note.
+    tsconfig*.json | jest.config.* | vitest.config.* | .eslintrc*) return 1 ;;
+  esac
+
+  # Se compara el basename, no la ruta: sin esto `sub/.gitignore` y
+  # `pkg/LICENSE` no matcheaban y un commit de solo-docs quedaba bloqueado por
+  # vivir en un subdirectorio.
+  case "$base" in
+    # Documentacion
+    *.md | *.txt | *.rst | *.adoc) return 0 ;;
+    # Config estatica, CI y lockfiles
+    *.yml | *.yaml | *.json | *.toml | *.ini | *.cfg | *.conf | *.lock | *.lockb) return 0 ;;
+    # Assets y datos
+    *.svg | *.png | *.jpg | *.jpeg | *.webp | *.gif | *.ico | *.woff | *.woff2 | *.ttf | *.otf | *.eot | *.pdf | *.csv) return 0 ;;
+    # Dotfiles de config
+    .gitignore | .gitattributes | .editorconfig | .dockerignore | .prettierrc | .prettierignore | .nvmrc | .tool-versions | .python-version | .env.example | .env.sample) return 0 ;;
+    # Archivos de convencion sin extension
+    LICENSE | LICENSE.* | CODEOWNERS | NOTICE | AUTHORS | CONTRIBUTING | CHANGELOG) return 0 ;;
+  esac
+  return 1
+}
+
+if [ -n "$STAGED_FILES_FOR_DETECT" ]; then
+  ALL_NON_CODE=true
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    is_docs_or_config "$f" || { ALL_NON_CODE=false; break; }
+  done <<< "$STAGED_FILES_FOR_DETECT"
+  if [ "$ALL_NON_CODE" = true ]; then
+    echo "[quality-gate] Commit sin codigo (docs/config/assets) — sin gate de tests." >&2
+    exit 0
+  fi
 fi
 
 detect_project_at "."
