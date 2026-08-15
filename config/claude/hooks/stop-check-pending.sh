@@ -24,9 +24,9 @@ fi
 : >"$MARKER"
 
 echo "" >&2
-echo "⚠️  CAMBIOS PENDIENTES en $PWD:" >&2
-[ -n "$UNSTAGED" ] && echo "   🔴 Archivos sin stage: $(echo "$UNSTAGED" | wc -l | tr -d ' ')" >&2
-[ -n "$STAGED" ] && echo "   🟡 Archivos staged (sin commit): $(echo "$STAGED" | wc -l | tr -d ' ')" >&2
-[ -n "$STASHES" ] && echo "   📦 Auto-save stashes pendientes: $(echo "$STASHES" | wc -l | tr -d ' ')" >&2
+echo "⚠️  PENDING CHANGES in $PWD:" >&2
+[ -n "$UNSTAGED" ] && echo "   🔴 Unstaged files: $(echo "$UNSTAGED" | wc -l | tr -d ' ')" >&2
+[ -n "$STAGED" ] && echo "   🟡 Staged files (not committed): $(echo "$STAGED" | wc -l | tr -d ' ')" >&2
+[ -n "$STASHES" ] && echo "   📦 Pending auto-save stashes: $(echo "$STASHES" | wc -l | tr -d ' ')" >&2
 echo "" >&2
 exit 0

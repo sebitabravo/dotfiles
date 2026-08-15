@@ -14,7 +14,7 @@ set -euo pipefail
 # Fallar cerrado evita que auto/bypassPermissions convierta la ausencia del
 # parser en una vía para ejecutar una operación que debía bloquearse.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[validate-safe-ops] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  echo "[validate-safe-ops] jq is not installed: blocking preventively; install it with: brew install jq" >&2
   exit 2
 fi
 
@@ -125,15 +125,15 @@ ask() {
 
 # Pipe a bash (RCE classico)
 if echo "$NO_QUOTES_FULL" | grep -qE 'curl.*\|.*(bash|sh|zsh)'; then
-  deny "curl | bash bloqueado. Descarga el script, revisalo, y ejecutalo por separado."
+  deny "curl | bash blocked. Download the script, review it, and run it separately."
 fi
 if echo "$NO_QUOTES_FULL" | grep -qE 'wget.*-O\s*-\s*.*\|.*(bash|sh|zsh)'; then
-  deny "wget | bash bloqueado. Descarga el script, revisalo, y ejecutalo por separado."
+  deny "wget | bash blocked. Download the script, review it, and run it separately."
 fi
 
 # DROP TABLE via echo/printf pipe (patron multi-comando)
 if echo "$NO_QUOTES_FULL" | grep -qiE '(echo|printf|cat).*\bDROP\s+(TABLE|DATABASE|SCHEMA)\b.*\|'; then
-  deny "DROP TABLE via pipe bloqueado. Ejecuta manualmente si es intencional."
+  deny "DROP TABLE via pipe blocked. Run it manually if it is intentional."
 fi
 
 # Lectura de secretos por shell.
@@ -172,7 +172,7 @@ ENV_DUMP_FLAGS='(^|[|;&])[[:space:]]*(export[[:space:]]+-p|declare[[:space:]]+-x
 SENSITIVE_VAR='\$\{?[A-Za-z_][A-Za-z0-9_]*(_KEY|_SECRET|_TOKEN|_PASSWORD|_PASSWD|_CREDENTIALS?|_APIKEY)\b'
 
 if echo "$HAYSTACK" | grep -qE "$ENV_DUMP" || echo "$HAYSTACK" | grep -qE "$ENV_DUMP_FLAGS"; then
-  deny "Volcado del entorno bloqueado. 'env'/'printenv'/'export -p' imprimen TODAS las variables, incluidos los tokens que hoy tenes cargados. Si necesitas una variable puntual, nombrala; si necesitas saber si existe, usa: [ -n \"\${VAR:-}\" ] && echo definida."
+  deny "Environment dump blocked. 'env'/'printenv'/'export -p' print ALL variables, including the tokens currently loaded. If you need a specific variable, name it; if you need to know whether it exists, use: [ -n \"\${VAR:-}\" ] && echo defined."
 fi
 
 # IMPRIMIR un secreto se bloquea; USARLO no.
@@ -186,15 +186,15 @@ fi
 # matcheaba nada. La version sin comillas se bloqueaba y la peligrosa pasaba.
 PRINTERS='(echo|printf|print|cat|tee|head|tail|write|logger|say)'
 if echo "$COMMAND" | grep -qE "\b${PRINTERS}\b[^|;&]*${SENSITIVE_VAR}"; then
-  deny "Imprimir una variable con nombre de secreto bloqueado (*_KEY, *_SECRET, *_TOKEN, *_PASSWORD, *_CREDENTIAL). Va a stdout, al transcript y a los logs. Pasala directo al comando que la necesita — 'curl -H \"auth: \$TOKEN\"' esta permitido — o comproba solo si existe: [ -n \"\${VAR:-}\" ] && echo definida."
+  deny "Printing a secret-named variable is blocked (*_KEY, *_SECRET, *_TOKEN, *_PASSWORD, *_CREDENTIAL). It goes to stdout, to the transcript and to the logs. Pass it straight to the command that needs it — 'curl -H \"auth: \$TOKEN\"' is allowed — or only check whether it exists: [ -n \"\${VAR:-}\" ] && echo defined."
 fi
 
 if ! echo "$HAYSTACK" | grep -qE "$IS_TEMPLATE"; then
   if echo "$HAYSTACK" | grep -qE "\b(cat|bat|head|tail|less|more|nl|od|xxd|strings|base64|cp|mv|rsync|scp|open|source|\.)\b[^|;&]*${SECRET_ARG}"; then
-    deny "Lectura de secretos por shell bloqueada (.env, credentials.json, claves privadas, certs). El deny de settings.json solo cubre el tool Read; esto cierra el mismo agujero por Bash. Si necesitas una variable, leela del entorno, no del archivo."
+    deny "Reading secrets through the shell is blocked (.env, credentials.json, private keys, certs). The settings.json deny only covers the Read tool; this closes the same hole through Bash. If you need a variable, read it from the environment, not from the file."
   fi
   if echo "$HAYSTACK" | grep -qE "\b(rg|grep|ag|ack|awk|sed|sd)\b[^|;&]*${SECRET_ARG}"; then
-    deny "Grep/sed sobre un archivo de secretos bloqueado. Usa el nombre de la variable desde el entorno, no el contenido del archivo."
+    deny "Grep/sed over a secrets file is blocked. Use the variable name from the environment, not the file contents."
   fi
 fi
 
@@ -291,20 +291,20 @@ if echo "$ORM_HAYSTACK" | grep -qEi "$ORM_SCHEMA" || echo "$ORM_HAYSTACK" | grep
 
   # 1. Verbo destructivo sin vuelta atras.
   if echo "$ORM_HAYSTACK" | grep -qEi "$ORM_DESTRUCTIVE" || echo "$ORM_HAYSTACK" | grep -qEi "$ARTISAN_RAILS"; then
-    deny "Operacion de esquema destructiva bloqueada. Estos comandos dropean o vacian tablas aunque el nombre no lo diga. Antes de correrlo a mano: (1) confirma a que base apunta la conexion, (2) verifica que exista un backup restaurable, (3) declara el blast radius al usuario. Ver rules/common/destructive-operations.md."
+    deny "Destructive schema operation blocked. These commands drop or empty tables even when the name does not say so. Before running it by hand: (1) confirm which database the connection points to, (2) verify a restorable backup exists, (3) declare the blast radius to the user. See rules/common/destructive-operations.md."
   fi
 
   # 2. Destino remoto explicito en cualquier operacion de esquema.
   if echo "$ORM_HAYSTACK" | grep -qEi "$REMOTE_DSN"; then
     if ! echo "$ORM_HAYSTACK" | grep -qEi "://[^[:space:]@]*(@)?${LOCAL_HOST}"; then
-      deny "Operacion de esquema apuntando a un host REMOTO. Asi se vacio una base de produccion: el comando parecia inofensivo y la URL apuntaba a prod. Corre el esquema contra local, o pedile al usuario que lo ejecute el mismo contra ese host."
+      deny "Schema operation targeting a REMOTE host. This is how a production database got wiped: the command looked harmless and the URL pointed at prod. Run the schema against local, or ask the user to run it themselves against that host."
     fi
   fi
 
   # 3. Destino en una variable sin resolver: no se puede saber a donde apunta.
   # Este es EXACTAMENTE el caso del incidente ($DATABASE_URL_UNPOOLED).
   if echo "$ORM_HAYSTACK" | grep -qE '(--[a-z-]*(database-)?url[= ]|DATABASE_URL[A-Z_]*=)[^[:space:]]*\$'; then
-    deny "El destino de esta operacion de esquema viene de una variable sin resolver, asi que ni vos ni el hook saben a que base apunta. Ese es el caso exacto que vacio una Supabase de produccion: --shadow-database-url recibia una variable que apuntaba a prod, y la shadow database se resetea por diseño. VERIFICA primero a donde resuelve (sin imprimir credenciales) y decilo antes de correr nada."
+    deny "The target of this schema operation comes from an unresolved variable, so neither you nor the hook knows which database it points to. That is the exact case that wiped a production Supabase: --shadow-database-url received a variable pointing at prod, and the shadow database is reset by design. VERIFY first where it resolves to (without printing credentials) and say so before running anything."
   fi
 fi
 
@@ -315,9 +315,9 @@ if echo "$NO_QUOTES_FULL" | grep -qE "$RM_RECURSIVE"; then
   # Solo el objetivo decide el nivel. Borrar la raiz o el home no se negocia;
   # borrar un build o un directorio temporal es trabajo normal.
   if echo "$NO_QUOTES_FULL" | grep -qE '\brm\s+(-[a-zA-Z]+\s+)+(/|/\*|~|~/|~/\*|\$HOME|\$HOME/|\$HOME/\*)(\s|$|;|&)'; then
-    deny "rm -rf sobre la raiz o el home bloqueado. Es irreversible y no hay razon legitima para correrlo desde una sesion de agente."
+    deny "rm -rf over the root or the home directory is blocked. It is irreversible and there is no legitimate reason to run it from an agent session."
   fi
-  ask "rm -rf es irreversible. Revisa el path exacto antes de aprobar."
+  ask "rm -rf is irreversible. Review the exact path before approving."
 fi
 
 # Borrar un test por Bash. protect-tests.sh solo ve Edit|Write|NotebookEdit, y la
@@ -331,11 +331,11 @@ fi
 # que `rm test_login.py` (el argumento pegado al comando) se escapaba entero.
 RM_TEST='\brm\b[^|;&]*((\.|_)(test|spec)\.|[[:space:]/]test_|[[:space:]/](tests?|specs?|__tests__|__snapshots__|features|e2e)/|(Test|Tests|Spec)\.(java|kt|cs|scala|php|swift)|\.(snap|ambr|feature)([[:space:]]|$))'
 if echo "$NO_QUOTES_FULL" | grep -qE "$RM_TEST"; then
-  ask "Estas borrando cobertura de tests. Hard Rule 8: un test no se elimina para que el codigo pase. Si el requisito cambio de verdad, deci que test es, por que, y que queda cubierto despues."
+  ask "You are deleting test coverage. Hard Rule 8: a test is not removed to make the code pass. If the requirement genuinely changed, state which test, why, and what stays covered afterwards."
 fi
 
 if echo "$NO_QUOTES_FULL" | grep -qE '\bchmod\s+(-R\s+)?777\b'; then
-  ask "chmod 777 deja el archivo escribible por cualquiera. Aprobalo solo si es un directorio descartable; si no, usa 644/755/700."
+  ask "chmod 777 makes the file writable by anyone. Approve it only for a throwaway directory; otherwise use 644/755/700."
 fi
 
 # === BINARY-SPECIFIC ===
@@ -355,32 +355,32 @@ check_segment() {
 
   case "$binary" in
     sudo | doas)
-      deny "sudo bloqueado. Ejecuta sin privilegios elevados."
+      deny "sudo blocked. Run without elevated privileges."
       ;;
     git)
       # --force($|[^-]) = --force al final o seguido de espacio (no --force-with-lease)
       if echo "$segment" | grep -qE '\bpush\b.*--force($|[^-])'; then
-        deny "git push --force bloqueado. Usa --force-with-lease si es necesario."
+        deny "git push --force blocked. Use --force-with-lease if it is necessary."
       fi
       if echo "$segment" | grep -qE '\bpush\b.*(\s-f\b|^-f\b)'; then
-        deny "git push -f bloqueado. Usa --force-with-lease si es necesario."
+        deny "git push -f blocked. Use --force-with-lease if it is necessary."
       fi
       # Un refspec con "+" delante es un force push sin la palabra force:
       # `git push origin +main` sobrescribe el remoto igual que --force. Sin
       # esta linea, la regla de arriba se esquiva escribiendo el mismo efecto
       # de otra forma, que es el modo de falla de validar un CLI por su texto.
       if echo "$segment" | grep -qE '\bpush\b.*[[:space:]]\+[A-Za-z0-9_./-]+(:|$|[[:space:]])'; then
-        deny "git push con refspec '+' es un force push. Usa --force-with-lease si es necesario."
+        deny "git push with a '+' refspec is a force push. Use --force-with-lease if it is necessary."
       fi
       if echo "$segment" | grep -qE '\breset\s+.*--hard(\s|$)'; then
-        deny "git reset --hard bloqueado. Usa git stash o git checkout -- <file> para descartes selectivos."
+        deny "git reset --hard blocked. Use git stash or git checkout -- <file> for selective discards."
       fi
       # Descartan trabajo no commiteado, pero son parte del dia a dia: decide el usuario.
       if echo "$segment" | grep -qE '\bclean\b.*-[a-zA-Z]*[fdx]'; then
-        ask "git clean borra archivos sin trackear de forma irreversible. Revisa 'git clean -n' antes de aprobar."
+        ask "git clean deletes untracked files irreversibly. Review 'git clean -n' before approving."
       fi
       if echo "$segment" | grep -qE '\bcheckout\b.*(\s-f\b|--force\b)'; then
-        ask "git checkout -f descarta cambios locales sin backup. Aprobalo solo si sabes que no perdes nada."
+        ask "git checkout -f discards local changes with no backup. Approve it only if you know nothing is lost."
       fi
       ;;
     npm)
@@ -388,33 +388,33 @@ check_segment() {
       # Las tres formas son el mismo install global: npm acepta -g, --global y
       # --location=global. Validar solo la corta deja las otras dos abiertas.
       if echo "$segment" | grep -qE '\b(install|i)\b.*(\s-g(\s|$)|^-g(\s|$)|--global(\s|$)|--location=global(\s|$))'; then
-        deny "npm install global bloqueado. Usa npx para herramientas one-shot."
+        deny "npm global install blocked. Use npx for one-shot tools."
       fi
       ;;
     pip | pip3)
       if echo "$segment" | grep -qE '\binstall\b.*--break-system-packages'; then
-        deny "pip install --break-system-packages bloqueado. By-passea la proteccion del venv. Usa un venv o uv."
+        deny "pip install --break-system-packages blocked. It bypasses the venv protection. Use a venv or uv."
       fi
       ;;
     kubectl)
       if echo "$segment" | grep -qE '^\s*kubectl\s+delete\b'; then
-        deny "kubectl delete bloqueado. Operacion destructiva en el cluster."
+        deny "kubectl delete blocked. Destructive operation on the cluster."
       fi
       ;;
     helm)
       if echo "$segment" | grep -qE '^\s*helm\s+(uninstall|delete)\b'; then
-        deny "helm uninstall/delete bloqueado. Operacion destructiva en el cluster."
+        deny "helm uninstall/delete blocked. Destructive operation on the cluster."
       fi
       ;;
     terraform)
       if echo "$segment" | grep -qE '\bterraform\s+destroy\b|\bterraform\s+apply\b.*-auto-approve'; then
-        deny "terraform destroy/apply -auto-approve bloqueado. Infraestructura como codigo requiere revision manual."
+        deny "terraform destroy/apply -auto-approve blocked. Infrastructure as code requires manual review."
       fi
       ;;
     mysql | psql | sqlite3 | mongo | mongosh | redis-cli | mariadb | cockroach | sqlplus | duckdb | clickhouse-client | bq | snowsql | mysqlsh)
       # Sobre el comando original (con quotes): el DROP suele ir dentro de -e "..." o -c "..."
       if echo "$COMMAND" | grep -qiE '\bDROP\s+(TABLE|DATABASE|SCHEMA)\b'; then
-        deny "DROP TABLE/DATABASE bloqueado. Ejecuta manualmente si es intencional."
+        deny "DROP TABLE/DATABASE blocked. Run it manually if it is intentional."
       fi
       ;;
     dd)
@@ -422,11 +422,11 @@ check_segment() {
       # sin necesitar if=. Validar solo la entrada dejaba pasar exactamente la
       # mitad peligrosa del comando.
       if echo "$segment" | grep -qE '\b(if|of)='; then
-        deny "dd bloqueado. Operacion de bajo nivel peligrosa."
+        deny "dd blocked. Dangerous low-level operation."
       fi
       ;;
     mkfs | mkfs.* | newfs | newfs_msdos)
-      deny "mkfs/newfs bloqueado. Formateo de filesystem es irreversible sin backup."
+      deny "mkfs/newfs blocked. Formatting a filesystem is irreversible without a backup."
       ;;
   esac
 }

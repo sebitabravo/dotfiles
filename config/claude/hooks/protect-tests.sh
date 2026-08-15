@@ -24,7 +24,7 @@ set -euo pipefail
 # Fallar cerrado evita que la ausencia del parser permita una edición que debía
 # quedar bloqueada.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[protect-tests] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  echo "[protect-tests] jq is not installed: blocking preventively; install it with: brew install jq" >&2
   exit 2
 fi
 
@@ -104,4 +104,4 @@ if [ -f "$OWNED" ] && grep -qxF -- "$FILE_PATH" "$OWNED" 2>/dev/null; then
   allow
 fi
 
-deny "PROTECCION DE TESTS: '$BASENAME' ya existia al empezar esta sesion, asi que es cobertura que verifica tu trabajo y no un borrador tuyo. No la modifiques por tu cuenta. Si el cambio es legitimo (el requisito cambio de verdad), DETENETE y pedile autorizacion explicita al usuario explicando: (1) que test tocas, (2) por que, (3) que cubre despues del cambio. Nunca borres ni debilites un test para que el codigo pase. NOTA: este hook solo cubre Edit/Write/NotebookEdit — una escritura por Bash lo esquiva. Que sea posible no lo hace permitido: esquivarlo es violar la regla, no encontrarle la vuelta."
+deny "TEST PROTECTION: '$BASENAME' already existed when this session started, so it is coverage that verifies your work and not a draft of yours. Do not modify it on your own. If the change is legitimate (the requirement genuinely changed), STOP and ask the user for explicit authorization, stating: (1) which test you are touching, (2) why, (3) what it covers after the change. Never delete or weaken a test to make the code pass. NOTE: this hook only covers Edit/Write/NotebookEdit — a write through Bash slips past it. That it is possible does not make it permitted: bypassing it is breaking the rule, not working around it."

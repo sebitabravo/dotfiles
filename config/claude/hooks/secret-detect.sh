@@ -58,13 +58,13 @@ if [ "$blocked" -gt 0 ]; then
   {
     echo ""
     echo "========================================"
-    echo "  PROMPT BLOQUEADO: secret detectado"
+    echo "  PROMPT BLOCKED: secret detected"
     echo "========================================"
-    echo "Se detectaron $blocked patron(es) de API key, token o clave privada."
-    echo "El prompt NO se envio al modelo."
+    echo "Detected $blocked pattern(s) of API key, token or private key."
+    echo "The prompt was NOT sent to the model."
     echo ""
-    echo "Saca la credencial y reemplazala por un placeholder (\$API_KEY, <token>)."
-    echo "Si la credencial es real y ya se compartio en otro lado, ROTALA."
+    echo "Remove the credential and replace it with a placeholder (\$API_KEY, <token>)."
+    echo "If the credential is real and was already shared elsewhere, ROTATE IT."
     echo "========================================"
     echo ""
   } >&2
@@ -74,8 +74,8 @@ fi
 if [ "$warned" -gt 0 ]; then
   {
     echo ""
-    echo "[secret-detect] ATENCION: el prompt trae algo con forma de JWT."
-    echo "[secret-detect] Si es un token real, corta (Ctrl+C) y reemplazalo por <token>."
+    echo "[secret-detect] WARNING: the prompt contains something shaped like a JWT."
+    echo "[secret-detect] If it is a real token, abort (Ctrl+C) and replace it with <token>."
     echo ""
   } >&2
 fi

@@ -124,22 +124,22 @@ if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
     TEST_RC=$?
 
     if [ "$TEST_RC" = 124 ]; then
-      echo "[gauntlet] la suite no termino en 90s; no se pudo verificar. NO la des por verde." >&2
+      echo "[gauntlet] the suite did not finish in 90s; it could not be verified. Do NOT call it green." >&2
     elif [ "$TEST_RC" != 0 ]; then
       {
-        echo "GAUNTLET: la suite esta ROJA. No cierres el turno."
+        echo "GAUNTLET: the suite is RED. Do not close the turn."
         echo ""
         echo "$TEST_OUT" | tail -30
         echo ""
-        echo "ORDEN DE DIAGNOSTICO (rules/common/testing.md) — no lo saltees:"
-        echo "  1. El codigo nuevo esta mal -> arreglalo. NO toques el test."
-        echo "  2. Rompiste un contrato que otro codigo usaba -> adapta tu implementacion."
-        echo "  3. El test es fragil (orden, reloj, mock viejo) -> arregla la fragilidad,"
-        echo "     NO lo que verifica."
-        echo "  4. Recien aca: el test esta mal escrito -> PARA y pedi autorizacion"
-        echo "     diciendo que test, por que, y que cubre despues."
+        echo "DIAGNOSIS ORDER (rules/common/testing.md) — do not skip it:"
+        echo "  1. The new code is wrong -> fix it. Do NOT touch the test."
+        echo "  2. You broke a contract other code relied on -> adapt your implementation."
+        echo "  3. The test is flaky (order, clock, stale mock) -> fix the flakiness,"
+        echo "     NOT what it verifies."
+        echo "  4. Only here: the test is wrong -> STOP and ask for authorization"
+        echo "     stating which test, why, and what stays covered afterwards."
         echo ""
-        echo "Nunca saltes al 4 porque es el camino mas corto al verde."
+        echo "Never jump to 4 because it is the shortest path to green."
       } >&2
       exit 2
     fi
@@ -149,15 +149,15 @@ fi
 [ -z "$MISSING" ] && exit 0
 
 {
-  echo "GAUNTLET: hay codigo de produccion sin test."
+  echo "GAUNTLET: there is production code with no test."
   echo ""
   printf '%s' "$MISSING"
   echo ""
   echo "rules/common/testing.md: ALL code requires tests. No exceptions."
-  echo "Escribi el test antes de cerrar el turno."
+  echo "Write the test before closing the turn."
   echo ""
-  echo "Si de verdad no corresponde (spike, scratch, prototipo descartable),"
-  echo "decilo explicitamente al usuario y pedile que corra: touch .claude-relaxed"
+  echo "If it genuinely does not apply (spike, scratch, throwaway prototype),"
+  echo "say so explicitly to the user and ask them to run: touch .claude-relaxed"
 } >&2
 
 exit 2

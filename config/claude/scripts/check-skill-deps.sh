@@ -14,18 +14,18 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCK="$DIR/skills-lock.json"
 
 if ! command -v jq >/dev/null 2>&1; then
-  echo "check-skill-deps: jq no esta instalado; no puedo leer skills-lock.json" >&2
+  echo "check-skill-deps: jq is not installed; cannot read skills-lock.json" >&2
   exit 1
 fi
 if [ ! -f "$LOCK" ]; then
-  echo "check-skill-deps: falta $LOCK" >&2
+  echo "check-skill-deps: $LOCK is missing" >&2
   exit 1
 fi
 
 missing=0
 report() {
   missing=$((missing + 1))
-  echo "  FALTA  $1  (skill: $2)"
+  echo "  MISSING  $1  (skill: $2)"
 }
 
 # Los nombres declarativos suelen coincidir con el import en el lock activo.
@@ -39,7 +39,7 @@ sys_binary() {
   echo "$1"
 }
 
-echo "Verificando dependencias de skills..."
+echo "Checking skill dependencies..."
 
 # Version minima de python por skill. No asumas que el primer python3 del PATH
 # funciona: en macOS un shim pyenv roto puede abortar el proceso antes de
@@ -68,12 +68,12 @@ PY_VERSION="0.0"
 if [ -n "$PYTHON_BIN" ]; then
   PY_VERSION=$("$PYTHON_BIN" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo "0.0")
 fi
-echo "  python $PY_VERSION via ${PYTHON_BIN:-no disponible}"
+echo "  python $PY_VERSION via ${PYTHON_BIN:-unavailable}"
 while IFS=$'\t' read -r skill min_py; do
   [ -z "$skill" ] || [ -z "$min_py" ] && continue
   if [ "$(printf '%s\n' "$min_py" "$PY_VERSION" | sort -V | head -1)" != "$min_py" ]; then
     missing=$((missing + 1))
-    echo "  FALTA  python $min_py+ (system python3 es $PY_VERSION)  (skill: $skill)"
+    echo "  MISSING  python $min_py+ (system python3 is $PY_VERSION)  (skill: $skill)"
   fi
 done < <(jq -r '.skills | to_entries[] | select(.value.python_version) | [.key, .value.python_version] | @tsv' "$LOCK")
 
@@ -92,7 +92,7 @@ while IFS=$'\t' read -r skill kind dep; do
       ;;
     node)
       # Las deps de node se instalan por proyecto, no global: solo se informan.
-      [ "$QUIET" -eq 1 ] || echo "  info   node: $dep se instala por proyecto (skill: $skill)"
+      [ "$QUIET" -eq 1 ] || echo "  info   node: $dep is installed per project (skill: $skill)"
       ;;
   esac
 done < <(jq -r '.skills | to_entries[] | .key as $s | .value.deps // {} | to_entries[] | .key as $k | .value[] | [$s, $k, .] | @tsv' "$LOCK")
@@ -111,7 +111,7 @@ while IFS= read -r package_json; do
     dep_path="$skill_dir/node_modules/$dep"
     if [ ! -e "$dep_path" ]; then
       local_node_info=$((local_node_info + 1))
-      [ "$QUIET" -eq 1 ] || echo "  info   node local: $dep no esta provisionado (skill: $skill_name; ejecutar npm install dentro de la skill cuando aplique)"
+      [ "$QUIET" -eq 1 ] || echo "  info   local node: $dep is not provisioned (skill: $skill_name; run npm install inside the skill when it applies)"
     fi
   done < <(jq -r '.dependencies // {} | keys[]' "$package_json")
 done < <(find "$SKILLS_ROOT_FOR_PACKAGES" -mindepth 2 -maxdepth 2 -name package.json -type f -print)
@@ -125,7 +125,7 @@ while IFS=$'\t' read -r skill dep; do
   [ -z "$skill" ] || [ -z "$dep" ] && continue
   if [ -z "$PYTHON_BIN" ] || ! "$PYTHON_BIN" -c "import $dep" >/dev/null 2>&1; then
     optional_info=$((optional_info + 1))
-    [ "$QUIET" -eq 1 ] || echo "  info   python opcional: $dep no esta provisionado (skill: $skill; resolver con uv --with cuando aplique)"
+    [ "$QUIET" -eq 1 ] || echo "  info   optional python: $dep is not provisioned (skill: $skill; resolve with uv --with when it applies)"
   fi
 done < <(jq -r '.skills | to_entries[] | .key as $s | .value.optional_python // [] | .[] | [$s, .] | @tsv' "$LOCK")
 
@@ -133,7 +133,7 @@ while IFS=$'\t' read -r skill dep; do
   [ -z "$skill" ] || [ -z "$dep" ] && continue
   if ! command -v "$dep" >/dev/null 2>&1; then
     optional_info=$((optional_info + 1))
-    [ "$QUIET" -eq 1 ] || echo "  info   binario opcional: $dep no esta provisionado (skill: $skill; instalar solo bajo demanda)"
+    [ "$QUIET" -eq 1 ] || echo "  info   optional binary: $dep is not provisioned (skill: $skill; install on demand only)"
   fi
 done < <(jq -r '.skills | to_entries[] | .key as $s | .value.optional_system // [] | .[] | [$s, .] | @tsv' "$LOCK")
 
@@ -145,25 +145,25 @@ if [ -d "$SKILLS_ROOT" ]; then
   invalid=0
   while IFS= read -r skill_file; do
     if ! grep -q '^name:' "$skill_file" || ! grep -q '^description:' "$skill_file"; then
-      echo "  invalid  frontmatter incompleto: ${skill_file#"$SKILLS_ROOT/"}"
+      echo "  invalid  incomplete frontmatter: ${skill_file#"$SKILLS_ROOT/"}"
       invalid=$((invalid + 1))
     fi
   done < <(find "$SKILLS_ROOT" -name SKILL.md -maxdepth 2 -type f)
   if [ "$invalid" -gt 0 ]; then
-    echo "$invalid skill(s) con frontmatter invalido: sin 'name:' y 'description:' el harness no las carga."
+    echo "$invalid skill(s) with invalid frontmatter: without 'name:' and 'description:' the harness does not load them."
     missing=$((missing + invalid))
   fi
 fi
 
 if [ "$missing" -eq 0 ]; then
   if [ "$local_node_info" -gt 0 ] || [ "$optional_info" -gt 0 ]; then
-    echo "OK — dependencias requeridas del lock y frontmatter validos; hay capacidades bajo demanda informadas."
+    echo "OK — required lock dependencies and frontmatter are valid; on-demand capabilities are reported above."
   else
-    echo "OK — dependencias presentes y frontmatter de skills valido."
+    echo "OK — dependencies present and skill frontmatter valid."
   fi
   exit 0
 fi
 
 echo
-echo "$missing dependencia(s) faltante(s). No se instala nada automaticamente; revisa el entorno del proyecto o reporta la limitacion del host."
+echo "$missing missing dependency(ies). Nothing is installed automatically; check the project environment or report the host limitation."
 exit 1
