@@ -20,10 +20,10 @@ description: |
   </example>
 color: green
 model: sonnet
-tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(docker:*), Bash(gh:*), Bash(curl:*), WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(python:*)", "Bash(docker:*)", "Bash(gh:*)", "Bash(curl:*)", "WebFetch"]
 context: fork
 maxTurns: 50
-skills: [api-design, database-migrations, android-clean-architecture, kotlin-coroutines-flows, laravel-specialist, laravel-inertia-react, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, docker-expert, bdd-gherkin, deployment-patterns, architecture-patterns, npm-security]
+skills: [api-design, database-migrations, android-clean-architecture, kotlin-coroutines-flows, laravel-specialist, laravel-inertia-react, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, docker-expert, bdd-gherkin, deployment-patterns, architecture-patterns, quality-metrics, npm-security]
 effort: max
 ---
 

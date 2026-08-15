@@ -235,7 +235,13 @@ slide.addImage({
 
 ### Icon Libraries
 
-Install: `npm install -g react-icons react react-dom sharp`
+Install these optional icon dependencies in the skill directory, never
+globally or in the target project:
+
+```bash
+cd ~/.claude/skills/pptx
+npm install react-icons react react-dom sharp
+```
 
 Popular icon sets in react-icons:
 - `react-icons/fa` - Font Awesome

@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 63
+- **Total skills:** 65
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -28,6 +28,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `docker-expert` | Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes. |
 | `github-actions-docs` | GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management. |
 | `e2e-testing` | E2E testing with Playwright. |
+| `acceptance-pipeline` | Gherkin-to-runner acceptance pipeline, generated entry points, and acceptance mutation. |
 
 ## Backend Languages & Frameworks
 
@@ -101,6 +102,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `branch-pr` | > Branch creation, PR workflow, and conventional commits. |
 | `systematic-debugging` | Use for bugs, test failures, unexpected behavior, and performance incidents. |
 | `verification-before-completion` | Use before claiming "done", "fixed", "passing", or before commit/PR. Requires fresh verification evidence. |
+| `swarmforge-workflow` | Claude-native two-pack, four-pack, and six-pack role handoffs for TDD, acceptance, CRAP/DRY, mutation, and QA. |
 | `sdd-workflow` | Spec-Driven Development para features complejas: Explore, Proposal, Requirements, Design, Tasks, Apply, Verify, con gates humanos y scaffolding. |
 | `handoff` | Crea un archivo HANDOFF.md con el estado actual del proyecto para un traspaso limpio entre sesiones. |
 | `cavecrew` | Protocolo de delegación a subagentes: escriben resultados a `/tmp/cavecrew/<tarea>-result.md` y devuelven solo el path. |

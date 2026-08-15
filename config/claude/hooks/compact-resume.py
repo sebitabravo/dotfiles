@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """SessionStart hook — reinyecta las reglas y el protocolo post-compactacion.
 
 POR QUE ESTA EN SessionStart Y NO EN PostCompact: la referencia de hooks dice

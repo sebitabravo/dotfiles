@@ -44,6 +44,11 @@ python scripts/office/unpack.py presentation.pptx unpacked/
 
 **Read [pptxgenjs.md](pptxgenjs.md) for full details.**
 
+Before requiring `pptxgenjs`, verify that the skill-local dependency exists. If
+`~/.claude/skills/pptx/node_modules/` is absent, run `npm install` from
+`~/.claude/skills/pptx/`; do not install this dependency globally or into the
+target project.
+
 Use when no template or reference presentation is available.
 
 ---
@@ -225,8 +230,10 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 
 ## Dependencies
 
-- `pip install "markitdown[pptx]"` - text extraction
-- `pip install Pillow` - thumbnail grids
-- `pptxgenjs` - pre-installed locally in `skills/pptx/node_modules/`. Scripts run with `node script.js` from this skill dir. `require("pptxgenjs")` resolves automatically.
+- `uv run --no-project --python 3.12 --with "markitdown[pptx]" -- python ...` - text extraction
+- `uv run --no-project --python 3.12 --with Pillow -- python ...` - thumbnail grids
+- `pptxgenjs` - declared in `skills/pptx/package.json` and installed in the
+  skill-local `node_modules/` only when the create-from-scratch workflow is
+  used. Resolve it from the skill directory, not from the target project.
 - LibreOffice (`soffice`) - PDF conversion for visual QA **only if needed** (MS Office renders natively on open). Auto-configured for sandboxed environments via `scripts/office/soffice.py`.
 - Poppler (`pdftoppm`) - PDF to images (only needed if using soffice for visual QA)

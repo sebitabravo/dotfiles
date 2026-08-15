@@ -23,12 +23,9 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **CleanMyMac** - Limpieza del sistema
 - [ ] **DaVinci Resolve** - Edición de video profesional
 - [ ] **The Unarchiver** - Descompresor de archivos
-- [ ] **Parallels Desktop** - Virtualización de sistemas operativos
 - [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
-- [ ] **WhatsApp** - Cliente de mensajería
 - [ ] **TestFlight** - App para probar nuevas versiones de aplicaciones
 - [ ] **Apple Developer** - App para desarrolladores de Apple
-- [ ] **Telegram** - Cliente de mensajería
 
 ---
 
@@ -50,123 +47,36 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Terminal & Development
 
-- [ ] **Warp Terminal** - <https://www.warp.dev/>
+- [ ] **Ghostty** - <https://ghostty.org/download>
 - [ ] **Visual Studio Code** - <https://code.visualstudio.com/>
 - [ ] **OrbStack** - <https://orbstack.dev/download/>
 - [ ] **Android Studio** - <https://developer.android.com/studio/>
 - [ ] **TablePlus** - <https://tableplus.com/>
-- [ ] **Cyberduck** - <https://cyberduck.io/>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
-- [ ] **Unity** - <https://unity.com/download/>
-- [ ] **Blender** - <https://www.blender.org/download/>
 - [ ] **Orca** - <https://www.onorca.dev>
-- [ ] **
 
 ### IA & Coding Agents
 
-- [ ] **ChatGPT** - <https://chatgpt.com/download/>
 - [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
-
-### Browsers
-
-- [ ] **Google Chrome** - <https://www.google.com/chrome/>
 
 ### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com/>
-- [ ] **Microsoft Teams** - <https://www.microsoft.com/en/microsoft-teams/download-app/>
-- [ ] **Discord** - <https://discord.com/download/>
-- [ ] **VoiceInk** - <https://tryvoiceink.com/> — Whisper small/base
 - [ ] **Obsidian** - <https://obsidian.md/download>
-- [ ] **Notion** - <https://www.notion.so/desktop>
 - [ ] **Spotify** - <https://open.spotify.com/download>
 
 ### Media & Content
 
 - [ ] **IINA** - <https://iina.io/>
-- [ ] **Figma** - <https://www.figma.com/downloads/>
 - [ ] **Affinity** - <https://www.affinity.studio/>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
-- [ ] **Audacity** - <https://www.audacityteam.org/download/mac/>
-- [ ] **Recordly** - <https://recordly.dev>
-- [ ] **VoiceBox** - <https://voicebox.sh/download> — Qwen3-TTS 0.6B, Whisper Small, Qwen3 0.6B LLM
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
-
-### Gaming
-
-- [ ] **Steam** - <https://store.steampowered.com/about/> - Habilitar beta Update
-- [ ] **Epic Games Launcher** - <https://www.epicgames.com/store/en-US/download/>
-- [ ] **Prism Launcher** - <https://prismlauncher.org/>
-- [ ] **Roblox** - <https://www.roblox.com/download>
 
 ---
 
 ## ⚙️ Configuraciones Post-Instalación
-
-### Sincronizar el repo con el home
-
-Las configs de los agentes viven en el repo (`config/claude/`) pero las
-herramientas leen el home (`~/.claude/`). Son copias, no symlinks, así que
-divergen solas: llegó a haber 67 archivos distintos entre ambas, con la copia
-desplegada **más nueva** que el repo.
-
-```bash
-./scripts/sync.sh            # qué difiere, sin tocar nada (exit 1 si hay drift)
-./scripts/sync.sh deploy     # repo -> home, al instalar o tras editar el repo
-./scripts/sync.sh pull       # home -> repo, para capturar cambios hechos en vivo
-./scripts/sync.sh deploy -n  # dry-run
-```
-
-Sincroniza solo lo que git ya trackea, así que el estado runtime del home
-(`cache/`, `projects/`, `history.jsonl`, `plugins/`) queda fuera sin tener que
-enumerarlo. Rutas cubiertas: `~/.claude`, `~/.config/opencode`, `~/.codex`,
-`~/.config/fastfetch`, `~/.git-hooks` y los dotfiles de la raíz.
-
-### Identidad de Git (obligatorio en máquina nueva)
-
-El `.gitconfig` del repo NO trae nombre ni email: los toma por `[include]` desde
-`~/.gitconfig.local`, que queda fuera del repo. Sin este archivo los commits
-salen sin autor.
-
-```bash
-cat > ~/.gitconfig.local <<'EOF'
-[user]
- name = tu-usuario
- email = tu-email@ejemplo.com
-EOF
-```
-
-### Firma de commits con SSH (opcional, da el badge Verified)
-
-Reusa tu llave SSH existente — no hace falta GPG. Requiere git 2.34+.
-
-```bash
-printf '%s %s\n' "$(git config --get user.email)" "$(cat ~/.ssh/id_ed25519.pub)" \
-  > ~/.ssh/allowed_signers
-chmod 600 ~/.ssh/allowed_signers
-
-cat >> ~/.gitconfig.local <<'EOF'
-[gpg]
- format = ssh
-[gpg "ssh"]
- allowedSignersFile = ~/.ssh/allowed_signers
-[user]
- signingkey = ~/.ssh/id_ed25519.pub
-[commit]
- gpgsign = true
-[tag]
- gpgsign = true
-EOF
-
-# La .pub va como Signing Key, APARTE de la authentication key.
-gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title "$(scutil --get LocalHostName) signing"
-```
-
-`allowed_signers` es lo que permite verificar firmas en local: sin ese archivo
-`git log --format=%G?` devuelve `N` aunque el commit esté firmado. GitHub no lo
-usa — verifica contra la Signing Key registrada.
 
 ### Node.js (con nvm)
 
@@ -174,12 +84,7 @@ usa — verifica contra la Signing Key registrada.
 nvm install 24
 nvm use 24
 nvm alias default 24
-
-# pnpm es el fallback cuando un proyecto no puede usar bun.
 corepack enable pnpm
-
-# Hardening de npm — para los proyectos que obligan a usarlo (repos de empresa
-# pinneados a package-lock.json). Equivale a los defaults de npm 12+.
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3

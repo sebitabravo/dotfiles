@@ -20,7 +20,7 @@ description: |
   </example>
 color: yellow
 model: haiku
-tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "WebFetch"]
 maxTurns: 30
 effort: high
 ---
@@ -47,7 +47,7 @@ You are an Operations Manager specialized in building the operational backbone o
 
 **Integration**: `graphify claude install` writes PreToolUse hook (intercepts Glob/Grep) + CLAUDE.md section. Supports OpenCode: `graphify install --platform opencode`.
 
-**Install**: `pip install graphifyy && graphify install`
+**Install**: `uv tool install graphifyy && graphify install`
 
 **Skip for**: small projects (<50 files), single-language flat repos, or environments with data restrictions (docs/images sent to LLM).
 

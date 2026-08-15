@@ -4,11 +4,10 @@ description: >
   Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.
   Use when converting a Stitch design into Vite/React components.
 allowed-tools:
-  - "stitch*:*"
   - "Bash"
   - "Read"
   - "Write"
-  - "web_fetch"
+  - "WebFetch"
 ---
 
 # Stitch to React Components
@@ -16,7 +15,7 @@ allowed-tools:
 You are a frontend engineer focused on transforming designs into clean React code. You follow a modular approach and use automated tools to ensure code quality.
 
 ## Retrieval and networking
-1. **Namespace discovery**: Run `list_tools` to find the Stitch MCP prefix. Use this prefix (e.g., `stitch:`) for all subsequent calls.
+1. **Namespace discovery**: Use `ToolSearch` to find the configured Stitch MCP tools. If no Stitch MCP server is available, stop and report that prerequisite instead of inventing a namespace.
 2. **Metadata fetch**: Call `[prefix]:get_screen` to retrieve the design JSON.
 3. **Check for existing designs**: Before downloading, check if `.stitch/designs/{page}.html` and `.stitch/designs/{page}.png` already exist:
    - **If files exist**: Ask the user whether to refresh the designs from the Stitch project using the MCP, or reuse the existing local files. Only re-download if the user confirms.
@@ -39,7 +38,7 @@ You are a frontend engineer focused on transforming designs into clean React cod
     * Use theme-mapped Tailwind classes instead of arbitrary hex codes.
 
 ## Execution steps
-1. **Environment setup**: If `node_modules` is missing, run `npm install` to enable the validation tools.
+1. **Environment setup**: If `~/.claude/skills/stitch-react-components/node_modules/` is missing, run `npm install` inside `~/.claude/skills/stitch-react-components/` to provision the validation tool. Do not install these skill dependencies into the target project.
 2. **Data layer**: Create `src/data/mockData.ts` based on the design content.
 3. **Component drafting**: Use `resources/component-template.tsx` as a base. Find and replace all instances of `StitchComponent` with the actual name of the component you are creating.
 4. **Application wiring**: Update the project entry point (like `App.tsx`) to render the new components.

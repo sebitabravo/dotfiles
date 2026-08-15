@@ -7,7 +7,7 @@ license: Apache-2.0
 metadata:
   author: sebita-programming
   version: "1.0"
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, Task
+allowed-tools: Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Task
 ---
 
 ## When to Create a Skill

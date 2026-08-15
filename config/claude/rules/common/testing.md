@@ -1,5 +1,30 @@
 # Testing
 
+## Test system architecture
+
+Use the smallest set of layers that proves the changed behavior. The layers
+are complementary, not interchangeable:
+
+1. **TDD/unit**: fast, deterministic tests drive the production code and cover
+   branches, errors, and boundaries.
+2. **Integration/contract**: verify boundaries such as databases, queues, and
+   HTTP contracts using project-local fixtures or controlled dependencies.
+3. **Acceptance**: for complex business behavior, express observable rules in
+   Gherkin and run the project's native acceptance pipeline. Do not add Gherkin
+   as decoration after implementation.
+4. **Mutation**: measure whether tests detect realistic source changes. Run it
+   after the baseline is green, preferably differentially on changed code and
+   normally in CI rather than every commit.
+5. **Risk metrics**: use complexity, CRAP, and duplication reports to choose
+   where to add tests or refactor. Metrics prioritize work; they do not prove
+   correctness by themselves.
+
+Normal tests are the everyday gate. Acceptance mutation and conventional
+mutation testing are expensive quality audits. If a required layer cannot run,
+report the exact unavailable stage and do not present the result as complete.
+Invoke `acceptance-pipeline`, `mutation-testing`, and `quality-metrics` for the
+full procedures.
+
 ## When a test goes red: diagnosis order
 
 **The test is right until proven otherwise.** It is the only part of the repo that encodes what the system MUST do; the code only says what it does today. When they disagree, the default suspect is the code.
@@ -83,4 +108,8 @@ Three questions. Any "no" means you are not finished:
 - Mutation testing measures test QUALITY, not just coverage.
 - **Mutation score >= 80%** on critical features.
 - Run in CI, not on every commit (it's expensive).
+- Mutate one changed production file at a time when the tool supports
+  differential runs; start with a green baseline and fresh coverage.
+- Acceptance mutation (changing Gherkin example values) is distinct from source
+  mutation and belongs to the acceptance pipeline.
 - Invoke the `mutation-testing` skill for full rules and configuration.

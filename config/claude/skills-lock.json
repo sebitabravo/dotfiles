@@ -19,7 +19,25 @@
     "remove-ai-marks": {
       "source": "local",
       "python_version": "3.10",
+      "optional_system": ["c2patool", "exiftool"],
       "notes": "Scripts stdlib-only. Opcionales (auto-usados si existen): c2patool, exiftool. Backends CtrlRegen y reverse-SynthID se bootstrapean on demand con setup_*.sh."
+    },
+    "inacap": {
+      "source": "local",
+      "optional_python": ["docx"],
+      "notes": "El template DOCX se ejecuta con uv --with python-docx; no se instala globalmente."
+    },
+    "pptx": {
+      "source": "local",
+      "optional_python": ["defusedxml", "lxml", "PIL", "markitdown"],
+      "optional_system": ["soffice", "pdftoppm"],
+      "notes": "Los scripts de Office y la extracción/QA visual son capacidades bajo demanda; usá uv --with o herramientas locales, sin instalación global."
+    },
+    "xlsx": {
+      "source": "local",
+      "optional_python": ["defusedxml", "lxml", "openpyxl"],
+      "optional_system": ["soffice"],
+      "notes": "La manipulación/recalculación de hojas usa dependencias bajo demanda; LibreOffice solo es necesario para recalcular/QA headless."
     }
   }
 }

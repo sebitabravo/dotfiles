@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """SessionStart hook — inyecta HANDOFF.md si existe.
 
 hookSpecificOutput exige hookEventName: sin ese campo Claude Code descarta el

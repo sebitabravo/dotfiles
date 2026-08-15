@@ -18,6 +18,9 @@ Do NOT use when:
 - The project has no tests yet (write tests first, then mutate)
 - You're in a fast dev loop (mutation is expensive, runs in CI)
 
+Mutation testing is a quality measurement, not a replacement for a green
+baseline suite. Run the baseline first and fail closed if it is red.
+
 ## What it does
 
 1. The framework **mutates production code**:
@@ -139,6 +142,36 @@ The change caused an infinite loop or extreme slowness. The test hung. Treat as 
    });
    ```
 4. **Re-run mutation testing** to confirm the mutant is killed.
+
+## Differential workflow
+
+Prefer the smallest useful surface:
+
+1. Run the normal project suite and fresh coverage.
+2. Scan the changed production file or changed function range when the tool
+   supports differential mutation.
+3. Mutate one source file at a time, with isolated workers only when the tool
+   supports them safely.
+4. Fix uncovered sites and surviving mutants before moving to the next file.
+5. Run a full-file or full-module mutation pass before a major release when the
+   risk justifies the cost.
+
+Some Uncle Bob tools persist a source manifest to make later runs differential.
+Treat that generated manifest as a project-owned artifact and verify whether
+the project's workflow permits it before updating it. Do not edit tests to kill
+mutants; improve the production behavior or add an authorized test.
+
+## Tool and dependency policy
+
+Use a checked-in project command, local wrapper, or project package manager.
+Do not run `go install ...@latest`, `gem install`, or a global package install
+as an automatic setup step. If a language-specific tool is absent, report the
+missing dependency and continue with the strongest available tests; do not call
+the mutation gate green.
+
+Acceptance mutation is separate: it mutates Gherkin example values in an
+acceptance IR and checks that the acceptance test fails. Use
+`acceptance-pipeline` for that workflow.
 
 ## Anti-patterns
 

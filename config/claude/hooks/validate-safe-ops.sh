@@ -10,12 +10,12 @@
 #     en auto-aprobado. Silencio = flujo normal de permisos de settings.json.
 set -euo pipefail
 
-# jq es obligatorio: sin el, este hook no puede leer el input y falla ABIERTO.
-# Se avisa fuerte en vez de morir en silencio, porque un hook mudo parece un
-# hook que aprueba. Instalar: brew install jq / apt install jq.
+# jq es obligatorio: sin el, este hook no puede validar comandos peligrosos.
+# Fallar cerrado evita que auto/bypassPermissions convierta la ausencia del
+# parser en una vía para ejecutar una operación que debía bloquearse.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[validate-safe-ops] jq no esta instalado: los comandos peligrosos NO se estan validando. Instalalo con: brew install jq" >&2
-  exit 0
+  echo "[validate-safe-ops] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  exit 2
 fi
 
 INPUT=$(cat)

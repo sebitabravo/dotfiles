@@ -20,7 +20,10 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Installing a package, auditing dependencies, lockfile review, supply chain advisory | `npm-security` |
 | Setting coverage thresholds, reading a complexity report, configuring a quality gate | `quality-metrics` |
 | Writing `.feature` files, Given-When-Then, step definitions | `bdd-gherkin` |
+| Acceptance pipelines, generated entry points, acceptance mutation, Gherkin IR | `acceptance-pipeline` |
+| SwarmForge-style role workflow, TDD/acceptance/CRAP/DRY/mutation/QA handoffs | `swarmforge-workflow` |
 | Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
+| Spec-Driven Development, OpenSpec projects, proposals, requirements, design, tasks, apply, verify | `sdd-workflow` |
 | Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
@@ -43,7 +46,7 @@ To keep the window usable: delegate file-heavy exploration to subagents (20 file
 
 **Native tools first.** For reading a file, searching content, or listing paths, use `Read` / `Grep` / `Glob` — no permission prompt, structured output, and the harness tracks file state through them.
 
-When the task genuinely needs a shell (piping, builds, inspecting a tree), prefer the modern replacement: `eza` over `ls`, `fd` over `find`, `rg` over `grep`, `bat` over `cat`, `sd` over `sed`, `uv` over `pip`, `bun` over `npm`/`node`. Available with no default to replace: `jq`, `fzf`, `gh`, `delta`, `brew`, `ffmpeg`, `magick`, `helm`, `actionlint`, `btop`. If a utility is absent, do not install it automatically: use the project's local runner or report the host limitation.
+When the task genuinely needs a shell (piping, builds, inspecting a tree), prefer the modern replacement: `eza` over `ls`, `fd` over `find`, `rg` over `grep`, `bat` over `cat`, `uv` over `pip`, `bun` over `npm`/`node`. Available with no default to replace: `jq`, `fzf`, `gh`, `delta`, `brew`, `ffmpeg`, `magick`, `helm`, `actionlint`. If a utility is absent, do not install it automatically: use the project's local runner or report the host limitation.
 
 `z` (zoxide) is a shell function and does NOT exist in the Bash tool. Use absolute paths instead of changing directory — `cd` in a compound command can also trigger a permission prompt.
 
@@ -105,6 +108,25 @@ Two mappings the agent list does not carry:
 - **Feature request** (spec → design → tasks → apply → verify): SDD Flow, `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`.
 - **Resume a feature**: read `specs/{change}/`, detect the phase, continue. No agent needed.
 
+### SwarmForge-style feature workflow
+
+For a non-trivial feature, select the smallest `swarmforge-workflow` pack that
+covers the risk before editing. Reuse existing agents instead of creating a
+new agent per role:
+
+- **two-pack:** existing implementer → `code-reviewer` → implementer if
+  corrections are needed.
+- **four-pack:** `product-manager` (specifier) → existing domain implementer →
+  `code-reviewer` (cleanup/refactor) → `backend-architect` or domain review.
+- **six-pack:** `product-manager` → existing implementer → `code-reviewer` →
+  architecture review → `qa-engineer` mutation hardening → `qa-engineer` final
+  QA.
+
+The specifier approval gate is mandatory for four-pack and six-pack. Each
+handoff must include exact commands and evidence; a hook cannot substitute for
+a role. Use the standalone SwarmForge launcher only when the project explicitly
+has its project-local `swarmforge/` setup and the user authorizes tmux/worktrees.
+
 ## SDD Flow (complex features only)
 
 DAG: `[constitution] → explore → propose → spec ∥ design → tasks → apply → verify → archive`
@@ -127,18 +149,20 @@ Defense in depth. Git hooks can enforce this, but they live outside this config 
 
 ## Hard Rules
 
-1. One feature at a time. Never skip the spec phase on an SDD feature.
+1. One feature at a time. Never skip the spec phase on an SDD feature or the
+   required SwarmForge role/gate for the selected pack.
 2. Don't declare `done` without green tests. Leave the repo clean on session close.
 3. **Quality gate**: before `done`, lint + tests + coverage. Floors: line >= 80%, branch >= 70%, function >= 90%, cyclomatic complexity <= 10 per function. `quality-gate.sh` enforces it on `git commit`. Tooling: `quality-metrics` skill.
 4. **BDD** for complex business behavior: `.feature` with Gherkin, `bdd-gherkin` skill. Does NOT apply to internal utilities, trivial CRUD, or technical refactors.
-5. **Mutation testing** in CI for critical features: score >= 80%, `mutation-testing` skill. Never on every commit — it's expensive.
-6. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generated by another AI, and any irreversible mutation require STOP+CONFIRM with blast radius, rollback plan, and backup verification. See `rules/common/destructive-operations.md`.
-7. **CodeGraph**: if `.codegraph/` exists at the repo root, use it BEFORE grep/find. `codegraph_explore` (MCP) or `codegraph explore "<symbols or question>"` (shell) answers most code questions in one call: verbatim source of the symbols plus the call paths between them, including dynamic-dispatch hops grep cannot follow. If it returns empty, errors, or times out, fall back to Read/Grep/Glob silently and do not retry more than twice. If `.codegraph/` does NOT exist, do not index on your own initiative: offer it once (`codegraph init -i`, auto-gitignored) when the task is real code exploration.
-8. **The test suite is not yours to edit.** You do not modify, weaken, skip, or delete a test to make code pass — that inverts the whole point of the gate. If a test fails, the default assumption is that the CODE is wrong, not the test. For a legitimate change (a requirement that genuinely changed, or a new test for a new feature): STOP and ask for explicit authorization, stating which test, why, and what it covers afterwards.
+5. **Acceptance pipeline**: complex business behavior needs a project-native acceptance run; acceptance mutation and source mutation are separate, expensive audits. Use `acceptance-pipeline` and never invent or globally install a runner.
+6. **Mutation testing** in CI for critical features: score >= 80%, `mutation-testing` skill. Prefer differential, one-file-at-a-time runs after a green baseline; never on every commit.
+7. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generated by another AI, and any irreversible mutation require STOP+CONFIRM with blast radius, rollback plan, and backup verification. See `rules/common/destructive-operations.md`.
+8. **Project preflight — CodeGraph + OpenSpec SDD**: `SessionStart` and `UserPromptSubmit` run `project-integrations-check.sh`. For a real code task, CodeGraph must report `initialized=true` with `codegraph status --json`, its MCP must be configured, and the project root `.gitignore` must ignore `.codegraph/` unless `.codegraph` was already tracked before the session, in which case preserve that tracking. Never stage or commit a `.codegraph/` created during the current session unless the user explicitly says otherwise. If CodeGraph is missing/broken, report the exact command (`codegraph install` or `codegraph init`) or the required `.gitignore` entry and stop code exploration/editing until the user authorizes the fix. OpenSpec is mandatory for this project's SDD workflow and for any complex feature that enters SDD: verify the CLI, `openspec/specs/`, `openspec/changes/`, and `openspec status --json`, then use the native `/opsx:*` workflow. OpenSpec artifacts are local AI planning files in this project: `.gitignore` must ignore `openspec/` unless it was already tracked before the session, and newly-created OpenSpec files must never be staged or committed without explicit user instruction. If OpenSpec is missing, report the exact install/init steps and stop SDD work until the user authorizes setup. Do not run initializers, install CLIs, or modify `.gitignore` silently. Configuration/documentation questions may continue. Once CodeGraph is ready, use `codegraph_explore` (MCP) or `codegraph explore "<symbols or question>"` before grep/find. If the MCP returns empty/errors/timeouts, fall back to Read/Grep/Glob silently and do not retry more than twice.
+9. **The test suite is not yours to edit.** You do not modify, weaken, skip, or delete a test to make code pass — that inverts the whole point of the gate. If a test fails, the default assumption is that the CODE is wrong, not the test. For a legitimate change (a requirement that genuinely changed, or a new test for a new feature): STOP and ask for explicit authorization, stating which test, why, and what it covers afterwards.
 
-   `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. The real gate is CI running the suite from a clean checkout.
+   `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. In this repo the suites are local-only and there is no CI, so the hook is the only automated check there is — which makes the rule above load-bearing rather than redundant.
 
-9. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
+10. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
 
    **Activation**: only on explicit request, or when the change is genuinely risky (auth, payments, data migrations, concurrency, anything irreversible). It REPLACES the ordinary review — never both.
 
@@ -160,7 +184,7 @@ Defense in depth. Git hooks can enforce this, but they live outside this config 
 
    **Known limitation**: both judges are the same model family and share training-correlated blind spots. Two PASS verdicts mean "no obvious defect found", never proof of correctness. The automated gates are the real guarantee; the judges are a second net.
 
-10. **RDD — Receipt Driven Development.** "It works" is an opinion; a receipt is evidence. In repos with `.claude-rdd/enabled`, a commit requires a receipt bound to the exact staged bytes:
+11. **RDD — Receipt Driven Development.** "It works" is an opinion; a receipt is evidence. In repos with `.claude-rdd/enabled`, a commit requires a receipt bound to the exact staged bytes:
 
     ```
     rdd freeze [max_fix_lines]   # freeze the candidate (hash of the staged diff)

@@ -20,7 +20,7 @@ description: |
   </example>
 color: cyan
 model: haiku
-tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(docker:*), Bash(curl:*), Bash(gh:*), WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(docker:*)", "Bash(curl:*)", "Bash(gh:*)", "WebFetch"]
 maxTurns: 40
 effort: high
 skills: [docker-expert, deployment-patterns]

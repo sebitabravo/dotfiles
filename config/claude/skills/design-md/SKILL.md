@@ -4,10 +4,9 @@ description: >
   Analyze Stitch projects and synthesize a semantic design system into DESIGN.md files
   Use when asked to analyze a Stitch project and produce or update a DESIGN.md design system.
 allowed-tools:
-  - "stitch*:*"
   - "Read"
   - "Write"
-  - "web_fetch"
+  - "WebFetch"
 ---
 
 # Stitch DESIGN.md Skill
@@ -32,7 +31,7 @@ The `DESIGN.md` file will serve as the "source of truth" for prompting Stitch to
 
 To analyze a Stitch project, you must retrieve screen metadata and design assets using the Stitch MCP Server tools:
 
-1. **Namespace discovery**: Run `list_tools` to find the Stitch MCP prefix. Use this prefix (e.g., `mcp_stitch:`) for all subsequent calls.
+1. **Namespace discovery**: Use `ToolSearch` to find the configured Stitch MCP tools. If no Stitch MCP server is available, stop and report that prerequisite instead of inventing a namespace.
 
 2. **Project lookup** (if Project ID is not provided):
    - Call `[prefix]:list_projects` with `filter: "view=owned"` to retrieve all user projects
@@ -53,7 +52,7 @@ To analyze a Stitch project, you must retrieve screen metadata and design assets
      - Project metadata including `designTheme` with color and style information
 
 5. **Asset download**:
-   - Use `web_fetch` or `read_url_content` to download the HTML code from `htmlCode.downloadUrl`
+   - Use `WebFetch` or the configured Stitch MCP URL-reading tool to download the HTML code from `htmlCode.downloadUrl`
    - Optionally download the screenshot from `screenshot.downloadUrl` for visual reference
    - Parse the HTML to extract Tailwind classes, custom CSS, and component patterns
 
