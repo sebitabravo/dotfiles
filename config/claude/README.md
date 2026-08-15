@@ -32,9 +32,9 @@ al repo antes del próximo sync o el sync se las come.
 
 | Categoria | Cantidad | Detalle |
 |---|---|---|
-| Agentes | 22 | Agentes de producto, ingeniería y negocio; `swarmforge-workflow` reutiliza estos agentes y no agrega agentes duplicados |
+| Agentes | 22 | Agentes de producto, ingeniería y negocio; Judgment Day reutiliza `code-reviewer` para los jueces y `debugger` para correcciones confirmadas en modo acotado |
 | Commands | 0 | No hay commands custom: Claude Code conserva su `/plan` nativo y el switch de modelo de `opusplan` funciona sin shadowing |
-| Skills | 65 | Engineering, Backend, Mobile, Frontend/Animation, Design/Stitch, Media/Documents, Core/Workflow, Quality/Testing, SwarmForge workflow |
+| Skills | 76 | Engineering, Backend, Mobile, Frontend/Animation, Design/Stitch, Media/Documents, Core/Workflow, Quality/Testing, SwarmForge workflow, chained PRs, issue triage, skill registry, Judgment Day y RDD |
 | Rules | 6 | `coding-style.md`, `git-workflow.md`, `testing.md`, `security.md`, `context-management.md`, `destructive-operations.md`. BDD, mutation testing, quality metrics, arquitectura y npm-security viven ahora como skills (`bdd-gherkin`, `mutation-testing`, `quality-metrics`, `architecture-patterns`, `npm-security`) |
 | Hooks | 15 scripts de runtime + `scripts/rdd.sh`, `scripts/check-skill-deps.sh` y `scripts/validate.sh`. Corré `make test` para validar la config que acabás de clonar: manifiestos JSON, dependencias de skills y linting. Las suites `*.test.sh` no se versionan (ver `.gitignore`), así que sus etapas se reportan como omitidas en vez de darse por buenas | `PreToolUse` (validate-safe-ops, protect-codegraph-tracking, privacy-review, quality-gate, protect-tests), `UserPromptSubmit` (secret-detect, CodeGraph/OpenSpec preflight), `SessionStart` (check-auto-save-stash, handoff-session-start, CodeGraph/OpenSpec preflight), `PostCompact`, `PostToolUse` (detect-debug), `PostToolUseFailure`, `Stop` (qa-checklist, gauntlet-stop, stop-check-pending, handoff-stop), `SessionEnd` |
 | SDD Templates | 7 | constitution, proposal, requirements, design, tasks, apply-progress, checklist |

@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 65
+- **Total skills:** 76
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -29,6 +29,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `github-actions-docs` | GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management. |
 | `e2e-testing` | E2E testing with Playwright. |
 | `acceptance-pipeline` | Gherkin-to-runner acceptance pipeline, generated entry points, and acceptance mutation. |
+| `go-testing` | Focused Go unit, integration, Bubbletea, teatest, and golden-file testing patterns. |
 
 ## Backend Languages & Frameworks
 
@@ -109,6 +110,16 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `find-skills` | Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X". |
 | `skill-creator` | > Creates new AI agent skills following the Agent Skills spec. |
 | `prompt-engineering` | > Designing and optimizing prompts for LLMs — chain-of-thought, few-shot, XML structuring, model-tier calibration. |
+| `chained-pr` | Split oversized changes into chained or stacked PR review slices. |
+| `work-unit-commits` | Plan commits as reviewable work units and keep tests/docs with the behavior they verify. |
+| `cognitive-doc-design` | Design guides, READMEs, RFCs, onboarding, and review docs for low cognitive load. |
+| `comment-writer` | Write concise, warm, direct GitHub, issue, review, and collaboration comments. |
+| `issue-creation` | Create and triage GitHub issues from repository evidence and discovered policy. |
+| `systemic-issue-triage` | Group repeated issues by root-cause cluster instead of patching symptoms one by one. |
+| `skill-improver` | Audit and improve existing LLM-first `SKILL.md` files without deleting intent. |
+| `skill-registry` | Index skills by trigger, scope, and exact path after skill changes. |
+| `judgment-day` | Run explicit blind dual adversarial review with bounded correction rounds. |
+| `rdd-defect-workflow` | Guide receipt-driven defects, lineage, recovery, and delivery-gate decisions. |
 
 ## Quality & Testing
 

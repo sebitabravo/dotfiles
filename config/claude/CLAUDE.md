@@ -28,9 +28,20 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
 | Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
+| PRs over 400 changed lines, stacked PRs, review slices | `chained-pr` |
+| Planning commits as reviewable work units | `work-unit-commits` |
+| Writing guides, READMEs, RFCs, onboarding, or review-facing docs | `cognitive-doc-design` |
+| Writing GitHub, issue, Slack, or collaboration comments | `comment-writer` |
+| Creating, drafting, or triaging GitHub issues | `issue-creation` |
+| Triage of repeated issues, backlogs, or root-cause clusters | `systemic-issue-triage` |
+| Writing or reviewing Go tests, Bubbletea tests, or golden files | `go-testing` |
 | Designing or optimizing a prompt, choosing a model tier, setting up evals | `prompt-engineering` |
 | Finding/installing a skill for a task the user describes | `find-skills` |
 | Creating a new agent skill, adding agent instructions, documenting a pattern | `skill-creator` |
+| Auditing or improving existing `SKILL.md` files | `skill-improver` |
+| Adding, removing, moving, or indexing skills | `skill-registry` |
+| Explicit Judgment Day or dual/adversarial review | `judgment-day` |
+| RDD defects, receipts, lineage, recovery, or delivery gates | `rdd-defect-workflow` |
 | Complex feature, multi-file behavior change, ambiguous architecture, resuming a `specs/` folder | `sdd-workflow` |
 | Session is long, model is looping, or before /clear | `handoff` |
 | Analyzing a Stitch project into a DESIGN.md design system | `design-md` |
@@ -162,7 +173,7 @@ Defense in depth. Git hooks can enforce this, but they live outside this config 
 
    `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. In this repo the suites are local-only and there is no CI, so the hook is the only automated check there is — which makes the rule above load-bearing rather than redundant.
 
-10. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
+10. **Judgment Day (blind dual review)**: two independent `code-reviewer` invocations in parallel as blind judges, labelled Judge A and Judge B — identical frozen target, no shared verdict context, read-only tools, and JSON findings. Plus `security-auditor` in parallel for auth/secrets/permissions when that lens applies. Use `debugger` only in explicit `JUDGMENT_DAY_FIX` mode for confirmed severe fixes. Never self-review.
 
    **Activation**: only on explicit request, or when the change is genuinely risky (auth, payments, data migrations, concurrency, anything irreversible). It REPLACES the ordinary review — never both.
 
