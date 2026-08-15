@@ -5,7 +5,7 @@
 set -u
 
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[protect-codegraph-tracking] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  echo "[protect-codegraph-tracking] jq is not installed: blocking preventively; install it with: brew install jq" >&2
   exit 2
 fi
 
@@ -48,7 +48,7 @@ for artifact in ".codegraph:CodeGraph" "openspec:OpenSpec"; do
   # A staged addition is never committed by the agent unless the explicit
   # override is present. Existing tracked files are not affected.
   if [ -n "$STAGED_ADD" ] && [ "$IS_COMMIT" = true ]; then
-    deny "No agregues al commit un artefacto $LABEL creado en esta sesión. Si el repositorio ya lo versionaba antes, preservá ese estado; para una excepción explícita usá AI_ARTIFACT_TRACKING_OVERRIDE=1."
+    deny "Do not add to the commit a $LABEL artifact created in this session. If the repository already versioned it before, preserve that state; for an explicit exception use AI_ARTIFACT_TRACKING_OVERRIDE=1."
   fi
 
   # Existing tracked artifacts are preserved exactly as requested.
@@ -59,7 +59,7 @@ for artifact in ".codegraph:CodeGraph" "openspec:OpenSpec"; do
   git -C "$ROOT" check-ignore -q -- "$RELATIVE_PATH/" && continue
 
   if [ "$IS_ADD" = true ] && [ "$ONLY_GITIGNORE_ADD" = false ]; then
-    deny "No stages $RELATIVE_PATH: fue creado en esta sesión y no está protegido por el .gitignore raíz. Agregá $RELATIVE_PATH/ al .gitignore y recién después usá git add; sólo una instrucción explícita del usuario puede cambiar esta regla."
+    deny "Do not stage $RELATIVE_PATH: it was created in this session and is not protected by the root .gitignore. Add $RELATIVE_PATH/ to .gitignore and only then use git add; only an explicit user instruction can change this rule."
   fi
 done
 

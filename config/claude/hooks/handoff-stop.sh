@@ -22,5 +22,5 @@ MARKER="${TMPDIR:-/tmp}/claude-handoff-hint-${SESSION_ID:-nosession}"
 [ -f "$MARKER" ] && exit 0
 : >"$MARKER"
 
-echo "[Hook] 💡 ¿Sesion larga o dando vueltas? Corre /handoff antes de cerrar para crear un traspaso limpio." >&2
+echo "[Hook] 💡 Long session or going in circles? Run /handoff before closing to create a clean handoff." >&2
 exit 0

@@ -1,62 +1,62 @@
 ---
 name: cavecrew
-description: Protocolo de delegación a subagentes. Los subagentes escriben resultados a archivos y devuelven SOLO el path, nunca contenido verbatim por chat.
+description: Subagent delegation protocol. Subagents write results to files and return ONLY the path, never verbatim content through chat.
 ---
 
-## Protocolo de delegación
+## Delegation protocol
 
-Complementa la regla ANTI-TELEPHONE de CLAUDE.md con la convención de archivos y el template de delegación.
+Complements the ANTI-TELEPHONE rule in CLAUDE.md with the file convention and the delegation template.
 
-### Cuándo delegar
+### When to delegate
 
-- Exploración amplia del codebase (>3 lecturas de archivos)
-- Búsquedas en muchos archivos
-- Tareas de investigación en paralelo
-- Operaciones context-heavy que inflarían el contexto principal
+- Broad codebase exploration (>3 file reads)
+- Searches across many files
+- Parallel research tasks
+- Context-heavy operations that would bloat the main context
 
-### Reglas
+### Rules
 
-1. **Los subagentes escriben resultados a archivos.** Devuelven SOLO el path.
-2. **Nunca pasar contenido verbatim por chat.** El chat corrompe la señal; los archivos sobreviven a la compactación.
-3. **Si un subagente no te da un path, exigíselo.**
-4. **El agente principal lee el archivo cuando lo necesita.** No antes.
+1. **Subagents write results to files.** They return ONLY the path.
+2. **Never pass verbatim content through chat.** Chat corrupts the signal; files survive compaction.
+3. **If a subagent does not give you a path, demand one.**
+4. **The main agent reads the file when it needs it.** Not before.
 
-### Convención de archivos de salida
+### Output file convention
 
 ```
-/tmp/cavecrew/<nombre-tarea>-result.md
+/tmp/cavecrew/<task-name>-result.md
 ```
 
-### Tipos de subagente (Claude)
+### Subagent types (Claude)
 
-| Tipo | Uso |
+| Type | Use |
 |------|-----|
-| `explore` | Exploración de codebase, encontrar patrones, entender arquitectura |
-| `code-reviewer` | Revisión de diffs, análisis de seguridad |
-| `debugger` | Root cause analysis, investigación de errores |
-| `general` | Research, búsqueda de documentación, tareas multi-paso |
-| `security-auditor` | Auditorías de auth, permisos, secretos |
+| `explore` | Codebase exploration, finding patterns, understanding architecture |
+| `code-reviewer` | Diff review, security analysis |
+| `debugger` | Root cause analysis, error investigation |
+| `general` | Research, documentation lookup, multi-step tasks |
+| `security-auditor` | Auth, permission and secret audits |
 
-### Template de delegación
+### Delegation template
 
-Al delegar una tarea, incluí:
-1. Objetivo claro
-2. Scope (qué archivos/dirs buscar)
-3. Formato de salida esperado (path del archivo con resultados)
-4. Constraints (límite de tiempo, profundidad)
+When delegating a task, include:
+1. A clear objective
+2. Scope (which files/dirs to search)
+3. Expected output format (path of the results file)
+4. Constraints (time limit, depth)
 
-### Ejemplo de delegación
+### Delegation example
 
 ```
-Tarea: Encontrar todos los endpoints que aceptan input de usuario sin validación.
-Scope: src/routes/ y src/controllers/
-Output: Escribir hallazgos en /tmp/cavecrew/validation-audit-result.md
-Formato: Tabla con archivo, endpoint, parámetro, estado de validación actual
+Task: Find every endpoint that accepts user input without validation.
+Scope: src/routes/ and src/controllers/
+Output: Write findings to /tmp/cavecrew/validation-audit-result.md
+Format: Table with file, endpoint, parameter, current validation state
 ```
 
 ### Anti-patterns
 
-- No delegues tareas triviales (lectura de un solo archivo, grep simple).
-- No delegues y después hagas la misma búsqueda vos.
-- No aceptes resultados inline. Exigí siempre un path de archivo.
-- No delegues si ya tenés la respuesta en contexto.
+- Do not delegate trivial tasks (single file read, simple grep).
+- Do not delegate and then run the same search yourself.
+- Do not accept inline results. Always demand a file path.
+- Do not delegate if you already have the answer in context.

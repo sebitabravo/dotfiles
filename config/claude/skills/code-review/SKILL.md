@@ -44,12 +44,12 @@ Review in this order. Each dimension is an independent pass:
 - No commented-out code or dead code.
 - Testability: can this be tested easily?
 
-### 5. Estructura y diseño
-- **Regla 1k líneas**: un PR no debería empujar un archivo de <1k a >1k líneas sin justificación fuerte. Si lo cruza, proponer descomponer primero.
-- **Anti-spaghetti growth**: nuevos ad-hoc conditionals, scattered special cases o one-off branches en flows no relacionados = flag de diseño, no nit.
-- **Simplificación radical**: si el comportamiento se puede mantener con menos conceptos, branches o capas, buscar ese path. Preferir el refactor que BORRA complejidad, no que la mueve.
-- **Boring over magic**: desconfiar de wrappers/identity helpers/pass-through que agregan indirección sin comprar claridad.
-- **Lógica en la capa correcta**: feature logic no debería filtrarse a shared paths. Usar utilities canónicas en vez de one-offs.
+### 5. Structure and design
+- **1k line rule**: a PR should not push a file from <1k to >1k lines without strong justification. If it crosses, propose decomposing first.
+- **Anti-spaghetti growth**: new ad-hoc conditionals, scattered special cases or one-off branches in unrelated flows = design flag, not a nit.
+- **Radical simplification**: if the behavior can be kept with fewer concepts, branches or layers, look for that path. Prefer the refactor that DELETES complexity over the one that moves it.
+- **Boring over magic**: distrust wrappers/identity helpers/pass-throughs that add indirection without buying clarity.
+- **Logic in the right layer**: feature logic should not leak into shared paths. Use canonical utilities instead of one-offs.
 
 ### 6. Testing
 - Tests for the happy path.

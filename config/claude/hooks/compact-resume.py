@@ -38,26 +38,26 @@ except (OSError, subprocess.SubprocessError):
 
 status_lines = status.splitlines()[:40]
 if len(status.splitlines()) > 40:
-    status_lines.append(f'... (+{len(status.splitlines()) - 40} archivos mas)')
-status_block = '\n'.join(status_lines) or 'working tree limpio'
+    status_lines.append(f'... (+{len(status.splitlines()) - 40} more files)')
+status_block = '\n'.join(status_lines) or 'working tree clean'
 
-context = f"""CONTEXTO COMPACTADO. Las reglas NO se relajan post-compactacion.
+context = f"""CONTEXT COMPACTED. The rules are NOT relaxed after compaction.
 
-Siguen vigentes TODAS las de CLAUDE.md y rules/common/*.md — NO AI FOOTPRINT,
-VERIFY FIRST (sin "should work"), EVIDENCE BEFORE CLAIMS, LEVERAGE != RELY
-(ownership total, CI != seguro), PRE-COMMIT LITMUS (3 preguntas), GOAL-DRIVEN
-(loop hasta verificado), STOP & WAIT ante ambiguedad.
+ALL of CLAUDE.md and rules/common/*.md remain in force — NO AI FOOTPRINT,
+VERIFY FIRST (no "should work"), EVIDENCE BEFORE CLAIMS, LEVERAGE != RELY
+(full ownership, CI != guarantee), PRE-COMMIT LITMUS (3 questions), GOAL-DRIVEN
+(loop until verified), STOP & WAIT on ambiguity.
 
-Protocolo de reanudacion (rules/common/context-management.md):
-1. Re-lee los archivos que estabas editando. NO confies en tu resumen de su
-   contenido por encima del archivo.
-2. `mem_context` y `mem_search` para recuperar el razonamiento de decisiones ya
-   tomadas, en vez de re-derivarlas.
-3. NO re-litigues una decision que el usuario ya aprobo.
-4. La compactacion no es fin de tarea: retoma el trabajo pendiente, no cierres
-   con un resumen.
+Resumption protocol (rules/common/context-management.md):
+1. Re-read the files you were editing. Do NOT trust your summary of their
+   contents over the file.
+2. `mem_context` and `mem_search` to recover the reasoning behind decisions
+   already made, instead of re-deriving them.
+3. Do NOT re-litigate a decision the user already approved.
+4. Compaction is not the end of the task: resume the pending work, do not close
+   with a summary.
 
-git status actual:
+current git status:
 {status_block}"""
 
 print(json.dumps({

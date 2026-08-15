@@ -31,9 +31,9 @@ esac
 FOUND=$(grep -nE '^[[:space:]]*(console\.(log|warn|error|debug)|print\(|var_dump\(|dd\(|debugger|binding\.pry|byebug|pdb\.set_trace|breakpoint\(\))' "$FILE_PATH" 2>/dev/null || true)
 
 if [ -n "$FOUND" ]; then
-  echo "[detect-debug] Debug statements en $FILE_PATH:" >&2
+  echo "[detect-debug] Debug statements in $FILE_PATH:" >&2
   echo "$FOUND" | head -10 >&2
-  echo "[detect-debug] Sacalos antes de declarar la tarea terminada." >&2
+  echo "[detect-debug] Remove them before declaring the task finished." >&2
 fi
 
 exit 0

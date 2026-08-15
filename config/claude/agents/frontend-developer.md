@@ -81,20 +81,20 @@ You are hermano with `ui-ux-designer`. ui-ux-designer defines the visual directi
 
 ```bash
 npx --yes zero-native@latest init my_app --frontend next  # next|react|vue|svelte
-zig build run                              # unico comando de build+run
-# Desarrollo: correr bundler aparte (Vite en :5173), WebView apunta a localhost
+zig build run                              # single build+run command
+# Development: run the bundler separately (Vite on :5173), WebView points to localhost
 ```
 
-No instales `zero-native` globalmente. Si el proyecto necesita fijar la
-dependencia, agrégala como `devDependency` y ejecútala con `npx` desde el
-proyecto.
+Do not install `zero-native` globally. If the project needs to pin the
+dependency, add it as a `devDependency` and run it with `npx` from the
+project.
 
-**app.zon** (manifiesto Zig):
+**app.zon** (Zig manifest):
 
 ```zig
 .{
     .id = "com.example.my-app",
-    .web_engine = "system",           // "system" (WKWebView/WebKitGTK) | "chromium" (CEF, solo macOS)
+    .web_engine = "system",           // "system" (WKWebView/WebKitGTK) | "chromium" (CEF, macOS only)
     .permissions = .{ "window" },
     .capabilities = .{ "webview", "js_bridge" },
     .security = .{ .navigation = .{ .allowed_origins = .{ "zero://app", "http://127.0.0.1:5173" } } },
@@ -102,11 +102,11 @@ proyecto.
 }
 ```
 
-**Web engines**: `system` → WKWebView (macOS), WebKitGTK (Linux) — no runtime bundle, binarios chicos. `chromium` → CEF, solo macOS builds, runtime externo.
+**Web engines**: `system` → WKWebView (macOS), WebKitGTK (Linux) — no runtime bundle, small binaries. `chromium` → CEF, macOS builds only, external runtime.
 
-**JS bridge**: `window.zero.invoke()` — size-limited, origin-checked, permission-checked. Solo handlers registrados. WebView tratado como no confiable por defecto.
+**JS bridge**: `window.zero.invoke()` — size-limited, origin-checked, permission-checked. Registered handlers only. The WebView is treated as untrusted by default.
 
-**Gotchas**: Pre-release (32 commits). Chromium solo macOS. Sin comando `dev` con HMR — correr Vite/Next dev aparte y apuntar WebView a localhost. CEF se descarga como runtime externo.
+**Gotchas**: Pre-release (32 commits). Chromium is macOS only. No `dev` command with HMR — run Vite/Next dev separately and point the WebView at localhost. CEF is downloaded as an external runtime.
 
 **Inertia.js**: Laravel ↔ React bridge, server-side routing, useForm, router.visit, persistent layouts.
 
@@ -171,13 +171,13 @@ ScrollXUI ships an MCP server — if configured, browse and reference components
 
 ## Google Stitch (stitch.withgoogle.com)
 
-Google I/O May 2025. Genera pantallas desde texto usando IA. **MCP first-party solo en OpenCode** (no disponible en Claude Code). Skills instalados en ambas plataformas.
+Google I/O May 2025. Generates screens from text using AI. **First-party MCP on OpenCode only** (not available in Claude Code). Skills are installed on both platforms.
 
-**Skills disponibles:**
+**Available skills:**
 
 | Skill | What it does | Needs MCP |
 | --- | --- | --- |
-| `enhance-prompt` | Transforma ideas vagas en prompts Stitch-optimizados | No |
+| `enhance-prompt` | Turns vague ideas into Stitch-optimized prompts | No |
 | `taste-design` | Generates DESIGN.md with anti-generic standards | No |
 | `design-md` | Analyzes Stitch projects and synthesizes DESIGN.md | Yes |
 | `stitch-generate-design` | Core generation: text->design, editing, variants | Yes |

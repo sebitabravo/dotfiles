@@ -19,7 +19,7 @@
 # jq es obligatorio: sin el, este hook no puede ejecutar el gate de commit.
 # Fallar cerrado evita que un commit escape sin la verificación requerida.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[quality-gate] jq no esta instalado: commit bloqueado; instalalo con: brew install jq" >&2
+  echo "[quality-gate] jq is not installed: commit blocked; install it with: brew install jq" >&2
   exit 2
 fi
 
@@ -128,16 +128,16 @@ block() {
   # el kill switch relajaba la mitad del gate y la otra mitad seguia frenando,
   # sin que nada lo dijera.
   if [ "$RELAXED" = true ]; then
-    echo "[quality-gate] AVISO (no bloquea, $RELAX_FILE): $msg" >&2
+    echo "[quality-gate] WARNING (not blocking, $RELAX_FILE): $msg" >&2
     [ -n "$output" ] && echo "$output" | tail -20 >&2
     return 0
   fi
 
   echo "[quality-gate] COMMIT BLOCKED: $msg" >&2
   if [ -n "$output" ]; then
-    echo "[quality-gate] --- salida del comando (ultimas 40 lineas) ---" >&2
+    echo "[quality-gate] --- command output (last 40 lines) ---" >&2
     echo "$output" | tail -40 >&2
-    echo "[quality-gate] --- fin de la salida ---" >&2
+    echo "[quality-gate] --- end of output ---" >&2
   fi
   echo "[quality-gate] Fix the issue and retry. Do NOT use --no-verify." >&2
   exit 2
@@ -163,11 +163,11 @@ if [ -x "$RDD" ] && [ ! -f "$ROOT/.claude-rdd/enabled" ] && [ "$RELAXED" = false
   if [ -n "$RISKY" ]; then
     bash "$RDD" on >/dev/null 2>&1 || true
     {
-      echo "[quality-gate] RDD ENCENDIDO AUTOMATICAMENTE en este repo."
-      echo "[quality-gate] El diff toca zona de riesgo:"
+      echo "[quality-gate] RDD TURNED ON AUTOMATICALLY in this repo."
+      echo "[quality-gate] The diff touches a risk zone:"
       printf '%s\n' "$RISKY" | sed 's/^/[quality-gate]   - /'
-      echo "[quality-gate] Desde ahora este repo exige recibo para commitear."
-      echo "[quality-gate] Apagalo con 'rdd off' si fue un falso positivo."
+      echo "[quality-gate] From now on this repo requires a receipt to commit."
+      echo "[quality-gate] Turn it off with 'rdd off' if this was a false positive."
     } >&2
   fi
 fi
@@ -182,13 +182,13 @@ if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
   RDD_RC=$?
   RDD_MSG=""
   case $RDD_RC in
-    1) RDD_MSG="RDD encendido y no hay recibo.
-[quality-gate]   1) rdd freeze          congela los bytes staged
-[quality-gate]   2) revisa sobre ellos
-[quality-gate]   3) rdd receipt '<cmd de tests>'
-[quality-gate] Apagalo con 'rdd off' si este repo no lo necesita." ;;
-    2) RDD_MSG="el recibo es de OTROS bytes. El codigo cambio despues del review.
-[quality-gate] Volve a congelar y revisa de nuevo. 'rdd status' muestra el detalle." ;;
+    1) RDD_MSG="RDD is on and there is no receipt.
+[quality-gate]   1) rdd freeze          freezes the staged bytes
+[quality-gate]   2) review those bytes
+[quality-gate]   3) rdd receipt '<test cmd>'
+[quality-gate] Turn it off with 'rdd off' if this repo does not need it." ;;
+    2) RDD_MSG="the receipt is for OTHER bytes. The code changed after the review.
+[quality-gate] Freeze again and review once more. 'rdd status' shows the detail." ;;
   esac
   # Via block() y no exit 2 directo, para que el kill switch y el modo autonomo
   # lo degraden igual que al resto del gate.
@@ -354,7 +354,7 @@ if [ -n "$STAGED_FILES_FOR_DETECT" ]; then
     is_docs_or_config "$f" || { ALL_NON_CODE=false; break; }
   done <<< "$STAGED_FILES_FOR_DETECT"
   if [ "$ALL_NON_CODE" = true ]; then
-    echo "[quality-gate] Commit sin codigo (docs/config/assets) — sin gate de tests." >&2
+    echo "[quality-gate] Commit with no code (docs/config/assets) — no test gate." >&2
     exit 0
   fi
 fi
@@ -386,12 +386,12 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # dejaba commitear igual, o sea era un cartel, no una puerta.
   if [ "$HAS_TESTS" = false ]; then
     if [ "$RELAXED" = true ]; then
-      echo "[quality-gate] [$LABEL] sin test runner; $RELAX_FILE presente, se deja pasar." >&2
+      echo "[quality-gate] [$LABEL] no test runner; $RELAX_FILE present, letting it through." >&2
       continue
     fi
-    block "[$LABEL] no hay test runner en este proyecto y ALL code requires tests (rules/common/testing.md).
-[quality-gate] Configura uno ANTES de escribir codigo de produccion. Si este repo es un scratch
-[quality-gate] o un spike, creá el kill switch: touch $RELAX_FILE"
+    block "[$LABEL] there is no test runner in this project and ALL code requires tests (rules/common/testing.md).
+[quality-gate] Configure one BEFORE writing production code. If this repo is a scratch
+[quality-gate] or a spike, create the kill switch: touch $RELAX_FILE"
   fi
 
   # 1. Lint (if available)
@@ -459,10 +459,10 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
 
     if [ -n "$COV_FAIL" ]; then
       if [ "$RELAXED" = true ]; then
-        printf '[quality-gate] [%s] cobertura bajo el piso (%s presente, no bloquea):\n%s' "$LABEL" "$RELAX_FILE" "$COV_FAIL" >&2
+        printf '[quality-gate] [%s] coverage below the floor (%s present, not blocking):\n%s' "$LABEL" "$RELAX_FILE" "$COV_FAIL" >&2
       else
-        block "[$LABEL] cobertura bajo el piso:
-${COV_FAIL}[quality-gate] Agrega tests. Kill switch para este repo: touch $RELAX_FILE"
+        block "[$LABEL] coverage below the floor:
+${COV_FAIL}[quality-gate] Add tests. Kill switch for this repo: touch $RELAX_FILE"
       fi
     fi
 
@@ -472,7 +472,7 @@ ${COV_FAIL}[quality-gate] Agrega tests. Kill switch para este repo: touch $RELAX
     [ -z "$COV_BRANCH" ] && UNMEASURED="$UNMEASURED branch"
     [ -z "$COV_FUNC" ] && UNMEASURED="$UNMEASURED function"
     [ -n "$UNMEASURED" ] &&
-      echo "[quality-gate] [$LABEL] NO MEDIDO (el runner no lo reporta):$UNMEASURED — no lo cuentes como verde." >&2
+      echo "[quality-gate] [$LABEL] NOT MEASURED (the runner does not report it):$UNMEASURED — do not count it as green." >&2
 
   fi
 
@@ -496,16 +496,16 @@ ${COV_FAIL}[quality-gate] Agrega tests. Kill switch para este repo: touch $RELAX
     # tiene configurada, el lint de arriba ya fallo por ella y no hay nada que
     # duplicar aca. Si no la tiene, se avisa una vez.
     if ! (cd "$PROJECT_DIR" && rg -q 'complexity' .eslintrc* eslint.config.* 2>/dev/null); then
-      echo "[quality-gate] [$LABEL] NO MEDIDO: complejidad ciclomatica. Agrega la regla eslint:" >&2
+      echo "[quality-gate] [$LABEL] NOT MEASURED: cyclomatic complexity. Add the eslint rule:" >&2
       echo "[quality-gate]   'complexity': ['error', { max: $MAX_COMPLEXITY }]" >&2
     fi
   fi
 
   if [ -n "$COMPLEXITY_OVER" ]; then
     if [ "$RELAXED" = true ]; then
-      echo "[quality-gate] [$LABEL] complejidad sobre $MAX_COMPLEXITY ($RELAX_FILE presente, no bloquea)." >&2
+      echo "[quality-gate] [$LABEL] complexity over $MAX_COMPLEXITY ($RELAX_FILE present, not blocking)." >&2
     else
-      block "[$LABEL] hay funciones con complejidad ciclomatica > $MAX_COMPLEXITY. Extrae metodos." "$COMPLEXITY_OUTPUT"
+      block "[$LABEL] there are functions with cyclomatic complexity > $MAX_COMPLEXITY. Extract methods." "$COMPLEXITY_OUTPUT"
     fi
   fi
 done

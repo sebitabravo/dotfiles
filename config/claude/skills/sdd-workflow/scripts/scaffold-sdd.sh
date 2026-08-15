@@ -10,19 +10,19 @@ set -euo pipefail
 
 FEATURE="${1:-}"
 if [[ ! "$FEATURE" =~ ^[A-Za-z0-9._-]+$ ]]; then
-  echo "Uso: scaffold-sdd.sh <feature-slug>" >&2
+  echo "Usage: scaffold-sdd.sh <feature-slug>" >&2
   exit 2
 fi
 
 TEMPLATE_ROOT="${CLAUDE_TEMPLATE_ROOT:-$HOME/.claude/templates}"
 if [ ! -d "$TEMPLATE_ROOT" ]; then
-  echo "No existe el directorio de plantillas: $TEMPLATE_ROOT" >&2
+  echo "Template directory does not exist: $TEMPLATE_ROOT" >&2
   exit 1
 fi
 
 TARGET="$(pwd)/specs/$FEATURE"
 if [ -e "$TARGET" ]; then
-  echo "Ya existe, no se sobrescribe: $TARGET" >&2
+  echo "Already exists, not overwriting: $TARGET" >&2
   exit 1
 fi
 
@@ -38,10 +38,10 @@ for mapping in \
   source_name="${mapping%%:*}"
   target_name="${mapping#*:}"
   if [ ! -f "$TEMPLATE_ROOT/$source_name" ]; then
-    echo "Falta la plantilla $source_name en $TEMPLATE_ROOT" >&2
+    echo "Missing template $source_name in $TEMPLATE_ROOT" >&2
     exit 1
   fi
   sed "s/{{FEATURE_NAME}}/$FEATURE/g" "$TEMPLATE_ROOT/$source_name" > "$TARGET/$target_name"
 done
 
-echo "Artefactos SDD creados en $TARGET"
+echo "SDD artifacts created in $TARGET"

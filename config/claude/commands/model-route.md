@@ -1,25 +1,25 @@
 ---
-description: "Elegir el modelo óptimo según complejidad, costo y latencia de la tarea"
-argument-hint: "[tarea a analizar]"
+description: "Pick the optimal model based on task complexity, cost and latency"
+argument-hint: "[task to analyze]"
 ---
 
-Analizá la tarea y recomendá el modelo óptimo: $ARGUMENTS.
+Analyze the task and recommend the optimal model: $ARGUMENTS.
 
-**Matriz de decisión** (modelos Claude disponibles en esta config):
+**Decision matrix** (Claude models available in this config):
 
-| Complejidad | Modelo | Caso de uso |
+| Complexity | Model | Use case |
 |---|---|---|
-| Trivial (typos, 1 línea) | haiku | Velocidad sobre inteligencia |
+| Trivial (typos, 1 line) | haiku | Speed over intelligence |
 | Standard (features, bugs) | sonnet | Balance |
-| Compleja (arquitectura, multi-agente) | opus | Máxima inteligencia |
-| Planificación pesada / specs | opusplan | Planificación larga |
-| Code review | opus + agente code-reviewer | Quality gate |
+| Complex (architecture, multi-agent) | opus | Maximum intelligence |
+| Heavy planning / specs | opusplan | Long-horizon planning |
+| Code review | opus + code-reviewer agent | Quality gate |
 
-**Factores a evaluar**:
-1. ¿Cuántos archivos hay que cambiar?
-2. ¿Hay lógica de seguridad/auth involucrada?
-3. ¿Es arquitectura o patrón nuevo?
-4. ¿Se necesitan subagentes?
-5. ¿Cuál es el presupuesto de costo/latencia?
+**Factors to evaluate**:
+1. How many files have to change?
+2. Is security/auth logic involved?
+3. Is it new architecture or a new pattern?
+4. Are subagents needed?
+5. What is the cost/latency budget?
 
-Output: modelo recomendado + rationale + estimación de token usage.
+Output: recommended model + rationale + token usage estimate.

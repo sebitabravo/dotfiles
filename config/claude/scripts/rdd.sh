@@ -29,7 +29,7 @@ die() {
   exit 1
 }
 
-repo_root() { git rev-parse --show-toplevel 2>/dev/null || die "no es un repo git"; }
+repo_root() { git rev-parse --show-toplevel 2>/dev/null || die "not a git repo"; }
 
 sha() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -f1; else shasum -a 256 | cut -d' ' -f1; fi
@@ -53,8 +53,8 @@ json_get() { grep -o "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" "$1" 2>/dev/nul
 cmd_freeze() {
   local root
   root=$(repo_root)
-  cd "$root" || die "no pude entrar a $root"
-  git diff --cached --quiet && die "no hay nada staged que congelar"
+  cd "$root" || die "could not enter $root"
+  git diff --cached --quiet && die "there is nothing staged to freeze"
 
   local max_fix="${1:-40}"
   mkdir -p "$STATE_DIR"
@@ -73,20 +73,20 @@ cmd_freeze() {
 }
 EOF
   rm -f "$RECEIPT"
-  echo "candidato congelado"
+  echo "candidate frozen"
   echo "  hash          $h"
-  echo "  archivos      $(git diff --cached --name-only | wc -l | tr -d ' ')"
-  echo "  lineas        $n"
-  echo "  techo de fix  $max_fix lineas"
+  echo "  files         $(git diff --cached --name-only | wc -l | tr -d ' ')"
+  echo "  lines         $n"
+  echo "  fix ceiling   $max_fix lines"
   echo
-  echo "Revisa AHORA sobre estos bytes. Si tocas algo, el hash cambia y el recibo no va a validar."
+  echo "Review those bytes NOW. If you touch anything, the hash changes and the receipt will not validate."
 }
 
 cmd_receipt() {
   local root
   root=$(repo_root)
-  cd "$root" || die "no pude entrar a $root"
-  [ -f "$CANDIDATE" ] || die "no hay candidato congelado. Corre: rdd freeze"
+  cd "$root" || die "could not enter $root"
+  [ -f "$CANDIDATE" ] || die "there is no frozen candidate. Run: rdd freeze"
 
   local frozen now
   frozen=$(json_get "$CANDIDATE" hash)
@@ -103,15 +103,15 @@ cmd_receipt() {
   now_lines=$(staged_line_count)
   delta=$((now_lines > frozen_lines ? now_lines - frozen_lines : frozen_lines - now_lines))
   if [ "$delta" -gt "$max" ]; then
-    die "la correccion movio $delta lineas y el techo es $max. Eso ya no es un fix acotado: achicalo, o congela un candidato nuevo a proposito."
+    die "the correction moved $delta lines and the ceiling is $max. That is no longer a bounded fix: shrink it, or freeze a new candidate on purpose."
   fi
 
   if [ "$frozen" != "$now" ]; then
-    echo "rdd: los bytes cambiaron desde el freeze." >&2
-    echo "  congelado: $frozen" >&2
-    echo "  ahora:     $now" >&2
-    echo "  El fix entra en el techo, pero el review cubrio otro contenido." >&2
-    echo "  Volve a congelar y revisa el delta antes de pedir el recibo." >&2
+    echo "rdd: the bytes changed since the freeze." >&2
+    echo "  frozen: $frozen" >&2
+    echo "  now:    $now" >&2
+    echo "  The fix fits under the ceiling, but the review covered other content." >&2
+    echo "  Freeze again and review the delta before asking for the receipt." >&2
     exit 1
   fi
 
@@ -120,18 +120,18 @@ cmd_receipt() {
   # ponia el `true`, no los tests. Eso rompia la propiedad que justifica RDD
   # entera — "no se emite recibo salvo que la evidencia salga 0".
   # Como argv, `||` y `true` llegan como argumentos literales a npm y falla.
-  [ "$#" -gt 0 ] || die "falta la evidencia. Uso: rdd receipt <comando de tests>  (ej: rdd receipt npm test)"
+  [ "$#" -gt 0 ] || die "the evidence is missing. Usage: rdd receipt <test command>  (e.g. rdd receipt npm test)"
 
   # Los metacaracteres van literales a proposito: se buscan como texto, no se expanden.
   # shellcheck disable=SC2016
   case "$*" in
     *'|'* | *';'* | *'&'* | *'$('* | *'`'*)
-      die "la evidencia trae metacaracteres de shell. Pasala como argv (rdd receipt npm test), no como string: un operador ahi puede fabricar el exit 0 que el recibo dice haber verificado."
+      die "the evidence contains shell metacharacters. Pass it as argv (rdd receipt npm test), not as a string: an operator there can fabricate the exit 0 the receipt claims to have verified."
       ;;
   esac
 
   local evidence_cmd="$*"
-  echo "corriendo evidencia: $evidence_cmd"
+  echo "running evidence: $evidence_cmd"
   local out rc
   out=$("$@" 2>&1)
   rc=$?
@@ -139,7 +139,7 @@ cmd_receipt() {
 
   if [ "$rc" -ne 0 ]; then
     echo
-    die "la evidencia fallo (exit $rc). Sin evidencia verde no hay recibo."
+    die "the evidence failed (exit $rc). No green evidence, no receipt."
   fi
 
   mkdir -p "$STATE_DIR"
@@ -153,7 +153,7 @@ cmd_receipt() {
 }
 EOF
   echo
-  echo "RECIBO EMITIDO — commit autorizado para el hash $frozen"
+  echo "RECEIPT ISSUED — commit authorized for hash $frozen"
 }
 
 # Usado por quality-gate.sh. Silencioso; el exit code es el contrato.
@@ -173,20 +173,20 @@ cmd_verify() {
 cmd_status() {
   local root
   root=$(repo_root)
-  cd "$root" || die "no pude entrar a $root"
-  if [ -f "$SWITCH" ]; then echo "RDD: ENCENDIDO (bloquea commits sin recibo)"; else echo "RDD: apagado (quality-gate solo avisa)"; fi
+  cd "$root" || die "could not enter $root"
+  if [ -f "$SWITCH" ]; then echo "RDD: ON (blocks commits without a receipt)"; else echo "RDD: off (quality-gate only warns)"; fi
   if [ -f "$CANDIDATE" ]; then
     local frozen
     frozen=$(json_get "$CANDIDATE" hash)
-    echo "candidato: $frozen"
-    [ "$frozen" = "$(candidate_hash)" ] && echo "  los bytes staged COINCIDEN" || echo "  los bytes staged CAMBIARON desde el freeze"
+    echo "candidate: $frozen"
+    [ "$frozen" = "$(candidate_hash)" ] && echo "  the staged bytes MATCH" || echo "  the staged bytes CHANGED since the freeze"
   else
-    echo "candidato: ninguno"
+    echo "candidate: none"
   fi
   if [ -f "$RECEIPT" ]; then
-    cmd_verify && echo "recibo: VALIDO" || echo "recibo: presente pero para otros bytes"
+    cmd_verify && echo "receipt: VALID" || echo "receipt: present but for other bytes"
   else
-    echo "recibo: ninguno"
+    echo "receipt: none"
   fi
 }
 
@@ -195,14 +195,14 @@ cmd_on() {
   root=$(repo_root)
   mkdir -p "$root/$STATE_DIR" && touch "$root/$SWITCH"
   grep -qxF "$STATE_DIR/" "$root/.gitignore" 2>/dev/null || printf '%s/\n' "$STATE_DIR" >>"$root/.gitignore"
-  echo "RDD encendido en $root. .gitignore actualizado."
+  echo "RDD turned on in $root. .gitignore updated."
 }
 
 cmd_off() {
   local root
   root=$(repo_root)
   rm -f "$root/$SWITCH"
-  echo "RDD apagado en $root. Los commits ya no requieren recibo."
+  echo "RDD turned off in $root. Commits no longer require a receipt."
 }
 
 case "${1:-}" in
@@ -216,13 +216,13 @@ case "${1:-}" in
     cat <<'EOF'
 rdd.sh — Receipt Driven Development
 
-  rdd freeze [max_fix_lines]   congela los bytes staged (default: techo 40)
-  rdd receipt <cmd tests>      corre la evidencia y emite el recibo (argv, sin comillas)
-  rdd verify                   exit 0 autorizado / 1 sin recibo / 2 otros bytes
-  rdd status                   estado actual
-  rdd on | rdd off             kill switch por repo
+  rdd freeze [max_fix_lines]   freeze the staged bytes (default: ceiling 40)
+  rdd receipt <test cmd>       run the evidence and issue the receipt (argv, unquoted)
+  rdd verify                   exit 0 authorized / 1 no receipt / 2 other bytes
+  rdd status                   current state
+  rdd on | rdd off             per-repo kill switch
 
-La regla: sin recibo atado a los bytes exactos, no hay commit.
+The rule: without a receipt bound to the exact bytes, there is no commit.
 EOF
     exit 2
     ;;

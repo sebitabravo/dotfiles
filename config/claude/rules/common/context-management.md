@@ -38,12 +38,12 @@ Every `mem_save` and every handoff must preserve:
 ## Anti-pattern: action-only summary
 
 ```text
-// MAL — truncacion glorificada. El modelo pierde el reasoning.
+// BAD — glorified truncation. The model loses the reasoning.
 "Fixed auth middleware bug. Added tests. All green."
 ```
 
 ```text
-// BIEN — preserva el chain of thought.
+// GOOD — preserves the chain of thought.
 "Auth middleware bug: token expiry used < instead of <= at L42.
  Rejected: timezone offset (tz data was correct), JWT lib bug (clean decode logs).
  Fix: changed operator + edge test at midnight boundary.

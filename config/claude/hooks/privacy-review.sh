@@ -12,16 +12,16 @@ cmd_str=""
 # Extract command from JSON stdin
 if command -v jq &>/dev/null; then
   if ! cmd_str="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null)"; then
-    echo "[Privacy Review] BLOCKED — no se pudo parsear el input del hook; no se puede revisar el contenido antes de publicar en GitHub." >&2
+    echo "[Privacy Review] BLOCKED — could not parse the hook input; the content cannot be reviewed before publishing to GitHub." >&2
     exit 2
   fi
 elif command -v python3 &>/dev/null; then
   if ! cmd_str="$(printf '%s' "$input" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)"; then
-    echo "[Privacy Review] BLOCKED — python3 no pudo parsear el input del hook; no se puede revisar el contenido antes de publicar en GitHub." >&2
+    echo "[Privacy Review] BLOCKED — python3 could not parse the hook input; the content cannot be reviewed before publishing to GitHub." >&2
     exit 2
   fi
 else
-  echo "[Privacy Review] BLOCKED — jq/python3 no esta disponible; no se puede revisar el contenido antes de publicar en GitHub." >&2
+  echo "[Privacy Review] BLOCKED — jq/python3 is not available; the content cannot be reviewed before publishing to GitHub." >&2
   exit 2
 fi
 

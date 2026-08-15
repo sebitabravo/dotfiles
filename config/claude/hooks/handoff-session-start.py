@@ -32,12 +32,12 @@ output = {
     "hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": (
-            "📋 **HANDOFF de sesión anterior detectado:**\n\n"
+            "📋 **HANDOFF from a previous session detected:**\n\n"
             f"{content}\n\n"
             "---\n"
-            "**INSTRUCCIÓN:** Leé el handoff arriba. Contiene objetivo, estado actual, "
-            "archivos clave, cambios hechos, intentos fallidos y próximos pasos. "
-            "Continuá EXACTAMENTE desde donde se dejó. No repitas trabajo ya hecho."
+            "**INSTRUCTION:** Read the handoff above. It contains the goal, current state, "
+            "key files, changes made, failed attempts and next steps. "
+            "Continue EXACTLY from where it was left. Do not repeat work already done."
         )
     }
 }

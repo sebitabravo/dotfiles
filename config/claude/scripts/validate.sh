@@ -29,7 +29,7 @@ SUITES=(
 SKIPPED=0
 for suite in "${SUITES[@]}"; do
   if [ ! -f "$suite" ]; then
-    printf '== %s no presente (suite local)\n' "$suite"
+    printf '== %s not present (local suite)\n' "$suite"
     SKIPPED=$((SKIPPED + 1))
     continue
   fi
@@ -37,11 +37,11 @@ for suite in "${SUITES[@]}"; do
   bash "$suite" >/dev/null
 done
 
-printf '== manifiestos JSON\n'
+printf '== JSON manifests\n'
 jq empty config/claude/settings.json
 jq empty config/claude/skills-lock.json
 
-printf '== dependencias de skills\n'
+printf '== skill dependencies\n'
 bash config/claude/scripts/check-skill-deps.sh >/dev/null
 
 # La etapa de linting solo corre si el binario esta disponible: en un host sin
@@ -60,19 +60,19 @@ if command -v shellcheck >/dev/null 2>&1; then
   # arbol no es un repo git: ahi la lista no es "cero scripts que pasan", es
   # una etapa que no se pudo armar.
   if [ ${#SCRIPTS[@]} -eq 0 ]; then
-    printf '== linting sin lista de archivos (fuera de un repo git)\n'
+    printf '== linting with no file list (outside a git repo)\n'
     SKIPPED=$((SKIPPED + 1))
   else
     printf '== linting\n'
     shellcheck -S warning "${SCRIPTS[@]}"
   fi
 else
-  printf '== linting no disponible (shellcheck ausente)\n'
+  printf '== linting unavailable (shellcheck absent)\n'
   SKIPPED=$((SKIPPED + 1))
 fi
 
 if [ "$SKIPPED" -gt 0 ]; then
-  printf 'CONFIG VALIDA — %s etapa(s) omitida(s), ninguna fallo\n' "$SKIPPED"
+  printf 'CONFIG VALID — %s stage(s) skipped, none failed\n' "$SKIPPED"
 else
-  printf 'TODO VERDE\n'
+  printf 'ALL GREEN\n'
 fi
