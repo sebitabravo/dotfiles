@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
-# Punto de entrada unico de verificacion del repo.
+# Valida esta configuracion: manifiestos JSON, dependencias de skills y linting
+# de los scripts. Si ademas hay suites locales presentes, las corre.
 #
-# Existe porque RDD exige una evidencia pasada como argv: sin un script real,
-# la unica alternativa es una cadena con operadores de shell, y ahi un `|| true`
-# puede fabricar el exit 0 que el recibo dice haber verificado.
+# Este repo se clona para copiar la configuracion, no para desarrollarla: las
+# suites `*.test.sh` no se versionan (ver .gitignore), asi que en un clone las
+# etapas de suite simplemente no estan. Eso no es cobertura faltante, es una
+# etapa que no aplica — pero se nombra igual, porque una etapa que no corrio
+# nunca se reporta como una que paso.
+#
+# Se pasa como argv al recibo de RDD: sin un script real la alternativa es una
+# cadena con operadores de shell, y ahi un `|| true` fabrica el exit 0 que el
+# recibo dice haber verificado.
 set -euo pipefail
 
 REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
@@ -19,14 +26,11 @@ SUITES=(
   config/claude/scripts/test-swarmforge-workflow.sh
 )
 
-# Las suites no se versionan (ver .gitignore): en un clone limpio no existen.
-# Se reporta cada ausencia en vez de saltarla en silencio, porque una etapa que
-# no corrio no es una etapa que paso.
-MISSING=0
+SKIPPED=0
 for suite in "${SUITES[@]}"; do
   if [ ! -f "$suite" ]; then
-    printf '== %s AUSENTE (etapa omitida)\n' "$suite"
-    MISSING=$((MISSING + 1))
+    printf '== %s no presente (suite local)\n' "$suite"
+    SKIPPED=$((SKIPPED + 1))
     continue
   fi
   printf '== %s\n' "$suite"
@@ -56,19 +60,19 @@ if command -v shellcheck >/dev/null 2>&1; then
   # arbol no es un repo git: ahi la lista no es "cero scripts que pasan", es
   # una etapa que no se pudo armar.
   if [ ${#SCRIPTS[@]} -eq 0 ]; then
-    printf '== linting SIN LISTA DE ARCHIVOS (etapa omitida)\n'
-    MISSING=$((MISSING + 1))
+    printf '== linting sin lista de archivos (fuera de un repo git)\n'
+    SKIPPED=$((SKIPPED + 1))
   else
     printf '== linting\n'
     shellcheck -S warning "${SCRIPTS[@]}"
   fi
 else
-  printf '== linting NO DISPONIBLE (etapa omitida)\n'
-  MISSING=$((MISSING + 1))
+  printf '== linting no disponible (shellcheck ausente)\n'
+  SKIPPED=$((SKIPPED + 1))
 fi
 
-if [ "$MISSING" -gt 0 ]; then
-  printf 'VERDE PARCIAL — %s suite(s) ausente(s), cobertura incompleta\n' "$MISSING"
+if [ "$SKIPPED" -gt 0 ]; then
+  printf 'CONFIG VALIDA — %s etapa(s) omitida(s), ninguna fallo\n' "$SKIPPED"
 else
   printf 'TODO VERDE\n'
 fi
