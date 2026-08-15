@@ -54,7 +54,7 @@ You are a security auditor. Your job is to find what will get hacked, not to val
 - JWT: algorithm validation, expiry, audience, issuer, key rotation, no `alg: none`
 - OAuth2/OIDC: state param, PKCE, redirect validation, scope minimality
 - Sessions: httpOnly + secure + SameSite=Strict cookies, rotation on privilege change
-- Password storage: bcrypt/argon2 only, minimum cost factors
+- Hash storage: bcrypt/argon2 only, minimum cost factors
 - MFA: TOTP or WebAuthn, no SMS as sole second factor
 
 ### Secrets & Configuration

@@ -187,7 +187,126 @@ nvm()   { _nvm_lazy_load; nvm "$@"; }
 # p10k transient prompt
 typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
 
-# Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
-if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
-command -v fastfetch &>/dev/null && fastfetch
+# Zsh usability plugins — optional at runtime, managed by Brewfile.
+# Syntax highlighting must load after Oh My Zsh and the other widgets.
+if [[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  builtin source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
+if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
+# claude a secas queda igual que siempre (Anthropic).
+claude() {
+  local -a args=()
+  local use_ds=false use_glm=false use_kimi=false use_mm=false use_or=false use_ol=false a deepseek_settings glm_settings kimi_settings minimax_settings openrouter_settings ollama_settings claude_bin
+  for a in "$@"; do
+    case "$a" in
+      --deepseek)   use_ds=true ;;
+      --glm)        use_glm=true ;;
+      --kimi)       use_kimi=true ;;
+      --minimax)    use_mm=true ;;
+      --openrouter) use_or=true ;;
+      --ollama)     use_ol=true ;;
+      *)            args+=("$a") ;;
+    esac
+  done
+  if $use_ds; then
+    deepseek_settings="$HOME/.claude/deepseek.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$deepseek_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de DeepSeek: $deepseek_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    # No fijar ANTHROPIC_MODEL: lo anularia opusplan del settings separado.
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$deepseek_settings" \
+      "${args[@]}"
+  elif $use_glm; then
+    glm_settings="$HOME/.claude/glm.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$glm_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de GLM: $glm_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    # Mismo patron que --deepseek: apiKeyHelper en el settings, sin tocar el
+    # entorno aca. Z.AI documenta ANTHROPIC_AUTH_TOKEN, pero acepta X-Api-Key
+    # igual (verificado con curl: 429 de saldo en ambos, ninguno 401 de auth).
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$glm_settings" \
+      "${args[@]}"
+  elif $use_kimi; then
+    kimi_settings="$HOME/.claude/kimi.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$kimi_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de Kimi: $kimi_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$kimi_settings" \
+      "${args[@]}"
+  elif $use_mm; then
+    minimax_settings="$HOME/.claude/minimax.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$minimax_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de MiniMax: $minimax_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$minimax_settings" \
+      "${args[@]}"
+  elif $use_or; then
+    openrouter_settings="$HOME/.claude/openrouter.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$openrouter_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de OpenRouter: $openrouter_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$openrouter_settings" \
+      "${args[@]}"
+  elif $use_ol; then
+    ollama_settings="$HOME/.claude/ollama.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$ollama_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de Ollama: $ollama_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env -u ANTHROPIC_MODEL \
+      "$claude_bin" \
+      --settings "$ollama_settings" \
+      "${args[@]}"
+  else
+    command claude "$@"
+  fi
+}

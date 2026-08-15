@@ -13,7 +13,9 @@
 # recibo dice haber verificado.
 set -euo pipefail
 
-REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+CLAUDE_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(cd -- "$CLAUDE_DIR/../.." && pwd)
 cd "$REPO_ROOT"
 
 SUITES=(
@@ -38,11 +40,11 @@ for suite in "${SUITES[@]}"; do
 done
 
 printf '== JSON manifests\n'
-jq empty config/claude/settings.json
-jq empty config/claude/skills-lock.json
+jq empty "$CLAUDE_DIR/settings.json"
+jq empty "$CLAUDE_DIR/skills-lock.json"
 
 printf '== skill dependencies\n'
-bash config/claude/scripts/check-skill-deps.sh >/dev/null
+bash "$CLAUDE_DIR/scripts/check-skill-deps.sh" >/dev/null
 
 # La etapa de linting solo corre si el binario esta disponible: en un host sin
 # el, callar seria reportar una cobertura que no existe.
