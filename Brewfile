@@ -39,8 +39,7 @@ brew "ffuf"
 brew "nuclei"
 brew "nikto"
 brew "gitleaks"
-# SAST principal del agente vulnerability-hunter. Sin el, /security-scan
-# reporta su etapa de analisis estatico como no ejecutada.
+# SAST principal del agente vulnerability-hunter.
 brew "semgrep"
 
 # ============================================================================

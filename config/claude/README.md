@@ -10,7 +10,7 @@ para siempre en `~/.claude/skills/` y el agente la sigue viendo.
 ```bash
 DOTFILES="$HOME/Developer/dotfiles/config/claude"
 
-for d in agents commands skills hooks rules templates scripts output-styles; do
+for d in agents skills hooks rules templates scripts output-styles; do
   rsync -aL --delete --exclude __pycache__ --exclude .DS_Store "$DOTFILES/$d/" "$HOME/.claude/$d/"
 done
 cp -p "$DOTFILES"/*.{json,md,sh} "$HOME/.claude/"
@@ -33,7 +33,7 @@ al repo antes del próximo sync o el sync se las come.
 | Categoria | Cantidad | Detalle |
 |---|---|---|
 | Agentes | 22 | Agentes de producto, ingeniería y negocio; `swarmforge-workflow` reutiliza estos agentes y no agrega agentes duplicados |
-| Commands | 4 | `/code-review`, `/model-route`, `/plan` y `/security-scan` |
+| Commands | 0 | No hay commands custom: Claude Code conserva su `/plan` nativo y el switch de modelo de `opusplan` funciona sin shadowing |
 | Skills | 65 | Engineering, Backend, Mobile, Frontend/Animation, Design/Stitch, Media/Documents, Core/Workflow, Quality/Testing, SwarmForge workflow |
 | Rules | 6 | `coding-style.md`, `git-workflow.md`, `testing.md`, `security.md`, `context-management.md`, `destructive-operations.md`. BDD, mutation testing, quality metrics, arquitectura y npm-security viven ahora como skills (`bdd-gherkin`, `mutation-testing`, `quality-metrics`, `architecture-patterns`, `npm-security`) |
 | Hooks | 15 scripts de runtime + `scripts/rdd.sh`, `scripts/check-skill-deps.sh` y `scripts/validate.sh`. Corré `make test` para validar la config que acabás de clonar: manifiestos JSON, dependencias de skills y linting. Las suites `*.test.sh` no se versionan (ver `.gitignore`), así que sus etapas se reportan como omitidas en vez de darse por buenas | `PreToolUse` (validate-safe-ops, protect-codegraph-tracking, privacy-review, quality-gate, protect-tests), `UserPromptSubmit` (secret-detect, CodeGraph/OpenSpec preflight), `SessionStart` (check-auto-save-stash, handoff-session-start, CodeGraph/OpenSpec preflight), `PostCompact`, `PostToolUse` (detect-debug), `PostToolUseFailure`, `Stop` (qa-checklist, gauntlet-stop, stop-check-pending, handoff-stop), `SessionEnd` |
