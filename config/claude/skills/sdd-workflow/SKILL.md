@@ -16,9 +16,28 @@ copy so a fix to a template applies everywhere.
 ## Before starting
 
 1. Read the project `CLAUDE.md`, README, architecture docs, and existing specs.
-2. Identify the stack, test runner, deploy path, and relevant constraints.
-3. Create `specs/<feature-slug>/` only after confirming the requested scope.
-4. Use the templates; do not invent a second spec format.
+2. Run the project preflight and verify that CodeGraph is initialized before
+   exploring implementation code. If it is missing, report `codegraph init`
+   as a user-authorized setup step; do not silently initialize.
+3. Identify the stack, test runner, deploy path, and relevant constraints.
+4. This project's SDD workflow uses OpenSpec as its source of truth. Verify
+   the CLI, `openspec/specs/`, `openspec/changes/`, and `openspec status --json`.
+   If any check fails, stop SDD work and report the authorized setup step.
+5. This project intentionally keeps OpenSpec artifacts local to avoid AI
+   residue in Git. Verify that the root `.gitignore` ignores `openspec/` unless
+   it was already tracked before the session. Do not stage or commit newly
+   created OpenSpec artifacts without explicit user instruction.
+6. Do not create local `specs/<feature-slug>/` artifacts as a parallel format.
+
+## OpenSpec mode
+
+OpenSpec is the agreement layer for this project's SDD workflow. It is not a
+test runner or a replacement for CodeGraph. Its files stay local and ignored
+by default in this project. Verify the CLI,
+`openspec/specs/`, `openspec/changes/`, and `openspec status --json`, then use
+the project's native `/opsx:*` commands. If OpenSpec is not initialized, stop
+before creating proposals or code and request authorization for the CLI install
+and `openspec init`; never install or initialize it silently.
 
 ## Scaffolding
 

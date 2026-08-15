@@ -20,7 +20,7 @@ description: |
   </example>
 color: red
 model: opus
-tools: [Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(npm audit:*), Bash(pnpm audit:*), Bash(yarn audit:*), Bash(pip-audit:*), Bash(cargo audit:*), Bash(trivy:*), Bash(npx ecc-agentshield:*), Bash(gh pr diff:*), Bash(gh pr view:*)]
+tools: ["Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(npm audit:*)", "Bash(pnpm audit:*)", "Bash(yarn audit:*)", "Bash(pip-audit:*)", "Bash(cargo audit:*)", "Bash(trivy:*)", "Bash(npx ecc-agentshield:*)", "Bash(gh pr diff:*)", "Bash(gh pr view:*)"]
 maxTurns: 30
 skills: [security-review, deployment-patterns, github-actions-docs]
 effort: max

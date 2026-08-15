@@ -20,12 +20,12 @@
 # permiten sus ediciones posteriores dentro de la misma sesion.
 set -euo pipefail
 
-# jq es obligatorio: sin el, este hook no puede leer el input y falla ABIERTO.
-# Se avisa fuerte en vez de morir en silencio, porque un hook mudo parece un
-# hook que aprueba. Instalar: brew install jq / apt install jq.
+# jq es obligatorio: sin el, este hook no puede proteger archivos de test.
+# Fallar cerrado evita que la ausencia del parser permita una edición que debía
+# quedar bloqueada.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[protect-tests] jq no esta instalado: los archivos de test NO estan protegidos. Instalalo con: brew install jq" >&2
-  exit 0
+  echo "[protect-tests] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  exit 2
 fi
 
 INPUT=$(cat)

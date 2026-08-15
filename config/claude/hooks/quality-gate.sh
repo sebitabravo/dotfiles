@@ -16,12 +16,11 @@
 # finge medir compra confianza falsa, que es peor que no tener gate.
 
 # Read hook input (JSON on stdin)
-# jq es obligatorio: sin el, este hook no puede leer el input y falla ABIERTO.
-# Se avisa fuerte en vez de morir en silencio, porque un hook mudo parece un
-# hook que aprueba. Instalar: brew install jq / apt install jq.
+# jq es obligatorio: sin el, este hook no puede ejecutar el gate de commit.
+# Fallar cerrado evita que un commit escape sin la verificación requerida.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[quality-gate] jq no esta instalado: el gate de lint/tests NO corre antes del commit. Instalalo con: brew install jq" >&2
-  exit 0
+  echo "[quality-gate] jq no esta instalado: commit bloqueado; instalalo con: brew install jq" >&2
+  exit 2
 fi
 
 input=$(cat)
@@ -208,6 +207,18 @@ fi
 # su propio runner). Se buscan subdirectorios de primer nivel que el commit
 # este tocando (STAGED_DIRS) y que ademas tengan marcador de proyecto, para no
 # correr la suite de un paquete que el commit ni toco.
+# QUIEN DECIDE COMO SE CORREN LOS TESTS: lib/test-runner.sh, no este archivo.
+#
+# Habia dos implementaciones de la misma deteccion y se desincronizaron. La lib
+# declara el target `test:` de un Makefile como maxima precedencia — si el repo
+# escribio ahi que significa "correr los tests", adivinarlo de nuevo es
+# reimplementar peor algo que ya esta escrito — y esta funcion no lo conocia.
+# Resultado: un repo cuyas suites se lanzan por make quedaba como "sin runner" y
+# el gate bloqueaba sin haber corrido nada. Bloquear ciego no es ser estricto.
+QG_LIB="$(dirname "${BASH_SOURCE[0]}")/lib/test-runner.sh"
+# shellcheck source=lib/test-runner.sh
+[ -f "$QG_LIB" ] && . "$QG_LIB"
+
 detect_project_at() {
   # Setea HAS_TESTS/TEST_CMD/LINT_CMD/COVERAGE_CMD/COVERAGE_KIND para el
   # directorio $1 (relativo a ROOT, "." para la raiz). No cambia el cwd del
@@ -221,14 +232,28 @@ detect_project_at() {
   COVERAGE_CMD=""
   COVERAGE_KIND=""
 
+  # La lib manda para TEST_CMD. Los bloques por manifiesto de mas abajo siguen
+  # corriendo, pero ya solo para COVERAGE_CMD y LINT_CMD, que la lib no cubre.
+  if declare -f detect_test_cmd >/dev/null 2>&1; then
+    local lib_root="$dir"
+    [ "$dir" = "." ] && lib_root="$PWD"
+    if detect_test_cmd "$lib_root" && [ -n "$TEST_CMD" ]; then
+      HAS_TESTS=true
+    else
+      TEST_CMD=""
+    fi
+  fi
+
   if [ -f "$dir/package.json" ]; then
     # JS/TS project.
     # HAS_TESTS se marca junto con TEST_CMD: antes se marcaba true y el TEST_CMD
     # quedaba vacio si el runner no era vitest/jest (ej. "test": "node --test"),
     # asi que el gate no corria nada y dejaba pasar el commit como si fuera verde.
     if jq -e '.scripts.test' "$dir/package.json" >/dev/null 2>&1; then
-      HAS_TESTS=true
-      TEST_CMD="${prefix}npm test"
+      if [ "$HAS_TESTS" = false ]; then
+        HAS_TESTS=true
+        TEST_CMD="${prefix}npm test"
+      fi
       # --coverage.reporter=text fuerza la tabla de istanbul aunque el proyecto
       # tenga configurado otro reporter (lcov/html no traen porcentajes al stdout,
       # y sin ellos el parseo de abajo no ve nada y el piso no se aplica).
@@ -245,8 +270,10 @@ detect_project_at() {
   elif [ -f "$dir/pyproject.toml" ] || [ -f "$dir/setup.cfg" ] || [ -f "$dir/pytest.ini" ]; then
     # Python project
     if command -v uv >/dev/null 2>&1 && [ -f "$dir/pyproject.toml" ]; then
-      HAS_TESTS=true
-      TEST_CMD="${prefix}uv run pytest"
+      if [ "$HAS_TESTS" = false ]; then
+        HAS_TESTS=true
+        TEST_CMD="${prefix}uv run pytest"
+      fi
       # --cov-branch: sin el, pytest-cov no reporta branch coverage y el piso de
       # 70% declarado en CLAUDE.md no se puede evaluar.
       COVERAGE_CMD="${prefix}uv run pytest --cov --cov-branch --cov-report=term-missing"
@@ -254,8 +281,10 @@ detect_project_at() {
     fi
   elif [ -f "$dir/go.mod" ]; then
     # Go project
-    HAS_TESTS=true
-    TEST_CMD="${prefix}go test ./..."
+    if [ "$HAS_TESTS" = false ]; then
+      HAS_TESTS=true
+      TEST_CMD="${prefix}go test ./..."
+    fi
     COVERAGE_CMD="${prefix}go test -cover ./..."
     COVERAGE_KIND="gocov"
     if command -v golangci-lint >/dev/null 2>&1; then
@@ -267,12 +296,67 @@ detect_project_at() {
 STAGED_FILES_FOR_DETECT=$(git diff --cached --name-only 2>/dev/null)
 STAGED_DIRS_FOR_DETECT=$(printf '%s\n' "$STAGED_FILES_FOR_DETECT" | awk -F/ '{print $1}' | sort -u)
 
-# Documentacion (README, ADRs, informes) no requiere tests per
-# rules/common/testing.md ("Que NO requiere tests"). Si TODOS los archivos
-# staged son .md, el gate de test-runner no aplica: no hay codigo que probar.
-if [ -n "$STAGED_FILES_FOR_DETECT" ] && ! printf '%s\n' "$STAGED_FILES_FOR_DETECT" | grep -qv '\.md$'; then
-  echo "[quality-gate] Commit solo-documentacion (.md) — sin gate de tests." >&2
-  exit 0
+# Documentacion y config estatica no requieren tests per
+# rules/common/testing.md ("What does NOT require tests").
+#
+# Whitelist CERRADA: si TODOS los archivos staged caen en la lista, no hay
+# codigo que probar y el gate de tests no aplica. Lo que NO esta en la lista
+# sigue pasando por el gate — una extension desconocida no abre un hueco
+# silencioso, al reves: bloquea como siempre.
+#
+# NO se listan .sh ni .py aunque vivan en .github/scripts (los scripts
+# requieren tests), ni Dockerfile/Makefile (afectan comportamiento).
+is_docs_or_config() {
+  local f="$1"
+  local base="${f##*/}"
+
+  # PRIMERO la lista negra, porque las reglas de abajo la taparian: un
+  # package.json matchea *.json y un Cargo.lock matchea *.lock.
+  #
+  # Manifiestos y lockfiles NO son config estatica: son el arbol de
+  # dependencias, o sea el comportamiento. Un bump de version no toca una
+  # linea de codigo propio y rompe la build igual — es exactamente el commit
+  # donde la suite tiene que correr, no el que hay que eximir.
+  case "$base" in
+    package.json | package-lock.json | npm-shrinkwrap.json) return 1 ;;
+    bun.lock | bun.lockb | pnpm-lock.yaml | yarn.lock) return 1 ;;
+    pyproject.toml | poetry.lock | uv.lock | requirements.txt | Pipfile | Pipfile.lock) return 1 ;;
+    Cargo.toml | Cargo.lock | go.mod | go.sum) return 1 ;;
+    composer.json | composer.lock | Gemfile | Gemfile.lock) return 1 ;;
+    # tsconfig cambia como compila el proyecto; jest/vitest/eslint definen que
+    # y como se verifica. Eximirlos deja que se relaje el propio gate sin que
+    # nada lo note.
+    tsconfig*.json | jest.config.* | vitest.config.* | .eslintrc*) return 1 ;;
+  esac
+
+  # Se compara el basename, no la ruta: sin esto `sub/.gitignore` y
+  # `pkg/LICENSE` no matcheaban y un commit de solo-docs quedaba bloqueado por
+  # vivir en un subdirectorio.
+  case "$base" in
+    # Documentacion
+    *.md | *.txt | *.rst | *.adoc) return 0 ;;
+    # Config estatica, CI y lockfiles
+    *.yml | *.yaml | *.json | *.toml | *.ini | *.cfg | *.conf | *.lock | *.lockb) return 0 ;;
+    # Assets y datos
+    *.svg | *.png | *.jpg | *.jpeg | *.webp | *.gif | *.ico | *.woff | *.woff2 | *.ttf | *.otf | *.eot | *.pdf | *.csv) return 0 ;;
+    # Dotfiles de config
+    .gitignore | .gitattributes | .editorconfig | .dockerignore | .prettierrc | .prettierignore | .nvmrc | .tool-versions | .python-version | .env.example | .env.sample) return 0 ;;
+    # Archivos de convencion sin extension
+    LICENSE | LICENSE.* | CODEOWNERS | NOTICE | AUTHORS | CONTRIBUTING | CHANGELOG) return 0 ;;
+  esac
+  return 1
+}
+
+if [ -n "$STAGED_FILES_FOR_DETECT" ]; then
+  ALL_NON_CODE=true
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    is_docs_or_config "$f" || { ALL_NON_CODE=false; break; }
+  done <<< "$STAGED_FILES_FOR_DETECT"
+  if [ "$ALL_NON_CODE" = true ]; then
+    echo "[quality-gate] Commit sin codigo (docs/config/assets) — sin gate de tests." >&2
+    exit 0
+  fi
 fi
 
 detect_project_at "."

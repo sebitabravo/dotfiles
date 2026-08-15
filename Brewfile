@@ -27,22 +27,21 @@ brew "eza"
 brew "zoxide"
 brew "jq"
 brew "ripgrep"
-brew "sd"
 brew "fd"
 brew "fzf"
 brew "uv"
-brew "mole"
-brew "btop"
 brew "engram"
 brew "ffmpeg"
 brew "imagemagick"
 brew "pandoc"
-brew "librsvg"
 
 brew "ffuf"
 brew "nuclei"
 brew "nikto"
 brew "gitleaks"
+# SAST principal del agente vulnerability-hunter. Sin el, /security-scan
+# reporta su etapa de analisis estatico como no ejecutada.
+brew "semgrep"
 
 # ============================================================================
 # Applications (Casks)

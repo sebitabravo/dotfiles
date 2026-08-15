@@ -3,30 +3,22 @@
   "cleanupPeriodDays": 3,
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE": "1",
     "API_TIMEOUT_MS": "3000000",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
     "CLAUDE_CODE_NO_FLICKER": "1",
     "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "200000",
-    "CLAUDE_CODE_MAX_FILE_READ_BYTES": "500000",
     "CLAUDE_CODE_EFFORT_LEVEL": "high",
-    "ENABLE_PROMPT_CACHING_1H": "1",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_CODE_COORDINATOR_MODE": "1",
-    "CLAUDE_CODE_MAX_AGENT_DEPTH": "5",
-    "ENABLE_MONITOR_TOOL": "1",
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "5",
     "CLAUDE_CODE_ENABLE_AWAY_SUMMARY": "1",
-    "CLAUDE_CODE_USE_LOCAL_GIT_USER": "1",
-    "CLAUDE_CODE_AUTO_IGNORE_PATTERNS": "1",
-    "CLAUDE_CODE_RETRY_LIMIT": "2",
-    "CLAUDE_CODE_USE_STRUCTURED_OUTPUT": "1",
+    "CLAUDE_CODE_MAX_RETRIES": "2",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "CLAUDE_CODE_HIDE_CWD": "1",
     "CLAUDE_CODE_SCROLL_SPEED": "3",
     "MAX_THINKING_TOKENS": "10000",
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
-    "ENABLE_TOOL_SEARCH": "1",
+    "ENABLE_TOOL_SEARCH": "true",
     "BASH_MAX_OUTPUT_LENGTH": "30000",
     "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": "25000",
     "ENGRAM_CLOUD_AUTOSYNC": "1",
@@ -52,7 +44,6 @@
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
       "Bash(npm:*)",
-      "Bash(npx:*)",
       "Bash(pnpm:*)",
       "Bash(bun:*)",
       "Bash(yarn:*)",
@@ -63,7 +54,6 @@
       "Bash(sd:*)",
       "Bash(which:*)",
       "Bash(brew:*)",
-      "Bash(python:*)",
       "Bash(pip:*)",
       "Bash(uvx:*)",
       "Bash(uv:*)",
@@ -88,7 +78,6 @@
       "Bash(printf:*)",
       "Bash(pwd:*)",
       "Bash(cd:*)",
-      "Bash(env:*)",
       "Bash(export:*)",
       "Bash(source:*)",
       "Bash(pytest:*)",
@@ -202,6 +191,11 @@
           },
           {
             "type": "command",
+            "command": "~/.claude/hooks/protect-codegraph-tracking.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "~/.claude/hooks/privacy-review.sh",
             "timeout": 5,
             "if": "Bash(gh *)"
@@ -256,6 +250,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "~/.claude/hooks/project-integrations-check.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "if [ -f '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/sebastian/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/sebastian/.orca/agent-hooks/claude-hook.sh'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi",
             "timeout": 10
           }
@@ -276,6 +279,11 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/compact-resume.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/project-integrations-check.sh",
+            "timeout": 10
           }
         ]
       }
@@ -434,11 +442,11 @@
       }
     ]
   },
-  "enableWorkflows": true,
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
-    "padding": 0
+    "padding": 0,
+    "refreshInterval": 5
   },
   "enabledPlugins": {
     "caveman@caveman": true,
@@ -465,18 +473,13 @@
       }
     }
   },
-  "outputStyle": "sebita",
+  "outputStyle": "Sebita",
   "language": "spanish",
   "spinnerTipsEnabled": true,
   "alwaysThinkingEnabled": true,
   "advisorModel": "opus",
   "autoUpdatesChannel": "latest",
   "autoMemoryEnabled": false,
-  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "enableFileCheckpointing": true,
-  "memoryPruning": true,
-  "mcpPriority": "project-first",
-  "maxBudgetPerSession": "2.0",
-  "includeGitHistoryContext": "last-5"
+  "fileCheckpointingEnabled": true
 }

@@ -38,6 +38,12 @@ __pycache__/
 HANDOFF.md
 HANDOFF.md.archived
 
+# Suites de verificacion: se corren en local, no se versionan.
+# run-all-tests.sh las ejecuta si estan presentes y reporta la etapa omitida
+# si no lo estan, para no confundir "no corrio" con "paso".
+*.test.sh
+config/claude/scripts/test-swarmforge-workflow.sh
+
 # IA
 .playwright-mcp/
 .claude-rdd/

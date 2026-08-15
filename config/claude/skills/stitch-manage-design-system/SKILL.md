@@ -5,11 +5,10 @@ description: >-
   creating/updating design systems in Stitch, and applying them to screens.
   Use when retrieving, creating, updating, or applying a Stitch design system via the Stitch MCP tools.
 allowed-tools:
-  - "stitch*:*"
   - "Bash"
   - "Read"
   - "Write"
-  - "web_fetch"
+  - "WebFetch"
 ---
 
 # Design-System
@@ -66,7 +65,7 @@ design system in Stitch.
 1. **Upload `DESIGN.md`**:
    - **Option A (Recommended - Uploader Script)**: Use the modified `upload-to-stitch` Python script which natively handles `.md` files. It base64-encodes the markdown file in-process and sends it to the `/v1/projects/{projectId}/screens:batchCreate` endpoint, bypassing output token limits.
      ```bash
-     python3 stitch-skills/plugins/stitch-design/skills/upload-to-stitch/scripts/upload_to_stitch.py \
+     uv run --no-project --python 3.12 ~/.claude/skills/stitch-manage-design-system/scripts/upload_to_stitch.py \
        --project-id <PROJECT_ID> \
        --file-path /path/to/DESIGN.md \
        --api-key <API_KEY>

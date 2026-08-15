@@ -28,7 +28,7 @@ description: |
   </example>
 color: yellow
 model: haiku
-tools: [Read, Grep, Glob, Write, Edit, Bash, WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(python:*)", "Bash(python3:*)", "Bash(uv:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pandoc:*)", "Bash(soffice:*)", "Bash(magick:*)", "Bash(exiftool:*)", "Bash(c2patool:*)", "WebFetch"]
 skills: [pptx, xlsx, inacap, pandoc, imagemagick]
 maxTurns: 30
 background: true
@@ -263,7 +263,9 @@ Invoca la skill `pptx` (workflow, design, QA). Sub-archivos a leer SOLO cuando a
 - `~/.claude/skills/pptx/pptxgenjs.md` — si creas desde cero
 - `~/.claude/skills/pptx/editing.md` — si editas un template existente
 
-pptxgenjs installed locally — require via absolute path resolved from home:
+`pptxgenjs` is declared in `~/.claude/skills/pptx/package.json`. If the skill's
+`node_modules/` directory is absent, run `npm install` inside that skill
+directory before requiring it. Then resolve it from the skill directory:
 
 ```javascript
 const os = require('os');
@@ -290,7 +292,9 @@ Template at `~/.claude/skills/inacap/template.py`.
 
 ## Format & Media Conversion
 
-`pandoc` and `imagemagick` preloaded via frontmatter. Full Bash available — run the commands directly, the API is already in your context.
+`pandoc` and `imagemagick` are available through the scoped command grants in
+the frontmatter when installed on the host. Use only those declared commands;
+do not assume unrestricted shell access.
 
 ### Documentos (pandoc)
 

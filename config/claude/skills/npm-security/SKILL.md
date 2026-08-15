@@ -148,16 +148,14 @@ bun install --frozen-lockfile
 ### npq — pre-install firewall
 
 ```bash
-npm install -g npq
-npq install express --dry-run
-alias npm='npq-hero'
+npx --yes npq install express --dry-run
 
 # Cross-manager:
-NPQ_PKG_MGR=pnpm npq install fastify
-NPQ_PKG_MGR=bun npq install fastify
+NPQ_PKG_MGR=pnpm npx --yes npq install fastify
+NPQ_PKG_MGR=bun npx --yes npq install fastify
 
 # Disable specific checks:
-MARSHALL_DISABLE_SNYK=1 npq install express
+MARSHALL_DISABLE_SNYK=1 npx --yes npq install express
 ```
 
 Checks: vulnerabilities (Snyk), package age, typosquatting, provenance, new
@@ -166,11 +164,10 @@ binaries, install scripts, trampoline maintenance.
 ### Socket Firewall (sfw)
 
 ```bash
-npm install -g sfw
-sfw npm install express
-sfw bun add express
-sfw pnpm add express
-sfw pip install requests
+npx --yes sfw npm install express
+npx --yes sfw bun add express
+npx --yes sfw pnpm add express
+npx --yes sfw pip install requests
 ```
 
 Real-time firewall. Intercepts package manager commands. Blocks packages flagged

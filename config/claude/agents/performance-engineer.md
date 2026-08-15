@@ -28,7 +28,7 @@ description: |
   </example>
 color: yellow
 model: sonnet
-tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(curl:*), Bash(docker:*), WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(python:*)", "Bash(curl:*)", "Bash(docker:*)", "WebFetch"]
 context: fork
 maxTurns: 40
 skills: [tanstack-query, gsap-performance, e2e-testing]

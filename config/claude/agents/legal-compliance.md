@@ -20,7 +20,7 @@ description: |
   </example>
 color: orange
 model: opus
-tools: [Read, Grep, Glob, WebFetch]
+tools: ["Read", "Grep", "Glob", "WebFetch"]
 maxTurns: 30
 effort: xhigh
 background: true

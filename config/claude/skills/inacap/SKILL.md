@@ -198,8 +198,11 @@ Sin labels ("Profesor:", "Integrantes:"). Solo los valores. Sin linea divisoria.
 ### Dependencias
 
 ```bash
-pip install python-docx
+uv run --no-project --python 3.12 --with python-docx -- python informe.py
 ```
+
+Esto mantiene `python-docx` fuera de la instalación global y del repositorio;
+reemplazá `informe.py` por el script que importa este template.
 
 ### Patron de uso
 

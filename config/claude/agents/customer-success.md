@@ -20,7 +20,7 @@ description: |
   </example>
 color: teal
 model: haiku
-tools: [Read, Grep, Glob, Write, Edit, WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "WebFetch"]
 maxTurns: 30
 effort: high
 ---

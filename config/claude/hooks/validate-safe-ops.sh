@@ -10,12 +10,12 @@
 #     en auto-aprobado. Silencio = flujo normal de permisos de settings.json.
 set -euo pipefail
 
-# jq es obligatorio: sin el, este hook no puede leer el input y falla ABIERTO.
-# Se avisa fuerte en vez de morir en silencio, porque un hook mudo parece un
-# hook que aprueba. Instalar: brew install jq / apt install jq.
+# jq es obligatorio: sin el, este hook no puede validar comandos peligrosos.
+# Fallar cerrado evita que auto/bypassPermissions convierta la ausencia del
+# parser en una vía para ejecutar una operación que debía bloquearse.
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[validate-safe-ops] jq no esta instalado: los comandos peligrosos NO se estan validando. Instalalo con: brew install jq" >&2
-  exit 0
+  echo "[validate-safe-ops] jq no esta instalado: bloqueo preventivo; instalalo con: brew install jq" >&2
+  exit 2
 fi
 
 INPUT=$(cat)
@@ -365,6 +365,13 @@ check_segment() {
       if echo "$segment" | grep -qE '\bpush\b.*(\s-f\b|^-f\b)'; then
         deny "git push -f bloqueado. Usa --force-with-lease si es necesario."
       fi
+      # Un refspec con "+" delante es un force push sin la palabra force:
+      # `git push origin +main` sobrescribe el remoto igual que --force. Sin
+      # esta linea, la regla de arriba se esquiva escribiendo el mismo efecto
+      # de otra forma, que es el modo de falla de validar un CLI por su texto.
+      if echo "$segment" | grep -qE '\bpush\b.*[[:space:]]\+[A-Za-z0-9_./-]+(:|$|[[:space:]])'; then
+        deny "git push con refspec '+' es un force push. Usa --force-with-lease si es necesario."
+      fi
       if echo "$segment" | grep -qE '\breset\s+.*--hard(\s|$)'; then
         deny "git reset --hard bloqueado. Usa git stash o git checkout -- <file> para descartes selectivos."
       fi
@@ -377,9 +384,11 @@ check_segment() {
       fi
       ;;
     npm)
-      # -g standalone — evita falsos positivos con paquetes que terminan en -g
-      if echo "$segment" | grep -qE '\b(install|i)\b.*(\s-g(\s|$)|^-g(\s|$))'; then
-        deny "npm install -g bloqueado. Usa npx para herramientas one-shot."
+      # -g standalone — evita falsos positivos con paquetes que terminan en -g.
+      # Las tres formas son el mismo install global: npm acepta -g, --global y
+      # --location=global. Validar solo la corta deja las otras dos abiertas.
+      if echo "$segment" | grep -qE '\b(install|i)\b.*(\s-g(\s|$)|^-g(\s|$)|--global(\s|$)|--location=global(\s|$))'; then
+        deny "npm install global bloqueado. Usa npx para herramientas one-shot."
       fi
       ;;
     pip | pip3)
@@ -409,7 +418,10 @@ check_segment() {
       fi
       ;;
     dd)
-      if echo "$segment" | grep -qE '\bif='; then
+      # of= es el lado que DESTRUYE: `dd of=/dev/rdisk0` sobrescribe el disco
+      # sin necesitar if=. Validar solo la entrada dejaba pasar exactamente la
+      # mitad peligrosa del comando.
+      if echo "$segment" | grep -qE '\b(if|of)='; then
         deny "dd bloqueado. Operacion de bajo nivel peligrosa."
       fi
       ;;

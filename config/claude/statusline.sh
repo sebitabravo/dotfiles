@@ -18,22 +18,34 @@ NC='\033[0m'
 input=$(cat)
 
 # Parse basic fields
-MODEL=$(echo "$input" | jq -r '.model.display_name // "Claude"')
-DIR=$(echo "$input" | jq -r '.workspace.current_dir // "~"')
-ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
-REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+MODEL=$(printf '%s' "$input" | jq -r '.model.display_name // "Claude"')
+DIR=$(printf '%s' "$input" | jq -r '.workspace.current_dir // .cwd // "~"')
+ADDED=$(printf '%s' "$input" | jq -r '.cost.total_lines_added // 0')
+REMOVED=$(printf '%s' "$input" | jq -r '.cost.total_lines_removed // 0')
 
-# Context window (before compression)
-CTX_SIZE=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
-INPUT_TOKENS=$(echo "$input" | jq -r '.context_window.current_usage.input_tokens // 0')
-CACHE_CREATE=$(echo "$input" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
-CACHE_READ=$(echo "$input" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
+# Context window. Claude Code provides used_percentage as the authoritative
+# value. Keep a token-based fallback for older/partial payloads.
+CTX_SIZE=$(printf '%s' "$input" | jq -r '.context_window.context_window_size // 200000')
+CTX_PERCENT_RAW=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty')
 
-TOTAL_USED=$((INPUT_TOKENS + CACHE_CREATE + CACHE_READ))
-if [ "$CTX_SIZE" -gt 0 ] 2>/dev/null; then
-  CTX_PERCENT=$((TOTAL_USED * 100 / CTX_SIZE))
+if [[ "$CTX_PERCENT_RAW" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  CTX_PERCENT=${CTX_PERCENT_RAW%.*}
 else
-  CTX_PERCENT=0
+  TOTAL_INPUT_TOKENS=$(printf '%s' "$input" | jq -r '.context_window.total_input_tokens // empty')
+  if [[ "$TOTAL_INPUT_TOKENS" =~ ^[0-9]+$ ]]; then
+    TOTAL_USED=$TOTAL_INPUT_TOKENS
+  else
+    INPUT_TOKENS=$(printf '%s' "$input" | jq -r '.context_window.current_usage.input_tokens // 0')
+    CACHE_CREATE=$(printf '%s' "$input" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
+    CACHE_READ=$(printf '%s' "$input" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
+    TOTAL_USED=$((INPUT_TOKENS + CACHE_CREATE + CACHE_READ))
+  fi
+
+  if [[ "$CTX_SIZE" =~ ^[0-9]+$ ]] && [ "$CTX_SIZE" -gt 0 ]; then
+    CTX_PERCENT=$((TOTAL_USED * 100 / CTX_SIZE))
+  else
+    CTX_PERCENT=0
+  fi
 fi
 [ "$CTX_PERCENT" -gt 100 ] && CTX_PERCENT=100
 [ "$CTX_PERCENT" -lt 0 ] && CTX_PERCENT=0
@@ -44,9 +56,11 @@ DIR_NAME=$(basename "$DIR")
 # Git info
 BRANCH=""
 GIT_DIRTY=""
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  BRANCH=$(git branch --show-current 2>/dev/null)
-  if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+GIT_CWD="$DIR"
+[ "$GIT_CWD" = "~" ] && GIT_CWD="$PWD"
+if git -C "$GIT_CWD" rev-parse --git-dir >/dev/null 2>&1; then
+  BRANCH=$(git -C "$GIT_CWD" branch --show-current 2>/dev/null)
+  if [[ -n $(git -C "$GIT_CWD" status --porcelain 2>/dev/null) ]]; then
     GIT_DIRTY="*"
   fi
 fi
@@ -142,7 +156,8 @@ if [ -n "$PEAK_WARNING" ]; then
 fi
 
 # Caveman mode badge
-CAVEMAN_FLAG="${HOME}/.claude/.caveman-active"
+CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}"
+CAVEMAN_FLAG="${CLAUDE_CONFIG_DIR}/.caveman-active"
 CAVEMAN_BADGE=""
 if [ -f "$CAVEMAN_FLAG" ]; then
   CAV_MODE=$(head -c 64 "$CAVEMAN_FLAG" 2>/dev/null | tr -d '\n\r' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
@@ -162,4 +177,4 @@ if [ -n "$CAVEMAN_BADGE" ]; then
 fi
 
 # Clear to end of line to prevent artifacts from previous renders
-echo -e "${LINE}\033[K"
+printf '%b\n' "${LINE}\033[K"

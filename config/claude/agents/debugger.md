@@ -20,7 +20,7 @@ description: |
   </example>
 color: red
 model: sonnet
-tools: [Read, Grep, Glob, Write, Edit, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(bun:*), Bash(go:*), Bash(cargo:*), Bash(python:*), Bash(pytest:*), Bash(jest:*), Bash(vitest:*), Bash(curl:*), Bash(docker:*), WebFetch]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(python:*)", "Bash(pytest:*)", "Bash(jest:*)", "Bash(vitest:*)", "Bash(curl:*)", "Bash(docker:*)", "WebFetch"]
 context: fork
 maxTurns: 40
 skills: [systematic-debugging, mobile-app-testing, python-testing-patterns, mutation-testing, verification-before-completion]
