@@ -68,7 +68,7 @@ Three questions. Any "no" means you are not finished:
 
 - **Documentation** (README, comments, ADRs).
 - **Static config** that does not affect behavior (format, style, metadata).
-- **CI/infra config** (workflows, dependabot, deploy YAML, lockfiles): no se testea con unit tests; se valida con linters (actionlint) y con la corrida de CI misma.
+- **CI/infra config** (workflows, dependabot, deploy YAML, lockfiles): not covered by unit tests; validated with linters (actionlint) and by the CI run itself.
 - **Generated code** (ORM models, protobuf, OpenAPI stubs).
 - **Tests of tests** (do not test mocks, fixtures, or test helpers).
 

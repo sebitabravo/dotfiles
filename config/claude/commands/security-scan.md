@@ -1,33 +1,33 @@
 ---
-description: "Auditoría de seguridad completa: dependencias, secretos, OWASP y permisos"
-argument-hint: "[ruta del proyecto | vacío = directorio actual]"
+description: "Full security audit: dependencies, secrets, OWASP and permissions"
+argument-hint: "[project path | empty = current directory]"
 ---
 
-Ejecutá un escaneo de seguridad completo de: $ARGUMENTS (si vacío, el directorio actual).
+Run a full security scan of: $ARGUMENTS (if empty, the current directory).
 
-1. **Dependency audit**: corré el audit del runner del proyecto (`npm audit`, `bun audit`, `pnpm audit`, o `pip-audit`).
-2. **Detección de secretos**: buscá hardcoded secrets, API keys y tokens en archivos fuente.
-3. **OWASP quick check**: revisá patrones de auth, validación de input y manejo de errores contra el top 10.
-4. **Permission review**: permisos de archivos, cobertura de .gitignore, exposición de archivos sensibles.
-5. **Supply chain**: integridad del lockfile, dependencias git, provenance (usá la skill `npm-security` para proyectos JS/TS).
+1. **Dependency audit**: run the project runner's audit (`npm audit`, `bun audit`, `pnpm audit`, or `pip-audit`).
+2. **Secret detection**: look for hardcoded secrets, API keys and tokens in source files.
+3. **OWASP quick check**: review auth patterns, input validation and error handling against the top 10.
+4. **Permission review**: file permissions, .gitignore coverage, exposure of sensitive files.
+5. **Supply chain**: lockfile integrity, git dependencies, provenance (use the `npm-security` skill for JS/TS projects).
 
-## Agentes
+## Agents
 
-Levantá **`vulnerability-hunter` siempre**: es el único que tiene las herramientas
-de escaneo en su allowlist (`semgrep`, `gitleaks`, `bandit`, `npm audit`,
-`pip-audit`, `trivy`, más el análisis de binarios), así que es el que ejecuta los
-pasos 1, 2 y la parte verificable del 5. Los demás agentes solo pueden opinar
-sobre esos puntos; este los corre.
+Spawn **`vulnerability-hunter` always**: it is the only one with the scanning
+tools in its allowlist (`semgrep`, `gitleaks`, `bandit`, `npm audit`,
+`pip-audit`, `trivy`, plus binary analysis), so it is the one that executes
+steps 1, 2 and the verifiable part of 5. The other agents can only opine on
+those points; this one runs them.
 
-Sumá `security-auditor` en paralelo cuando el proyecto no sea trivial o el paso 3
-importe: aporta el lente de threat model, OWASP y arquitectura de auth, que es
-juicio de diseño y no sale de un scanner.
+Add `security-auditor` in parallel when the project is non-trivial or step 3
+matters: it brings the threat model, OWASP and auth architecture lens, which is
+design judgment and does not come out of a scanner.
 
-Si una herramienta no está instalada en el host, reportá esa etapa como **no
-ejecutada**. Un scanner ausente no es un hallazgo limpio: presentarlo como verde
-es peor que no correrlo, porque compra confianza que nadie verificó.
+If a tool is not installed on the host, report that stage as **not executed**.
+A missing scanner is not a clean finding: presenting it as green is worse than
+not running it, because it buys confidence nobody verified.
 
-Formato de reporte:
-- Severidad: Critical / High / Medium / Low / Info
-- Por hallazgo: descripción, archivo:línea, remediación
-- Resumen ejecutivo con risk score
+Report format:
+- Severity: Critical / High / Medium / Low / Info
+- Per finding: description, file:line, remediation
+- Executive summary with risk score

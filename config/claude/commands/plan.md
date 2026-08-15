@@ -1,16 +1,16 @@
 ---
-description: "Planificar la implementación de una feature: arquitectura, fases y dependencias"
-argument-hint: "[feature a planificar]"
+description: "Plan a feature implementation: architecture, phases and dependencies"
+argument-hint: "[feature to plan]"
 ---
 
-Planificá la implementación de: $ARGUMENTS.
+Plan the implementation of: $ARGUMENTS.
 
-Proceso:
-1. **Explore**: leé los archivos relevantes del codebase.
-2. **Design**: arquitectura de la solución y patrones a usar.
-3. **Plan**: dividí en fases con dependencias claras.
-4. **Validate**: chequeá contra las reglas de `rules/common/`.
+Process:
+1. **Explore**: read the relevant files in the codebase.
+2. **Design**: solution architecture and patterns to use.
+3. **Plan**: split into phases with explicit dependencies.
+4. **Validate**: check against the rules in `rules/common/`.
 
-Si es una feature compleja o multi-archivo, usá la skill `sdd-workflow` con sus templates y gates.
+For a complex or multi-file feature, use the `sdd-workflow` skill with its templates and gates.
 
-No escribas código en esta fase. Solo diseño y plan.
+Do not write code in this phase. Design and plan only.

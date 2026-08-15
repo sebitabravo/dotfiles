@@ -12,10 +12,10 @@ Rules extracted from auditing 20+ patterns in a legacy codebase. Only what cause
 ### Always an array, hierarchical, with dependencies
 
 ```tsx
-// BAD: string plana, sin dependencias
+// BAD: flat string, no dependencies
 useQuery({ queryKey: 'todos', queryFn: fetchTodos })
 
-// BAD: falta variable en key — colision de cache entre usuarios
+// BAD: missing variable in key — cache collision across users
 useQuery({ queryKey: ['posts'], queryFn: () => fetchPostsByUser(userId) })
 
 // GOOD: hierarchical array, every dependency included
@@ -38,25 +38,25 @@ export const todoKeys = {
   detail: (id: number) => [...todoKeys.all, 'detail', id] as const,
 }
 
-// Uso
+// Usage
 useQuery({ queryKey: todoKeys.list({ status: 'active' }), queryFn: ... })
 
-// Invalidacion precisa
-queryClient.invalidateQueries({ queryKey: todoKeys.all })     // todo
-queryClient.invalidateQueries({ queryKey: todoKeys.detail(5) }) // uno
+// Precise invalidation
+queryClient.invalidateQueries({ queryKey: todoKeys.all })     // everything
+queryClient.invalidateQueries({ queryKey: todoKeys.detail(5) }) // one
 ```
 
 ## Caching
 
 ### staleTime by volatility
 
-| Tipo de dato | staleTime |
+| Data type | staleTime |
 |---|---|
 | Real-time (stocks, feeds) | `0` |
-| Notificaciones | `30s - 1min` |
+| Notifications | `30s - 1min` |
 | UGC (posts, comments) | `1 - 5min` |
-| Referencia (categorias, config) | `10 - 30min` |
-| Estatico | `Infinity` |
+| Reference (categories, config) | `10 - 30min` |
+| Static | `Infinity` |
 
 ```tsx
 // Sensible default, override per query
@@ -70,7 +70,7 @@ Stale data returns instantly. Refetch happens in the background. `staleTime: 0` 
 ### gcTime — retention after unmount
 
 ```tsx
-// Rutas frecuentes: mantener en cache
+// Frequent routes: keep in cache
 useQuery({ queryKey: ['dashboard'], queryFn: ..., gcTime: 30 * 60 * 1000 })
 
 // Large data viewed once: release quickly
@@ -82,13 +82,13 @@ Default 5 min. For SSR: never `gcTime: 0` (2000ms minimum for hydration).
 ### Targeted invalidation, not broad
 
 ```tsx
-// BAD: invalida todo
+// BAD: invalidates everything
 queryClient.invalidateQueries()
 
-// BAD: invalida de mas
+// BAD: invalidates too much
 queryClient.invalidateQueries({ queryKey: ['todos'] })
 
-// GOOD: invalidacion exacta + relacionadas
+// GOOD: exact invalidation + related
 queryClient.invalidateQueries({ queryKey: ['todos', todoId] })
 queryClient.invalidateQueries({ queryKey: ['todos', 'list'] })
 ```
@@ -159,7 +159,7 @@ export function PostList() {
 ```
 
 - A new `QueryClient` per request (avoids leaks between users).
-- `staleTime > 0` en server (previene refetch inmediato en cliente).
+- `staleTime > 0` on the server (prevents an immediate client refetch).
 - Serialize carefully: `JSON.stringify` is XSS-prone. Use a safe serializer.
 
 ## Query Cancellation
@@ -195,7 +195,7 @@ function QueryErrorBoundary({ children }) {
 }
 ```
 
-`useQueryErrorResetBoundary` limpia el estado de error. Sin esto, el retry no funciona.
+`useQueryErrorResetBoundary` clears the error state. Without it, the retry does not work.
 
 ## Prefetching (hover/focus)
 
@@ -211,12 +211,12 @@ Set `staleTime` on the prefetch so it does not refetch immediately. 100ms delay 
 
 ## Cheatsheet
 
-| Problema | Causa probable | Fix |
+| Problem | Likely cause | Fix |
 |---|---|---|
-| Datos stale entre usuarios | Falta variable en queryKey | `queryKey: ['x', userId]` |
+| Stale data across users | Missing variable in queryKey | `queryKey: ['x', userId]` |
 | Refetch on every navigation | `staleTime: 0` (default) | `staleTime: 5 * 60 * 1000` |
-| UI lenta post-mutacion | Esperando refetch | Optimistic update |
+| Slow UI after a mutation | Waiting for the refetch | Optimistic update |
 | Mutation does not refresh the UI | Missing invalidateQueries | Invalidate every affected query |
-| Memory leak en SPA | `gcTime: Infinity` | `gcTime` segun frecuencia de visita |
-| SSR flash de loading | Cliente refetcha tras hydrate | `staleTime > 0` en server |
-| Search input laggy | Requests viejas no canceladas | Pasar `signal` a fetch |
+| Memory leak in an SPA | `gcTime: Infinity` | `gcTime` based on visit frequency |
+| SSR loading flash | Client refetches after hydrate | `staleTime > 0` on the server |
+| Search input laggy | Old requests not cancelled | Pass `signal` to fetch |

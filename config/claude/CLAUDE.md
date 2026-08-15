@@ -199,4 +199,4 @@ Defense in depth. Git hooks can enforce this, but they live outside this config 
 
 ## Session Close
 
-Verificacion en verde (tests, linters, exit 0). Sin artefactos temporales, debug statements ni TODOs colgando. Con Engram: `mem_session_summary`.
+Verification green (tests, linters, exit 0). No temporary artifacts, no debug statements, no dangling TODOs. With Engram: `mem_session_summary`.

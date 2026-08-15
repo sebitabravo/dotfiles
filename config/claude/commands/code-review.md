@@ -1,22 +1,22 @@
 ---
-description: "Revisar cambios de código: diff, calidad, seguridad y arquitectura"
-argument-hint: "[rango de diff | archivos | vacío = staged]"
+description: "Review code changes: diff, quality, security and architecture"
+argument-hint: "[diff range | files | empty = staged]"
 ---
 
-Hacé una revisión de código exhaustiva de: $ARGUMENTS (si vacío, usá `git diff --staged`; si no hay staged, `git diff HEAD~1`).
+Perform an exhaustive code review of: $ARGUMENTS (if empty, use `git diff --staged`; if nothing is staged, `git diff HEAD~1`).
 
-Proceso:
-1. **Scope**: determiná el diff exacto a revisar.
-2. **Delegá** al agente `code-reviewer` con el diff.
-3. **Chequeá**:
-   - Corrección y edge cases
-   - Vulnerabilidades de seguridad (OWASP, inyección, auth)
-   - Implicaciones de performance
-   - Cobertura de tests de la lógica cambiada
-   - Naming, legibilidad, adherencia al estilo del proyecto
-4. **Reportá**:
-   - Severidad por hallazgo (Critical/High/Medium/Low/Info)
-   - Cobertura de requerimientos si existen
-   - Veredicto: approve / changes-requested / block
+Process:
+1. **Scope**: determine the exact diff to review.
+2. **Delegate** to the `code-reviewer` agent with the diff.
+3. **Check**:
+   - Correctness and edge cases
+   - Security vulnerabilities (OWASP, injection, auth)
+   - Performance implications
+   - Test coverage of the changed logic
+   - Naming, readability, adherence to the project style
+4. **Report**:
+   - Severity per finding (Critical/High/Medium/Low/Info)
+   - Requirements coverage when requirements exist
+   - Verdict: approve / changes-requested / block
 
-Siempre usá el agente `code-reviewer` para revisiones no triviales. Para fixes de 1 línea, revisá inline.
+Always use the `code-reviewer` agent for non-trivial reviews. For 1-line fixes, review inline.

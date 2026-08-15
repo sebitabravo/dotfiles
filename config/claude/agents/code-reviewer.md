@@ -133,7 +133,7 @@ Tag every finding with severity and confidence:
 - **Performance**: N+1 queries, missing indexes, unnecessary loops, memory leaks
 - **Error handling**: Missing try/catch, swallowed exceptions, leaked stack traces
 - **Testing**: Missing edge case tests, test only happy path, mocked too aggressively
-- **SDD Traceability**: Cada R<n> del spec tiene al menos un test que lo verifica. Boundary compliance: archivos modificados coinciden con `_Boundary:_` de las tareas
+- **SDD Traceability**: every R<n> in the spec has at least one test verifying it. Boundary compliance: modified files match the `_Boundary:_` of the tasks
 
 ### Auto-Fixable Patterns
 

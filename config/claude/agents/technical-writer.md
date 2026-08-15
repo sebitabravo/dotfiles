@@ -258,10 +258,10 @@ the task asks for that specific file. Invoke them with the `Skill` tool (`pptx`,
 
 ### PPTX — presentations, decks, slides
 
-Invoca la skill `pptx` (workflow, design, QA). Sub-archivos a leer SOLO cuando apliquen:
+Invoke the `pptx` skill (workflow, design, QA). Sub-files to read ONLY when they apply:
 
-- `~/.claude/skills/pptx/pptxgenjs.md` — si creas desde cero
-- `~/.claude/skills/pptx/editing.md` — si editas un template existente
+- `~/.claude/skills/pptx/pptxgenjs.md` — when creating from scratch
+- `~/.claude/skills/pptx/editing.md` — when editing an existing template
 
 `pptxgenjs` is declared in `~/.claude/skills/pptx/package.json`. If the skill's
 `node_modules/` directory is absent, run `npm install` inside that skill
@@ -276,7 +276,7 @@ QA required: content QA with `python -m markitdown file.pptx`, visual QA with su
 
 ### XLSX — spreadsheets, tabular data, financial models
 
-Invoca la skill `xlsx`.
+Invoke the `xlsx` skill.
 
 Helper scripts in `~/.claude/skills/xlsx/scripts/`. Recalculate formulas:
 
@@ -286,7 +286,7 @@ python ~/.claude/skills/xlsx/scripts/recalc.py file.xlsx
 
 ### DOCX — Word documents, INACAP academic format
 
-Invoca la skill `inacap`.
+Invoke the `inacap` skill.
 
 Template at `~/.claude/skills/inacap/template.py`.
 
@@ -296,24 +296,24 @@ Template at `~/.claude/skills/inacap/template.py`.
 the frontmatter when installed on the host. Use only those declared commands;
 do not assume unrestricted shell access.
 
-### Documentos (pandoc)
+### Documents (pandoc)
 
-Convertir entre formatos: MD <-> DOCX / PDF / HTML / EPUB / LaTeX / PPTX, con TOC, citas (`--citeproc --bibliography`), y templates corporativos (`--reference-doc`).
+Convert between formats: MD <-> DOCX / PDF / HTML / EPUB / LaTeX / PPTX, with TOC, citations (`--citeproc --bibliography`), and corporate templates (`--reference-doc`).
 
 ```bash
 pandoc input.md -o output.docx --reference-doc=template.docx
 pandoc input.md -o output.html --standalone --embed-resources
 ```
 
-PDF necesita engine LaTeX (`brew install tectonic` liviano, o `--cask basictex`). Sin engine, el export a PDF falla.
+PDF needs a LaTeX engine (`brew install tectonic` for a light one, or `--cask basictex`). Without an engine, PDF export fails.
 
-### Imagenes (imagemagick / magick)
+### Images (imagemagick / magick)
 
-Convertir/optimizar: WebP / AVIF / PNG / JPG / ICO, resize, compress, crop, watermark, favicon, thumbnails.
+Convert/optimize: WebP / AVIF / PNG / JPG / ICO, resize, compress, crop, watermark, favicon, thumbnails.
 
 ```bash
 magick input.png -quality 80 output.webp
 magick input.png -define icon:auto-resize=16,32,48 favicon.ico
 ```
 
-PDF <-> imagen necesita Ghostscript (`brew install ghostscript`). Sin el, ImageMagick falla con `no decode delegate for this image format PDF`.
+PDF <-> image needs Ghostscript (`brew install ghostscript`). Without it, ImageMagick fails with `no decode delegate for this image format PDF`.
