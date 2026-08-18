@@ -12,29 +12,46 @@
 # la raiz y `pytest` no esta en el PATH (vive en el venv que maneja uv), asi que
 # la deteccion vieja no encontraba runner y salia 0.
 #
-# ORDEN DE PRECEDENCIA — el Makefile primero, a proposito: si el repo declara un
-# target `test`, esa es la definicion que sus autores dieron de "correr los
-# tests", incluidos el venv, los flags de cobertura y los markers. Adivinar el
-# comando por nuestra cuenta es reimplementar peor algo que ya esta escrito.
+# ORDEN DE PRECEDENCIA — un runner explicito del repo gana porque expresa la
+# validacion que sus autores definieron sin imponer una herramienta de build.
+# Luego vienen Make/Just y los manifiestos detectables por convencion.
 #
-# Setea TEST_CMD (vacio si no se pudo determinar).
+# Setea TEST_CMD (vacio si no se pudo determinar) y TEST_CMD_SOURCE con el nivel
+# de precedencia que lo eligio:
+#
+#   declared  el repo escribio el comando (test.sh, target de make/just)
+#   inferred  lo dedujimos de un manifiesto por convencion
+#
+# La distincion importa para quien consuma esto: un comando `declared` es la
+# definicion que dieron los autores del repo y no se reemplaza por una variante
+# nuestra "equivalente pero con flag de cobertura". Uno `inferred` si, porque ya
+# es una suposicion propia.
 
-# TEST_CMD lo consume quien sourcea este archivo (gauntlet-stop.sh), no se usa
-# aca adentro. shellcheck no cruza archivos y lo reporta como variable muerta.
+# TEST_CMD y TEST_CMD_SOURCE los consume quien sourcea este archivo
+# (gauntlet-stop.sh, quality-gate.sh), no se usan aca adentro. shellcheck no
+# cruza archivos y los reporta como variables muertas.
 # shellcheck disable=SC2034
 detect_test_cmd() {
   local root="${1:-$PWD}"
   TEST_CMD=""
+  TEST_CMD_SOURCE=""
 
-  # 1. Makefile / justfile con target de test.
+  # 1. Runner explicito para repos que no necesitan una herramienta de build.
+  if [ -x "$root/test.sh" ]; then
+    TEST_CMD="$root/test.sh"
+    TEST_CMD_SOURCE="declared"
+    return 0
+  fi
+
+  # 2. Makefile / justfile con target de test.
   if [ -f "$root/Makefile" ] && grep -qE '^test:' "$root/Makefile" 2>/dev/null; then
-    command -v make >/dev/null 2>&1 && { TEST_CMD="make test"; return 0; }
+    command -v make >/dev/null 2>&1 && { TEST_CMD="make test"; TEST_CMD_SOURCE="declared"; return 0; }
   fi
   if [ -f "$root/justfile" ] && grep -qE '^test:' "$root/justfile" 2>/dev/null; then
-    command -v just >/dev/null 2>&1 && { TEST_CMD="just test"; return 0; }
+    command -v just >/dev/null 2>&1 && { TEST_CMD="just test"; TEST_CMD_SOURCE="declared"; return 0; }
   fi
 
-  # 2. Manifiesto en la raiz o un nivel adentro. El subdirectorio cubre el
+  # 3. Manifiesto en la raiz o un nivel adentro. El subdirectorio cubre el
   # layout de monorepo (backend/, api/, server/) sin recorrer el repo entero.
   local d
   for d in "$root" "$root"/*/; do
@@ -53,6 +70,7 @@ detect_test_cmd() {
 _emit() {
   local dir="$1" root="$2" cmd="$3"
   [ "$dir" = "$root" ] && TEST_CMD="$cmd" || TEST_CMD="cd '$dir' && $cmd"
+  TEST_CMD_SOURCE="inferred"
   return 0
 }
 

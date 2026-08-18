@@ -73,8 +73,9 @@ for f in $SRC; do
 
   found=false
   # Convenciones por ecosistema: junto al archivo, en un __tests__/ hermano, o
-  # en un tests/ al lado del directorio padre.
-  for d in "$dir" "$dir/__tests__" "$dir/tests" "$(dirname "$dir")/tests" "$(dirname "$dir")/__tests__"; do
+  # en un tests/ al lado del directorio padre, o en el tests/ de la raiz
+  # (convencion Astro/Vite/Vitest).
+  for d in "$dir" "$dir/__tests__" "$dir/tests" "$(dirname "$dir")/tests" "$(dirname "$dir")/__tests__" "$ROOT/tests" "$ROOT/__tests__"; do
     [ -d "$d" ] || continue
     for pat in "${stem}.test" "${stem}.spec" "test_${stem}" "${stem}_test"; do
       if find "$d" -maxdepth 1 -name "${pat}.*" 2>/dev/null | grep -q .; then
@@ -86,9 +87,23 @@ for f in $SRC; do
 
   # Ultimo recurso: cualquier test en el repo cuyo nombre contenga el stem.
   # Cubre layouts que no siguen ninguna de las convenciones de arriba.
+  # Los DOS flags son necesarios y no son aditivos por defecto: --cached mira el
+  # indice (tests ya versionados) y --others el working tree (tests nuevos sin
+  # commitear). Con --others solo, un test ya trackeado se reporta inexistente.
   if [ "$found" = false ]; then
-    if git ls-files "*${stem}*" 2>/dev/null |
+    if git ls-files --cached --others --exclude-standard "*${stem}*" 2>/dev/null |
       grep -qE '(\.(test|spec)\.|_test\.|(^|/)test_)'; then
+      found=true
+    fi
+  fi
+
+  # Ultimo recurso por contenido: un modulo puede estar cubierto por un test
+  # que importa la facade del directorio (src/lib/data) sin nombrar al archivo
+  # individual. La suite ya corrio verde arriba; este grep solo evita el falso
+  # "missing" para archivos cubiertos via import.
+  if [ "$found" = false ] && [ -d "$ROOT/tests" ]; then
+    rel="${dir#./}"
+    if grep -rlE "['\"][^'\"]*${rel}/${stem}['\"]|['\"][^'\"]*${rel}['\"]" "$ROOT/tests" 2>/dev/null | grep -q .; then
       found=true
     fi
   fi
@@ -114,17 +129,36 @@ if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
   fi
 
   if [ -n "$TEST_CMD" ]; then
+    # macOS no trae `timeout`: sin coreutils no hay ninguno de los dos y la suite
+    # corre sin limite. No se puede acotar desde aca, pero se dice — un comentario
+    # que promete un timeout inexistente es peor que no tenerlo.
     TIMEOUT_BIN=""
     command -v timeout >/dev/null 2>&1 && TIMEOUT_BIN="timeout 90"
     command -v gtimeout >/dev/null 2>&1 && TIMEOUT_BIN="gtimeout 90"
+    [ -z "$TIMEOUT_BIN" ] &&
+      echo "[gauntlet] no timeout binary (brew install coreutils): the suite runs with no limit." >&2
 
     # eval: el comando puede venir como `cd backend && uv run pytest`, y sin
     # eval el `&&` y el cd llegarian como argumentos literales al runner.
     TEST_OUT=$(eval "$TIMEOUT_BIN $TEST_CMD" 2>&1)
     TEST_RC=$?
 
+    # Un timeout BLOQUEA. Antes solo imprimia y seguia, y como abajo se sale 0
+    # cuando no falta ningun test, el turno se cerraba igual: "no se pudo
+    # verificar" terminaba teniendo el mismo efecto practico que "verde", que es
+    # justo lo que el comentario de arriba dice no querer.
     if [ "$TEST_RC" = 124 ]; then
-      echo "[gauntlet] the suite did not finish in 90s; it could not be verified. Do NOT call it green." >&2
+      {
+        echo "GAUNTLET: the suite did not finish in 90s. It could NOT be verified."
+        echo ""
+        echo "Do not close the turn calling it green. Either:"
+        echo "  1. run the suite yourself and wait for it, or"
+        echo "  2. narrow the run to the affected scope, or"
+        echo "  3. fix what is hanging it (a test with no timeout, a real service, a busy port)."
+        echo ""
+        echo "Escape for this repo, if it is genuinely a slow suite: touch .claude-relaxed"
+      } >&2
+      exit 2
     elif [ "$TEST_RC" != 0 ]; then
       {
         echo "GAUNTLET: the suite is RED. Do not close the turn."

@@ -17,6 +17,33 @@ if grep -qiE "Co-Authored-By:|co-authored-by:" "$COMMIT_MSG_FILE"; then
     exit 1
 fi
 
+# --- Block direct commits to main/master ---
+# CLAUDE.md "Git Hygiene" #3 pide esto y era la unica de esas reglas que se
+# podia hacer cumplir por hook y no lo estaba: el footprint lo frena el bloque
+# de arriba, los auto-save los frena pre-push, y esta quedaba solo escrita.
+#
+# Un merge que cierra una rama SI va a main: se detecta por MERGE_HEAD, que git
+# mantiene mientras el merge esta en curso.
+#
+# Solo aplica a repos CON remoto. Un `git init` local sin remoto no tiene
+# historia compartida que proteger, y bloquear ahi el primer commit convierte
+# un guardarrail en un estorbo — que es como termina desactivado para todo.
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+if { [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; } && [ -n "$(git remote 2>/dev/null)" ]; then
+    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    if ! git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 &&
+       [ ! -f "$REPO_ROOT/.claude-relaxed" ]; then
+        echo "" >&2
+        echo "❌ COMMIT BLOCKED: commit directo a '$BRANCH'" >&2
+        echo "   Regla:  CLAUDE.md → Git Hygiene #3 'Always on a branch'" >&2
+        echo "   Fix:    git switch -c feature/<slug> && git commit ..." >&2
+        echo "   Si este repo se trabaja en $BRANCH a proposito:" >&2
+        echo "           touch \"\$(git rev-parse --show-toplevel)/.claude-relaxed\"" >&2
+        echo "" >&2
+        exit 1
+    fi
+fi
+
 # --- Chain to local hook if exists (and isn't ourselves) ---
 LOCAL_HOOK="${GIT_DIR:-.git}/hooks/commit-msg"
 if [ -f "$LOCAL_HOOK" ] && [ "$(realpath "$LOCAL_HOOK" 2>/dev/null)" != "$(realpath "$0" 2>/dev/null)" ]; then

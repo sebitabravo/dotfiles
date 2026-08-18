@@ -42,12 +42,13 @@ allow() {
   exit 0
 }
 
-# jq -n arma el JSON y escapa el reason. Interpolar la razon directo rompia el
-# decision cuando el filename traia comillas o backslashes, y un decision
-# malformado se ignora: el bloqueo fallaba abierto justo con el input raro.
-deny() {
+# Un test existente no se edita silenciosamente, pero una modificacion
+# legitima puede aprobarse desde el prompt nativo de permisos de Claude Code.
+# La autorizacion conversacional no llega al hook, asi que `ask` es el unico
+# punto de aprobacion que este guardarrail puede consumir de forma confiable.
+ask() {
   jq -nc --arg reason "$1" \
-    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
   exit 0
 }
 
@@ -104,4 +105,4 @@ if [ -f "$OWNED" ] && grep -qxF -- "$FILE_PATH" "$OWNED" 2>/dev/null; then
   allow
 fi
 
-deny "TEST PROTECTION: '$BASENAME' already existed when this session started, so it is coverage that verifies your work and not a draft of yours. Do not modify it on your own. If the change is legitimate (the requirement genuinely changed), STOP and ask the user for explicit authorization, stating: (1) which test you are touching, (2) why, (3) what it covers after the change. Never delete or weaken a test to make the code pass. NOTE: this hook only covers Edit/Write/NotebookEdit — a write through Bash slips past it. That it is possible does not make it permitted: bypassing it is breaking the rule, not working around it."
+ask "TEST PROTECTION: '$BASENAME' ya existia antes de esta sesion y protege cobertura que verifica tu trabajo. La edicion no se permite silenciosamente: aprobala en el prompt nativo solo si el requisito cambio. Indica (1) que test tocas, (2) por que y (3) que cubrira despues. Nunca borres ni debilites un test para hacer pasar el codigo. Este hook solo cubre Edit/Write/NotebookEdit; escribir por Bash lo esquiva, pero hacerlo rompe esta politica y no es un workaround valido."

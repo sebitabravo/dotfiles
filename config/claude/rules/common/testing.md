@@ -11,7 +11,10 @@ are complementary, not interchangeable:
    HTTP contracts using project-local fixtures or controlled dependencies.
 3. **Acceptance**: for complex business behavior, express observable rules in
    Gherkin and run the project's native acceptance pipeline. Do not add Gherkin
-   as decoration after implementation.
+   as decoration after implementation. A green acceptance run says nothing
+   about internal quality: in unclebob/negative-test-experiment, eight
+   implementations with different disciplines, sizes and structures all passed
+   the same suite 25/0. Acceptance proves the behavior, never the design.
 4. **Mutation**: measure whether tests detect realistic source changes. Run it
    after the baseline is green, preferably differentially on changed code and
    normally in CI rather than every commit.

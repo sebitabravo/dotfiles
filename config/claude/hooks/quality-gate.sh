@@ -48,9 +48,9 @@ NO_QUOTES=$(echo "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
 
 echo "$NO_QUOTES" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]]+[^[:space:]-][^[:space:]]*)?)*[[:space:]]+commit\b' || exit 0
 
-# Skip merge commits. --amend NO se exceptua: era un bypass de una sola flag
-# para cualquier commit que el gate acabara de bloquear.
-echo "$COMMAND" | grep -qE '(--merge|-m\s+"merge)' && exit 0
+# --amend NO se exceptua: seria un bypass de una sola flag para cualquier commit
+# que el gate acabara de bloquear. La excepcion de merge se resuelve mas abajo,
+# donde ya se sabe a que repo apunta el comando.
 
 # Detect project root and test runner.
 #
@@ -84,6 +84,20 @@ esac
 
 ROOT=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || echo "$TARGET_DIR")
 cd "$ROOT" 2>/dev/null || exit 0
+
+# Merge commit en curso: git mantiene MERGE_HEAD entre el merge y el commit que
+# lo cierra. Es la unica señal confiable, y hay que leerla del repo — por eso
+# esta aca y no junto al resto del parseo del comando.
+#
+# Antes se miraba el texto: `grep -qE '(--merge|-m\s+"merge)'`. Fallaba en los
+# dos sentidos. `git commit` no tiene flag `--merge`, y un merge real se cierra
+# con `git commit` sin `-m`, asi que el caso a eximir nunca matcheaba; mientras
+# tanto cualquier `git commit -m "merge ..."` saltaba el gate entero, que es el
+# bypass de una palabra que el comentario de arriba dice no querer.
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+  echo "[quality-gate] merge in progress (MERGE_HEAD): the merge commit does not go through the gate." >&2
+  exit 0
+fi
 
 # Kill switch por repo. Mismo patron que RDD y por la misma razon: un guardarrail
 # que nadie puede desactivar termina esquivado por caminos peores (--no-verify,
@@ -209,12 +223,10 @@ fi
 # correr la suite de un paquete que el commit ni toco.
 # QUIEN DECIDE COMO SE CORREN LOS TESTS: lib/test-runner.sh, no este archivo.
 #
-# Habia dos implementaciones de la misma deteccion y se desincronizaron. La lib
-# declara el target `test:` de un Makefile como maxima precedencia — si el repo
-# escribio ahi que significa "correr los tests", adivinarlo de nuevo es
-# reimplementar peor algo que ya esta escrito — y esta funcion no lo conocia.
-# Resultado: un repo cuyas suites se lanzan por make quedaba como "sin runner" y
-# el gate bloqueaba sin haber corrido nada. Bloquear ciego no es ser estricto.
+# La lib centraliza la precedencia: primero respeta un runner explicito del repo
+# (por ejemplo `test.sh` en un dotfiles), luego Make/Just y finalmente los
+# manifiestos detectables por convencion. Esta funcion no debe duplicar esa
+# decision ni imponer una herramienta de build que el proyecto no necesita.
 QG_LIB="$(dirname "${BASH_SOURCE[0]}")/lib/test-runner.sh"
 # shellcheck source=lib/test-runner.sh
 [ -f "$QG_LIB" ] && . "$QG_LIB"
@@ -231,14 +243,24 @@ detect_project_at() {
   LINT_CMD=""
   COVERAGE_CMD=""
   COVERAGE_KIND=""
+  COVERAGE_EXTRA=false
 
   # La lib manda para TEST_CMD. Los bloques por manifiesto de mas abajo siguen
   # corriendo, pero ya solo para COVERAGE_CMD y LINT_CMD, que la lib no cubre.
+  #
+  # DECLARED bloquea el reemplazo por COVERAGE_CMD. Sin esto, un repo con
+  # `test.sh` propio y un `package.json` con vitest terminaba corriendo
+  # `npm test -- --coverage` en vez del runner que el repo escribio: el gate
+  # decia respetar la decision del proyecto y ejecutaba otra cosa. Se pierde la
+  # medicion de cobertura, y eso se reporta como NO MEDIDO mas abajo — que es la
+  # respuesta honesta, no correr un comando que el repo no eligio.
+  local declared=false
   if declare -f detect_test_cmd >/dev/null 2>&1; then
     local lib_root="$dir"
     [ "$dir" = "." ] && lib_root="$PWD"
     if detect_test_cmd "$lib_root" && [ -n "$TEST_CMD" ]; then
       HAS_TESTS=true
+      [ "${TEST_CMD_SOURCE:-}" = declared ] && declared=true
     else
       TEST_CMD=""
     fi
@@ -291,6 +313,14 @@ detect_project_at() {
       LINT_CMD="${prefix}golangci-lint run"
     fi
   fi
+
+  # Un runner declarado NO se reemplaza por la variante con flag de cobertura,
+  # pero tampoco cancela la medicion: se corren los dos. Un solo punto de
+  # decision y despues de los bloques por manifiesto, porque cada uno arma su
+  # COVERAGE_CMD sin saber de los otros y repetir la condicion es como se
+  # desincronizan.
+  COVERAGE_EXTRA=false
+  [ "$declared" = true ] && [ -n "$COVERAGE_CMD" ] && COVERAGE_EXTRA=true
 }
 
 STAGED_FILES_FOR_DETECT=$(git diff --cached --name-only 2>/dev/null)
@@ -406,10 +436,28 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # entera: dos corridas completas en cada intento de commit, con timeout de 120s.
   # COVERAGE_CMD es TEST_CMD con un flag, asi que si existe reemplaza a TEST_CMD
   # y de la misma salida se saca el porcentaje.
+  #
+  # Excepcion: si el repo declaro su runner (test.sh, target de make/just) ese
+  # es el que dictamina si los tests pasan — no se cambia por una variante
+  # nuestra. La cobertura se mide igual, en una segunda corrida, porque dejar de
+  # medirla para respetar al runner seria pagar el respeto con una metrica menos.
   RUN_CMD="${COVERAGE_CMD:-$TEST_CMD}"
+  [ "${COVERAGE_EXTRA:-false}" = true ] && RUN_CMD="$TEST_CMD"
   TEST_OUTPUT=""
   if [ -n "$RUN_CMD" ]; then
     TEST_OUTPUT=$(eval "$RUN_CMD" 2>&1) || block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+  fi
+
+  # La segunda corrida es solo para leer los porcentajes. Si falla no vuelve a
+  # dictaminar sobre los tests (de eso ya se encargo el runner declarado), pero
+  # tampoco se calla: sin salida no hay metrica, y eso se reporta como NO MEDIDO.
+  if [ "${COVERAGE_EXTRA:-false}" = true ]; then
+    COV_RUN_OUTPUT=$(eval "$COVERAGE_CMD" 2>&1) || true
+    if [ -n "$COV_RUN_OUTPUT" ]; then
+      TEST_OUTPUT="$COV_RUN_OUTPUT"
+    else
+      echo "[quality-gate] [$LABEL] coverage command produced no output: $COVERAGE_CMD" >&2
+    fi
   fi
 
   # 3. Coverage — bloqueante, por metrica.

@@ -65,12 +65,27 @@ if git -C "$GIT_CWD" rev-parse --git-dir >/dev/null 2>&1; then
   fi
 fi
 
-# Model icon
+# Model icon. El display_name de Anthropic trae el tier en el nombre
+# (Opus/Sonnet/Haiku); el de proveedores externos trae el ID del modelo
+# (deepseek-v4-pro, gpt-oss:120b-cloud, ...), asi que cada tier lista ademas
+# los IDs de los overlays. Ojo con el orden: los sufijos [1m] y :cloud
+# distinguen tiers que comparten nombre base (MiniMax-M3[1m] vs MiniMax-M3).
 MODEL_ICON="🤖"
 case "$MODEL" in
+  # Anthropic
   *Opus*) MODEL_ICON="🎭" ;;
   *Sonnet*) MODEL_ICON="📝" ;;
   *Haiku*) MODEL_ICON="🍃" ;;
+  # Proveedores externos: tier Opus. Los [1m] van escapados: sin escape son una
+  # character class de glob y el corchete literal no matchea.
+  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*MiniMax-M3\[1m\]*|*minimax-m3:cloud*)
+    MODEL_ICON="🎭" ;;
+  # Proveedores externos: tier Sonnet
+  *deepseek-v4-flash\[1m\]*|*glm-4.7*|*kimi-k2.7-code*|*MiniMax-M2.7-highspeed*|*gpt-5.6-luna*|*gpt-oss:120b-cloud*)
+    MODEL_ICON="📝" ;;
+  # Proveedores externos: tier Haiku y subagentes
+  *deepseek-v4-flash*|*glm-4.5*|*kimi-k2.6*|*MiniMax-M3*|*openrouter/free*|*gpt-oss:20b-cloud*)
+    MODEL_ICON="🍃" ;;
 esac
 
 # Progress bar
