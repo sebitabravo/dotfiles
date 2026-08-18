@@ -74,9 +74,9 @@ window-padding-color = extend
 window-padding-balance = true
 
 # Apariencia
-background-opacity = 0.40
+background-opacity = 0.80
 background-opacity-cells = true
-background-blur = 20
+background-blur = 40
 custom-shader = shaders/cursor_smear_gentleman.glsl
 custom-shader-animation = true
 

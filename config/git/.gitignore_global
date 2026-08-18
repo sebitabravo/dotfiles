@@ -3,3 +3,5 @@
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
+
+**/.claude/settings.local.json

@@ -39,6 +39,7 @@
   "typescript.updateImportsOnFileMove.enabled": "always",
   "typescript.suggest.paths": false,
   "typescript.preferences.quoteStyle": "single",
+  "go.toolsManagement.autoUpdate": true,
   "typescript.inlayHints.parameterNames.enabled": "all",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.guides.bracketPairs": true,
@@ -67,6 +68,7 @@
   "git.autofetch": true,
   "git.enableSmartCommit": true,
   "git.confirmSync": false,
+  "makefile.configureOnOpen": true,
   "git.blame.editorDecoration.enabled": true,
   "gitlens.hovers.currentLine.over": "line",
   "gitlens.hovers.currentLine.details": false,
@@ -209,6 +211,13 @@
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 2
+  },
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
   },
   "[python]": {
     "diffEditor.ignoreTrimWhitespace": false,

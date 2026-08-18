@@ -1,6 +1,10 @@
 # macOS Defaults
 
-Optimizaciones para macOS Sequoia 15.x y Tahoe 26.x orientadas a developers. **226 defaults write**, 3 defaults delete, 50 secciones. Cero dependencias. Cero `sudo`.
+Optimizaciones de macOS orientadas a developers. **265 defaults write**, 3 defaults delete, 54 secciones. Cero dependencias. Cero `sudo`.
+
+Verificado en **Sequoia 15.7.9**. Tahoe 26.x no esta verificado: ahi Launchpad ya no existe (lo absorbio Spotlight) y las keys `springboard-*` pasan a ser no-op.
+
+El script esta reconciliado contra el estado real de la maquina: los valores reflejan como esta configurada hoy, no una propuesta teorica.
 
 ## Quick Start
 
@@ -16,20 +20,23 @@ Solo escribe a preferencias de usuario via `defaults write`. Si algo no te gusta
 |---|---|
 | **Animaciones** | Ventanas instantaneas, sin rebote elastico, sin anillo de foco animado |
 | **Teclado** | Key repeat rapido (2), delay corto (15), Tab navega todos los controles |
-| **Finder** | Extensiones visibles, path completo, barra de estado, carpetas primero al ordenar, spring-loading instantaneo, trash auto-clean >30 dias, sin warning al vaciar papelera, sin .DS_Store en network |
-| **Dock** | Auto-hide instantaneo (sin delay), sin animaciones, sin apps recientes, size 48px |
-| **Menu Bar** | Clock minimalista (HH:mm), battery percentage, icono Spotlight oculto, menu item icons hidden (Tahoe) |
-| **Desktop** | Iconos ocultos — escritorio limpio (accesible via Finder) |
-| **Safari / WebKit** | 30+ keys de hardening: sin autofill, sin tracking, pop-ups bloqueados, fraudulent website warning, extensiones auto-update, thumbnail cache off, developer menu, Web Inspector |
-| **Privacidad** | Siri analytics off, diagnostics off, advertising tracking off, apps anonymous usage off |
+| **Finder** | Extensiones visibles, barra de ruta y de estado, panel de vista previa, carpetas primero al ordenar, spring-loading instantaneo, trash auto-clean >30 dias, sin warning al vaciar papelera, sin iconos de discos en el escritorio, sin .DS_Store en network |
+| **Dock** | Auto-hide instantaneo (sin delay ni animacion), sin rebote al abrir apps, sin apps recientes, minimizar a slot propio, size 48px |
+| **Mission Control** | Escritorios en orden fijo (sin reorden por uso), sin cambio automatico de escritorio |
+| **Ventanas** | Doble clic en la barra de titulo = Fill, arrastrar con ctrl+cmd desde cualquier punto, Stage Manager off |
+| **Menu Bar** | Clock digital 24h, barra minima (solo reloj + Control Center), icono Spotlight oculto |
+| **Desktop** | Iconos visibles en el Finder pero ocultos mientras trabajas (WindowManager) |
+| **Trackpad** | Tap to click, click derecho con dos dedos, arrastre con tres dedos, swipes de espacios con cuatro dedos |
+| **Region** | Metrico, Celsius, semana desde el lunes, fecha corta ISO (y-MM-dd) |
+| **Safari / WebKit** | 30+ keys: sin tracking ni search suggestions, pop-ups bloqueados, fraudulent website warning, extensiones auto-update, thumbnail cache off, Debug menu, Web Inspector. **AutoFill esta ACTIVO** (incluye contrasenas y tarjetas) |
+| **Privacidad** | Siri analytics off, diagnostics off, apps anonymous usage off. **El identificador de publicidad (IDFA) esta ACTIVO** |
 | **Security** | Screensaver password immediate (idle 5 min), Terminal Secure Keyboard Entry |
 | **Software Update** | Check diario, auto-descarga, auto-instalar updates criticos de seguridad y system data files |
 | **App Store** | Debug menu, auto-update apps + auto-restart |
-| **Chrome** | Backswipe desactivado (evita navegacion accidental en scroll horizontal) |
 | **Activity Monitor** | Todos los procesos visibles, refresh 2s, sort por CPU |
 | **Xcode** | Debug menu, file extensions, parallel build (max cores), numeric progress, no state restoration |
 | **Terminal** | UTF-8 only, Secure Keyboard Entry, no line marks |
-| **Accessibility** | Ctrl+Scroll = screen zoom con follow-focus |
+| **Accessibility** | Ctrl+Scroll = zoom de pantalla, navegacion completa por teclado (Tab llega a todos los controles) |
 | **Tahoe 26.x** | Reduce Transparency (Liquid Glass GPU relief ~15-20% WindowServer CPU) |
 | **Mail** | Sin animaciones al responder/enviar, copy email sin nombre, texto plano por defecto, inline attachments off |
 | **Varios** | Quick Look text selection, Mission Control sin reorden, Launchpad, Trackpad, Sound, Calendar, Help Viewer, Notification Center, App Store, Spotlight suggestions off |
@@ -63,14 +70,6 @@ La captura se guarda directo a disco sin preview editable. Mas rapido, pero no p
 defaults write com.apple.screencapture show-thumbnail -bool false
 ```
 
-### Sin warning al vaciar papelera
-
-No pide confirmacion al vaciar la papelera. Mas agil, pero un click accidental y perdes todo.
-
-```bash
-defaults write com.apple.finder WarnOnEmptyTrash -bool false
-```
-
 ---
 
 ## Revertir
@@ -98,6 +97,33 @@ defaults delete NSGlobalDomain && defaults delete com.apple.finder
 ## Recomendaciones con sudo
 
 Estas optimizaciones requieren `sudo` — no estan en el script principal porque estan fuera del alcance sin password. Son seguras, no rompen el ecosistema Apple, y cada una tiene un camino claro de vuelta atras.
+
+### Ya configurado en esta maquina
+
+Verificado el 2026-08-15 en Sequoia 15.7.9. No hace falta volver a revisarlos:
+
+| Control | Estado | Como se verifica |
+|---|---|---|
+| FileVault | On | `fdesetup status` |
+| Firewall | Enabled | `/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate` |
+| SIP | Enabled | `csrutil status` |
+| Gatekeeper | assessments enabled | `spctl --status` |
+| Touch ID para sudo | Configurado | `[ -f /etc/pam.d/sudo_local ]` |
+| Bloqueo de pantalla | Inmediato | `sysadminctl -screenLock status` |
+
+### Developer mode para debugging
+
+Sin esto, Xcode y las herramientas de debug piden autenticacion cada vez que se
+adjuntan a un proceso. Hoy esta desactivado (`DevToolsSecurity -status`).
+
+```bash
+sudo DevToolsSecurity -enable
+```
+
+**Revertir:** `sudo DevToolsSecurity -disable`
+
+**Impacto ecosistema Apple:** Ninguno. Solo evita el prompt repetido de
+autenticacion al usar el debugger; no baja Gatekeeper ni SIP.
 
 ### Firewall + Stealth Mode
 
