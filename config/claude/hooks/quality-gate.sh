@@ -109,15 +109,15 @@ RELAXED=false
 
 # El modo de permisos NO relaja este gate, a proposito.
 #
-# Antes si lo hacia, cuando bypassPermissions era algo que se elegia a mano para
-# una sesion puntual. Ahora `defaultMode` es bypassPermissions de forma
-# permanente, asi que degradar por modo dejaba el gauntlet inerte para siempre.
+# Antes si lo hacia, cuando un modo permisivo era algo que se elegia a mano para
+# una sesion puntual. Con un `defaultMode` fijo, degradar por modo dejaria el
+# gauntlet inerte de forma permanente en vez de puntual.
 #
-# La distincion que importa: bypass elimina PROMPTS DE PERMISO — preguntas sobre
-# si tenes derecho a hacer algo. Un gate de calidad no pregunta eso; dice que el
-# codigo todavia no esta listo. Son cosas distintas y no deberian compartir
-# interruptor. Los `ask` de validate-safe-ops si degradan en bypass, porque esos
-# si son prompts.
+# La distincion que importa: un modo de permisos gobierna PROMPTS — preguntas
+# sobre si tenes derecho a hacer algo. Un gate de calidad no pregunta eso; dice
+# que el codigo todavia no esta listo. Son cosas distintas y no deberian
+# compartir interruptor. Los `ask` de validate-safe-ops si dependen del modo,
+# porque esos si son prompts.
 #
 # Para relajar este gate esta `.claude-relaxed`, que es una decision explicita
 # por repo y no un efecto lateral del modo de permisos.

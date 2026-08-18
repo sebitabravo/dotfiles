@@ -32,6 +32,7 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
+PERMISSION_MODE=$(echo "$INPUT" | jq -r '.permission_mode // ""' 2>/dev/null)
 
 OWNED="${TMPDIR:-/tmp}/claude-owned-tests-${SESSION_ID:-nosession}"
 
@@ -46,9 +47,35 @@ allow() {
 # legitima puede aprobarse desde el prompt nativo de permisos de Claude Code.
 # La autorizacion conversacional no llega al hook, asi que `ask` es el unico
 # punto de aprobacion que este guardarrail puede consumir de forma confiable.
-ask() {
-  jq -nc --arg reason "$1" \
-    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
+#
+# ...siempre que haya alguien para responderlo. En bypassPermissions y dontAsk
+# no hay prompt: nadie contesta, y un `ask` que nadie puede contestar no es una
+# aprobacion, es un resultado que este hook no controla. Ahi se deniega, que es
+# la unica interpretacion segura de "no se pudo pedir permiso".
+#
+# La documentacion de hooks no define que hace el harness con un `ask` sin
+# interlocutor, asi que la decision no se delega: se toma aca leyendo
+# permission_mode, que si viene en el input.
+#
+# El deny NO vuelve a ser incondicional. Este hook ya bloqueaba siempre una vez
+# y se cambio a `ask` justamente porque impedia autorizaciones legitimas; en los
+# modos sin prompt no hay canal de aprobacion, asi que el escape es el mismo que
+# usan quality-gate y gauntlet-stop: `.claude-relaxed`, una decision explicita
+# por repo. Un guardarrail sin salida se termina esquivando por caminos peores.
+gate() {
+  local decision=ask
+  case "$PERMISSION_MODE" in
+    bypassPermissions | dontAsk)
+      local root
+      root=$(git rev-parse --show-toplevel 2>/dev/null)
+      if [ -n "$root" ] && [ -f "$root/.claude-relaxed" ]; then
+        allow
+      fi
+      decision=deny
+      ;;
+  esac
+  jq -nc --arg reason "$1" --arg d "$decision" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:$d,permissionDecisionReason:$reason}}'
   exit 0
 }
 
@@ -105,4 +132,4 @@ if [ -f "$OWNED" ] && grep -qxF -- "$FILE_PATH" "$OWNED" 2>/dev/null; then
   allow
 fi
 
-ask "TEST PROTECTION: '$BASENAME' ya existia antes de esta sesion y protege cobertura que verifica tu trabajo. La edicion no se permite silenciosamente: aprobala en el prompt nativo solo si el requisito cambio. Indica (1) que test tocas, (2) por que y (3) que cubrira despues. Nunca borres ni debilites un test para hacer pasar el codigo. Este hook solo cubre Edit/Write/NotebookEdit; escribir por Bash lo esquiva, pero hacerlo rompe esta politica y no es un workaround valido."
+gate "TEST PROTECTION: '$BASENAME' ya existia antes de esta sesion y protege cobertura que verifica tu trabajo. La edicion no se permite silenciosamente: aprobala en el prompt nativo solo si el requisito cambio. Indica (1) que test tocas, (2) por que y (3) que cubrira despues. Nunca borres ni debilites un test para hacer pasar el codigo. Este hook solo cubre Edit/Write/NotebookEdit; escribir por Bash lo esquiva, pero hacerlo rompe esta politica y no es un workaround valido."

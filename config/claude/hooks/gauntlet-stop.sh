@@ -26,11 +26,12 @@ if command -v jq >/dev/null 2>&1; then
   [ "$ACTIVE" = "true" ] && exit 0
 fi
 
-# El modo de permisos NO relaja este hook.
-# `defaultMode` es bypassPermissions de forma permanente, asi que degradar por
-# modo lo dejaba inerte siempre. Bypass saca los prompts de permiso; no declara
-# que el codigo sin tests este terminado. El escape es `.claude-relaxed`, una
-# decision explicita por repo.
+# El modo de permisos NO relaja este hook, cualquiera sea.
+# Un modo de permisos responde "tenes derecho a hacer esto"; este hook responde
+# "esto todavia no esta terminado". Son preguntas distintas y no deberian
+# compartir interruptor, asi que degradar por modo lo dejaria inerte sin que eso
+# signifique nada sobre el codigo. El escape es `.claude-relaxed`, una decision
+# explicita por repo.
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" 2>/dev/null || exit 0

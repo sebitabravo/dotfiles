@@ -25,6 +25,7 @@ SUITES=(
   config/claude/hooks/quality-gate.test.sh
   config/claude/hooks/validate-safe-ops.test.sh
   config/claude/hooks/gauntlet-stop.test.sh
+  config/claude/hooks/protect-tests.test.sh
   config/claude/hooks/lib/test-runner.test.sh
   config/claude/scripts/test-swarmforge-workflow.sh
   git-hooks/commit-msg.test.sh
