@@ -19,6 +19,8 @@ REPO_ROOT=$(cd -- "$CLAUDE_DIR/../.." && pwd)
 cd "$REPO_ROOT"
 
 SUITES=(
+  config/claude/agents/agent-preload.test.sh
+  config/claude/agents/vulnerability-hunter.test.sh
   config/claude/statusline.test.sh
   config/claude/hooks/project-integrations-check.test.sh
   config/claude/hooks/protect-codegraph-tracking.test.sh

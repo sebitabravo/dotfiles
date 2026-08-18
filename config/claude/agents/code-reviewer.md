@@ -47,9 +47,10 @@ justified change and run focused verification; otherwise hand off to
 
 ### Step 1b — Resolve the stack skill (do this AFTER seeing the diff)
 
-Only four skills preload with this agent: `code-review`, `security-review`,
-`thermo-nuclear-code-quality-review`, `mutation-testing`. Those are transversal —
-they apply to every review.
+The listed review, architecture, quality, security, testing, and stack skills
+are available to this agent for compatibility with the established workflow.
+Use the `Skill` tool to load any additional skill that is not listed here, and
+do not substitute an unrelated skill merely because it is available.
 
 **The stack skill is resolved from the diff, not preloaded.** Once you know what
 the change touches, invoke the matching one via the `Skill` tool:
@@ -70,12 +71,10 @@ the change touches, invoke the matching one via the `Skill` tool:
 | mobile tests (Espresso/XCTest) | `mobile-app-testing` |
 | `.ts`/`.tsx` | `typescript`, `react-19`, `tailwind-4`, `nextjs` as applicable |
 
-**Why it is resolved and not preloaded.** Preloading all 19 cost 28k tokens on
-EVERY review, and on a Laravel PR that means dragging Unity, ffmpeg and Jetpack
-Compose along as noise. A reviewer carrying 28k of irrelevant manuals has less
-attention for the diff, not more useful context: the signal dilutes across pages
-that do not apply. Loading the right one, when it applies, is what makes the
-review sharp.
+**Why stack resolution still matters.** The existing preload list preserves the
+agent's established capabilities. When a task needs a skill outside that list,
+load only the matching additional skill instead of inventing guidance or
+forcing an unrelated stack manual into the review.
 
 If the diff spans two stacks, invoke both. If it matches none, continue without a
 stack skill — do not force one that does not apply.

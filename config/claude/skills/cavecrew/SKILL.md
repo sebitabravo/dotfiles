@@ -1,6 +1,6 @@
 ---
 name: cavecrew
-description: Subagent delegation protocol. Subagents write results to files and return ONLY the path, never verbatim content through chat.
+description: Subagent delegation protocol. Subagents persist results to files and return a short delivery receipt; inline summaries never replace the durable report.
 ---
 
 ## Delegation protocol
@@ -16,15 +16,17 @@ Complements the ANTI-TELEPHONE rule in CLAUDE.md with the file convention and th
 
 ### Rules
 
-1. **Subagents write results to files.** They return ONLY the path.
-2. **Never pass verbatim content through chat.** Chat corrupts the signal; files survive compaction.
-3. **If a subagent does not give you a path, demand one.**
-4. **The main agent reads the file when it needs it.** Not before.
+1. **Subagents write the complete result to the unique path supplied by the coordinator before signaling completion.**
+2. **Return a short receipt:** `REPORT_READY: <path>`, `status: clean|findings|blocked`, and one-line summary.
+3. **Never depend on inline text or a completion notification as the only delivery channel.** Chat can be truncated or dropped; the report file survives compaction and notification races.
+4. **An inline request is additive, not an exception:** write the file first, then include a concise inline summary and the exact path.
+5. **If the subagent gives no path, recover once by requesting the path and status.** Do not keep asking for the same inline report; inspect the task/session status and logs, then read the report when available.
+6. **The main agent reads and verifies the file before using its claims.** It must exist, be non-empty, and contain the requested format/evidence.
 
 ### Output file convention
 
 ```
-/tmp/cavecrew/<task-name>-result.md
+/tmp/cavecrew/<task-name>-<session-or-task-id>-result.md
 ```
 
 ### Subagent types (Claude)
@@ -42,21 +44,23 @@ Complements the ANTI-TELEPHONE rule in CLAUDE.md with the file convention and th
 When delegating a task, include:
 1. A clear objective
 2. Scope (which files/dirs to search)
-3. Expected output format (path of the results file)
-4. Constraints (time limit, depth)
+3. A unique output path and expected report format
+4. Receipt format: `REPORT_READY: <path>` plus status and one-line summary
+5. Constraints (time limit, depth)
 
 ### Delegation example
 
 ```
 Task: Find every endpoint that accepts user input without validation.
 Scope: src/routes/ and src/controllers/
-Output: Write findings to /tmp/cavecrew/validation-audit-result.md
+Output: Write findings to /tmp/cavecrew/validation-audit-<session-or-task-id>-result.md
 Format: Table with file, endpoint, parameter, current validation state
+Final reply: `REPORT_READY: <exact path>`; include `status` and a one-line summary.
 ```
 
 ### Anti-patterns
 
 - Do not delegate trivial tasks (single file read, simple grep).
 - Do not delegate and then run the same search yourself.
-- Do not accept inline results. Always demand a file path.
+- Do not accept inline results as the only delivery. Always require and verify a file path.
 - Do not delegate if you already have the answer in context.

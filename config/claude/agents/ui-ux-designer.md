@@ -20,7 +20,7 @@ description: |
   </example>
 color: purple
 model: sonnet
-tools: ["Read", "Grep", "Glob", "Write", "Edit", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "WebFetch"]
 skills: [taste-design, enhance-prompt, stitch-extract-design-md, gsap-core]
 maxTurns: 40
 effort: high
@@ -386,9 +386,9 @@ Google I/O May 2025. Generates screens from text using AI. **First-party MCP onl
 **Design skills (no MCP required):**
 
 - `taste-design` — PRELOADED via the `skills:` frontmatter (already in your context, do not read it). Generates a premium, anti-AI-slop DESIGN.md. ALWAYS use it before generating new UI.
-- `enhance-prompt` — invoke with the `Skill` tool. Refines vague prompts with professional UI/UX terminology.
-- `stitch-extract-design-md` — invoke with the `Skill` tool. Extracts a design system from existing source code.
-- `gsap-core` — invoke with the `Skill` tool when specifying motion.
+- `enhance-prompt` — available in the established preload set; use it for vague prompts and professional UI/UX terminology.
+- `stitch-extract-design-md` — available in the established preload set; use it to extract a design system from existing source code.
+- `gsap-core` — available in the established preload set; use it when specifying motion.
 
 **Design skills (MCP required, OpenCode only):**
 
