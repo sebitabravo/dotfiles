@@ -34,22 +34,17 @@ backup() {
   run mv -- "$1" "$1.backup.$STAMP"
 }
 
-# Enlaza. Editas el repo y el cambio ya esta aplicado: no queda una segunda
-# copia que pueda quedar vieja.
-link() {
-  local src="$DOTFILES/$1" dst="$2"
-  [ -e "$src" ] || { printf '  FALTA  %s (se omite)\n' "$1" >&2; return 0; }
-  [ "$(readlink "$dst" 2>/dev/null)" = "$src" ] && return 0
-  backup "$dst"
-  run mkdir -p -- "$(dirname -- "$dst")"
-  run ln -sfn -- "$src" "$dst"
-  printf '  LINK   %s\n' "$dst"
-}
-
-# Solo para archivos que la app duena reescribe sola.
+# El despliegue usa copias independientes. Así el usuario puede editar su
+# configuración instalada aunque mueva o elimine este repositorio.
 copy() {
   local src="$DOTFILES/$1" dst="$2"
   [ -e "$src" ] || { printf '  FALTA  %s (se omite)\n' "$1" >&2; return 0; }
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    printf '  REMOVE  symlink %s\n' "$dst"
+    run rm -- "$dst"
+  elif [ -L "$dst" ]; then
+    backup "$dst"
+  fi
   cmp -s -- "$src" "$dst" && return 0
   backup "$dst"
   run mkdir -p -- "$(dirname -- "$dst")"
@@ -57,34 +52,51 @@ copy() {
   printf '  COPY   %s\n' "$dst"
 }
 
+copy_dir() {
+  local src="$DOTFILES/$1" dst="$2"
+  [ -d "$src" ] || { printf '  FALTA  %s (se omite)\n' "$1" >&2; return 0; }
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    printf '  REMOVE  symlink %s\n' "$dst"
+    run rm -- "$dst"
+  elif [ -L "$dst" ] || { [ -e "$dst" ] && [ ! -d "$dst" ]; }; then
+    backup "$dst"
+  fi
+  run mkdir -p -- "$dst"
+  run rsync -a --delete \
+    --exclude='__pycache__' \
+    --exclude='.DS_Store' \
+    "$src/" "$dst/"
+  printf '  COPY   %s/\n' "$dst"
+}
+
 printf 'repo: %s\n\n' "$DOTFILES"
 
 echo "shell"
-link .zshrc    "$HOME/.zshrc"
-link .zshenv   "$HOME/.zshenv"
-link .zprofile "$HOME/.zprofile"
-link .p10k.zsh "$HOME/.p10k.zsh"
+copy .zshrc    "$HOME/.zshrc"
+copy .zshenv   "$HOME/.zshenv"
+copy .zprofile "$HOME/.zprofile"
+copy .p10k.zsh "$HOME/.p10k.zsh"
 
 echo "git"
-link .gitconfig                   "$HOME/.gitconfig"
-link config/git/.gitignore_global "$HOME/.gitignore_global"
-link git-hooks                    "$HOME/.git-hooks"
+copy .gitconfig                   "$HOME/.gitconfig"
+copy config/git/.gitignore_global "$HOME/.gitignore_global"
+copy_dir git-hooks                "$HOME/.git-hooks"
 
 echo "terminal"
-link config/ghostty   "$HOME/.config/ghostty"
+copy_dir config/ghostty "$HOME/.config/ghostty"
 
 echo "vscode"
 VSCODE="$HOME/Library/Application Support/Code/User"
-link config/vscode/settings.json    "$VSCODE/settings.json"
-link config/vscode/keybindings.json "$VSCODE/keybindings.json"
-link config/vscode/mcp.json         "$VSCODE/mcp.json"
+copy config/vscode/settings.json    "$VSCODE/settings.json"
+copy config/vscode/keybindings.json "$VSCODE/keybindings.json"
+copy config/vscode/mcp.json         "$VSCODE/mcp.json"
 
 echo "claude"
 for d in agents skills hooks rules templates scripts output-styles; do
-  link "config/claude/$d" "$HOME/.claude/$d"
+  copy_dir "config/claude/$d" "$HOME/.claude/$d"
 done
 for f in CLAUDE.md statusline.sh mcp-servers.json skills-lock.json tweakcc-theme.json skill-registry.md; do
-  link "config/claude/$f" "$HOME/.claude/$f"
+  copy "config/claude/$f" "$HOME/.claude/$f"
 done
 # Claude Code y los overlays de proveedores leen estos JSON desde runtime.
 # Se copian (no se enlazan) porque Claude Code puede reescribir settings.json y
@@ -95,9 +107,9 @@ for f in settings.json deepseek.settings.json glm.settings.json \
   copy "config/claude/$f" "$HOME/.claude/$f"
 done
 
-# core.hooksPath NO se fija con `git config --global`: ~/.gitconfig es un
-# symlink al repo, y ese comando escribiria la ruta absoluta de ESTE home
-# dentro del archivo versionado. El .gitconfig ya declara hooksPath.
+# core.hooksPath no se fija con `git config --global`: la copia instalada debe
+# conservar la configuracion portable versionada sin escribir rutas locales del
+# usuario dentro del archivo fuente.
 
 if [ "$DRY_RUN" -eq 0 ] && [ ! -f "$HOME/.gitconfig.local" ]; then
   cat <<'EOF'
