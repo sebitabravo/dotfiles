@@ -44,8 +44,7 @@ export NVM_DEFAULT_BIN="$NVM_DIR/versions/node/$_nvm_default/bin"
 unset _nvm_default
 
 # Unica definicion del orden de prioridad del PATH. El ultimo path_promote gana,
-# asi que el node de Herd queda por delante del symlink que Hermes deja en
-# ~/.local/bin.
+# así el Node de Herd queda por delante de cualquier Node alternativo en el PATH.
 setup_user_path() {
   # Red de seguridad: en shells de login esto ya lo pone brew shellenv desde
   # .zprofile, pero un shell interactivo no-login nunca lo ejecuta y se quedaria
@@ -60,6 +59,21 @@ setup_user_path() {
   path_promote "$HOME/Library/Application Support/Herd/bin"
   path_promote "$HOME/.local/bin"
   path_promote "$NVM_DEFAULT_BIN"
+  path_promote "$HOME/.cargo/bin"
+  # Homebrew mantiene binutils keg-only para no pisar las herramientas nativas;
+  # exponer sus nombres prefijados (greadelf/gobjdump) deja el analisis ELF
+  # disponible sin reemplazar los binarios del sistema.
+  path_append "$HOMEBREW_PREFIX/opt/binutils/bin"
+  # Xcode ya trae LLVM; exponer sus herramientas evita instalar otro LLVM por
+  # Homebrew y permite que los agentes invoquen llvm-cov/profdata directamente.
+  path_append "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+
+  # Android Studio ya trae un JBR funcional; reutilizarlo evita instalar otro
+  # JDK solo para Gradle/Kotlin.
+  if [[ -x "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java" ]]; then
+    export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+    path_promote "$JAVA_HOME/bin"
+  fi
 
   path_append "$GOPATH/bin"
   path_append "$HOME/.spicetify"
