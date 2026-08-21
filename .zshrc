@@ -200,18 +200,43 @@ fi
 # claude a secas queda igual que siempre (Anthropic).
 claude() {
   local -a args=()
-  local use_ds=false use_glm=false use_kimi=false use_mm=false use_or=false use_ol=false a deepseek_settings glm_settings kimi_settings minimax_settings openrouter_settings ollama_settings claude_bin
+  local -a provider_env=(
+    -u ANTHROPIC_API_KEY
+    -u ANTHROPIC_AUTH_TOKEN
+    -u ANTHROPIC_BASE_URL
+    -u ANTHROPIC_MODEL
+    -u ANTHROPIC_DEFAULT_OPUS_MODEL
+    -u ANTHROPIC_DEFAULT_SONNET_MODEL
+    -u ANTHROPIC_DEFAULT_HAIKU_MODEL
+    -u ANTHROPIC_DEFAULT_FABLE_MODEL
+    -u CLAUDE_CODE_SUBAGENT_MODEL
+    -u CLAUDE_CODE_AUTO_COMPACT_WINDOW
+    -u CLAUDE_CODE_MAX_CONTEXT_TOKENS
+    -u CLAUDE_CODE_EFFORT_LEVEL
+    -u CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY
+    -u CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS
+    -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    -u ENABLE_TOOL_SEARCH
+    -u API_TIMEOUT_MS
+  )
+  local use_ds=false use_glm=false use_kimi=false use_mm=false use_or=false use_ol=false use_qwen=false a deepseek_settings glm_settings kimi_settings minimax_settings openrouter_settings ollama_settings qwen_settings claude_bin
+  local provider_count=0
   for a in "$@"; do
     case "$a" in
-      --deepseek)   use_ds=true ;;
-      --glm)        use_glm=true ;;
-      --kimi)       use_kimi=true ;;
-      --minimax)    use_mm=true ;;
-      --openrouter) use_or=true ;;
-      --ollama)     use_ol=true ;;
+      --deepseek)   use_ds=true; provider_count=$((provider_count + 1)) ;;
+      --glm)        use_glm=true; provider_count=$((provider_count + 1)) ;;
+      --kimi)       use_kimi=true; provider_count=$((provider_count + 1)) ;;
+      --minimax)    use_mm=true; provider_count=$((provider_count + 1)) ;;
+      --openrouter) use_or=true; provider_count=$((provider_count + 1)) ;;
+      --ollama)     use_ol=true; provider_count=$((provider_count + 1)) ;;
+      --qwen)       use_qwen=true; provider_count=$((provider_count + 1)) ;;
       *)            args+=("$a") ;;
     esac
   done
+  if (( provider_count > 1 )); then
+    print -u2 'claude: selecciona un solo provider por invocacion'
+    return 2
+  fi
   if $use_ds; then
     deepseek_settings="$HOME/.claude/deepseek.settings.json"
     claude_bin="${commands[claude]:-}"
@@ -223,8 +248,9 @@ claude() {
       print -u2 "claude: binario de Claude Code no encontrado"
       return 1
     fi
-    # No fijar ANTHROPIC_MODEL: lo anularia opusplan del settings separado.
-    env -u ANTHROPIC_MODEL \
+    # Aislar el overlay: las variables exportadas por otro provider no deben
+    # ganar sobre el settings seleccionado.
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$deepseek_settings" \
       "${args[@]}"
@@ -242,7 +268,7 @@ claude() {
     # Mismo patron que --deepseek: apiKeyHelper en el settings, sin tocar el
     # entorno aca. Z.AI documenta ANTHROPIC_AUTH_TOKEN, pero acepta X-Api-Key
     # igual (verificado con curl: 429 de saldo en ambos, ninguno 401 de auth).
-    env -u ANTHROPIC_MODEL \
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$glm_settings" \
       "${args[@]}"
@@ -257,7 +283,7 @@ claude() {
       print -u2 "claude: binario de Claude Code no encontrado"
       return 1
     fi
-    env -u ANTHROPIC_MODEL \
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$kimi_settings" \
       "${args[@]}"
@@ -272,7 +298,7 @@ claude() {
       print -u2 "claude: binario de Claude Code no encontrado"
       return 1
     fi
-    env -u ANTHROPIC_MODEL \
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$minimax_settings" \
       "${args[@]}"
@@ -287,7 +313,7 @@ claude() {
       print -u2 "claude: binario de Claude Code no encontrado"
       return 1
     fi
-    env -u ANTHROPIC_MODEL \
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$openrouter_settings" \
       "${args[@]}"
@@ -302,9 +328,24 @@ claude() {
       print -u2 "claude: binario de Claude Code no encontrado"
       return 1
     fi
-    env -u ANTHROPIC_MODEL \
+    env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$ollama_settings" \
+      "${args[@]}"
+  elif $use_qwen; then
+    qwen_settings="$HOME/.claude/qwen.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$qwen_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de Qwen: $qwen_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env "${provider_env[@]}" \
+      "$claude_bin" \
+      --settings "$qwen_settings" \
       "${args[@]}"
   else
     command claude "$@"

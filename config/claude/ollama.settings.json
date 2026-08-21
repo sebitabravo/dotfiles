@@ -3,11 +3,11 @@
   "apiKeyHelper": "~/.claude/scripts/ollama-api-key.sh",
   "env": {
     "ANTHROPIC_BASE_URL": "https://ollama.com",
-    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_MODEL": "opus",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "minimax-m3:cloud",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "minimax-m3:cloud",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-oss:120b-cloud",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-oss:20b-cloud",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "gpt-oss:20b-cloud",
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "200000"
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemma4:31b-cloud",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-oss:120b-cloud",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "204800"
   }
 }
