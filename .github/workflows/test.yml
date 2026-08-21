@@ -1,0 +1,19 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  install-and-macos-checks:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install.sh test suite
+        run: bash .github/test.sh
+
+      - name: shellcheck config/macos
+        run: shellcheck config/macos/defaults.sh config/macos/verify.sh

@@ -38,18 +38,23 @@ __pycache__/
 HANDOFF.md
 HANDOFF.md.archived
 
-# Suites de verificacion: se corren en local, no se versionan.
+# Roadmap del workflow automatico - estado de sesion, no un artefacto versionado
+TASK-ROADMAP.md
+task-roadmap.md
+
+# Suites de verificacion dentro de directorios administrados: se corren en
+# local, no se versionan.
 #
-# Este repo se instala, no se desarrolla: install.sh enlaza config/claude/hooks
-# entero, asi que cualquier *.test.sh que viva ahi termina en el ~/.claude/hooks
-# de quien copia esta configuracion. Un test del gate no le sirve de nada a
-# quien solo quiere el gate.
+# install.sh copia los directorios administrados (config/claude/**, etc.) pero
+# excluye `*.test.sh`, asi que esas suites nunca llegan al runtime de quien usa
+# la config. .github/test.sh no vive dentro de ningun directorio administrado
+# -- install.sh nunca lo copia a ningun HOME -- asi que se versiona y corre en
+# CI (.github/workflows/).
 #
-# El costo asumido: en un clone, validate.sh reporta las etapas de suite como
-# omitidas. Las nombra igual en vez de callarlas, porque una etapa que no corrio
-# no es una que paso.
+# El costo asumido: en un clone, validate.sh reporta las etapas de suite
+# *.test.sh como omitidas. Las nombra igual en vez de callarlas, porque una
+# etapa que no corrio no es una que paso.
 *.test.sh
-test.sh
 config/claude/scripts/test-swarmforge-workflow.sh
 Makefile
 

@@ -37,8 +37,16 @@ detect_test_cmd() {
   TEST_CMD_SOURCE=""
 
   # 1. Runner explicito para repos que no necesitan una herramienta de build.
+  # .github/test.sh cubre el repo que saca su runner de la raiz para no
+  # ensuciarla pero lo sigue versionando (no vive en un directorio administrado
+  # que install.sh copie a un HOME).
   if [ -x "$root/test.sh" ]; then
     TEST_CMD="$root/test.sh"
+    TEST_CMD_SOURCE="declared"
+    return 0
+  fi
+  if [ -x "$root/.github/test.sh" ]; then
+    TEST_CMD="$root/.github/test.sh"
     TEST_CMD_SOURCE="declared"
     return 0
   fi
