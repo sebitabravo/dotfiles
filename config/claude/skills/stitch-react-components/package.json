@@ -1,6 +1,7 @@
 {
   "name": "react-components",
   "version": "1.0.0",
+  "private": true,
   "description": "Design-to-code prompt to React components for Stitch MCP",
   "type": "module",
   "scripts": {

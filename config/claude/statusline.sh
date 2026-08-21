@@ -67,24 +67,27 @@ fi
 
 # Model icon. El display_name de Anthropic trae el tier en el nombre
 # (Opus/Sonnet/Haiku); el de proveedores externos trae el ID del modelo
-# (deepseek-v4-pro, gpt-oss:120b-cloud, ...), asi que cada tier lista ademas
-# los IDs de los overlays. Ojo con el orden: los sufijos [1m] y :cloud
-# distinguen tiers que comparten nombre base (MiniMax-M3[1m] vs MiniMax-M3).
+# (deepseek-v4-pro, qwen3.8-max, glm-5.2, ...), asi que cada tier lista ademas
+# los IDs de los overlays. Ojo con el orden: los sufijos [1m] distinguen tiers
+# que comparten nombre base (deepseek-v4-flash[1m] vs deepseek-v4-flash).
 MODEL_ICON="🤖"
 case "$MODEL" in
   # Anthropic
   *Opus*) MODEL_ICON="🎭" ;;
   *Sonnet*) MODEL_ICON="📝" ;;
   *Haiku*) MODEL_ICON="🍃" ;;
+  # El mismo ID sirve a Fable, Opus y Sonnet en el overlay MiniMax; sin el
+  # alias original no se puede inferir un tier honesto desde display_name.
+  *MiniMax-M3\[1m\]*) MODEL_ICON="🤖" ;;
   # Proveedores externos: tier Opus. Los [1m] van escapados: sin escape son una
   # character class de glob y el corchete literal no matchea.
-  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*MiniMax-M3\[1m\]*|*minimax-m3:cloud*)
+  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*minimax-m3:cloud*|*qwen3.8-max*)
     MODEL_ICON="🎭" ;;
   # Proveedores externos: tier Sonnet
-  *deepseek-v4-flash\[1m\]*|*glm-4.7*|*kimi-k2.7-code*|*MiniMax-M2.7-highspeed*|*gpt-5.6-luna*|*gpt-oss:120b-cloud*)
+  *deepseek-v4-flash\[1m\]*|*glm-5.2*|*kimi-k2.6*|*gemma4:31b-cloud*|*gpt-5.6-luna*|*qwen3.7-max*)
     MODEL_ICON="📝" ;;
   # Proveedores externos: tier Haiku y subagentes
-  *deepseek-v4-flash*|*glm-4.5*|*kimi-k2.6*|*MiniMax-M3*|*openrouter/free*|*gpt-oss:20b-cloud*)
+  *deepseek-v4-flash*|*glm-4.7*|*kimi-k2.5*|*MiniMax-M3*|*gpt-oss:120b-cloud*|*qwen3.6-flash*|*openrouter/free*)
     MODEL_ICON="🍃" ;;
 esac
 
@@ -130,41 +133,35 @@ LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 # Providers WITHOUT peak/surge pricing: OpenAI, Gemini, Mistral, Groq, xAI, Kimi/Moonshot,
 #   Qwen/DashScope, StepFun, MiMo/Xiaomi, Copilot, MiniMax (flat rate or throttling only)
 get_peak_warning() {
+  local model=$1
   local UTC_HOUR
   UTC_HOUR=$(date -u +%H)
   local BJS_HOUR=$(((10#$UTC_HOUR + 8) % 24)) # Beijing time for CN providers
 
   # z.ai/GLM: daily 14:00-18:00 Beijing (06:00-10:00 UTC) — 3x quota
-  if [ "$BJS_HOUR" -ge 14 ] && [ "$BJS_HOUR" -lt 18 ]; then
+  if [[ "$model" == *glm-* ]] && [ "$BJS_HOUR" -ge 14 ] && [ "$BJS_HOUR" -lt 18 ]; then
     echo -e "${ERROR}🔥 3x${NC}"
     return
   fi
 
-  # Anthropic: 1.5-2x throttling, weekdays 5am-11am PT (09:00-15:00 CLT)
-  # Was peak throttling, removed May 2026 but may return.
-  local PT_HOUR PT_DOW
-  PT_HOUR=$(TZ="America/Los_Angeles" date +%-H)
-  PT_DOW=$(TZ="America/Los_Angeles" date +%u)
-  local PT_H=$((10#$PT_HOUR))
-  if [ "$PT_DOW" -le 5 ] && [ "$PT_H" -ge 5 ] && [ "$PT_H" -lt 11 ]; then
-    echo -e "${ACCENT}💸 2x${NC}"
-    return
-  fi
+  # Anthropic: no se muestra un multiplicador estático especulativo; throttling
+  # dinámico no se puede deducir sólo del reloj.
 
   # DeepSeek V4 peak-valley (oficial, confirmado 2x exacto, lanza mid-July 2026)
-  if { [ "$UTC_HOUR" -ge 1 ] && [ "$UTC_HOUR" -lt 4 ]; } || { [ "$UTC_HOUR" -ge 6 ] && [ "$UTC_HOUR" -lt 10 ]; }; then
+  if [[ "$model" == *deepseek-* ]] \
+    && { { [ "$UTC_HOUR" -ge 1 ] && [ "$UTC_HOUR" -lt 4 ]; } || { [ "$UTC_HOUR" -ge 6 ] && [ "$UTC_HOUR" -lt 10 ]; }; }; then
     echo -e "${ACCENT}💸 2x${NC}"
     return
   fi
 
   # DeepSeek: daily 9:00-21:00 Beijing (01:00-13:00 UTC) — ~1.2x premium vs off-peak
-  if [ "$BJS_HOUR" -ge 9 ] && [ "$BJS_HOUR" -lt 21 ]; then
+  if [[ "$model" == *deepseek-* ]] && [ "$BJS_HOUR" -ge 9 ] && [ "$BJS_HOUR" -lt 21 ]; then
     echo -e "${MUTED}⚠️ 1.2x${NC}"
     return
   fi
 }
 
-PEAK_WARNING=$(get_peak_warning)
+PEAK_WARNING=$(get_peak_warning "$MODEL")
 
 if [ -n "$PEAK_WARNING" ]; then
   LINE+="${MUTED}  ${NC}${PEAK_WARNING}"

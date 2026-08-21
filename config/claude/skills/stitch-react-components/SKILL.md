@@ -38,12 +38,12 @@ You are a frontend engineer focused on transforming designs into clean React cod
     * Use theme-mapped Tailwind classes instead of arbitrary hex codes.
 
 ## Execution steps
-1. **Environment setup**: If `~/.claude/skills/stitch-react-components/node_modules/` is missing, run `npm install` inside `~/.claude/skills/stitch-react-components/` to provision the validation tool. Do not install these skill dependencies into the target project.
+1. **Environment setup**: If `~/.claude/skills/stitch-react-components/node_modules/` is missing, ask before installing and run `npm ci --ignore-scripts` inside `~/.claude/skills/stitch-react-components/` to provision the locked validation tool. Do not install these skill dependencies into the target project.
 2. **Data layer**: Create `src/data/mockData.ts` based on the design content.
 3. **Component drafting**: Use `resources/component-template.tsx` as a base. Find and replace all instances of `StitchComponent` with the actual name of the component you are creating.
 4. **Application wiring**: Update the project entry point (like `App.tsx`) to render the new components.
 5. **Quality check**:
-    * Run `npm run validate <file_path>` for each component.
+    * Run `npm run validate -- <file_path>` for each component.
     * Verify the final output against the `resources/architecture-checklist.md`.
     * Start the dev server with `npm run dev` to verify the live result.
 

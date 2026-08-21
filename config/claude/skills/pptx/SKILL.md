@@ -45,9 +45,19 @@ python scripts/office/unpack.py presentation.pptx unpacked/
 **Read [pptxgenjs.md](pptxgenjs.md) for full details.**
 
 Before requiring `pptxgenjs`, verify that the skill-local dependency exists. If
-`~/.claude/skills/pptx/node_modules/` is absent, run `npm install` from
-`~/.claude/skills/pptx/`; do not install this dependency globally or into the
-target project.
+`~/.claude/skills/pptx/node_modules/` is absent, ask before installing and run
+`npm ci --ignore-scripts` from `~/.claude/skills/pptx/`; do not install this
+dependency globally or into the target project.
+
+### Image parser security
+
+`pptxgenjs@4.0.1` declares `image-size`, whose ICNS/JXL/HEIF parsers have
+unpatched infinite-loop advisories (`GHSA-w3rx-r6r6-pgpr` and
+`GHSA-5p2g-fcmc-qvqq`). The current PptxGenJS 4 Node build does not import that
+dependency, but do not import `image-size` directly or feed ICNS, JXL, HEIF or
+HEIC assets into this workflow. Use trusted PNG, JPEG or SVG assets and keep
+`npm audit --package-lock-only --ignore-scripts` visible until upstream ships a
+patched dependency.
 
 Use when no template or reference presentation is available.
 
