@@ -19,7 +19,7 @@ config/vscode/
 
 | Server | Proposito |
 |---|---|
-| `context7` | Documentacion actualizada de librerias (via npx) |
+| `context7` | Documentacion actualizada de librerias (MCP HTTP hospedado) |
 | `engram` | Memoria persistente entre sesiones (requiere instalacion: `brew install engram`) |
 
 ## Keybindings

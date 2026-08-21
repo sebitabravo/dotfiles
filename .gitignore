@@ -34,11 +34,16 @@ package-lock.json
 bun.lock
 __pycache__/
 
+# Las skills gestionadas de Claude sí versionan su lockfile para reproducir
+# dependencias locales con el Node existente, sin instalar paquetes globales.
+!config/claude/skills/pptx/package-lock.json
+!config/claude/skills/stitch-react-components/package-lock.json
+
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
 
-# Roadmap del workflow automatico - estado de sesion, no un artefacto versionado
+# Roadmap del workflow automatico — estado de sesion, no un artefacto versionado
 TASK-ROADMAP.md
 task-roadmap.md
 
@@ -46,7 +51,7 @@ task-roadmap.md
 # local, no se versionan.
 #
 # install.sh copia los directorios administrados (config/claude/**, etc.) pero
-# excluye `*.test.sh`, asi que esas suites nunca llegan al runtime de quien usa
+# excluye `*.test.sh`, así que esas suites nunca llegan al runtime de quien usa
 # la config. .github/test.sh no vive dentro de ningun directorio administrado
 # -- install.sh nunca lo copia a ningun HOME -- asi que se versiona y corre en
 # CI (.github/workflows/).
@@ -64,6 +69,7 @@ Makefile
 # Anclados a la raiz con `/` para no tapar un tools/ dentro de config/.
 /specs/
 /tools/
+/openspec/
 
 # IA
 .playwright-mcp/

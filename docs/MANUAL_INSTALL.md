@@ -34,7 +34,7 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
+- [ ] **OpenLogi** - <https://openlogi.org/en#install>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
 
 ### Herramientas Especiales
@@ -97,7 +97,7 @@ pyenv install 3.14.3
 pyenv global 3.14.3
 ```
 
-### Oh My Zsh con Warp
+### Oh My Zsh
 
 Configurar Oh My Zsh manualmente:
 
@@ -134,6 +134,8 @@ curl https://cursor.com/install -fsS | bash
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 curl -fsSL https://claude.ai/install.sh | bash
 curl -fsSL https://gh.io/copilot-install | bash
+curl -fsSL https://kilo.ai/cli/install | bash
+curl -fsSL https://cli.kiro.dev/install | bash
 ```
 
 ---

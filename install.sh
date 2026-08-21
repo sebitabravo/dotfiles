@@ -21,9 +21,16 @@ while [ -L "$SELF" ]; do
 done
 DOTFILES="$(cd -- "$(dirname -- "$SELF")" && pwd -P)"
 
-DRY_RUN=0
-[ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+case "$#:${1:-}" in
+  0:)          DRY_RUN=0 ;;
+  1:--dry-run) DRY_RUN=1 ;;
+  *)
+    printf 'uso: %s [--dry-run]\n' "$0" >&2
+    exit 2
+    ;;
+esac
 STAMP="$(date +%Y%m%d%H%M%S)"
+BACKUP_ROOT="$HOME/.dotfiles-backups/$STAMP"
 
 run() { if [ "$DRY_RUN" -eq 1 ]; then printf '  DRY  %s\n' "$*"; else "$@"; fi; }
 
@@ -38,7 +45,7 @@ backup() {
 # configuración instalada aunque mueva o elimine este repositorio.
 copy() {
   local src="$DOTFILES/$1" dst="$2"
-  [ -e "$src" ] || { printf '  FALTA  %s (se omite)\n' "$1" >&2; return 0; }
+  [ -e "$src" ] || { printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2; return 1; }
   if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
     printf '  REMOVE  symlink %s\n' "$dst"
     run rm -- "$dst"
@@ -54,18 +61,38 @@ copy() {
 
 copy_dir() {
   local src="$DOTFILES/$1" dst="$2"
-  [ -d "$src" ] || { printf '  FALTA  %s (se omite)\n' "$1" >&2; return 0; }
+  local backup_dst changes
+  local -a excludes
+  [ -d "$src" ] || { printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2; return 1; }
   if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
     printf '  REMOVE  symlink %s\n' "$dst"
     run rm -- "$dst"
   elif [ -L "$dst" ] || { [ -e "$dst" ] && [ ! -d "$dst" ]; }; then
     backup "$dst"
   fi
+  excludes=(
+    --exclude='__pycache__'
+    --exclude='.DS_Store'
+    --exclude='node_modules'
+    --exclude='*.test.sh'
+    --exclude='*.backup.*'
+  )
+  if [ -d "$dst" ]; then
+    changes=$(rsync -rlptc --dry-run --itemize-changes --delete \
+      "${excludes[@]}" "$src/" "$dst/")
+    if [ -n "$changes" ]; then
+      case "$dst" in
+        "$HOME"/*) backup_dst="$BACKUP_ROOT/${dst#"$HOME"/}" ;;
+        *)         backup_dst="$BACKUP_ROOT/absolute/${dst#/}" ;;
+      esac
+      printf '  BACKUP %s/ -> %s/\n' "$dst" "$backup_dst"
+      run mkdir -p -- "$backup_dst"
+      run rsync -rlpt "${excludes[@]}" "$dst/" "$backup_dst/"
+    fi
+  fi
   run mkdir -p -- "$dst"
-  run rsync -a --delete \
-    --exclude='__pycache__' \
-    --exclude='.DS_Store' \
-    "$src/" "$dst/"
+  # --checksum evita falsos MATCH cuando tamaño y mtime coinciden por azar.
+  run rsync -rlptc --delete "${excludes[@]}" "$src/" "$dst/"
   printf '  COPY   %s/\n' "$dst"
 }
 
@@ -92,7 +119,7 @@ copy config/vscode/keybindings.json "$VSCODE/keybindings.json"
 copy config/vscode/mcp.json         "$VSCODE/mcp.json"
 
 echo "claude"
-for d in agents skills hooks rules templates scripts output-styles; do
+for d in agents skills hooks rules templates scripts output-styles agent-tools; do
   copy_dir "config/claude/$d" "$HOME/.claude/$d"
 done
 for f in CLAUDE.md statusline.sh mcp-servers.json skills-lock.json tweakcc-theme.json skill-registry.md; do
@@ -103,7 +130,7 @@ done
 # las credenciales se resuelven por helper externo, nunca desde estos archivos.
 for f in settings.json deepseek.settings.json glm.settings.json \
   kimi.settings.json minimax.settings.json ollama.settings.json \
-  openrouter.settings.json; do
+  openrouter.settings.json qwen.settings.json; do
   copy "config/claude/$f" "$HOME/.claude/$f"
 done
 

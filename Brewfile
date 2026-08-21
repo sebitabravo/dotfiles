@@ -35,15 +35,24 @@ brew "engram"
 brew "ffmpeg"
 brew "imagemagick"
 brew "pandoc"
+brew "binutils"
+brew "exiftool"
+brew "c2patool"
+brew "poppler"
+brew "shellcheck"
+brew "wabt"
+brew "wget"
 
 brew "ffuf"
 brew "nuclei"
 brew "nikto"
 brew "gitleaks"
-brew "semgrep"
+# semgrep se instala en el Python administrado por pyenv; la formula Homebrew
+# arrastra python@3.14 y duplicaria el runtime del usuario.
 
 # ============================================================================
 # Applications (Casks)
 # ============================================================================
 
 cask "dotnet-sdk"
+cask "libreoffice"
