@@ -13,6 +13,7 @@ Claude Code descarta el additionalContext aunque el evento si lo soporte.
 """
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 
@@ -41,6 +42,74 @@ if len(status.splitlines()) > 40:
     status_lines.append(f'... (+{len(status.splitlines()) - 40} more files)')
 status_block = '\n'.join(status_lines) or 'working tree clean'
 
+
+def roadmap_context(project_root):
+    """Return a bounded summary of the active durable roadmap, if one exists."""
+    root = Path(project_root)
+    candidates = []
+
+    configured = os.environ.get('CLAUDE_TASK_ROADMAP', '').strip()
+    if configured:
+        configured_path = Path(configured)
+        candidates.append(
+            configured_path if configured_path.is_absolute() else root / configured_path
+        )
+
+    # Claude Code puede tratar .claude/ como configuración sensible y bloquear
+    # Writes no interactivos. El roadmap raíz es el default; .claude queda como
+    # compatibilidad para proyectos que ya lo usan.
+    candidates.extend([
+        root / 'TASK-ROADMAP.md',
+        root / 'task-roadmap.md',
+        root / '.claude' / 'task-roadmap.md',
+    ])
+
+    openspec_tasks = sorted((root / 'openspec' / 'changes').glob('*/tasks.md'))
+    if len(openspec_tasks) == 1:
+        candidates.append(openspec_tasks[0])
+
+    seen = set()
+    for roadmap in candidates:
+        try:
+            resolved = roadmap.resolve()
+        except OSError:
+            continue
+        if resolved in seen or not resolved.is_file():
+            continue
+        seen.add(resolved)
+
+        try:
+            lines = resolved.read_text(encoding='utf-8', errors='replace').splitlines()
+        except OSError:
+            continue
+
+        task_lines = [
+            line.strip() for line in lines
+            if line.lstrip().startswith(('- [ ]', '- [>','- [x]', '- [X]'))
+        ][:12]
+        if not task_lines:
+            continue
+
+        # Mostrar una ruta relativa mantiene el contexto compacto y evita
+        # filtrar rutas absolutas de la máquina en cada reanudación. El path
+        # resuelto se conserva sólo para deduplicar y abrir el archivo.
+        try:
+            display_path = str(roadmap.relative_to(root))
+        except ValueError:
+            try:
+                display_path = str(resolved.relative_to(root))
+            except ValueError:
+                display_path = str(resolved)
+
+        return 'active roadmap: ' + display_path + '\n' + '\n'.join(task_lines)
+
+    return ''
+
+
+roadmap_block = roadmap_context(cwd)
+if roadmap_block:
+    roadmap_block = '\n\ndurable task state:\n' + roadmap_block
+
 context = f"""CONTEXT COMPACTED. The rules are NOT relaxed after compaction.
 
 ALL of CLAUDE.md and rules/common/*.md remain in force — NO AI FOOTPRINT,
@@ -58,7 +127,7 @@ Resumption protocol (rules/common/context-management.md):
    with a summary.
 
 current git status:
-{status_block}"""
+{status_block}{roadmap_block}"""
 
 print(json.dumps({
     "hookSpecificOutput": {

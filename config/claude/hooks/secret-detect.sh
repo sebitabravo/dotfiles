@@ -11,7 +11,26 @@
 #           legitimo en el prompt no puede dejarte sin poder trabajar.
 set -euo pipefail
 
-PROMPT=$(cat)
+INPUT=$(cat)
+
+# Claude Code entrega un objeto JSON al hook. Escanear el payload completo hace
+# que una ruta inocente como `task-oneshot-...` parezca una clave `sk-...` y
+# bloquee el prompt antes de que llegue al modelo. Inspecciona sólo `.prompt`;
+# si el caller entrega texto plano o JSON inválido, conserva compatibilidad con
+# el comportamiento anterior.
+PROMPT="$INPUT"
+if command -v jq >/dev/null 2>&1; then
+  case "$INPUT" in
+    *'{'*)
+      # Si el parseo falla o el input no es un objeto, PROMPT se queda con el
+      # $INPUT crudo (fallback seguro): nunca se vacia por un parseo fallido,
+      # porque eso desactivaria el escaneo en vez de ampliarlo.
+      if PARSED_PROMPT=$(printf '%s' "$INPUT" | jq -r 'select(type == "object") | (.prompt // "")' 2>/dev/null); then
+        [ -n "$PARSED_PROMPT" ] && PROMPT="$PARSED_PROMPT"
+      fi
+      ;;
+  esac
+fi
 
 BLOCK_PATTERNS=(
   'sk-[A-Za-z0-9_-]{20,}'                                # OpenAI/Anthropic/LLM API keys

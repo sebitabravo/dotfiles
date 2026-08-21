@@ -1,5 +1,8 @@
 # Design — {{FEATURE_NAME}}
 
+> **Legacy compatibility template:** OpenSpec projects use the generated
+> `openspec/changes/<name>/design.md` instead of this template.
+
 ## Meta
 
 - **Feature:** {{FEATURE_NAME}}

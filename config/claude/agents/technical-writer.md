@@ -264,8 +264,9 @@ Invoke the `pptx` skill (workflow, design, QA). Sub-files to read ONLY when they
 - `~/.claude/skills/pptx/editing.md` — when editing an existing template
 
 `pptxgenjs` is declared in `~/.claude/skills/pptx/package.json`. If the skill's
-`node_modules/` directory is absent, run `npm install` inside that skill
-directory before requiring it. Then resolve it from the skill directory:
+`node_modules/` directory is absent, ask before installing and run
+`npm ci --ignore-scripts` inside that skill directory before requiring it.
+Then resolve it from the skill directory:
 
 ```javascript
 const os = require('os');

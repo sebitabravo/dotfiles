@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# privacy-review.sh — Pre-submission privacy scan for gh issue/pr create
-# Blocks commands that contain private identifiers (home paths, hostnames, tokens, emails).
+# privacy-review.sh — Pre-submission privacy scan for GitHub writes.
+# Blocks private identifier categories without echoing the matched value back
+# into Claude's transcript.
 # Gentle-ai pattern: replace with explicit placeholders, never redact into nothingness.
 
 set -euo pipefail
 
-# Only intercept gh issue create / gh pr create / gh api with --input
+# Intercept common issue/PR publication commands and write-oriented gh api.
 input="$(cat)"
 cmd_str=""
 
@@ -27,25 +28,34 @@ fi
 
 [[ -z "$cmd_str" ]] && exit 0
 
-# Only scan gh issue/pr create commands
-if ! echo "$cmd_str" | grep -qE 'gh\s+(issue|pr)\s+create'; then
+# `gh api --input` publishes a file whose contents are not visible in the hook
+# command. Fail closed rather than claiming it was reviewed.
+if echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+api\b' && \
+  echo "$cmd_str" | grep -qE '(^|[[:space:]])--input([=[:space:]]|$)'; then
+  echo '[Privacy Review] BLOCKED — gh api --input publishes file contents that this command-only review cannot verify. Review the file explicitly and use redacted inline fields or publish it manually.' >&2
+  exit 2
+fi
+
+if ! echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+((issue|pr)[[:space:]]+(create|comment|review)\b|api\b)'; then
   exit 0
 fi
 
 # Detect private identifiers
 PRIVATE_PATTERNS=(
-  "/Users/[a-zA-Z0-9]+"          # macOS home dirs
-  "/home/[a-zA-Z0-9]+"           # Linux home dirs
-  "hostname:.*\.local"           # local hostnames
-  "ghp_[a-zA-Z0-9]{36,}"         # GitHub personal access tokens (classic, >=36 chars)
-  "github_pat_[a-zA-Z0-9_]{22,}" # GitHub fine-grained tokens
-  "sk-[a-zA-Z0-9]{32,}"          # OpenAI keys
-  "AKIA[0-9A-Z]{16}"             # AWS access keys
-  "xox[bprs]-[0-9A-Za-z-]+"     # Slack tokens
+  "macOS home path|/Users/[a-zA-Z0-9]+"
+  "Linux home path|/home/[a-zA-Z0-9]+"
+  "local hostname|hostname:.*\.local"
+  "GitHub classic token|ghp_[a-zA-Z0-9]{36,}"
+  "GitHub fine-grained token|github_pat_[a-zA-Z0-9_]{22,}"
+  "OpenAI-style token|sk-[a-zA-Z0-9]{32,}"
+  "AWS access key|AKIA[0-9A-Z]{16}"
+  "Slack token|xox[bprs]-[0-9A-Za-z-]+"
 )
 
 violations=""
-for pattern in "${PRIVATE_PATTERNS[@]}"; do
+for entry in "${PRIVATE_PATTERNS[@]}"; do
+  label=${entry%%|*}
+  pattern=${entry#*|}
   # Use ggrep (GNU grep) if available, fall back to grep -E with basic patterns
   # El '--' separa flags del patron: sin el, un patron que empieza con '-' se
   # parsea como opciones y el match falla en silencio.
@@ -59,10 +69,7 @@ for pattern in "${PRIVATE_PATTERNS[@]}"; do
     match="$(echo "$cmd_str" | grep -oE -- "$pattern" 2>/dev/null | head -5 || true)"
   fi
   if [[ -n "$match" ]]; then
-    while IFS= read -r line; do
-      [[ -z "$line" ]] && continue
-      violations+="  - Found: $line"$'\n'
-    done <<< "$match"
+    violations+="  - ${label}"$'\n'
   fi
 done
 
@@ -79,15 +86,12 @@ EMAIL_PATTERN="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 EMAIL_EXCLUDE='@(example\.(com|org|net)|test|invalid|localhost|users\.noreply\.github\.com)($|[^A-Za-z0-9_])'
 email_match="$(echo "$cmd_str" | grep -oE -- "$EMAIL_PATTERN" 2>/dev/null | grep -vE -- "$EMAIL_EXCLUDE" | head -5 || true)"
 if [[ -n "$email_match" ]]; then
-  while IFS= read -r line; do
-    [[ -z "$line" ]] && continue
-    violations+="  - Found: $line"$'\n'
-  done <<< "$email_match"
+  violations+="  - email address"$'\n'
 fi
 
 if [[ -n "$violations" ]]; then
   {
-    echo "[Privacy Review] BLOCKED — private identifiers detected in gh issue/pr create body:"
+    echo "[Privacy Review] BLOCKED — private identifier categories detected in GitHub publication:"
     echo "$violations"
     echo ""
     echo "Replace private identifiers with explicit placeholders BEFORE publishing:"

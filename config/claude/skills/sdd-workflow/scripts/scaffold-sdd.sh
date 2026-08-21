@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# Crea specs/<feature-slug>/ desde las plantillas SDD.
+# LEGACY: crea specs/<feature-slug>/ desde las plantillas SDD.
+#
+# El flujo activo usa OpenSpec CLI; este helper no debe usarse en
+# proyectos inicializados con OpenSpec porque crea un segundo formato de
+# planificación. Se conserva sólo para compatibilidad explícita con proyectos
+# legacy que todavía dependan de `specs/`.
 #
 # Las plantillas viven en ~/.claude/templates/ y NO se duplican dentro del skill:
 # una sola copia significa que arreglar una plantilla la arregla en todos lados.
@@ -17,6 +22,11 @@ fi
 TEMPLATE_ROOT="${CLAUDE_TEMPLATE_ROOT:-$HOME/.claude/templates}"
 if [ ! -d "$TEMPLATE_ROOT" ]; then
   echo "Template directory does not exist: $TEMPLATE_ROOT" >&2
+  exit 1
+fi
+
+if [ -d "$(pwd)/openspec" ]; then
+  echo "OpenSpec project detected; use automatic-task-orchestrator and the OpenSpec CLI instead of the legacy scaffold." >&2
   exit 1
 fi
 

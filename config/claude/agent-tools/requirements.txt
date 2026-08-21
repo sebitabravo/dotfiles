@@ -1,0 +1,15 @@
+# Instalar con el Python activo de pyenv, no con Homebrew ni con un Python nuevo:
+#   pyenv exec python -m pip install -r requirements.txt
+# Las versiones fijadas son las verificadas en macOS arm64 el 2026-08-19.
+bandit==1.9.4
+defusedxml==0.7.1
+lxml==6.1.1
+markitdown[pptx]==0.1.7
+openpyxl==3.1.5
+pandas==3.0.5
+pip-audit==2.10.1
+Pillow==12.3.0
+pytest==9.1.1
+python-docx==1.2.0
+python-pptx==1.0.2
+semgrep==1.173.0

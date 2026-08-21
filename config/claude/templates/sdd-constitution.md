@@ -1,5 +1,8 @@
 # Constitution — {{PROJECT_NAME}}
 
+> **Legacy compatibility template:** OpenSpec projects use their generated
+> project configuration and specs; do not create a parallel `specs/` tree.
+
 > **What it is:** Non-negotiable principles defining how software is built in this project. Every PR, feature, and technical decision MUST align with them.
 >
 > **When it's used:** Before any feature, the Constitution Check verifies the proposal does not violate these principles. If a violation is necessary, it goes documented in Complexity Tracking.

@@ -43,14 +43,15 @@ echo "Checking skill dependencies..."
 
 # Version minima de python por skill. No asumas que el primer python3 del PATH
 # funciona: en macOS un shim pyenv roto puede abortar el proceso antes de
-# devolver una version y producir un falso `0.0`. Preferimos ese interprete si
-# responde; si no, usamos el Python administrado por uv.
+# devolver una version y producir un falso `0.0`. Preferimos el Python
+# administrado por pyenv o el python3 activo; uv queda como fallback para
+# instalaciones que no tengan un gestor local de Python.
 PYTHON_BIN="${PYTHON_BIN:-}"
 if [ -n "$PYTHON_BIN" ] && ! "$PYTHON_BIN" -c 'import sys' >/dev/null 2>&1; then
   PYTHON_BIN=""
 fi
-if [ -z "$PYTHON_BIN" ] && command -v uv >/dev/null 2>&1; then
-  candidate=$(uv python find 3.12 2>/dev/null || true)
+if [ -z "$PYTHON_BIN" ] && command -v pyenv >/dev/null 2>&1; then
+  candidate=$(pyenv which python 2>/dev/null || true)
   if [ -n "$candidate" ] && "$candidate" -c 'import sys' >/dev/null 2>&1; then
     PYTHON_BIN="$candidate"
   fi
@@ -62,6 +63,12 @@ fi
 if [ -z "$PYTHON_BIN" ] && [ -x /usr/bin/python3 ] \
   && /usr/bin/python3 -c 'import sys' >/dev/null 2>&1; then
   PYTHON_BIN=/usr/bin/python3
+fi
+if [ -z "$PYTHON_BIN" ] && command -v uv >/dev/null 2>&1; then
+  candidate=$(uv python find 3.12 2>/dev/null || true)
+  if [ -n "$candidate" ] && "$candidate" -c 'import sys' >/dev/null 2>&1; then
+    PYTHON_BIN="$candidate"
+  fi
 fi
 
 PY_VERSION="0.0"
@@ -111,7 +118,7 @@ while IFS= read -r package_json; do
     dep_path="$skill_dir/node_modules/$dep"
     if [ ! -e "$dep_path" ]; then
       local_node_info=$((local_node_info + 1))
-      [ "$QUIET" -eq 1 ] || echo "  info   local node: $dep is not provisioned (skill: $skill_name; run npm install inside the skill when it applies)"
+      [ "$QUIET" -eq 1 ] || echo "  info   local node: $dep is not provisioned (skill: $skill_name; ask first, then run npm ci --ignore-scripts inside the skill when it applies)"
     fi
   done < <(jq -r '.dependencies // {} | keys[]' "$package_json")
 done < <(find "$SKILLS_ROOT_FOR_PACKAGES" -mindepth 2 -maxdepth 2 -name package.json -type f -print)

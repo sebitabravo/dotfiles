@@ -23,11 +23,25 @@ SUITES=(
   config/claude/agents/vulnerability-hunter.test.sh
   config/claude/statusline.test.sh
   config/claude/hooks/project-integrations-check.test.sh
+  config/claude/hooks/privacy-review.test.sh
   config/claude/hooks/protect-codegraph-tracking.test.sh
+  config/claude/hooks/secret-detect.test.sh
   config/claude/hooks/quality-gate.test.sh
   config/claude/hooks/validate-safe-ops.test.sh
   config/claude/hooks/gauntlet-stop.test.sh
   config/claude/hooks/protect-tests.test.sh
+  config/claude/hooks/task-contract.test.sh
+  config/claude/hooks/automatic-workflow.test.sh
+  config/claude/hooks/automatic-workflow-stop.test.sh
+  config/claude/hooks/convergence-stop.test.sh
+  config/claude/hooks/activate-convergence-on-apply.test.sh
+  config/claude/hooks/compact-resume.test.sh
+  config/claude/scripts/validate-task-roadmap.test.sh
+  config/claude/scripts/compare-task-roadmaps.test.sh
+  config/claude/scripts/convergence-start.test.sh
+  config/claude/scripts/check-runtime-parity.test.sh
+  config/claude/scripts/check-provider-runtime-parity.test.sh
+  config/claude/scripts/sync-convergence-runtime.test.sh
   config/claude/hooks/lib/test-runner.test.sh
   config/claude/scripts/test-swarmforge-workflow.sh
   git-hooks/commit-msg.test.sh
@@ -48,6 +62,27 @@ printf '== JSON manifests\n'
 jq empty "$CLAUDE_DIR/settings.json"
 jq empty "$CLAUDE_DIR/skills-lock.json"
 
+printf '== provider overlays\n'
+for overlay in \
+  deepseek.settings.json \
+  glm.settings.json \
+  kimi.settings.json \
+  minimax.settings.json \
+  ollama.settings.json \
+  openrouter.settings.json \
+  qwen.settings.json; do
+  jq -e '
+    (.apiKeyHelper | type == "string" and length > 0)
+    and (.env.ANTHROPIC_BASE_URL | type == "string" and length > 0)
+    and (.env.ANTHROPIC_DEFAULT_FABLE_MODEL | type == "string" and length > 0)
+    and (.env.ANTHROPIC_DEFAULT_OPUS_MODEL | type == "string" and length > 0)
+    and (.env.ANTHROPIC_DEFAULT_SONNET_MODEL | type == "string" and length > 0)
+    and (.env.ANTHROPIC_DEFAULT_HAIKU_MODEL | type == "string" and length > 0)
+    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) >= 100000)
+    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 1000000)
+  ' "$CLAUDE_DIR/$overlay" >/dev/null
+done
+
 printf '== skill dependencies\n'
 bash "$CLAUDE_DIR/scripts/check-skill-deps.sh" >/dev/null
 
@@ -59,15 +94,37 @@ if command -v shellcheck >/dev/null 2>&1; then
   # Los .sh del repo, excluyendo lo que vive dentro de skills de terceros.
   # Sin mapfile: bash 3.2 (el que trae macOS) no lo tiene.
   SCRIPTS=()
-  while IFS= read -r script; do
-    SCRIPTS+=("$script")
-  done < <(git ls-files '*.sh' ':!:config/claude/skills/*' 2>/dev/null)
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    while IFS= read -r script; do
+      # `git ls-files` también devuelve archivos eliminados del working tree;
+      # El analizador no puede abrirlos y una eliminación legítima convertía
+      # toda la validación en falso rojo.
+      [ -f "$script" ] && SCRIPTS+=("$script")
+    done < <(
+      {
+        git ls-files '*.sh' ':!:config/claude/skills/*'
+        git ls-files --others --exclude-standard '*.sh' ':!:config/claude/skills/*'
+      } | sort -u
+    )
+  else
+    # GitHub permite descargar el repo como ZIP. Ese árbol no tiene `.git`,
+    # pero debe recibir el mismo lint en vez de declarar VALID con la etapa
+    # vacía. El ZIP no contiene archivos ignorados, así que este fallback no
+    # incorpora las suites locales ni artefactos del desarrollador.
+    while IFS= read -r script; do
+      [ -f "$script" ] && SCRIPTS+=("$script")
+    done < <(
+      find . -type f -name '*.sh' \
+        -not -path './config/claude/skills/*' \
+        -not -path './.git/*' \
+        -print | sed 's#^\./##' | sort
+    )
+  fi
 
-  # Bajo `set -u`, expandir un array vacio aborta en bash 3.2. Pasa cuando el
-  # arbol no es un repo git: ahi la lista no es "cero scripts que pasan", es
-  # una etapa que no se pudo armar.
+  # Bajo `set -u`, expandir un array vacío aborta en bash 3.2. Un árbol sin
+  # scripts es una etapa sin cobertura y se informa explícitamente.
   if [ ${#SCRIPTS[@]} -eq 0 ]; then
-    printf '== linting with no file list (outside a git repo)\n'
+    printf '== linting with no shell scripts found\n'
     SKIPPED=$((SKIPPED + 1))
   else
     printf '== linting\n'

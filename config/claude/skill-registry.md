@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 76
+- **Total skills:** 78
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -22,6 +22,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `architecture-patterns` | SOLID principles applied, composition over inheritance, layered separation (controller/service/repository). |
 | `code-review` | Systematic code review for correctness, security, performance, and maintainability. |
 | `security-review` | Complete a security review of pending changes. |
+| `fuzzing-primer` | Fuzzing fundamentals, harness design, crash triage, and safe mutation strategy. |
 | `npm-security` | NPM supply chain hardening — 17 practices covering postinstall blocking, git dependency bans, version cooldown. |
 | `database-migrations` | Safe database migration patterns: zero-downtime, backward-compatible, rollback-ready. |
 | `deployment-patterns` | CI/CD pipelines, Docker optimization, health checks, rollback strategies, and deployment automation. |
@@ -100,11 +101,12 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 
 | Skill | Trigger |
 |---|---|
+| `automatic-task-orchestrator` | Automatic one-shot planning, ordered execution, verification, acceptance, and root-cause iteration. |
 | `branch-pr` | > Branch creation, PR workflow, and conventional commits. |
 | `systematic-debugging` | Use for bugs, test failures, unexpected behavior, and performance incidents. |
 | `verification-before-completion` | Use before claiming "done", "fixed", "passing", or before commit/PR. Requires fresh verification evidence. |
 | `swarmforge-workflow` | Claude-native two-pack, four-pack, and six-pack role handoffs for TDD, acceptance, CRAP/DRY, mutation, and QA. |
-| `sdd-workflow` | Spec-Driven Development para features complejas: Explore, Proposal, Requirements, Design, Tasks, Apply, Verify, con gates humanos y scaffolding. |
+| `sdd-workflow` | Spec-Driven Development para features complejas con OpenSpec: artifacts, apply, verify y archive, más contratos de tareas y receipts. |
 | `handoff` | Crea un archivo HANDOFF.md con el estado actual del proyecto para un traspaso limpio entre sesiones. |
 | `cavecrew` | Protocolo de delegación a subagentes: escriben resultados a `/tmp/cavecrew/<tarea>-result.md` y devuelven solo el path. |
 | `find-skills` | Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X". |
