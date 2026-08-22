@@ -81,7 +81,7 @@ case "$MODEL" in
   *MiniMax-M3\[1m\]*) MODEL_ICON="🤖" ;;
   # Proveedores externos: tier Opus. Los [1m] van escapados: sin escape son una
   # character class de glob y el corchete literal no matchea.
-  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*minimax-m3:cloud*|*qwen3.8-max*)
+  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*minimax-m3:cloud*|*qwen3.8-max*|*gpt-5.6-luna-pro*)
     MODEL_ICON="🎭" ;;
   # Proveedores externos: tier Sonnet
   *deepseek-v4-flash\[1m\]*|*glm-5.2*|*kimi-k2.6*|*gemma4:31b-cloud*|*gpt-5.6-luna*|*qwen3.7-max*)
