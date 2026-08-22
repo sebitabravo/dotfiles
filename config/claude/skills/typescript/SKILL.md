@@ -5,7 +5,7 @@ description: >
   Trigger: When writing TypeScript code - types, interfaces, generics.
 license: Apache-2.0
 metadata:
-  author: sebita-programming
+  author: gentleman-programming
   version: "1.0"
 ---
 
@@ -107,5 +107,4 @@ import { createUser, type Config } from "./utils";
 ```
 
 ## Keywords
-
 typescript, ts, types, interfaces, generics, strict mode, utility types

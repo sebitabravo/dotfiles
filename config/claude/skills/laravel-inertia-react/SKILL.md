@@ -1,11 +1,17 @@
 ---
 name: laravel-inertia-react
 description: Laravel + Inertia.js + React integration patterns. Use when building Inertia page components, handling forms with useForm, managing shared data, or implementing persistent layouts. Triggers on tasks involving Inertia.js, page props, form handling, or Laravel React integration.
+license: MIT
+metadata:
+  author: Asyraf Hussin
+  version: "1.0.2"
+  laravelVersion: "13.x"
+  phpVersion: "8.3+"
 ---
 
 # Laravel + Inertia.js + React
 
-Comprehensive patterns for building modern monolithic applications with Laravel, Inertia.js, and React. Contains 30+ rules for seamless full-stack development.
+Comprehensive patterns for building modern monolithic applications with Laravel, Inertia.js, and React. Contains 24 rules for seamless full-stack development.
 
 ## When to Apply
 
@@ -470,9 +476,11 @@ each one carries the full explanation, the working code, and the failure modes.
 
 ```
 laravel-inertia-react/
-├── SKILL.md    # This file - overview, examples, and the rule index above
-├── AGENTS.md   # Integration guide for AI agents
-└── rules/      # 24 rule files: page-* (6), form-* (8), nav-* (5), shared-* (4), layout-* (1)
+├── SKILL.md          # This file - overview, examples, and the rule index above
+├── README.md         # Quick reference guide
+├── AGENTS.md         # Integration guide for AI agents
+├── metadata.json     # Skill metadata and references
+└── rules/            # 24 rule files plus section/template guidance
 ```
 
 ## References
@@ -508,8 +516,8 @@ SOFTWARE.
 
 ## Metadata
 
-- **Version**: 1.0.0
+- **Version**: 1.0.2
 - **Last Updated**: 2026-01-17
 - **Maintainer**: Asyraf Hussin
 - **Rule Count**: 24 rules across 6 categories
-- **Tech Stack**: Laravel 10+, Inertia.js 1.0+, React 18+, TypeScript 5+
+- **Tech Stack**: PHP 8.3+, Laravel 12+, Inertia.js 2.0+, React 19+, TypeScript 5+

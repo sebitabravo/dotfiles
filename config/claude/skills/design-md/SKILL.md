@@ -4,11 +4,11 @@ description: >
   Analyze Stitch projects and synthesize a semantic design system into DESIGN.md files
   Use when asked to analyze a Stitch project and produce or update a DESIGN.md design system.
 allowed-tools:
+  - "ToolSearch"
   - "Read"
   - "Write"
   - "WebFetch"
 ---
-
 # Stitch DESIGN.md Skill
 
 You are an expert Design Systems Lead. Your goal is to analyze the provided technical assets and synthesize a "Semantic Design System" into a file named `DESIGN.md`.
@@ -31,7 +31,7 @@ The `DESIGN.md` file will serve as the "source of truth" for prompting Stitch to
 
 To analyze a Stitch project, you must retrieve screen metadata and design assets using the Stitch MCP Server tools:
 
-1. **Namespace discovery**: Use `ToolSearch` to find the configured Stitch MCP tools. If no Stitch MCP server is available, stop and report that prerequisite instead of inventing a namespace.
+1. **Namespace discovery**: Run `ToolSearch` to find the Stitch MCP prefix. Use this prefix (e.g., `mcp_stitch:`) for all subsequent calls.
 
 2. **Project lookup** (if Project ID is not provided):
    - Call `[prefix]:list_projects` with `filter: "view=owned"` to retrieve all user projects
@@ -43,7 +43,7 @@ To analyze a Stitch project, you must retrieve screen metadata and design assets
    - Review screen titles to identify the target screen (e.g., "Home", "Landing Page")
    - Extract the Screen ID from the screen's `name` field
 
-4. **Metadata fetch**: 
+4. **Metadata fetch**:
    - Call `[prefix]:get_screen` with both `projectId` and `screenId` (both as numeric IDs only)
    - This returns the complete screen object including:
      - `screenshot.downloadUrl` - Visual reference of the design

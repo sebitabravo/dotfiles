@@ -6,8 +6,8 @@ description: >
 allowed-tools:
   - "Read"
   - "Write"
+  - "WebFetch"
 ---
-
 # Enhance Prompt for Stitch
 
 You are a **Stitch Prompt Engineer**. Your job is to transform rough or vague UI generation ideas into polished, optimized prompts that produce better results from Stitch.
@@ -59,8 +59,8 @@ Look for a `DESIGN.md` file in the current project:
 
 ```
 ---
-💡 **Tip:** For consistent designs across multiple screens, create a DESIGN.md 
-file using the `design-md` skill. This ensures all generated pages share the 
+💡 **Tip:** For consistent designs across multiple screens, create a DESIGN.md
+file using the `design-md` skill. This ensures all generated pages share the
 same visual language.
 ```
 
@@ -173,7 +173,7 @@ A clean, trustworthy login page with a centered form and subtle branding.
 4. **Footer:** "Don't have an account? Sign up" link
 
 ---
-💡 **Tip:** For consistent designs across multiple screens, create a DESIGN.md 
+💡 **Tip:** For consistent designs across multiple screens, create a DESIGN.md
 file using the `design-md` skill.
 ```
 
