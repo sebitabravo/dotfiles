@@ -20,7 +20,7 @@ description: |
   </example>
 color: purple
 model: sonnet
-tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "WebFetch", "mcp__playwright"]
 skills: [taste-design, enhance-prompt, stitch-extract-design-md, gsap-core]
 maxTurns: 40
 effort: high

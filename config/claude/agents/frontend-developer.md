@@ -20,7 +20,7 @@ description: |
   </example>
 color: blue
 model: sonnet
-tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(ls:*)", "Bash(cat:*)", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(ls:*)", "Bash(cat:*)", "WebFetch", "mcp__playwright"]
 context: fork
 maxTurns: 50
 skills: [tanstack-query, e2e-testing, bdd-gherkin, acceptance-pipeline, verification-before-completion, android-jetpack-compose, swift, unity-developer, ffmpeg, gsap-core, gsap-react, gsap-scrolltrigger, gsap-timeline, gsap-utils, gsap-frameworks, gsap-plugins, stitch-react-components, taste-design, react-19, tailwind-4, nextjs, typescript, laravel-inertia-react]
