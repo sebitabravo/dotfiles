@@ -74,6 +74,11 @@ for overlay in \
   ollama.settings.json \
   openrouter.settings.json \
   qwen.settings.json; do
+  # Upper bound is a sanity check against typos (an extra digit), not a
+  # policy cap: kimi.settings.json legitimately declares 1048576 (2^20),
+  # Moonshot's real long-context window, since its very first commit. 2000000
+  # leaves headroom for that and similar real values without disabling the
+  # check.
   jq -e '
     (.apiKeyHelper | type == "string" and length > 0)
     and (.env.ANTHROPIC_BASE_URL | type == "string" and length > 0)
@@ -82,7 +87,7 @@ for overlay in \
     and (.env.ANTHROPIC_DEFAULT_SONNET_MODEL | type == "string" and length > 0)
     and (.env.ANTHROPIC_DEFAULT_HAIKU_MODEL | type == "string" and length > 0)
     and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) >= 100000)
-    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 1000000)
+    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 2000000)
   ' "$CLAUDE_DIR/$overlay" >/dev/null
 done
 
