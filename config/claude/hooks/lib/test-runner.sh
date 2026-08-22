@@ -192,14 +192,22 @@ _detect_managed() {
   return 1
 }
 
-# _kill_process_tree: signals pid and every descendant, not just direct
+# _process_tree_pids: returns pid and every descendant, not just direct
 # children. `pkill -P "$pid"` alone only reaches one generation -- a real
 # test runner (pytest/jest/go test) can fork a worker that itself forks
 # another process, and that grandchild survives `pkill -P` untouched,
 # leaking a live process (and whatever port/CPU it holds) past the timeout
 # this function exists to enforce.
-_kill_process_tree() {
-  local root_pid="$1" sig="$2" frontier="$1" all_pids="$1" pid children next
+#
+# Discovery is separate from signaling on purpose: a descendant that dies to
+# TERM can orphan ITS OWN children before a second `pgrep -P` walk would find
+# them again (reparented to init/launchd, no longer reachable from $pid at
+# all). The caller signals the ONE list this returns for both TERM and KILL
+# instead of re-walking the tree per signal -- kill(2) targets a PID
+# directly and does not care who its current parent is, so an orphaned PID
+# already captured here is still killable.
+_process_tree_pids() {
+  local root_pid="$1" frontier="$1" all_pids="$1" pid children next
 
   while [ -n "$frontier" ]; do
     next=""
@@ -210,9 +218,7 @@ _kill_process_tree() {
     frontier=$next
   done
 
-  for pid in $all_pids; do
-    kill -"$sig" "$pid" >/dev/null 2>&1 || true
-  done
+  printf '%s' "$all_pids"
 }
 
 # run_with_timeout: bounds an arbitrary shell command string (may contain
@@ -235,7 +241,7 @@ _kill_process_tree() {
 # same exit code regardless of which path (real timeout, or the manual
 # ps-polling fallback) actually ran.
 run_with_timeout() {
-  local timeout_seconds="$1" cmd="$2" result_file pid elapsed_tenths rc process_state
+  local timeout_seconds="$1" cmd="$2" result_file pid elapsed_tenths rc process_state tree_pids tp
 
   if command -v timeout >/dev/null 2>&1; then
     eval "timeout $timeout_seconds $cmd" 2>&1
@@ -256,9 +262,13 @@ run_with_timeout() {
       ""|Z*) break ;;
     esac
     if [ "$elapsed_tenths" -ge $((timeout_seconds * 10)) ]; then
-      _kill_process_tree "$pid" TERM
+      # ONE discovery pass, signaled twice: see _process_tree_pids for why
+      # re-walking pgrep -P for the KILL pass would miss a descendant whose
+      # own parent already died to TERM in between.
+      tree_pids=$(_process_tree_pids "$pid")
+      for tp in $tree_pids; do kill -TERM "$tp" >/dev/null 2>&1 || true; done
       sleep 0.2
-      _kill_process_tree "$pid" KILL
+      for tp in $tree_pids; do kill -KILL "$tp" >/dev/null 2>&1 || true; done
       wait "$pid" >/dev/null 2>&1 || true
       rm -f "$result_file"
       return 124

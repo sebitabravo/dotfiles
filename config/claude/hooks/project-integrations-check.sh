@@ -41,9 +41,9 @@ esac
 
 # GitHub CLI has no portable per-request timeout on a stock macOS install.
 # Prefer coreutils when present, otherwise inspect the real child process and
-# kill it ourselves. The SessionStart hook has a 10s outer timeout, so a
-# bounded request is required here; otherwise a stalled network call can make
-# the entire hook appear broken.
+# kill it ourselves. The SessionStart/UserPromptSubmit hook has a 30s outer
+# timeout, so a bounded request is still required here; otherwise a stalled
+# network call can make the entire hook appear broken.
 GH_REQUEST_TIMEOUT_SECONDS=2
 gh_request() {
   local result_file gh_pid elapsed_tenths request_rc process_state
