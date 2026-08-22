@@ -60,11 +60,14 @@ task-roadmap.md
 # *.test.sh como omitidas. Las nombra igual en vez de callarlas, porque una
 # etapa que no corrio no es una que paso.
 *.test.sh
-# Excepcion: la evidencia de regresion de este hook debe ser reproducible por
+# Excepcion: la evidencia de regresion de estos hooks debe ser reproducible por
 # cualquiera que clone el repo, no solo localmente. install.sh sigue
 # excluyendo *.test.sh del runtime instalado (regla de arriba), asi que
-# versionar este archivo no lo hace llegar al ~/.claude de quien instala.
+# versionar estos archivos no los hace llegar al ~/.claude de quien instala.
 !config/claude/hooks/project-integrations-check.test.sh
+!config/claude/hooks/gauntlet-stop.test.sh
+!config/claude/hooks/quality-gate.test.sh
+!config/claude/statusline.test.sh
 config/claude/scripts/test-swarmforge-workflow.sh
 Makefile
 

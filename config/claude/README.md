@@ -186,14 +186,21 @@ la higiene del repo en GitHub: la rama por defecto protegida contra
 force-push y borrado, al menos un status check obligatorio antes de mergear,
 y `delete_branch_on_merge` activado.
 
-Ese último chequeo solo corre cuando `gh api repos/<owner>/<repo>` confirma
-que la sesión de `gh` autenticada en esta máquina es admin/dueña del repo
-(`permissions.admin == true`); si no lo es, o no hay remoto de GitHub, o no
-hay sesión de `gh`, queda en `NOT_APPLICABLE` sin hacer ninguna otra llamada
-— nunca reporta ni sugiere nada sobre un repo ajeno. Como todo lo demás en
-este hook, no corrige nada por sí solo: reporta el gap exacto y el comando
-`gh api` para corregirlo, y aplicar eso sigue siendo una acción explícita y
-autorizada aparte.
+El preflight completo es owner-only: en `SessionStart`, primero confirma que
+`gh api repos/<owner>/<repo>` devuelve `permissions.admin == true` para la
+sesión autenticada en esta máquina. Si no hay remoto válido de GitHub, `gh`,
+autenticación o permisos admin, queda en `NOT_APPLICABLE` y no ejecuta
+CodeGraph, OpenSpec, AGENTS.md/CLAUDE.md ni el scan de scopes; tampoco consulta
+la protección de ramas. Así nunca reporta ni sugiere mantenibilidad sobre un
+repo ajeno.
+
+`UserPromptSubmit` no hace llamadas de red: solo reutiliza un snapshot temporal
+atado al root Git, al remoto/repositorio y al `session_id` actual después de un
+`SessionStart` que confirmó ownership. Si falta ese snapshot o cambió el
+remoto, sale silenciosamente. La protección de GitHub se consulta únicamente
+en `SessionStart`; como todo lo demás en este hook, no corrige nada por sí
+sola: reporta el gap exacto y el comando `gh api` para corregirlo, y aplicar
+eso sigue siendo una acción explícita y autorizada aparte.
 
 ### One-shot automático y convergencia
 

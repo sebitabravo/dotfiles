@@ -180,3 +180,12 @@ printf '%s\n' 'PASS: Claude wrapper isolates provider env, routes one overlay, a
 
 printf '%s\n' '== AGENTS.md/CLAUDE.md scope-detection hook =='
 bash "$ROOT/config/claude/hooks/project-integrations-check.test.sh"
+
+printf '%s\n' '== gauntlet-stop.sh timeout and coverage regressions =='
+bash "$ROOT/config/claude/hooks/gauntlet-stop.test.sh"
+
+printf '%s\n' '== quality-gate.sh timeout regressions =='
+bash "$ROOT/config/claude/hooks/quality-gate.test.sh"
+
+printf '%s\n' '== statusline model-tier icons =='
+bash "$ROOT/config/claude/statusline.test.sh"
