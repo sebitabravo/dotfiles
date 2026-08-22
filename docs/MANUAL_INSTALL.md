@@ -34,7 +34,7 @@ Estas apps se instalan desde la App Store de macOS:
 ### Drivers & Hardware
 
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **OpenLogi** - <https://openlogi.org/en#install>
+- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
 
 ### Herramientas Especiales
@@ -44,6 +44,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
 - [ ] **Bartender** - <https://www.macbartender.com/>
 - [ ] **CodexBar** - <https://codexbar.app/>
+- [ ] **Flow** - <https://wisprflow.ai>
 
 ### Terminal & Development
 
@@ -55,7 +56,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
 - [ ] **Bruno** - <https://www.usebruno.com/downloads/>
 - [ ] **Laravel Herd** - <https://herd.laravel.com/>
-- [ ] **Orca** - <https://www.onorca.dev>
 
 ### IA & Coding Agents
 
@@ -88,6 +88,9 @@ corepack enable pnpm
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
+npm install -g @fission-ai/openspec@latest
+npm i -g vercel
+npm install -g @playwright/cli@latest
 ```
 
 ### Python (con pyenv)
@@ -117,6 +120,13 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-
 
 ```bash
 php artisan sail:install
+```
+
+### Multi agents
+
+```bash
+curl -fsSL https://herdr.dev/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
 ```
 
 ### IA
