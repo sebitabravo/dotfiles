@@ -3,10 +3,13 @@
 # de los scripts. Si ademas hay suites locales presentes, las corre.
 #
 # Este repo se clona para copiar la configuracion, no para desarrollarla: las
-# suites `*.test.sh` no se versionan (ver .gitignore), asi que en un clone las
-# etapas de suite simplemente no estan. Eso no es cobertura faltante, es una
-# etapa que no aplica — pero se nombra igual, porque una etapa que no corrio
-# nunca se reporta como una que paso.
+# suites `*.test.sh` no se versionan por defecto (ver .gitignore), asi que en
+# un clone la mayoria de las etapas de suite simplemente no estan. Eso no es
+# cobertura faltante, es una etapa que no aplica — pero se nombra igual,
+# porque una etapa que no corrio nunca se reporta como una que paso.
+# Excepcion: project-integrations-check.test.sh SI se versiona (negacion en
+# .gitignore) porque tambien corre en CI via .github/test.sh; el resto sigue
+# el criterio general.
 #
 # Se pasa como argv al recibo de RDD: sin un script real la alternativa es una
 # cadena con operadores de shell, y ahi un `|| true` fabrica el exit 0 que el

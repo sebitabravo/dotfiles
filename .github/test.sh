@@ -177,3 +177,6 @@ set -e
 printf '%s' "$wrapper_error" | grep -qxF 'claude: selecciona un solo provider por invocacion'
 
 printf '%s\n' 'PASS: Claude wrapper isolates provider env, routes one overlay, and rejects ambiguous provider flags'
+
+printf '%s\n' '== AGENTS.md/CLAUDE.md scope-detection hook =='
+bash "$ROOT/config/claude/hooks/project-integrations-check.test.sh"
