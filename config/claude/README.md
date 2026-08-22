@@ -189,13 +189,16 @@ la higiene del repo en GitHub: la rama por defecto protegida contra
 force-push y borrado, al menos un status check obligatorio antes de mergear,
 y `delete_branch_on_merge` activado.
 
-El preflight completo es owner-only: en `SessionStart`, primero confirma que
-`gh api repos/<owner>/<repo>` devuelve `permissions.admin == true` para la
+Solo la higiene de GitHub es owner-only: en `SessionStart`, primero confirma
+que `gh api repos/<owner>/<repo>` devuelve `permissions.admin == true` para la
 sesión autenticada en esta máquina. Si no hay remoto válido de GitHub, `gh`,
-autenticación o permisos admin, queda en `NOT_APPLICABLE` y no ejecuta
-CodeGraph, OpenSpec, AGENTS.md/CLAUDE.md ni el scan de scopes; tampoco consulta
-la protección de ramas. Así nunca reporta ni sugiere mantenibilidad sobre un
-repo ajeno.
+autenticación o permisos admin, la protección de ramas queda en
+`NOT_APPLICABLE` y nunca se consulta. CodeGraph, OpenSpec, el puente
+AGENTS.md/CLAUDE.md y el scan de scopes son chequeos locales de solo lectura
+sin relación con quién es dueño del repo en GitHub, y corren siempre, sin
+gating: condicionarlos a ser admin los desactivaría en cualquier remoto que no
+sea GitHub (GitLab, un repo sin remoto) y en cualquier repo de GitHub sin
+sesión de `gh`, que sería una regresión.
 
 `UserPromptSubmit` no hace llamadas de red: solo reutiliza un snapshot temporal
 atado al root Git, al remoto/repositorio y al `session_id` actual después de un

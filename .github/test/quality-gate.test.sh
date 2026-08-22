@@ -100,4 +100,37 @@ elapsed=$((end - start))
 [ "$elapsed" -lt 10 ]
 printf '%s' "$out" | grep -Fq 'WARNING'
 
+printf '%s\n' '== declared runner + coverage-extra that hangs: blocked, not silently NOT MEASURED'
+COV_HANGING="$TMP/coverage-hanging"
+new_repo "$COV_HANGING"
+cat >"$COV_HANGING/test.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$COV_HANGING/test.sh"
+cat >"$COV_HANGING/package.json" <<'EOF'
+{"scripts": {"test": "vitest run"}}
+EOF
+git -C "$COV_HANGING" add -A
+NPM_BIN="$TMP/coverage-hanging-bin"
+mkdir -p "$NPM_BIN"
+cat >"$NPM_BIN/npm" <<'EOF'
+#!/usr/bin/env bash
+# `npm test` (declared-runner check) exits clean; `npm test -- --coverage...`
+# (the coverage-extra measurement run) hangs, simulating a stuck instrumented run.
+case "$*" in
+  *--coverage*) sleep 30 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "$NPM_BIN/npm"
+start=$(date +%s)
+out=$(QG_COVERAGE_TIMEOUT_SECONDS=1 PATH="$NPM_BIN:$PATH" run_hook "$COV_HANGING" 2>&1) && rc=0 || rc=$?
+end=$(date +%s)
+elapsed=$((end - start))
+[ "$rc" -eq 2 ]
+[ "$elapsed" -lt 15 ]
+printf '%s' "$out" | grep -Fq 'coverage did not finish in 1s'
+! printf '%s' "$out" | grep -Fq 'NOT MEASURED'
+
 printf '%s\n' 'PASS: quality-gate.sh enforces a real, portable timeout on lint/test/coverage'

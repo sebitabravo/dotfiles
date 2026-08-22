@@ -475,11 +475,21 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # runner declarado), pero tampoco se calla: sin salida no hay metrica, y eso
   # se reporta como NO MEDIDO.
   if [ "${COVERAGE_EXTRA:-false}" = true ]; then
-    COV_RUN_OUTPUT=$(run_with_timeout "$QG_COVERAGE_TIMEOUT_SECONDS" "$COVERAGE_CMD") || true
+    COV_RUN_OUTPUT=$(run_with_timeout "$QG_COVERAGE_TIMEOUT_SECONDS" "$COVERAGE_CMD")
+    COV_RC=$?
+    # Un fallo comun del comando de cobertura no dictamina sobre los tests (ya
+    # lo hizo el runner declarado): se degrada a NO MEDIDO. Un timeout es
+    # distinto -- significa que el proceso siguio vivo mas alla del bound
+    # interno, exactamente el escenario fail-open que run_with_timeout existe
+    # para cerrar en lint/test. Tragarlo aqui con el mismo `|| true` reabria
+    # esa brecha solo para la cobertura.
+    if [ "$COV_RC" = 124 ]; then
+      block "[$LABEL] coverage did not finish in ${QG_COVERAGE_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $COVERAGE_CMD" "$COV_RUN_OUTPUT"
+    fi
     if [ -n "$COV_RUN_OUTPUT" ]; then
       TEST_OUTPUT="$COV_RUN_OUTPUT"
     else
-      echo "[quality-gate] [$LABEL] coverage command produced no output (or did not finish in ${QG_COVERAGE_TIMEOUT_SECONDS}s): $COVERAGE_CMD" >&2
+      echo "[quality-gate] [$LABEL] coverage command produced no output: $COVERAGE_CMD" >&2
     fi
   fi
 

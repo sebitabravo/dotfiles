@@ -192,6 +192,29 @@ _detect_managed() {
   return 1
 }
 
+# _kill_process_tree: signals pid and every descendant, not just direct
+# children. `pkill -P "$pid"` alone only reaches one generation -- a real
+# test runner (pytest/jest/go test) can fork a worker that itself forks
+# another process, and that grandchild survives `pkill -P` untouched,
+# leaking a live process (and whatever port/CPU it holds) past the timeout
+# this function exists to enforce.
+_kill_process_tree() {
+  local root_pid="$1" sig="$2" frontier="$1" all_pids="$1" pid children next
+
+  while [ -n "$frontier" ]; do
+    next=""
+    for pid in $frontier; do
+      children=$(pgrep -P "$pid" 2>/dev/null || true)
+      [ -n "$children" ] && { next="$next $children"; all_pids="$all_pids $children"; }
+    done
+    frontier=$next
+  done
+
+  for pid in $all_pids; do
+    kill -"$sig" "$pid" >/dev/null 2>&1 || true
+  done
+}
+
 # run_with_timeout: bounds an arbitrary shell command string (may contain
 # `&&`, `cd`, pipes -- hence `eval`, not `"$@"`) to N seconds, portably.
 #
@@ -233,14 +256,9 @@ run_with_timeout() {
       ""|Z*) break ;;
     esac
     if [ "$elapsed_tenths" -ge $((timeout_seconds * 10)) ]; then
-      # Kill both the direct child and its own children: a real test runner
-      # (pytest/jest/go test) forks workers that `kill "$pid"` alone would
-      # leave running, still holding ports/CPU after we report the timeout.
-      kill "$pid" >/dev/null 2>&1 || true
-      pkill -P "$pid" >/dev/null 2>&1 || true
+      _kill_process_tree "$pid" TERM
       sleep 0.2
-      kill -9 "$pid" >/dev/null 2>&1 || true
-      pkill -9 -P "$pid" >/dev/null 2>&1 || true
+      _kill_process_tree "$pid" KILL
       wait "$pid" >/dev/null 2>&1 || true
       rm -f "$result_file"
       return 124
