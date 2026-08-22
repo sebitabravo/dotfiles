@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: install shellcheck
+        run: brew install shellcheck
+
       - name: install.sh test suite
         run: bash .github/test.sh
 
