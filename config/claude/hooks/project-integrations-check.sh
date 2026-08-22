@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # SessionStart/UserPromptSubmit hook — verifies project-local CodeGraph and
-# OpenSpec projects used by the SDD workflow.
+# OpenSpec projects, the AGENTS.md/CLAUDE.md bridge, and (owner-only) GitHub
+# repo hygiene, all used by the SDD workflow.
+#
+# CodeGraph, OpenSpec, and the AGENTS.md/CLAUDE.md bridge are pure local,
+# read-only filesystem checks and always run, regardless of GitHub ownership
+# or remote host. Only the GitHub branch-hygiene check is owner-gated: a
+# GitHub admin snapshot is established at SessionStart, and UserPromptSubmit
+# reuses that snapshot for the same project/session without a network call.
 #
 # This hook is deliberately read-only. `codegraph init` creates project files,
 # so the hook reports the exact remediation instead of silently mutating an
@@ -12,18 +19,18 @@ INPUT=$(cat 2>/dev/null || printf '%s' '{}')
 if command -v jq >/dev/null 2>&1; then
   CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
   EVENT=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // .hookEventName // empty' 2>/dev/null || true)
+  SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
 else
   CWD=""
   EVENT=""
+  SESSION_ID=""
 fi
 
 CWD="${PROJECT_ROOT:-${CWD:-${PWD:-}}}"
 [ -d "$CWD" ] || exit 0
 
-if [ -z "${PROJECT_ROOT:-}" ]; then
-  PROJECT_ROOT_RESOLVED=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || true)
-  [ -n "$PROJECT_ROOT_RESOLVED" ] && CWD="$PROJECT_ROOT_RESOLVED"
-fi
+PROJECT_ROOT_RESOLVED=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || true)
+[ -n "$PROJECT_ROOT_RESOLVED" ] && CWD="$PROJECT_ROOT_RESOLVED"
 
 [ -d "$CWD" ] || exit 0
 
@@ -31,6 +38,171 @@ case "$EVENT" in
   SessionStart|UserPromptSubmit) ;;
   *) EVENT="UserPromptSubmit" ;;
 esac
+
+# GitHub CLI has no portable per-request timeout on a stock macOS install.
+# Prefer coreutils when present, otherwise inspect the real child process and
+# kill it ourselves. The SessionStart hook has a 10s outer timeout, so a
+# bounded request is required here; otherwise a stalled network call can make
+# the entire hook appear broken.
+GH_REQUEST_TIMEOUT_SECONDS=2
+gh_request() {
+  local result_file gh_pid elapsed_tenths request_rc process_state
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$GH_REQUEST_TIMEOUT_SECONDS" gh "$@"
+    return $?
+  fi
+  if command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$GH_REQUEST_TIMEOUT_SECONDS" gh "$@"
+    return $?
+  fi
+
+  result_file=$(mktemp "${TMPDIR:-/tmp}/project-integrations-check.XXXXXX") || return 125
+  gh "$@" >"$result_file" 2>/dev/null &
+  gh_pid=$!
+  elapsed_tenths=0
+  while :; do
+    process_state=$(ps -o state= -p "$gh_pid" 2>/dev/null | tr -d '[:space:]')
+    case "$process_state" in
+      ""|Z*) break ;;
+    esac
+    if [ "$elapsed_tenths" -ge $((GH_REQUEST_TIMEOUT_SECONDS * 10)) ]; then
+      kill "$gh_pid" >/dev/null 2>&1 || true
+      wait "$gh_pid" >/dev/null 2>&1 || true
+      rm -f "$result_file"
+      return 124
+    fi
+    sleep 0.1
+    elapsed_tenths=$((elapsed_tenths + 1))
+  done
+
+  wait "$gh_pid"
+  request_rc=$?
+  cat "$result_file"
+  rm -f "$result_file"
+  return "$request_rc"
+}
+
+github_repo_slug() {
+  local remote_url="$1" path owner repo
+
+  case "$remote_url" in
+    https://github.com/*) path=${remote_url#https://github.com/} ;;
+    http://github.com/*) path=${remote_url#http://github.com/} ;;
+    git://github.com/*) path=${remote_url#git://github.com/} ;;
+    ssh://git@github.com/*) path=${remote_url#ssh://git@github.com/} ;;
+    git@github.com:*) path=${remote_url#git@github.com:} ;;
+    *) return 1 ;;
+  esac
+
+  path=${path%%\?*}
+  path=${path%%\#*}
+  path=${path%/}
+  case "$path" in
+    *.git) path=${path%.git} ;;
+  esac
+
+  owner=${path%%/*}
+  repo=${path#*/}
+  [ -n "$owner" ] || return 1
+  [ "$repo" != "$path" ] || return 1
+  case "$repo" in
+    ""|*/*) return 1 ;;
+  esac
+  printf '%s/%s' "$owner" "$repo"
+}
+
+owner_state_key() {
+  local value="$1" digest
+  if command -v shasum >/dev/null 2>&1; then
+    digest=$(printf '%s' "$value" | shasum -a 256 2>/dev/null | awk '{print $1}' || true)
+    [ -n "$digest" ] && { printf '%s' "$digest"; return; }
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    digest=$(printf '%s' "$value" | sha256sum 2>/dev/null | awk '{print $1}' || true)
+    [ -n "$digest" ] && { printf '%s' "$digest"; return; }
+  fi
+  printf '%s' "$value" | cksum | awk '{print $1}'
+}
+
+OWNER_STATE_FILE=""
+if [ -n "$SESSION_ID" ]; then
+  OWNER_STATE_FILE="${TMPDIR:-/tmp}/project-integrations-check-owner.$(owner_state_key "$CWD|$SESSION_ID")"
+fi
+
+owner_state_matches() {
+  local current_root current_remote current_repo
+  [ -n "$OWNER_STATE_FILE" ] && [ -f "$OWNER_STATE_FILE" ] || return 1
+  current_root=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || true)
+  [ "$current_root" = "$CWD" ] || return 1
+  current_remote=$(git -C "$CWD" remote get-url origin 2>/dev/null || true)
+  current_repo=$(github_repo_slug "$current_remote" 2>/dev/null || true)
+  [ -n "$current_repo" ] || return 1
+  grep -Fqx -- "root=$CWD" "$OWNER_STATE_FILE" 2>/dev/null || return 1
+  grep -Fqx -- "session=$SESSION_ID" "$OWNER_STATE_FILE" 2>/dev/null || return 1
+  grep -Fqx -- "repo=$current_repo" "$OWNER_STATE_FILE" 2>/dev/null
+}
+
+write_owner_state() {
+  local state_tmp
+  [ -n "$OWNER_STATE_FILE" ] || return 1
+  umask 077
+  state_tmp=$(mktemp "${OWNER_STATE_FILE}.tmp.XXXXXX" 2>/dev/null) || return 1
+  {
+    printf 'root=%s\n' "$CWD"
+    printf 'session=%s\n' "$SESSION_ID"
+    printf 'repo=%s\n' "$REPO_SLUG"
+  } >"$state_tmp" || {
+    rm -f "$state_tmp"
+    return 1
+  }
+  mv -f "$state_tmp" "$OWNER_STATE_FILE"
+}
+
+# This gate protects ONLY the GitHub branch-hygiene check below
+# (repo_hygiene_state) -- CodeGraph, OpenSpec, and the AGENTS.md/CLAUDE.md
+# bridge are pure local, read-only filesystem checks with no relationship to
+# who owns the repo on GitHub, and must keep running unconditionally exactly
+# as they did before this check existed. Gating them on GitHub admin status
+# would silently disable them for every non-GitHub remote (GitLab, a local-
+# only repo) and for every GitHub repo without a `gh` session, which is a
+# regression, not the behavior asked for.
+#
+# Ownership is established once at SessionStart and cached only for the exact
+# Git root/repository/session pair; UserPromptSubmit reuses that cache
+# instead of making a network call, but never exits early on a cache miss --
+# doing so would also (accidentally) skip the cheap, always-local AGENTS.md
+# root check on every prompt until a fresh SessionStart re-establishes it.
+OWNER_GATE_STATE="NOT_APPLICABLE"
+OWNER_NOT_APPLICABLE_REASON=""
+GH_REMOTE_URL=""
+REPO_SLUG=""
+REPO_META=""
+REPO_IS_ADMIN="false"
+if [ "$EVENT" = "SessionStart" ] && git -C "$CWD" rev-parse --show-toplevel >/dev/null 2>&1; then
+  GH_REMOTE_URL=$(git -C "$CWD" remote get-url origin 2>/dev/null || true)
+  REPO_SLUG=$(github_repo_slug "$GH_REMOTE_URL" 2>/dev/null || true)
+  if [ -z "$REPO_SLUG" ]; then
+    OWNER_NOT_APPLICABLE_REASON="there is no valid GitHub origin remote."
+  elif ! command -v gh >/dev/null 2>&1; then
+    OWNER_NOT_APPLICABLE_REASON="the gh CLI is not installed."
+  elif ! command -v jq >/dev/null 2>&1; then
+    OWNER_NOT_APPLICABLE_REASON="jq is not installed."
+  elif ! gh_request auth status >/dev/null 2>&1; then
+    OWNER_NOT_APPLICABLE_REASON="gh is not authenticated; no GitHub API call was made."
+  else
+    REPO_META=$(gh_request api "repos/$REPO_SLUG" || true)
+    REPO_IS_ADMIN=$(printf '%s' "$REPO_META" | jq -r '.permissions.admin // false' 2>/dev/null || printf 'false')
+    if [ "$REPO_IS_ADMIN" = "true" ]; then
+      OWNER_GATE_STATE="OWNER"
+      write_owner_state || true
+    else
+      OWNER_NOT_APPLICABLE_REASON="GitHub did not confirm permissions.admin=true; no branch-protection check was made."
+    fi
+  fi
+elif [ "$EVENT" = "UserPromptSubmit" ] && owner_state_matches; then
+  OWNER_GATE_STATE="OWNER"
+fi
 
 resolve_binary() {
   local override="$1"
@@ -669,15 +841,11 @@ scope_candidate_count=${#scope_candidates[@]}
 
 # Repo hygiene (GitHub): default-branch protection (no force-push, no
 # deletion, at least one required status check) plus delete_branch_on_merge.
-# Owner-gated and read-only, same as every other check here: it never calls
-# a mutating GitHub endpoint, only reports state and the exact `gh` commands
-# to fix it. Runs only at SessionStart -- it is one to two network calls,
-# the same cost class as the scoped-instruction scan above -- and only past
-# two cheap local checks that need no network at all: a GitHub-hosted
-# `origin` remote must exist, and `gh` must be installed. If either is
-# false, or `gh auth status` fails, this stays NOT_APPLICABLE with zero
-# further calls: a repo with no GitHub remote, or a machine with no `gh`
-# session, is not this check's business to report on.
+# Owner-gated and read-only: it never calls a mutating GitHub endpoint, only
+# reports state and the exact `gh` commands to fix it. Ownership was already
+# verified above, before any project-local maintainability check ran. The
+# protection request is the only remaining GitHub API call and runs only at
+# SessionStart; UserPromptSubmit reuses the owner snapshot and stays network-free.
 #
 # The owner gate itself is `permissions.admin` on repos/<slug>, checked
 # BEFORE the branches/<default>/protection call: a contributor without admin
@@ -687,48 +855,30 @@ scope_candidate_count=${#scope_candidates[@]}
 # counts as healthy for the silent-exit condition below, so a non-owner
 # working in someone else's repo sees no noise about it, ever.
 repo_hygiene_state="NOT_APPLICABLE"
-repo_hygiene_detail=""
-if [ "$EVENT" = "SessionStart" ] && git -C "$CWD" rev-parse --show-toplevel >/dev/null 2>&1; then
-  GH_REMOTE_URL=$(git -C "$CWD" remote get-url origin 2>/dev/null || true)
-  case "$GH_REMOTE_URL" in
-    *github.com*) GH_REMOTE_IS_GITHUB=1 ;;
-    *) GH_REMOTE_IS_GITHUB=0 ;;
-  esac
-  if [ "$GH_REMOTE_IS_GITHUB" = "1" ] && command -v gh >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-    GH_TIMEOUT=""
-    command -v timeout >/dev/null 2>&1 && GH_TIMEOUT="timeout 5"
-    command -v gtimeout >/dev/null 2>&1 && GH_TIMEOUT="gtimeout 5"
-    if $GH_TIMEOUT gh auth status >/dev/null 2>&1; then
-      REPO_SLUG=$(printf '%s' "$GH_REMOTE_URL" | sed -E 's#.*github\.com[:/]([^/]+/[^/.]+)(\.git)?/?$#\1#')
-      if [ -n "$REPO_SLUG" ] && [ "$REPO_SLUG" != "$GH_REMOTE_URL" ]; then
-        REPO_META=$($GH_TIMEOUT gh api "repos/$REPO_SLUG" 2>/dev/null || true)
-        REPO_IS_ADMIN=$(printf '%s' "$REPO_META" | jq -r '.permissions.admin // false' 2>/dev/null || printf 'false')
-        if [ "$REPO_IS_ADMIN" = "true" ]; then
-          DEFAULT_BRANCH=$(printf '%s' "$REPO_META" | jq -r '.default_branch // empty' 2>/dev/null || true)
-          DELETE_ON_MERGE=$(printf '%s' "$REPO_META" | jq -r '.delete_branch_on_merge // false' 2>/dev/null || printf 'false')
-          if [ -n "$DEFAULT_BRANCH" ]; then
-            PROTECTION=$($GH_TIMEOUT gh api "repos/$REPO_SLUG/branches/$DEFAULT_BRANCH/protection" 2>/dev/null || true)
-            hygiene_gaps=()
-            printf '%s' "$PROTECTION" | jq -e '.allow_force_pushes.enabled == false' >/dev/null 2>&1 ||
-              hygiene_gaps+=("$DEFAULT_BRANCH allows force-push")
-            printf '%s' "$PROTECTION" | jq -e '.allow_deletions.enabled == false' >/dev/null 2>&1 ||
-              hygiene_gaps+=("$DEFAULT_BRANCH allows deletion")
-            printf '%s' "$PROTECTION" | jq -e '(.required_status_checks.contexts // []) | length > 0' >/dev/null 2>&1 ||
-              hygiene_gaps+=("no required status check before merging into $DEFAULT_BRANCH")
-            [ "$DELETE_ON_MERGE" = "true" ] ||
-              hygiene_gaps+=("merged branches are not auto-deleted")
-            if [ "${#hygiene_gaps[@]}" -eq 0 ]; then
-              repo_hygiene_state="READY"
-            else
-              repo_hygiene_state="MISSING"
-              repo_hygiene_detail=$(IFS='; '; printf '%s' "${hygiene_gaps[*]}")
-            fi
-          fi
-        fi
-        # REPO_IS_ADMIN != true: stays NOT_APPLICABLE, no further calls --
-        # this machine's gh session is not an owner/admin of this repo.
-      fi
+repo_hygiene_detail="$OWNER_NOT_APPLICABLE_REASON"
+if [ "$EVENT" = "SessionStart" ] && [ "$OWNER_GATE_STATE" = "OWNER" ]; then
+  DEFAULT_BRANCH=$(printf '%s' "$REPO_META" | jq -r '.default_branch // empty' 2>/dev/null || true)
+  DELETE_ON_MERGE=$(printf '%s' "$REPO_META" | jq -r '.delete_branch_on_merge // false' 2>/dev/null || printf 'false')
+  if [ -n "$DEFAULT_BRANCH" ]; then
+    PROTECTION=$(gh_request api "repos/$REPO_SLUG/branches/$DEFAULT_BRANCH/protection" || true)
+    hygiene_gaps=()
+    printf '%s' "$PROTECTION" | jq -e '.allow_force_pushes.enabled == false' >/dev/null 2>&1 ||
+      hygiene_gaps+=("$DEFAULT_BRANCH allows force-push")
+    printf '%s' "$PROTECTION" | jq -e '.allow_deletions.enabled == false' >/dev/null 2>&1 ||
+      hygiene_gaps+=("$DEFAULT_BRANCH allows deletion")
+    printf '%s' "$PROTECTION" | jq -e '((.required_status_checks.contexts // []) | length) + ((.required_status_checks.checks // []) | length) > 0' >/dev/null 2>&1 ||
+      hygiene_gaps+=("no required status check before merging into $DEFAULT_BRANCH")
+    [ "$DELETE_ON_MERGE" = "true" ] ||
+      hygiene_gaps+=("merged branches are not auto-deleted")
+    if [ "${#hygiene_gaps[@]}" -eq 0 ]; then
+      repo_hygiene_state="READY"
+    else
+      repo_hygiene_state="MISSING"
+      repo_hygiene_detail=$(IFS='; '; printf '%s' "${hygiene_gaps[*]}")
     fi
+  else
+    repo_hygiene_state="UNAVAILABLE"
+    repo_hygiene_detail="GitHub confirmed admin access but returned no default branch."
   fi
 fi
 

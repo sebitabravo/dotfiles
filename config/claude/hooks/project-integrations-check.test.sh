@@ -12,14 +12,17 @@ new_repo() {
   git -C "$dir" init -q
   git -C "$dir" config user.email test@example.com
   git -C "$dir" config user.name test
+  git -C "$dir" config core.hooksPath /dev/null
   printf '%s\n' '.codegraph/' >"$dir/.gitignore"
   git -C "$dir" add .gitignore
   git -C "$dir" commit -q -m init
+  git -C "$dir" remote add origin https://github.com/testuser/testrepo.git
 }
 
 run_hook() {
-  local cwd="$1" event="${2:-UserPromptSubmit}"
-  jq -nc --arg cwd "$cwd" --arg event "$event" '{hook_event_name:$event,cwd:$cwd}' | "$HOOK"
+  local cwd="$1" event="${2:-SessionStart}" session_id="${3:-test-session}"
+  jq -nc --arg cwd "$cwd" --arg event "$event" --arg session_id "$session_id" \
+    '{hook_event_name:$event,cwd:$cwd,session_id:$session_id}' | "$HOOK"
 }
 
 MOCK_INDEX="$TMP/mock-index"
@@ -32,8 +35,36 @@ EOF
 chmod +x "$MOCK_CODEGRAPH"
 MOCK_CLAUDE_CONFIG="$TMP/claude.json"
 printf '%s' '{"mcpServers":{"codegraph":{"command":"codegraph"}}}' >"$MOCK_CLAUDE_CONFIG"
+
+# Every ordinary fixture represents a repo owned by the test user. This keeps
+# the existing parser/maintainability cases meaningful after the real owner
+# gate is enabled; the explicit no-remote/non-GitHub/non-admin cases below
+# replace or remove this origin and use their own fake gh.
+DEFAULT_GH_BIN="$TMP/default-owner-gh"
+DEFAULT_GH_MARKER="$TMP/default-owner-gh-calls"
+mkdir -p "$DEFAULT_GH_BIN"
+cat >"$DEFAULT_GH_BIN/gh" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"$DEFAULT_GH_MARKER"
+if [ "\$1" = "auth" ] && [ "\$2" = "status" ]; then
+  exit 0
+fi
+if [ "\$1" = "api" ]; then
+  case "\$2" in
+    repos/*/branches/*/protection)
+      printf '%s' '{"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_status_checks":{"contexts":["ci"],"checks":[]}}'
+      ;;
+    repos/*)
+      printf '%s' '{"permissions":{"admin":true},"default_branch":"main","delete_branch_on_merge":true}'
+      ;;
+  esac
+fi
+EOF
+chmod +x "$DEFAULT_GH_BIN/gh"
+PATH="$DEFAULT_GH_BIN:$PATH"
+
 run_hook_healthy_deps() {
-  CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" run_hook "$1" "${2:-UserPromptSubmit}"
+  CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" run_hook "$1" "${2:-SessionStart}"
 }
 
 # A PATH with jq but WITHOUT pandoc, so claude_md_import_candidates falls
@@ -44,7 +75,7 @@ REAL_JQ=$(command -v jq)
 FALLBACK_BIN="$TMP/fallback-bin"
 mkdir -p "$FALLBACK_BIN"
 ln -s "$REAL_JQ" "$FALLBACK_BIN/jq"
-FALLBACK_PATH="$FALLBACK_BIN:/usr/bin:/bin"
+FALLBACK_PATH="$DEFAULT_GH_BIN:$FALLBACK_BIN:/usr/bin:/bin"
 if command -v pandoc >/dev/null 2>&1; then
   PATH="$FALLBACK_PATH" command -v pandoc >/dev/null 2>&1 && {
     echo 'FAIL: fallback PATH still resolves pandoc, cannot test the awk fallback in isolation' >&2
@@ -52,7 +83,7 @@ if command -v pandoc >/dev/null 2>&1; then
   }
 fi
 run_hook_fallback_parser() {
-  PATH="$FALLBACK_PATH" run_hook "$1" "${2:-UserPromptSubmit}"
+  PATH="$FALLBACK_PATH" run_hook "$1" "${2:-SessionStart}"
 }
 
 # A PATH where `pandoc` resolves but is BROKEN (present, on PATH, yet fails
@@ -68,9 +99,9 @@ echo 'pandoc: fatal error' >&2
 exit 1
 EOF
 chmod +x "$BROKEN_PANDOC_EXIT_BIN/pandoc"
-BROKEN_PANDOC_EXIT_PATH="$BROKEN_PANDOC_EXIT_BIN:$FALLBACK_BIN:/usr/bin:/bin"
+BROKEN_PANDOC_EXIT_PATH="$BROKEN_PANDOC_EXIT_BIN:$DEFAULT_GH_BIN:$FALLBACK_BIN:/usr/bin:/bin"
 run_hook_broken_pandoc_exit() {
-  PATH="$BROKEN_PANDOC_EXIT_PATH" run_hook "$1" "${2:-UserPromptSubmit}"
+  PATH="$BROKEN_PANDOC_EXIT_PATH" run_hook "$1" "${2:-SessionStart}"
 }
 
 BROKEN_PANDOC_JSON_BIN="$TMP/broken-pandoc-json-bin"
@@ -81,9 +112,9 @@ printf '%s' 'not valid json at all'
 exit 0
 EOF
 chmod +x "$BROKEN_PANDOC_JSON_BIN/pandoc"
-BROKEN_PANDOC_JSON_PATH="$BROKEN_PANDOC_JSON_BIN:$FALLBACK_BIN:/usr/bin:/bin"
+BROKEN_PANDOC_JSON_PATH="$BROKEN_PANDOC_JSON_BIN:$DEFAULT_GH_BIN:$FALLBACK_BIN:/usr/bin:/bin"
 run_hook_broken_pandoc_json() {
-  PATH="$BROKEN_PANDOC_JSON_PATH" run_hook "$1" "${2:-UserPromptSubmit}"
+  PATH="$BROKEN_PANDOC_JSON_PATH" run_hook "$1" "${2:-SessionStart}"
 }
 
 BROKEN_PANDOC_SHAPE_BIN="$TMP/broken-pandoc-shape-bin"
@@ -94,9 +125,9 @@ printf '%s' '{}'
 exit 0
 EOF
 chmod +x "$BROKEN_PANDOC_SHAPE_BIN/pandoc"
-BROKEN_PANDOC_SHAPE_PATH="$BROKEN_PANDOC_SHAPE_BIN:$FALLBACK_BIN:/usr/bin:/bin"
+BROKEN_PANDOC_SHAPE_PATH="$BROKEN_PANDOC_SHAPE_BIN:$DEFAULT_GH_BIN:$FALLBACK_BIN:/usr/bin:/bin"
 run_hook_broken_pandoc_shape() {
-  PATH="$BROKEN_PANDOC_SHAPE_PATH" run_hook "$1" "${2:-UserPromptSubmit}"
+  PATH="$BROKEN_PANDOC_SHAPE_PATH" run_hook "$1" "${2:-SessionStart}"
 }
 
 printf '%s\n' '== healthy scope (AGENTS.md + CLAUDE.md symlink, no candidates) is silent on SessionStart'
@@ -619,6 +650,21 @@ git -C "$NO_SCAN_ON_PROMPT" add AGENTS.md CLAUDE.md docs/README.md
 git -C "$NO_SCAN_ON_PROMPT" commit -q -m no-scan-on-prompt
 prompt_out=$(run_hook_healthy_deps "$NO_SCAN_ON_PROMPT" UserPromptSubmit)
 [ -z "$prompt_out" ]
+# No GitHub ownership was ever established for this repo/session, but the
+# local CodeGraph check is unconditional -- only GitHub branch-hygiene is
+# owner-gated. Output still stays silent because codegraph reports healthy.
+NO_OWNER_PROMPT_CALLS="$TMP/no-owner-prompt-codegraph-calls"
+NO_OWNER_PROMPT_CODEGRAPH="$TMP/no-owner-prompt-codegraph"
+cat >"$NO_OWNER_PROMPT_CODEGRAPH" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called >>"$NO_OWNER_PROMPT_CALLS"
+printf '%s' '{"initialized":true,"indexPath":"$MOCK_INDEX"}'
+EOF
+chmod +x "$NO_OWNER_PROMPT_CODEGRAPH"
+prompt_out=$(CODEGRAPH_BIN="$NO_OWNER_PROMPT_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  run_hook "$NO_SCAN_ON_PROMPT" UserPromptSubmit no-owner-prompt-session)
+[ -z "$prompt_out" ]
+[ -e "$NO_OWNER_PROMPT_CALLS" ]
 session_out=$(run_hook_healthy_deps "$NO_SCAN_ON_PROMPT" SessionStart)
 printf '%s' "$session_out" | grep -Fq 'Scoped-instruction candidates (scanned at SessionStart only): 1 subdirectory'
 
@@ -641,32 +687,34 @@ printf '%s' "$out" | grep -Fq 'my docs/ (README.md)'
 # called, so "does this stay NOT_APPLICABLE without even checking protection"
 # is a real assertion, not just an assumption about short-circuiting.
 new_github_repo() {
-  local dir="$1"
+  local dir="$1" remote_url="${2:-https://github.com/testuser/testrepo.git}"
   new_repo "$dir"
-  git -C "$dir" remote add origin https://github.com/testuser/testrepo.git
+  git -C "$dir" remote set-url origin "$remote_url"
 }
 
 make_fake_gh() {
-  local bin_dir="$1" auth_ok="$2" is_admin="$3" protected="$4" delete_on_merge="$5" marker="$6"
+  local bin_dir="$1" auth_ok="$2" is_admin="$3" protected="$4" delete_on_merge="$5" marker="$6" default_branch="${7-main}"
   mkdir -p "$bin_dir"
   cat >"$bin_dir/gh" <<EOF
 #!/usr/bin/env bash
+printf '%s\n' "\$*" >>"$marker.calls"
 if [ "\$1" = "auth" ] && [ "\$2" = "status" ]; then
   [ "$auth_ok" = "1" ] && exit 0 || exit 1
 fi
 if [ "\$1" = "api" ]; then
   case "\$2" in
     */branches/*/protection)
-      printf '%s' '$marker' >>"$marker"
+      : >"$marker"
       if [ "$protected" = "1" ]; then
-        printf '%s' '{"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_status_checks":{"contexts":["ci"]}}'
+        printf '%s' '{"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_status_checks":{"contexts":[],"checks":[{"context":"ci","app_id":123}]}}'
       else
         printf '%s' '{"message":"Branch not protected"}'
         exit 1
       fi
       ;;
     repos/*)
-      printf '{"permissions":{"admin":$is_admin},"default_branch":"main","delete_branch_on_merge":$delete_on_merge}'
+      [ "$auth_ok" = "1" ] || exit 1
+      printf '{"permissions":{"admin":$is_admin},"default_branch":"$default_branch","delete_branch_on_merge":$delete_on_merge}'
       ;;
   esac
 fi
@@ -677,23 +725,38 @@ EOF
 printf '%s\n' '== repo hygiene: no GitHub remote at all never invokes gh'
 NO_REMOTE="$TMP/hygiene-no-remote"
 new_repo "$NO_REMOTE"
+git -C "$NO_REMOTE" remote remove origin
 NO_REMOTE_GH_BIN="$TMP/hygiene-no-remote-gh-marker"
 NO_REMOTE_MARKER="$TMP/hygiene-no-remote-marker"
 make_fake_gh "$NO_REMOTE_GH_BIN" 1 true 1 true "$NO_REMOTE_MARKER"
 out=$(PATH="$NO_REMOTE_GH_BIN:$PATH" run_hook "$NO_REMOTE" SessionStart)
 printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
 [ ! -e "$NO_REMOTE_MARKER" ]
+[ ! -e "$NO_REMOTE_MARKER.calls" ]
 
 printf '%s\n' '== repo hygiene: non-GitHub remote never invokes gh'
 NON_GITHUB="$TMP/hygiene-non-github"
 new_repo "$NON_GITHUB"
-git -C "$NON_GITHUB" remote add origin https://gitlab.com/testuser/testrepo.git
+git -C "$NON_GITHUB" remote set-url origin https://gitlab.com/testuser/testrepo.git
 NON_GITHUB_GH_BIN="$TMP/hygiene-non-github-gh-marker"
 NON_GITHUB_MARKER="$TMP/hygiene-non-github-marker"
 make_fake_gh "$NON_GITHUB_GH_BIN" 1 true 1 true "$NON_GITHUB_MARKER"
 out=$(PATH="$NON_GITHUB_GH_BIN:$PATH" run_hook "$NON_GITHUB" SessionStart)
 printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
 [ ! -e "$NON_GITHUB_MARKER" ]
+[ ! -e "$NON_GITHUB_MARKER.calls" ]
+
+printf '%s\n' '== a hostname containing github.com but not GitHub never invokes gh'
+SPOOFED_HOST="$TMP/hygiene-spoofed-host"
+new_repo "$SPOOFED_HOST"
+git -C "$SPOOFED_HOST" remote set-url origin https://evilgithub.com/testuser/testrepo.git
+SPOOFED_HOST_GH_BIN="$TMP/hygiene-spoofed-host-gh"
+SPOOFED_HOST_MARKER="$TMP/hygiene-spoofed-host-marker"
+make_fake_gh "$SPOOFED_HOST_GH_BIN" 1 true 1 true "$SPOOFED_HOST_MARKER"
+out=$(PATH="$SPOOFED_HOST_GH_BIN:$PATH" run_hook "$SPOOFED_HOST" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+[ ! -e "$SPOOFED_HOST_MARKER" ]
+[ ! -e "$SPOOFED_HOST_MARKER.calls" ]
 
 printf '%s\n' '== repo hygiene: gh not authenticated stays NOT_APPLICABLE'
 UNAUTH="$TMP/hygiene-unauth"
@@ -704,6 +767,8 @@ make_fake_gh "$UNAUTH_GH_BIN" 0 true 1 true "$UNAUTH_MARKER"
 out=$(PATH="$UNAUTH_GH_BIN:$PATH" run_hook "$UNAUTH" SessionStart)
 printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
 [ ! -e "$UNAUTH_MARKER" ]
+! grep -Fq 'api repos/' "$UNAUTH_MARKER.calls"
+! grep -Fq '/protection' "$UNAUTH_MARKER.calls"
 
 printf '%s\n' '== repo hygiene: authenticated but not the repo admin stays NOT_APPLICABLE, never checks branch protection'
 NON_ADMIN="$TMP/hygiene-non-admin"
@@ -714,6 +779,28 @@ make_fake_gh "$NON_ADMIN_GH_BIN" 1 false 1 true "$NON_ADMIN_MARKER"
 out=$(PATH="$NON_ADMIN_GH_BIN:$PATH" run_hook "$NON_ADMIN" SessionStart)
 printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
 [ ! -e "$NON_ADMIN_MARKER" ]
+! grep -Fq '/protection' "$NON_ADMIN_MARKER.calls"
+
+printf '%s\n' '== non-admin still runs local maintainability checks (only branch protection is owner-gated)'
+NON_ADMIN_CODEGRAPH="$TMP/hygiene-non-admin-codegraph"
+NON_ADMIN_OPENSPEC="$TMP/hygiene-non-admin-openspec"
+NON_ADMIN_LOCAL_CALLS="$TMP/hygiene-non-admin-local-calls"
+cat >"$NON_ADMIN_CODEGRAPH" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' codegraph >>"$NON_ADMIN_LOCAL_CALLS"
+printf '%s' '{"initialized":true,"indexPath":"$TMP/mock-index"}'
+EOF
+cat >"$NON_ADMIN_OPENSPEC" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' openspec >>"$NON_ADMIN_LOCAL_CALLS"
+exit 0
+EOF
+chmod +x "$NON_ADMIN_CODEGRAPH" "$NON_ADMIN_OPENSPEC"
+out=$(CODEGRAPH_BIN="$NON_ADMIN_CODEGRAPH" OPENSPEC_BIN="$NON_ADMIN_OPENSPEC" \
+  PATH="$NON_ADMIN_GH_BIN:$PATH" run_hook "$NON_ADMIN" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+printf '%s' "$out" | grep -Fq 'CodeGraph: READY'
+grep -Fqx codegraph "$NON_ADMIN_LOCAL_CALLS"
 
 printf '%s\n' '== repo hygiene: admin with unprotected branch and no auto-delete reports MISSING with specific gaps'
 ADMIN_MISSING="$TMP/hygiene-admin-missing"
@@ -729,6 +816,17 @@ printf '%s' "$out" | grep -Fq 'no required status check'
 printf '%s' "$out" | grep -Fq 'not auto-deleted'
 [ -e "$ADMIN_MISSING_MARKER" ]
 
+printf '%s\n' '== admin metadata without a default branch reports UNAVAILABLE and never checks protection'
+ADMIN_NO_DEFAULT="$TMP/hygiene-admin-no-default"
+new_github_repo "$ADMIN_NO_DEFAULT"
+ADMIN_NO_DEFAULT_GH_BIN="$TMP/hygiene-admin-no-default-gh"
+ADMIN_NO_DEFAULT_MARKER="$TMP/hygiene-admin-no-default-marker"
+make_fake_gh "$ADMIN_NO_DEFAULT_GH_BIN" 1 true 1 true "$ADMIN_NO_DEFAULT_MARKER" ''
+out=$(PATH="$ADMIN_NO_DEFAULT_GH_BIN:$PATH" run_hook "$ADMIN_NO_DEFAULT" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): UNAVAILABLE'
+[ ! -e "$ADMIN_NO_DEFAULT_MARKER" ]
+! grep -Fq '/protection' "$ADMIN_NO_DEFAULT_MARKER.calls"
+
 printf '%s\n' '== repo hygiene: admin with everything configured reports READY and stays silent when combined with other healthy integrations'
 ADMIN_READY="$TMP/hygiene-admin-ready"
 new_repo "$ADMIN_READY"
@@ -736,15 +834,68 @@ printf '# Agents\n' >"$ADMIN_READY/AGENTS.md"
 ln -s AGENTS.md "$ADMIN_READY/CLAUDE.md"
 git -C "$ADMIN_READY" add AGENTS.md CLAUDE.md
 git -C "$ADMIN_READY" commit -q -m agents
-# The global commit-msg hook (~/.git-hooks/commit-msg) blocks a direct commit
-# to main/master once a repo has a remote, so the GitHub remote is added
-# LAST here, after every commit this fixture needs.
-git -C "$ADMIN_READY" remote add origin https://github.com/testuser/testrepo.git
+git -C "$ADMIN_READY" remote set-url origin 'https://github.com/testuser/test.repo.git'
 ADMIN_READY_GH_BIN="$TMP/hygiene-admin-ready-gh"
 ADMIN_READY_MARKER="$TMP/hygiene-admin-ready-marker"
 make_fake_gh "$ADMIN_READY_GH_BIN" 1 true 1 true "$ADMIN_READY_MARKER"
 silent_out=$(CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" PATH="$ADMIN_READY_GH_BIN:$PATH" run_hook "$ADMIN_READY" SessionStart)
 [ -z "$silent_out" ]
 [ -e "$ADMIN_READY_MARKER" ]
+
+printf '%s\n' '== an owned SessionStart authorizes only the same project/session UserPromptSubmit'
+OWNER_PROMPT="$TMP/hygiene-owner-prompt"
+new_github_repo "$OWNER_PROMPT"
+printf '# Agents\n' >"$OWNER_PROMPT/AGENTS.md"
+ln -s AGENTS.md "$OWNER_PROMPT/CLAUDE.md"
+git -C "$OWNER_PROMPT" add AGENTS.md CLAUDE.md
+git -C "$OWNER_PROMPT" commit -q -m agents
+OWNER_PROMPT_INDEX="$TMP/owner-prompt-index"
+mkdir -p "$OWNER_PROMPT_INDEX"
+OWNER_PROMPT_CODEGRAPH="$TMP/owner-prompt-codegraph"
+OWNER_PROMPT_CODEGRAPH_CALLS="$TMP/owner-prompt-codegraph-calls"
+cat >"$OWNER_PROMPT_CODEGRAPH" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called >>"$OWNER_PROMPT_CODEGRAPH_CALLS"
+printf '%s' '{"initialized":true,"indexPath":"$OWNER_PROMPT_INDEX"}'
+EOF
+chmod +x "$OWNER_PROMPT_CODEGRAPH"
+OWNER_PROMPT_GH_BIN="$TMP/owner-prompt-gh"
+OWNER_PROMPT_MARKER="$TMP/owner-prompt-marker"
+make_fake_gh "$OWNER_PROMPT_GH_BIN" 1 true 1 true "$OWNER_PROMPT_MARKER"
+OWNER_PROMPT_SESSION='owner-prompt-session'
+session_out=$(CODEGRAPH_BIN="$OWNER_PROMPT_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  PATH="$OWNER_PROMPT_GH_BIN:$PATH" run_hook "$OWNER_PROMPT" SessionStart "$OWNER_PROMPT_SESSION")
+[ -z "$session_out" ]
+gh_calls_before=$(wc -l <"$OWNER_PROMPT_MARKER.calls")
+codegraph_calls_before=$(wc -l <"$OWNER_PROMPT_CODEGRAPH_CALLS")
+[ "$gh_calls_before" -eq 3 ]
+prompt_out=$(CODEGRAPH_BIN="$OWNER_PROMPT_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  PATH="$OWNER_PROMPT_GH_BIN:$PATH" run_hook "$OWNER_PROMPT" UserPromptSubmit "$OWNER_PROMPT_SESSION")
+[ -z "$prompt_out" ]
+gh_calls_after=$(wc -l <"$OWNER_PROMPT_MARKER.calls")
+codegraph_calls_after=$(wc -l <"$OWNER_PROMPT_CODEGRAPH_CALLS")
+[ "$gh_calls_after" -eq "$gh_calls_before" ]
+[ "$codegraph_calls_after" -gt "$codegraph_calls_before" ]
+
+# A session/remote mismatch only invalidates the cached GitHub-hygiene
+# authorization -- it must NOT also disable the local, unconditional
+# CodeGraph/OpenSpec/AGENTS.md checks (that was the exact regression this
+# suite caught). Both still run and produce silent output (all healthy),
+# and gh is never invoked again in either case: repo hygiene is
+# SessionStart-only regardless of the local checks' own outcome.
+codegraph_calls_before_mismatch="$codegraph_calls_after"
+prompt_out=$(CODEGRAPH_BIN="$OWNER_PROMPT_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  PATH="$OWNER_PROMPT_GH_BIN:$PATH" run_hook "$OWNER_PROMPT" UserPromptSubmit wrong-session)
+[ -z "$prompt_out" ]
+[ "$(wc -l <"$OWNER_PROMPT_CODEGRAPH_CALLS")" -gt "$codegraph_calls_before_mismatch" ]
+[ "$(wc -l <"$OWNER_PROMPT_MARKER.calls")" -eq "$gh_calls_after" ]
+
+git -C "$OWNER_PROMPT" remote set-url origin 'https://github.com/other-user/other-repo.git'
+codegraph_calls_before_remote_change=$(wc -l <"$OWNER_PROMPT_CODEGRAPH_CALLS")
+prompt_out=$(CODEGRAPH_BIN="$OWNER_PROMPT_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  PATH="$OWNER_PROMPT_GH_BIN:$PATH" run_hook "$OWNER_PROMPT" UserPromptSubmit "$OWNER_PROMPT_SESSION")
+[ -z "$prompt_out" ]
+[ "$(wc -l <"$OWNER_PROMPT_CODEGRAPH_CALLS")" -gt "$codegraph_calls_before_remote_change" ]
+[ "$(wc -l <"$OWNER_PROMPT_MARKER.calls")" -eq "$gh_calls_after" ]
 
 printf '%s\n' 'PASS: AGENTS.md/CLAUDE.md root and scoped-instruction detection stays read-only and accurate'
