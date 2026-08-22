@@ -634,4 +634,117 @@ git -C "$SPACEY" commit -q -m spacey
 out=$(run_hook "$SPACEY" SessionStart)
 printf '%s' "$out" | grep -Fq 'my docs/ (README.md)'
 
+# Repo hygiene (GitHub, owner-only) fixtures. A fake `gh` on a restricted PATH
+# is the same style already used above for fake pandoc: it never touches the
+# network, so these scenarios are deterministic and offline. Each fake `gh`
+# also drops a marker file when the branches/.../protection endpoint is
+# called, so "does this stay NOT_APPLICABLE without even checking protection"
+# is a real assertion, not just an assumption about short-circuiting.
+new_github_repo() {
+  local dir="$1"
+  new_repo "$dir"
+  git -C "$dir" remote add origin https://github.com/testuser/testrepo.git
+}
+
+make_fake_gh() {
+  local bin_dir="$1" auth_ok="$2" is_admin="$3" protected="$4" delete_on_merge="$5" marker="$6"
+  mkdir -p "$bin_dir"
+  cat >"$bin_dir/gh" <<EOF
+#!/usr/bin/env bash
+if [ "\$1" = "auth" ] && [ "\$2" = "status" ]; then
+  [ "$auth_ok" = "1" ] && exit 0 || exit 1
+fi
+if [ "\$1" = "api" ]; then
+  case "\$2" in
+    */branches/*/protection)
+      printf '%s' '$marker' >>"$marker"
+      if [ "$protected" = "1" ]; then
+        printf '%s' '{"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_status_checks":{"contexts":["ci"]}}'
+      else
+        printf '%s' '{"message":"Branch not protected"}'
+        exit 1
+      fi
+      ;;
+    repos/*)
+      printf '{"permissions":{"admin":$is_admin},"default_branch":"main","delete_branch_on_merge":$delete_on_merge}'
+      ;;
+  esac
+fi
+EOF
+  chmod +x "$bin_dir/gh"
+}
+
+printf '%s\n' '== repo hygiene: no GitHub remote at all never invokes gh'
+NO_REMOTE="$TMP/hygiene-no-remote"
+new_repo "$NO_REMOTE"
+NO_REMOTE_GH_BIN="$TMP/hygiene-no-remote-gh-marker"
+NO_REMOTE_MARKER="$TMP/hygiene-no-remote-marker"
+make_fake_gh "$NO_REMOTE_GH_BIN" 1 true 1 true "$NO_REMOTE_MARKER"
+out=$(PATH="$NO_REMOTE_GH_BIN:$PATH" run_hook "$NO_REMOTE" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+[ ! -e "$NO_REMOTE_MARKER" ]
+
+printf '%s\n' '== repo hygiene: non-GitHub remote never invokes gh'
+NON_GITHUB="$TMP/hygiene-non-github"
+new_repo "$NON_GITHUB"
+git -C "$NON_GITHUB" remote add origin https://gitlab.com/testuser/testrepo.git
+NON_GITHUB_GH_BIN="$TMP/hygiene-non-github-gh-marker"
+NON_GITHUB_MARKER="$TMP/hygiene-non-github-marker"
+make_fake_gh "$NON_GITHUB_GH_BIN" 1 true 1 true "$NON_GITHUB_MARKER"
+out=$(PATH="$NON_GITHUB_GH_BIN:$PATH" run_hook "$NON_GITHUB" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+[ ! -e "$NON_GITHUB_MARKER" ]
+
+printf '%s\n' '== repo hygiene: gh not authenticated stays NOT_APPLICABLE'
+UNAUTH="$TMP/hygiene-unauth"
+new_github_repo "$UNAUTH"
+UNAUTH_GH_BIN="$TMP/hygiene-unauth-gh"
+UNAUTH_MARKER="$TMP/hygiene-unauth-marker"
+make_fake_gh "$UNAUTH_GH_BIN" 0 true 1 true "$UNAUTH_MARKER"
+out=$(PATH="$UNAUTH_GH_BIN:$PATH" run_hook "$UNAUTH" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+[ ! -e "$UNAUTH_MARKER" ]
+
+printf '%s\n' '== repo hygiene: authenticated but not the repo admin stays NOT_APPLICABLE, never checks branch protection'
+NON_ADMIN="$TMP/hygiene-non-admin"
+new_github_repo "$NON_ADMIN"
+NON_ADMIN_GH_BIN="$TMP/hygiene-non-admin-gh"
+NON_ADMIN_MARKER="$TMP/hygiene-non-admin-marker"
+make_fake_gh "$NON_ADMIN_GH_BIN" 1 false 1 true "$NON_ADMIN_MARKER"
+out=$(PATH="$NON_ADMIN_GH_BIN:$PATH" run_hook "$NON_ADMIN" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): NOT_APPLICABLE'
+[ ! -e "$NON_ADMIN_MARKER" ]
+
+printf '%s\n' '== repo hygiene: admin with unprotected branch and no auto-delete reports MISSING with specific gaps'
+ADMIN_MISSING="$TMP/hygiene-admin-missing"
+new_github_repo "$ADMIN_MISSING"
+ADMIN_MISSING_GH_BIN="$TMP/hygiene-admin-missing-gh"
+ADMIN_MISSING_MARKER="$TMP/hygiene-admin-missing-marker"
+make_fake_gh "$ADMIN_MISSING_GH_BIN" 1 true 0 false "$ADMIN_MISSING_MARKER"
+out=$(PATH="$ADMIN_MISSING_GH_BIN:$PATH" run_hook "$ADMIN_MISSING" SessionStart)
+printf '%s' "$out" | grep -Fq 'Repo hygiene (GitHub, owner-only): MISSING'
+printf '%s' "$out" | grep -Fq 'allows force-push'
+printf '%s' "$out" | grep -Fq 'allows deletion'
+printf '%s' "$out" | grep -Fq 'no required status check'
+printf '%s' "$out" | grep -Fq 'not auto-deleted'
+[ -e "$ADMIN_MISSING_MARKER" ]
+
+printf '%s\n' '== repo hygiene: admin with everything configured reports READY and stays silent when combined with other healthy integrations'
+ADMIN_READY="$TMP/hygiene-admin-ready"
+new_repo "$ADMIN_READY"
+printf '# Agents\n' >"$ADMIN_READY/AGENTS.md"
+ln -s AGENTS.md "$ADMIN_READY/CLAUDE.md"
+git -C "$ADMIN_READY" add AGENTS.md CLAUDE.md
+git -C "$ADMIN_READY" commit -q -m agents
+# The global commit-msg hook (~/.git-hooks/commit-msg) blocks a direct commit
+# to main/master once a repo has a remote, so the GitHub remote is added
+# LAST here, after every commit this fixture needs.
+git -C "$ADMIN_READY" remote add origin https://github.com/testuser/testrepo.git
+ADMIN_READY_GH_BIN="$TMP/hygiene-admin-ready-gh"
+ADMIN_READY_MARKER="$TMP/hygiene-admin-ready-marker"
+make_fake_gh "$ADMIN_READY_GH_BIN" 1 true 1 true "$ADMIN_READY_MARKER"
+silent_out=$(CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" PATH="$ADMIN_READY_GH_BIN:$PATH" run_hook "$ADMIN_READY" SessionStart)
+[ -z "$silent_out" ]
+[ -e "$ADMIN_READY_MARKER" ]
+
 printf '%s\n' 'PASS: AGENTS.md/CLAUDE.md root and scoped-instruction detection stays read-only and accurate'

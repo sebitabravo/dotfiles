@@ -667,6 +667,71 @@ if [ "$EVENT" = "SessionStart" ] && git -C "$CWD" rev-parse --show-toplevel >/de
 fi
 scope_candidate_count=${#scope_candidates[@]}
 
+# Repo hygiene (GitHub): default-branch protection (no force-push, no
+# deletion, at least one required status check) plus delete_branch_on_merge.
+# Owner-gated and read-only, same as every other check here: it never calls
+# a mutating GitHub endpoint, only reports state and the exact `gh` commands
+# to fix it. Runs only at SessionStart -- it is one to two network calls,
+# the same cost class as the scoped-instruction scan above -- and only past
+# two cheap local checks that need no network at all: a GitHub-hosted
+# `origin` remote must exist, and `gh` must be installed. If either is
+# false, or `gh auth status` fails, this stays NOT_APPLICABLE with zero
+# further calls: a repo with no GitHub remote, or a machine with no `gh`
+# session, is not this check's business to report on.
+#
+# The owner gate itself is `permissions.admin` on repos/<slug>, checked
+# BEFORE the branches/<default>/protection call: a contributor without admin
+# rights cannot change branch protection anyway, and the user explicitly
+# asked that nothing about this check even run when they are not the owner
+# ("si se detecta que no soy el dueño entonces no se realice"). NOT_APPLICABLE
+# counts as healthy for the silent-exit condition below, so a non-owner
+# working in someone else's repo sees no noise about it, ever.
+repo_hygiene_state="NOT_APPLICABLE"
+repo_hygiene_detail=""
+if [ "$EVENT" = "SessionStart" ] && git -C "$CWD" rev-parse --show-toplevel >/dev/null 2>&1; then
+  GH_REMOTE_URL=$(git -C "$CWD" remote get-url origin 2>/dev/null || true)
+  case "$GH_REMOTE_URL" in
+    *github.com*) GH_REMOTE_IS_GITHUB=1 ;;
+    *) GH_REMOTE_IS_GITHUB=0 ;;
+  esac
+  if [ "$GH_REMOTE_IS_GITHUB" = "1" ] && command -v gh >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    GH_TIMEOUT=""
+    command -v timeout >/dev/null 2>&1 && GH_TIMEOUT="timeout 5"
+    command -v gtimeout >/dev/null 2>&1 && GH_TIMEOUT="gtimeout 5"
+    if $GH_TIMEOUT gh auth status >/dev/null 2>&1; then
+      REPO_SLUG=$(printf '%s' "$GH_REMOTE_URL" | sed -E 's#.*github\.com[:/]([^/]+/[^/.]+)(\.git)?/?$#\1#')
+      if [ -n "$REPO_SLUG" ] && [ "$REPO_SLUG" != "$GH_REMOTE_URL" ]; then
+        REPO_META=$($GH_TIMEOUT gh api "repos/$REPO_SLUG" 2>/dev/null || true)
+        REPO_IS_ADMIN=$(printf '%s' "$REPO_META" | jq -r '.permissions.admin // false' 2>/dev/null || printf 'false')
+        if [ "$REPO_IS_ADMIN" = "true" ]; then
+          DEFAULT_BRANCH=$(printf '%s' "$REPO_META" | jq -r '.default_branch // empty' 2>/dev/null || true)
+          DELETE_ON_MERGE=$(printf '%s' "$REPO_META" | jq -r '.delete_branch_on_merge // false' 2>/dev/null || printf 'false')
+          if [ -n "$DEFAULT_BRANCH" ]; then
+            PROTECTION=$($GH_TIMEOUT gh api "repos/$REPO_SLUG/branches/$DEFAULT_BRANCH/protection" 2>/dev/null || true)
+            hygiene_gaps=()
+            printf '%s' "$PROTECTION" | jq -e '.allow_force_pushes.enabled == false' >/dev/null 2>&1 ||
+              hygiene_gaps+=("$DEFAULT_BRANCH allows force-push")
+            printf '%s' "$PROTECTION" | jq -e '.allow_deletions.enabled == false' >/dev/null 2>&1 ||
+              hygiene_gaps+=("$DEFAULT_BRANCH allows deletion")
+            printf '%s' "$PROTECTION" | jq -e '(.required_status_checks.contexts // []) | length > 0' >/dev/null 2>&1 ||
+              hygiene_gaps+=("no required status check before merging into $DEFAULT_BRANCH")
+            [ "$DELETE_ON_MERGE" = "true" ] ||
+              hygiene_gaps+=("merged branches are not auto-deleted")
+            if [ "${#hygiene_gaps[@]}" -eq 0 ]; then
+              repo_hygiene_state="READY"
+            else
+              repo_hygiene_state="MISSING"
+              repo_hygiene_detail=$(IFS='; '; printf '%s' "${hygiene_gaps[*]}")
+            fi
+          fi
+        fi
+        # REPO_IS_ADMIN != true: stays NOT_APPLICABLE, no further calls --
+        # this machine's gh session is not an owner/admin of this repo.
+      fi
+    fi
+  fi
+fi
+
 scope_candidate_reason() {
   local dir="$1" bridge state detail
   bridge=$(compute_bridge_state "$CWD/$dir")
@@ -703,7 +768,8 @@ if [ "$codegraph_state" = "READY" ] && [ "$codegraph_mcp_state" = "CONFIGURED" ]
   { [ "$openspec_state" = "READY" ] || [ "$openspec_state" = "NOT_ENABLED" ]; } &&
   { [ "$openspec_gitignore_state" = "CONFIGURED" ] || [ "$openspec_gitignore_state" = "TRACKED_EXISTING" ] || [ "$openspec_gitignore_state" = "NOT_APPLICABLE" ]; } &&
   [ "$instructions_root_state" = "READY" ] &&
-  { [ "$EVENT" != "SessionStart" ] || [ "$scope_candidate_count" -eq 0 ]; }; then
+  { [ "$EVENT" != "SessionStart" ] || [ "$scope_candidate_count" -eq 0 ]; } &&
+  { [ "$repo_hygiene_state" = "READY" ] || [ "$repo_hygiene_state" = "NOT_APPLICABLE" ]; }; then
   exit 0
 fi
 
@@ -733,13 +799,16 @@ OpenSpec .gitignore: $openspec_gitignore_state${openspec_gitignore_detail:+ — 
 Agent instructions (root): $instructions_root_state${instructions_root_detail:+ — $instructions_root_detail}
 Scoped-instruction candidates (scanned at SessionStart only): ${scope_candidate_count} subdirectory(ies) with a README.md, package/module manifest, test-suite directory name, or Supabase function directory, and no working AGENTS.md/CLAUDE.md bridge (missing, broken, or AGENTS.md/CLAUDE.md only)
 ${READY_CANDIDATES_LIST}
+Repo hygiene (GitHub, owner-only): $repo_hygiene_state${repo_hygiene_detail:+ — $repo_hygiene_detail}
+
 Before exploring or modifying code, do not assume these integrations are available:
 1. CodeGraph: if its MCP is missing, run \`codegraph install\`; then run \`codegraph init\` inside the project and verify with \`codegraph status --json\`.
 2. Git: add ".codegraph/" to the project root ".gitignore" before continuing.
 3. OpenSpec: install the CLI and run "openspec init" with explicit authorization; keep "openspec/" in ".gitignore" unless it was already tracked. Then verify with "openspec status --json".
 4. Agent instructions (Claude Code only): AGENTS.md is the canonical file; CLAUDE.md is the bridge Claude Code actually reads (\`ln -s AGENTS.md CLAUDE.md\`, or a CLAUDE.md that imports \`@AGENTS.md\` anywhere outside code — inline spans and fenced blocks are both ignored). A README.md alone is not agent instructions. For root or per-scope gaps above, ask the user which scope(s) they actually want AGENTS.md for and whether the content differs meaningfully from the root instructions before creating anything — do not scaffold AGENTS.md/CLAUDE.md automatically, and do not create one in every listed directory by default.
+5. Repo hygiene (GitHub): only checked when \`gh\` reports you as the repo's admin/owner; a contributor on someone else's repo sees NOT_APPLICABLE and nothing else. If MISSING, fix with explicit authorization: \`gh api --method PUT repos/<owner>/<repo>/branches/<default>/protection -F "required_status_checks[strict]=true" -F "required_status_checks[contexts][]=<job>" -F "enforce_admins=true" -F "required_pull_request_reviews=null" -F "restrictions=null" -F "allow_force_pushes=false" -F "allow_deletions=false"\` and \`gh api --method PATCH repos/<owner>/<repo> -F "delete_branch_on_merge=true"\`.
 
-Do not run those commands silently: they can create project files. Ask for authorization or report the blocker. Do not claim that CodeGraph MCP, the index, the ".codegraph/" exclusion, OpenSpec, the "openspec/" exclusion, or any AGENTS.md/CLAUDE.md bridge work until you have that evidence. Configuration/documentation questions may continue without editing code.
+Do not run those commands silently: they can create project files or change shared repo settings. Ask for authorization or report the blocker. Do not claim that CodeGraph MCP, the index, the ".codegraph/" exclusion, OpenSpec, the "openspec/" exclusion, any AGENTS.md/CLAUDE.md bridge, or the GitHub branch protection/delete-on-merge settings work until you have that evidence. Configuration/documentation questions may continue without editing code.
 EOF
 )
 

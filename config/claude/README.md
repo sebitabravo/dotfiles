@@ -177,6 +177,24 @@ claude --settings ~/.claude/qwen.settings.json
 El resto de los overlays se activa de la misma forma cambiando el nombre del
 archivo.
 
+### Preflight de integraciones del proyecto
+
+`hooks/project-integrations-check.sh` corre en `SessionStart` y
+`UserPromptSubmit`, es de solo lectura, y reporta (nunca aplica) el estado de
+CodeGraph, OpenSpec, el puente AGENTS.md/CLAUDE.md y, desde esta versión,
+la higiene del repo en GitHub: la rama por defecto protegida contra
+force-push y borrado, al menos un status check obligatorio antes de mergear,
+y `delete_branch_on_merge` activado.
+
+Ese último chequeo solo corre cuando `gh api repos/<owner>/<repo>` confirma
+que la sesión de `gh` autenticada en esta máquina es admin/dueña del repo
+(`permissions.admin == true`); si no lo es, o no hay remoto de GitHub, o no
+hay sesión de `gh`, queda en `NOT_APPLICABLE` sin hacer ninguna otra llamada
+— nunca reporta ni sugiere nada sobre un repo ajeno. Como todo lo demás en
+este hook, no corrige nada por sí solo: reporta el gap exacto y el comando
+`gh api` para corregirlo, y aplicar eso sigue siendo una acción explícita y
+autorizada aparte.
+
 ### One-shot automático y convergencia
 
 Para una tarea accionable no necesitás invocar `/plan`, OpenSpec ni los gates a
