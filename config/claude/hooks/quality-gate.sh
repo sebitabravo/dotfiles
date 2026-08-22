@@ -403,6 +403,39 @@ if [ "$HAS_TESTS" = false ] && [ -z "$LINT_CMD" ]; then
   [ "${#MONO_DIRS[@]}" -gt 0 ] && PROJECT_DIRS=("${MONO_DIRS[@]}")
 fi
 
+# run_with_timeout (lib/test-runner.sh) bounds every eval'd command below:
+# a stock macOS host has neither timeout nor gtimeout, and Claude Code's
+# own docs confirm a timed-out command hook is fail-open (does not block
+# the tool call) -- without an internal bound, a hanging lint/test/coverage
+# command was relying entirely on the outer harness timeout to ever stop
+# it, which meant the commit could go through unchecked instead of blocked.
+QG_LINT_TIMEOUT_SECONDS="${QG_LINT_TIMEOUT_SECONDS:-20}"
+QG_TEST_TIMEOUT_SECONDS="${QG_TEST_TIMEOUT_SECONDS:-90}"
+QG_COVERAGE_TIMEOUT_SECONDS="${QG_COVERAGE_TIMEOUT_SECONDS:-30}"
+
+# These three per-stage ceilings (140s) already sit under settings.json's
+# 150s outer PreToolUse timeout for ONE project. A monorepo commit can walk
+# several PROJECT_DIRS in the same run, and each used to get its own full
+# 140s -- two projects could already run past the outer timeout, handing
+# control back to the exact fail-open harness behavior run_with_timeout
+# exists to avoid. QG_TOTAL_TIMEOUT_SECONDS is a budget shared across every
+# PROJECT_DIR in this run: each stage gets min(its own ceiling, whatever is
+# left of the shared budget), and $SECONDS (seconds since this script
+# started) is what measures how much has been spent so far.
+QG_TOTAL_TIMEOUT_SECONDS="${QG_TOTAL_TIMEOUT_SECONDS:-140}"
+
+budget_remaining() {
+  local left=$((QG_TOTAL_TIMEOUT_SECONDS - SECONDS))
+  [ "$left" -lt 0 ] && left=0
+  printf '%s' "$left"
+}
+
+cap_to_budget() {
+  local ceiling="$1" left
+  left=$(budget_remaining)
+  if [ "$left" -lt "$ceiling" ]; then printf '%s' "$left"; else printf '%s' "$ceiling"; fi
+}
+
 for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   detect_project_at "$PROJECT_DIR"
   LABEL="$PROJECT_DIR"
@@ -424,24 +457,18 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
 [quality-gate] or a spike, create the kill switch: touch $RELAX_FILE"
   fi
 
-  # run_with_timeout (lib/test-runner.sh) bounds every eval'd command below:
-  # a stock macOS host has neither timeout nor gtimeout, and Claude Code's
-  # own docs confirm a timed-out command hook is fail-open (does not block
-  # the tool call) -- without an internal bound, a hanging lint/test/coverage
-  # command was relying entirely on the outer harness timeout to ever stop
-  # it, which meant the commit could go through unchecked instead of blocked.
-  QG_LINT_TIMEOUT_SECONDS="${QG_LINT_TIMEOUT_SECONDS:-20}"
-  QG_TEST_TIMEOUT_SECONDS="${QG_TEST_TIMEOUT_SECONDS:-90}"
-  QG_COVERAGE_TIMEOUT_SECONDS="${QG_COVERAGE_TIMEOUT_SECONDS:-30}"
-
   # 1. Lint (if available)
   if [ -n "$LINT_CMD" ]; then
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before lint could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    LINT_BOUND=$(cap_to_budget "$QG_LINT_TIMEOUT_SECONDS")
     # eval y no $LINT_CMD a secas: sin eval, el "cd dir &&" de los proyectos de
     # subdirectorio llega como argumentos literales en vez de ejecutarse.
-    LINT_OUTPUT=$(run_with_timeout "$QG_LINT_TIMEOUT_SECONDS" "$LINT_CMD")
+    LINT_OUTPUT=$(run_with_timeout "$LINT_BOUND" "$LINT_CMD")
     LINT_RC=$?
     if [ "$LINT_RC" = 124 ]; then
-      block "[$LABEL] lint did not finish in ${QG_LINT_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $LINT_CMD" "$LINT_OUTPUT"
+      block "[$LABEL] lint did not finish in ${LINT_BOUND}s. It could NOT be verified. Run: $LINT_CMD" "$LINT_OUTPUT"
     elif [ "$LINT_RC" != 0 ]; then
       block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
     fi
@@ -461,10 +488,14 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   [ "${COVERAGE_EXTRA:-false}" = true ] && RUN_CMD="$TEST_CMD"
   TEST_OUTPUT=""
   if [ -n "$RUN_CMD" ]; then
-    TEST_OUTPUT=$(run_with_timeout "$QG_TEST_TIMEOUT_SECONDS" "$RUN_CMD")
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before tests could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    TEST_BOUND=$(cap_to_budget "$QG_TEST_TIMEOUT_SECONDS")
+    TEST_OUTPUT=$(run_with_timeout "$TEST_BOUND" "$RUN_CMD")
     TEST_RC=$?
     if [ "$TEST_RC" = 124 ]; then
-      block "[$LABEL] tests did not finish in ${QG_TEST_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
+      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
     elif [ "$TEST_RC" != 0 ]; then
       block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
     fi
@@ -475,7 +506,11 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # runner declarado), pero tampoco se calla: sin salida no hay metrica, y eso
   # se reporta como NO MEDIDO.
   if [ "${COVERAGE_EXTRA:-false}" = true ]; then
-    COV_RUN_OUTPUT=$(run_with_timeout "$QG_COVERAGE_TIMEOUT_SECONDS" "$COVERAGE_CMD")
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before coverage could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    COVERAGE_BOUND=$(cap_to_budget "$QG_COVERAGE_TIMEOUT_SECONDS")
+    COV_RUN_OUTPUT=$(run_with_timeout "$COVERAGE_BOUND" "$COVERAGE_CMD")
     COV_RC=$?
     # Un fallo comun del comando de cobertura no dictamina sobre los tests (ya
     # lo hizo el runner declarado): se degrada a NO MEDIDO. Un timeout es
@@ -484,7 +519,7 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
     # para cerrar en lint/test. Tragarlo aqui con el mismo `|| true` reabria
     # esa brecha solo para la cobertura.
     if [ "$COV_RC" = 124 ]; then
-      block "[$LABEL] coverage did not finish in ${QG_COVERAGE_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $COVERAGE_CMD" "$COV_RUN_OUTPUT"
+      block "[$LABEL] coverage did not finish in ${COVERAGE_BOUND}s. It could NOT be verified. Run: $COVERAGE_CMD" "$COV_RUN_OUTPUT"
     fi
     if [ -n "$COV_RUN_OUTPUT" ]; then
       TEST_OUTPUT="$COV_RUN_OUTPUT"

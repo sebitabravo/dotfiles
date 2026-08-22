@@ -133,4 +133,38 @@ elapsed=$((end - start))
 printf '%s' "$out" | grep -Fq 'coverage did not finish in 1s'
 ! printf '%s' "$out" | grep -Fq 'NOT MEASURED'
 
+printf '%s\n' '== monorepo: a shared budget bounds the WHOLE run, not 90s+30s per project'
+MONOREPO="$TMP/monorepo"
+new_repo "$MONOREPO"
+mkdir -p "$MONOREPO/pkg-a" "$MONOREPO/pkg-b"
+# setup.cfg is only there to satisfy the monorepo-dir detector's manifest
+# check (package.json/pyproject.toml/setup.cfg/pytest.ini/go.mod). Unlike
+# pyproject.toml/pytest.ini, it is not one of the markers lib/test-runner.sh's
+# own "manifest one level in" scan recognizes, so it can't get root itself
+# mistaken for a Python project (which would swallow PROJECT_DIRS back down
+# to a single "."). The declared test.sh runner below is what actually runs.
+touch "$MONOREPO/pkg-a/setup.cfg" "$MONOREPO/pkg-b/setup.cfg"
+for pkg in pkg-a pkg-b; do
+  cat >"$MONOREPO/$pkg/test.sh" <<'EOF'
+#!/usr/bin/env bash
+sleep 30
+EOF
+  chmod +x "$MONOREPO/$pkg/test.sh"
+done
+git -C "$MONOREPO" add pkg-a pkg-b
+start=$(date +%s)
+# Without a shared budget, each project gets its own 90s TEST ceiling: two
+# hanging projects would take up to ~180s (or run past the outer harness
+# timeout entirely). QG_TOTAL_TIMEOUT_SECONDS=2 must cap the FIRST project's
+# stage down to ~2s (or, if fork/exec overhead already spent it, block before
+# even starting) -- the second project never gets a fresh 90s of its own.
+# Whichever of the two happens depends on $SECONDS's whole-second rounding
+# against setup overhead, so accept either message rather than pin one.
+out=$(QG_TOTAL_TIMEOUT_SECONDS=2 run_hook "$MONOREPO" 2>&1) && rc=0 || rc=$?
+end=$(date +%s)
+elapsed=$((end - start))
+[ "$rc" -eq 2 ]
+[ "$elapsed" -lt 15 ]
+printf '%s' "$out" | grep -Eq '\[pkg-a\] (tests did not finish in [0-9]+s|the shared 2s quality-gate budget ran out)'
+
 printf '%s\n' 'PASS: quality-gate.sh enforces a real, portable timeout on lint/test/coverage'
