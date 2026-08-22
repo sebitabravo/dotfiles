@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
@@ -14,6 +15,12 @@ from typing import Any
 # The env overrides remain as an explicit escape hatch.
 MAX_INPUT_BYTES = int(os.environ.get("WATERMARKS_MAX_INPUT_BYTES", str(256 << 20)))
 MAX_STDIN_BYTES = int(os.environ.get("WATERMARKS_MAX_STDIN_BYTES", str(64 << 20)))
+
+# Exit codes shared by the audit CLIs. 0 = clean, 1 = actionable findings,
+# 2 = usage/refusal error, 3 = partial scan (some files/URLs failed to
+# scan). A partial scan takes precedence over actionable findings: an
+# incomplete audit is the more important CI signal.
+EXIT_PARTIAL = 3
 
 # Child-process resource limits (address space / output file size). Applied
 # via preexec_fn so a crafted file cannot make exiftool/c2patool/OpenCV
@@ -36,10 +43,8 @@ def _reconfigure_stream(stream: Any, errors: str) -> None:
     """
     reconfigure = getattr(stream, "reconfigure", None)
     if reconfigure is not None:
-        try:
+        with contextlib.suppress(OSError, ValueError):
             reconfigure(encoding="utf-8", errors=errors)
-        except (OSError, ValueError):
-            pass
 
 
 def _configure_stdio() -> None:
@@ -64,6 +69,7 @@ BINARY_MAGIC: tuple[tuple[bytes, str], ...] = (
     (b"\xff\xd8\xff", "a JPEG image"),
     (b"GIF87a", "a GIF image"),
     (b"GIF89a", "a GIF image"),
+    (b"BM", "a BMP image"),
     (b"II*\x00", "a TIFF image"),
     (b"MM\x00*", "a TIFF image"),
     (b"RIFF", "a RIFF container (WEBP, WAV, AVI)"),
@@ -261,10 +267,8 @@ def safe_write_bytes(path: str | Path, data: bytes) -> None:
             os.fsync(f.fileno())
         os.replace(tmp_name, dest)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp_name)
-        except OSError:
-            pass
         raise
 
 
@@ -284,7 +288,7 @@ def backup_path(src: Path) -> Path:
         safe_write_bytes(bak, src.read_bytes())
     except OSError as e:
         eprint(f"cannot create backup {bak}: {e}")
-        raise SystemExit(2)
+        raise SystemExit(2) from None
     return bak
 
 
@@ -402,6 +406,27 @@ def classify_finding_confidence(finding: str) -> str:
         return "probable"
 
     return "informational"
+
+
+def c2patool_probe_note(tools: dict[str, Any]) -> str | None:
+    """Describe an inconclusive c2patool run, or None when it answered.
+
+    c2patool exits non-zero both for an asset with no manifest and for a
+    binary that failed to run, so a caller that only reads `has_manifest`
+    cannot tell "this asset is clean" from "the probe never ran". Reporting
+    the second as the first is the dangerous direction: `has_c2pa: False`
+    beside a dead probe reads as a clean bill of health on the one check a
+    user would trust.
+
+    The wording deliberately avoids the substring "c2patool reports", which
+    classify_finding_confidence() maps to `confirmed`; "not fully inspected"
+    puts it in the `informational` bucket instead.
+    """
+    ct = tools.get("c2patool") or {}
+    if not ct.get("available") or ct.get("ok", True):
+        return None
+    detail = ct.get("error") or "no usable verdict"
+    return f"c2patool probe inconclusive ({detail}); C2PA not fully inspected by this tool"
 
 
 def cleaned_path(src: Path, suffix: str = ".cleaned") -> Path:
