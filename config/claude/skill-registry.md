@@ -83,7 +83,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `stitch-generate-design` | >- Generate new screens from text prompts or images, edit existing screens with prompts and design system tokens. |
 | `stitch-manage-design-system` | >- Manage design systems in Stitch using MCP tools. |
 | `stitch-extract-design-md` | >- Extract a comprehensive design system (DESIGN.md) directly from frontend source code — React, Vue, Svelte. |
-| `stitch-react-components` | Converts Stitch designs into modular Vite and React components using system-level networking and AST-based. |
+| `stitch-react-components` | Converts or syncs Stitch designs into modular Vite and React components using system-level networking and AST-based validation. |
 
 ## Media & Documents
 
@@ -92,8 +92,8 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `ffmpeg` | FFmpeg commands for video/audio conversion, compression, trimming, merging, filters, subtitle handling, and batch. |
 | `imagemagick` | ImageMagick (magick) for image conversion, resizing, compression, cropping, rotating, watermarking, format. |
 | `pandoc` | Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates. |
-| `pptx` | "Use this skill any time a .pptx file is involved in any way — as input, output, or both. |
-| `xlsx` | "Use this skill any time a spreadsheet file is the primary input or output. |
+| `pptx` | Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. |
+| `xlsx` | Use this skill any time a spreadsheet file is the primary input or output, including .xlsx, .xlsm, .xltx, .csv, or .tsv. |
 | `inacap` | > Genera documentos academicos formato INACAP en DOCX (python-docx). |
 | `remove-ai-marks` | > Strip AI provenance marks (Unicode, C2PA/metadata) from owned files and text. |
 
