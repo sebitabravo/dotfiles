@@ -130,18 +130,13 @@ if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
   fi
 
   if [ -n "$TEST_CMD" ]; then
-    # macOS no trae `timeout`: sin coreutils no hay ninguno de los dos y la suite
-    # corre sin limite. No se puede acotar desde aca, pero se dice — un comentario
-    # que promete un timeout inexistente es peor que no tenerlo.
-    TIMEOUT_BIN=""
-    command -v timeout >/dev/null 2>&1 && TIMEOUT_BIN="timeout 90"
-    command -v gtimeout >/dev/null 2>&1 && TIMEOUT_BIN="gtimeout 90"
-    [ -z "$TIMEOUT_BIN" ] &&
-      echo "[gauntlet] no timeout binary (brew install coreutils): the suite runs with no limit." >&2
-
-    # eval: el comando puede venir como `cd backend && uv run pytest`, y sin
-    # eval el `&&` y el cd llegarian como argumentos literales al runner.
-    TEST_OUT=$(eval "$TIMEOUT_BIN $TEST_CMD" 2>&1)
+    # run_with_timeout (lib/test-runner.sh) bounds this even without
+    # coreutils: a stock macOS host has neither timeout nor gtimeout, and
+    # without an internal bound the suite ran fully unbounded, relying only
+    # on the OUTER Stop-hook harness timeout to ever cut it off -- silently,
+    # before this hook could report anything.
+    GAUNTLET_TEST_TIMEOUT_SECONDS="${GAUNTLET_TEST_TIMEOUT_SECONDS:-90}"
+    TEST_OUT=$(run_with_timeout "$GAUNTLET_TEST_TIMEOUT_SECONDS" "$TEST_CMD")
     TEST_RC=$?
 
     # Un timeout BLOQUEA. Antes solo imprimia y seguia, y como abajo se sale 0
@@ -150,7 +145,7 @@ if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
     # justo lo que el comentario de arriba dice no querer.
     if [ "$TEST_RC" = 124 ]; then
       {
-        echo "GAUNTLET: the suite did not finish in 90s. It could NOT be verified."
+        echo "GAUNTLET: the suite did not finish in ${GAUNTLET_TEST_TIMEOUT_SECONDS}s. It could NOT be verified."
         echo ""
         echo "Do not close the turn calling it green. Either:"
         echo "  1. run the suite yourself and wait for it, or"

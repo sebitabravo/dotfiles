@@ -203,7 +203,7 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/quality-gate.sh",
-            "timeout": 120,
+            "timeout": 150,
             "if": "Bash(git commit *)"
           }
         ]
@@ -337,7 +337,7 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/gauntlet-stop.sh",
-            "timeout": 20
+            "timeout": 100
           },
           {
             "type": "command",

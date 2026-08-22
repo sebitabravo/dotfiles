@@ -191,3 +191,67 @@ _detect_managed() {
 
   return 1
 }
+
+# run_with_timeout: bounds an arbitrary shell command string (may contain
+# `&&`, `cd`, pipes -- hence `eval`, not `"$@"`) to N seconds, portably.
+#
+# WHY THIS EXISTS: a stock macOS host has neither `timeout` nor `gtimeout`
+# (coreutils is not installed by default, and this repo's own Brewfile does
+# not declare it either). Without an internal bound, the ONLY thing that
+# could ever stop a hanging test suite was the outer Claude Code hook-harness
+# timeout in settings.json -- and a hook killed by that external timeout is
+# fail-open (per Claude Code's own docs: a timed-out command hook does not
+# block the tool call). A gate with no real internal bound on a slow-or-
+# hanging suite is a gate that silently stops gating.
+#
+# Consumed by gauntlet-stop.sh and quality-gate.sh, both of which run a
+# repo's own test command and both hit exactly this gap independently.
+#
+# Sets stdout to the command's combined stdout+stderr and returns 124 on
+# timeout, matching `timeout`(1)'s own convention, so callers branch on the
+# same exit code regardless of which path (real timeout, or the manual
+# ps-polling fallback) actually ran.
+run_with_timeout() {
+  local timeout_seconds="$1" cmd="$2" result_file pid elapsed_tenths rc process_state
+
+  if command -v timeout >/dev/null 2>&1; then
+    eval "timeout $timeout_seconds $cmd" 2>&1
+    return $?
+  fi
+  if command -v gtimeout >/dev/null 2>&1; then
+    eval "gtimeout $timeout_seconds $cmd" 2>&1
+    return $?
+  fi
+
+  result_file=$(mktemp "${TMPDIR:-/tmp}/run-with-timeout.XXXXXX") || return 125
+  (eval "$cmd") >"$result_file" 2>&1 &
+  pid=$!
+  elapsed_tenths=0
+  while :; do
+    process_state=$(ps -o state= -p "$pid" 2>/dev/null | tr -d '[:space:]')
+    case "$process_state" in
+      ""|Z*) break ;;
+    esac
+    if [ "$elapsed_tenths" -ge $((timeout_seconds * 10)) ]; then
+      # Kill both the direct child and its own children: a real test runner
+      # (pytest/jest/go test) forks workers that `kill "$pid"` alone would
+      # leave running, still holding ports/CPU after we report the timeout.
+      kill "$pid" >/dev/null 2>&1 || true
+      pkill -P "$pid" >/dev/null 2>&1 || true
+      sleep 0.2
+      kill -9 "$pid" >/dev/null 2>&1 || true
+      pkill -9 -P "$pid" >/dev/null 2>&1 || true
+      wait "$pid" >/dev/null 2>&1 || true
+      rm -f "$result_file"
+      return 124
+    fi
+    sleep 0.1
+    elapsed_tenths=$((elapsed_tenths + 1))
+  done
+
+  wait "$pid"
+  rc=$?
+  cat "$result_file"
+  rm -f "$result_file"
+  return "$rc"
+}

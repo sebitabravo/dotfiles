@@ -424,16 +424,32 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
 [quality-gate] or a spike, create the kill switch: touch $RELAX_FILE"
   fi
 
+  # run_with_timeout (lib/test-runner.sh) bounds every eval'd command below:
+  # a stock macOS host has neither timeout nor gtimeout, and Claude Code's
+  # own docs confirm a timed-out command hook is fail-open (does not block
+  # the tool call) -- without an internal bound, a hanging lint/test/coverage
+  # command was relying entirely on the outer harness timeout to ever stop
+  # it, which meant the commit could go through unchecked instead of blocked.
+  QG_LINT_TIMEOUT_SECONDS="${QG_LINT_TIMEOUT_SECONDS:-20}"
+  QG_TEST_TIMEOUT_SECONDS="${QG_TEST_TIMEOUT_SECONDS:-90}"
+  QG_COVERAGE_TIMEOUT_SECONDS="${QG_COVERAGE_TIMEOUT_SECONDS:-30}"
+
   # 1. Lint (if available)
   if [ -n "$LINT_CMD" ]; then
     # eval y no $LINT_CMD a secas: sin eval, el "cd dir &&" de los proyectos de
     # subdirectorio llega como argumentos literales en vez de ejecutarse.
-    LINT_OUTPUT=$(eval "$LINT_CMD" 2>&1) || block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
+    LINT_OUTPUT=$(run_with_timeout "$QG_LINT_TIMEOUT_SECONDS" "$LINT_CMD")
+    LINT_RC=$?
+    if [ "$LINT_RC" = 124 ]; then
+      block "[$LABEL] lint did not finish in ${QG_LINT_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $LINT_CMD" "$LINT_OUTPUT"
+    elif [ "$LINT_RC" != 0 ]; then
+      block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
+    fi
   fi
 
   # 2. Tests + coverage, UNA sola corrida.
   # Antes corria TEST_CMD y despues COVERAGE_CMD, que re-ejecuta la misma suite
-  # entera: dos corridas completas en cada intento de commit, con timeout de 120s.
+  # entera: dos corridas completas en cada intento de commit.
   # COVERAGE_CMD es TEST_CMD con un flag, asi que si existe reemplaza a TEST_CMD
   # y de la misma salida se saca el porcentaje.
   #
@@ -445,18 +461,25 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   [ "${COVERAGE_EXTRA:-false}" = true ] && RUN_CMD="$TEST_CMD"
   TEST_OUTPUT=""
   if [ -n "$RUN_CMD" ]; then
-    TEST_OUTPUT=$(eval "$RUN_CMD" 2>&1) || block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+    TEST_OUTPUT=$(run_with_timeout "$QG_TEST_TIMEOUT_SECONDS" "$RUN_CMD")
+    TEST_RC=$?
+    if [ "$TEST_RC" = 124 ]; then
+      block "[$LABEL] tests did not finish in ${QG_TEST_TIMEOUT_SECONDS}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
+    elif [ "$TEST_RC" != 0 ]; then
+      block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+    fi
   fi
 
-  # La segunda corrida es solo para leer los porcentajes. Si falla no vuelve a
-  # dictaminar sobre los tests (de eso ya se encargo el runner declarado), pero
-  # tampoco se calla: sin salida no hay metrica, y eso se reporta como NO MEDIDO.
+  # La segunda corrida es solo para leer los porcentajes. Si falla (o se
+  # cuelga) no vuelve a dictaminar sobre los tests (de eso ya se encargo el
+  # runner declarado), pero tampoco se calla: sin salida no hay metrica, y eso
+  # se reporta como NO MEDIDO.
   if [ "${COVERAGE_EXTRA:-false}" = true ]; then
-    COV_RUN_OUTPUT=$(eval "$COVERAGE_CMD" 2>&1) || true
+    COV_RUN_OUTPUT=$(run_with_timeout "$QG_COVERAGE_TIMEOUT_SECONDS" "$COVERAGE_CMD") || true
     if [ -n "$COV_RUN_OUTPUT" ]; then
       TEST_OUTPUT="$COV_RUN_OUTPUT"
     else
-      echo "[quality-gate] [$LABEL] coverage command produced no output: $COVERAGE_CMD" >&2
+      echo "[quality-gate] [$LABEL] coverage command produced no output (or did not finish in ${QG_COVERAGE_TIMEOUT_SECONDS}s): $COVERAGE_CMD" >&2
     fi
   fi
 
