@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
-# Runner local del gate para el instalador y wrappers de shell. No se versiona:
-# este repo instala configuracion y no debe copiar sus pruebas al HOME.
+# Gate del instalador, los wrappers de shell y las suites de hooks/scripts.
+# Se versiona y corre en CI (.github/workflows/) porque, a diferencia de las
+# suites bajo .github/test/, install.sh no copia nada de .github/ a ningun
+# HOME -- no hay riesgo de que esto llegue al runtime de quien instala.
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 INSTALL="$ROOT/install.sh"
 TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
 
+# Fixture real para el --exclude='*.test.sh' de install.sh: ahora que ningun
+# directorio administrado tiene sus propias suites, sin esto la aserción de
+# mas abajo sería tautológica (nada que copiar, con o sin el exclude). Vive
+# en el hooks/ real del repo -- copy_dir() no acepta una fuente alternativa
+# -- y el trap la borra pase lo que pase.
+EXCLUDE_FIXTURE="$ROOT/config/claude/hooks/__ci_exclude_fixture__.test.sh"
+
 cleanup() {
   rm -rf -- "$TMP_HOME"
+  rm -f -- "$EXCLUDE_FIXTURE"
 }
 trap cleanup EXIT
 
@@ -89,6 +99,7 @@ printf '%s\n' 'local identity' >"$TEST_HOME/.gitconfig.local"
 printf '%s\n' 'unmanaged marker' >"$TEST_HOME/local-marker"
 printf '%s\n' 'runtime dependency' >"$TEST_HOME/.claude/skills/pptx/node_modules/.keep"
 printf '%s\n' 'runtime rollback' >"$TEST_HOME/.claude/hooks/example.sh.backup.20260821000000"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$EXCLUDE_FIXTURE"
 
 printf '%s\n' '== isolated installation =='
 HOME="$TEST_HOME" bash "$INSTALL" >"$TMP_HOME/install.log"
@@ -102,8 +113,7 @@ assert_not_symlink "$TEST_HOME/.claude/agents"
 assert_file "$TEST_HOME/.claude/agents/backend-architect.md"
 assert_file "$TEST_HOME/.config/ghostty/config.ghostty"
 assert_not_symlink "$TEST_HOME/.config/ghostty"
-assert_not_exists "$TEST_HOME/.claude/hooks/automatic-workflow-stop.test.sh"
-assert_not_exists "$TEST_HOME/.claude/scripts/check-runtime-parity.test.sh"
+assert_not_exists "$TEST_HOME/.claude/hooks/__ci_exclude_fixture__.test.sh"
 
 printf '%s\n' '== symlink migration and backups =='
 assert_file "$TEST_HOME/.zprofile"
@@ -179,13 +189,13 @@ printf '%s' "$wrapper_error" | grep -qxF 'claude: selecciona un solo provider po
 printf '%s\n' 'PASS: Claude wrapper isolates provider env, routes one overlay, and rejects ambiguous provider flags'
 
 printf '%s\n' '== AGENTS.md/CLAUDE.md scope-detection hook =='
-bash "$ROOT/config/claude/hooks/project-integrations-check.test.sh"
+bash "$ROOT/.github/test/project-integrations-check.test.sh"
 
 printf '%s\n' '== gauntlet-stop.sh timeout and coverage regressions =='
-bash "$ROOT/config/claude/hooks/gauntlet-stop.test.sh"
+bash "$ROOT/.github/test/gauntlet-stop.test.sh"
 
 printf '%s\n' '== quality-gate.sh timeout regressions =='
-bash "$ROOT/config/claude/hooks/quality-gate.test.sh"
+bash "$ROOT/.github/test/quality-gate.test.sh"
 
 printf '%s\n' '== statusline model-tier icons =='
-bash "$ROOT/config/claude/statusline.test.sh"
+bash "$ROOT/.github/test/statusline.test.sh"

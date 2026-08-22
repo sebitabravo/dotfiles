@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 HOOK="$ROOT/config/claude/hooks/quality-gate.sh"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/quality-gate-test.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT

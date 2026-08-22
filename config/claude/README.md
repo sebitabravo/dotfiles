@@ -81,9 +81,12 @@ personalizadas en `settings.json`, respaldalas o integrá esas entradas en el
 repositorio antes de copiarlo.
 
 > `rsync --delete` se usa sólo dentro de las carpetas gestionadas. Excluye
-> `node_modules`, suites locales `*.test.sh` y backups `*.backup.*`; así, si
-> eliminás una skill del repositorio, desaparece del destino sin borrar
-> dependencias locales ni la ruta de rollback.
+> `node_modules` y backups `*.backup.*`; así, si eliminás una skill del
+> repositorio, desaparece del destino sin borrar dependencias locales ni la
+> ruta de rollback. El `--exclude='*.test.sh'` queda como defensa en
+> profundidad: todas las suites de este repo viven versionadas en
+> `.github/test/` (fuera de estas carpetas gestionadas), así que hoy no hay
+> ningún `*.test.sh` real que excluir.
 
 ## Configuración principal
 

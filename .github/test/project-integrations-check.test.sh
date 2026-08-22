@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 HOOK="$ROOT/config/claude/hooks/project-integrations-check.sh"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/project-integrations-check-test.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT

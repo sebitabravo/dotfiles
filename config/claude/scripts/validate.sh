@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Valida esta configuracion: manifiestos JSON, dependencias de skills y linting
-# de los scripts. Si ademas hay suites locales presentes, las corre.
+# de los scripts. Si ademas hay suites presentes, las corre.
 #
-# Este repo se clona para copiar la configuracion, no para desarrollarla: las
-# suites `*.test.sh` no se versionan por defecto (ver .gitignore), asi que en
-# un clone la mayoria de las etapas de suite simplemente no estan. Eso no es
-# cobertura faltante, es una etapa que no aplica — pero se nombra igual,
-# porque una etapa que no corrio nunca se reporta como una que paso.
-# Excepcion: project-integrations-check.test.sh SI se versiona (negacion en
-# .gitignore) porque tambien corre en CI via .github/test.sh; el resto sigue
-# el criterio general.
+# Todas las suites viven en .github/test/, versionadas y corridas en CI via
+# .github/test.sh -- ningun directorio administrado (config/claude/**, etc.)
+# tiene sus propias suites, asi que install.sh no necesita excluirlas por
+# convencion de nombre al copiar. Las entradas de esta lista que todavia no
+# existen (protect-tests, agent-preload, vulnerability-hunter, test-runner,
+# commit-msg, test-swarmforge-workflow) son el nombre esperado para cuando se
+# escriban, no una suite que se perdio: se nombran igual para que una etapa
+# que no corrio nunca se reporte como una que paso.
 #
 # Se pasa como argv al recibo de RDD: sin un script real la alternativa es una
 # cadena con operadores de shell, y ahi un `|| true` fabrica el exit 0 que el
@@ -22,32 +22,32 @@ REPO_ROOT=$(cd -- "$CLAUDE_DIR/../.." && pwd)
 cd "$REPO_ROOT"
 
 SUITES=(
-  config/claude/agents/agent-preload.test.sh
-  config/claude/agents/vulnerability-hunter.test.sh
-  config/claude/statusline.test.sh
-  config/claude/hooks/project-integrations-check.test.sh
-  config/claude/hooks/privacy-review.test.sh
-  config/claude/hooks/protect-codegraph-tracking.test.sh
-  config/claude/hooks/secret-detect.test.sh
-  config/claude/hooks/quality-gate.test.sh
-  config/claude/hooks/validate-safe-ops.test.sh
-  config/claude/hooks/gauntlet-stop.test.sh
-  config/claude/hooks/protect-tests.test.sh
-  config/claude/hooks/task-contract.test.sh
-  config/claude/hooks/automatic-workflow.test.sh
-  config/claude/hooks/automatic-workflow-stop.test.sh
-  config/claude/hooks/convergence-stop.test.sh
-  config/claude/hooks/activate-convergence-on-apply.test.sh
-  config/claude/hooks/compact-resume.test.sh
-  config/claude/scripts/validate-task-roadmap.test.sh
-  config/claude/scripts/compare-task-roadmaps.test.sh
-  config/claude/scripts/convergence-start.test.sh
-  config/claude/scripts/check-runtime-parity.test.sh
-  config/claude/scripts/check-provider-runtime-parity.test.sh
-  config/claude/scripts/sync-convergence-runtime.test.sh
-  config/claude/hooks/lib/test-runner.test.sh
-  config/claude/scripts/test-swarmforge-workflow.sh
-  git-hooks/commit-msg.test.sh
+  .github/test/agent-preload.test.sh
+  .github/test/vulnerability-hunter.test.sh
+  .github/test/statusline.test.sh
+  .github/test/project-integrations-check.test.sh
+  .github/test/privacy-review.test.sh
+  .github/test/protect-codegraph-tracking.test.sh
+  .github/test/secret-detect.test.sh
+  .github/test/quality-gate.test.sh
+  .github/test/validate-safe-ops.test.sh
+  .github/test/gauntlet-stop.test.sh
+  .github/test/protect-tests.test.sh
+  .github/test/task-contract.test.sh
+  .github/test/automatic-workflow.test.sh
+  .github/test/automatic-workflow-stop.test.sh
+  .github/test/convergence-stop.test.sh
+  .github/test/activate-convergence-on-apply.test.sh
+  .github/test/compact-resume.test.sh
+  .github/test/validate-task-roadmap.test.sh
+  .github/test/compare-task-roadmaps.test.sh
+  .github/test/convergence-start.test.sh
+  .github/test/check-runtime-parity.test.sh
+  .github/test/check-provider-runtime-parity.test.sh
+  .github/test/sync-convergence-runtime.test.sh
+  .github/test/test-runner.test.sh
+  .github/test/test-swarmforge-workflow.sh
+  .github/test/commit-msg.test.sh
 )
 
 SKIPPED=0

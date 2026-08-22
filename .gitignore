@@ -47,29 +47,12 @@ HANDOFF.md.archived
 TASK-ROADMAP.md
 task-roadmap.md
 
-# Suites de verificacion dentro de directorios administrados: se corren en
-# local, no se versionan.
-#
-# install.sh copia los directorios administrados (config/claude/**, etc.) pero
-# excluye `*.test.sh`, así que esas suites nunca llegan al runtime de quien usa
-# la config. .github/test.sh no vive dentro de ningun directorio administrado
-# -- install.sh nunca lo copia a ningun HOME -- asi que se versiona y corre en
-# CI (.github/workflows/).
-#
-# El costo asumido: en un clone, validate.sh reporta las etapas de suite
-# *.test.sh como omitidas. Las nombra igual en vez de callarlas, porque una
-# etapa que no corrio no es una que paso.
-*.test.sh
-# Excepcion: la evidencia de regresion de estos hooks debe ser reproducible por
-# cualquiera que clone el repo, no solo localmente. install.sh sigue
-# excluyendo *.test.sh del runtime instalado (regla de arriba), asi que
-# versionar estos archivos no los hace llegar al ~/.claude de quien instala.
-!config/claude/hooks/project-integrations-check.test.sh
-!config/claude/hooks/gauntlet-stop.test.sh
-!config/claude/hooks/quality-gate.test.sh
-!config/claude/statusline.test.sh
+# Todos los tests viven en .github/test/ (versionado, corre en CI). No hace
+# falta ignorar *.test.sh en ningun directorio administrado: ninguno vuelve a
+# tener suites propias, asi que no hay nada que install.sh deba excluir por
+# convencion de nombre. El --exclude='*.test.sh' de install.sh queda igual,
+# como defensa en profundidad, no porque algo lo necesite hoy.
 config/claude/scripts/test-swarmforge-workflow.sh
-Makefile
 
 # Planificacion y herramientas propias: no son parte de la configuracion que se
 # instala. specs/ son artefactos SDD locales (Hard Rule 8) y tools/ es un banco
@@ -88,3 +71,4 @@ Makefile
 .codex/
 .claude-relaxed
 .atl
+Makefile
