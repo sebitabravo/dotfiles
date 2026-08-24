@@ -197,5 +197,8 @@ bash "$ROOT/.github/test/gauntlet-stop.test.sh"
 printf '%s\n' '== quality-gate.sh timeout regressions =='
 bash "$ROOT/.github/test/quality-gate.test.sh"
 
+printf '%s\n' '== hook edge cases =='
+bash "$ROOT/.github/test/hooks-edge-cases.test.sh"
+
 printf '%s\n' '== statusline model-tier icons =='
 bash "$ROOT/.github/test/statusline.test.sh"

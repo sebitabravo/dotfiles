@@ -8,6 +8,7 @@ en silencio. El rename va DESPUES de emitir el JSON por la misma razon.
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 # El cwd real llega por stdin; PWD puede apuntar a otro lado segun como se lance.
 try:
@@ -44,4 +45,20 @@ output = {
 print(json.dumps(output))
 sys.stdout.flush()
 
-os.rename(handoff_path, archived_path)
+# Preserve the previous archive. `os.rename()` replaces an existing destination
+# on POSIX, which silently discarded the last handoff whenever two sessions
+# started before the old archive was reviewed.
+if os.path.exists(archived_path):
+    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    archived_path = f'{archived_path}.{stamp}'
+    suffix = 1
+    while os.path.exists(archived_path):
+        archived_path = f'{handoff_path}.archived.{stamp}.{suffix}'
+        suffix += 1
+
+try:
+    os.rename(handoff_path, archived_path)
+except OSError as exc:
+    # The context was already emitted and flushed. Do not turn a successful
+    # handoff into a Claude hook error because archiving was unavailable.
+    print(f'[handoff] warning: no se pudo archivar {handoff_path}: {exc}', file=sys.stderr)

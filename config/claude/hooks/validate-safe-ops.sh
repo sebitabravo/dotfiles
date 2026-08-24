@@ -314,6 +314,8 @@ RM_RECURSIVE='\brm\s+(-[a-zA-Z]*\s+)*-?[a-zA-Z]*r[a-zA-Z]*f|\brm\s+(-[a-zA-Z]*\s
 if echo "$NO_QUOTES_FULL" | grep -qE "$RM_RECURSIVE"; then
   # Solo el objetivo decide el nivel. Borrar la raiz o el home no se negocia;
   # borrar un build o un directorio temporal es trabajo normal.
+  # shellcheck disable=SC2016
+  # The regex intentionally matches literal $HOME text.
   if echo "$NO_QUOTES_FULL" | grep -qE '\brm\s+(-[a-zA-Z]+\s+)+(/|/\*|~|~/|~/\*|\$HOME|\$HOME/|\$HOME/\*)(\s|$|;|&)'; then
     deny "rm -rf over the root or the home directory is blocked. It is irreversible and there is no legitimate reason to run it from an agent session."
   fi

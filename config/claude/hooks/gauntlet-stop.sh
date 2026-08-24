@@ -33,7 +33,12 @@ fi
 # signifique nada sobre el codigo. El escape es `.claude-relaxed`, una decision
 # explicita por repo.
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+PROJECT_DIR="$PWD"
+if command -v jq >/dev/null 2>&1; then
+  CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+  [ -n "$CWD" ] && PROJECT_DIR="$CWD"
+fi
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" 2>/dev/null || exit 0
 [ -f "$ROOT/.claude-relaxed" ] && exit 0
 
@@ -66,7 +71,8 @@ SRC=$(echo "$CHANGED" |
 [ -z "$SRC" ] && exit 0
 
 MISSING=""
-for f in $SRC; do
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
   [ -f "$f" ] || continue
   base=$(basename "$f")
   dir=$(dirname "$f")
@@ -110,7 +116,7 @@ for f in $SRC; do
   fi
 
   [ "$found" = false ] && MISSING="${MISSING}  - $f"$'\n'
-done
+done <<< "$SRC"
 
 # ── La suite existente tiene que estar verde ────────────────────────────────
 #
@@ -124,6 +130,7 @@ done
 if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
   TEST_CMD=""
   # shellcheck source=lib/test-runner.sh
+  # shellcheck disable=SC1091
   if [ -r "$HOME/.claude/hooks/lib/test-runner.sh" ]; then
     . "$HOME/.claude/hooks/lib/test-runner.sh"
     detect_test_cmd "$ROOT" || true

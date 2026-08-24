@@ -38,7 +38,21 @@ receipt_value() {
   awk -F':[[:space:]]*' -v key="$1" '$1 == key { print substr($0, index($0, ":") + 1); exit }' "$RECEIPT" | sed 's/^[[:space:]]*//'
 }
 
-grep -Eq '^[[:space:]]*STATUS:[[:space:]]*PASS[[:space:]]*$' "$RECEIPT" || fail 'el receipt no tiene STATUS: PASS'
+STATUS=$(receipt_value STATUS)
+case "$STATUS" in
+  BLOCKED)
+    grep -Eq '^[[:space:]]*ACCEPTANCE:[[:space:]]*PENDING[[:space:]]*$' "$RECEIPT" || fail 'un receipt BLOCKED debe tener ACCEPTANCE: PENDING'
+    grep -Eq '^[[:space:]]*VERIFY_EXIT:[[:space:]]*[0-9]+[[:space:]]*$' "$RECEIPT" || fail 'un receipt BLOCKED debe tener VERIFY_EXIT numérico'
+    grep -Eq '^[[:space:]]*EVIDENCE:[[:space:]]*[^[:space:]].*$' "$RECEIPT" || fail 'un receipt BLOCKED debe tener EVIDENCE no vacío'
+    printf '[automatic-workflow] BLOCKED: se conserva el estado activo; no se declara PASS.\n' >&2
+    exit 0
+    ;;
+  PASS) ;;
+  *)
+    fail 'el receipt debe tener STATUS: PASS o STATUS: BLOCKED'
+    ;;
+esac
+
 grep -Eq '^[[:space:]]*ACCEPTANCE:[[:space:]]*PASS[[:space:]]*$' "$RECEIPT" || fail 'el receipt no tiene ACCEPTANCE: PASS'
 grep -Eq '^[[:space:]]*VERIFY_EXIT:[[:space:]]*0[[:space:]]*$' "$RECEIPT" || fail 'el receipt no tiene VERIFY_EXIT: 0'
 grep -Eq '^[[:space:]]*EVIDENCE:[[:space:]]*[^[:space:]].*$' "$RECEIPT" || fail 'el receipt no tiene EVIDENCE no vacío'

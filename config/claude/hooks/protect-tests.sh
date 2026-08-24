@@ -33,6 +33,8 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
 PERMISSION_MODE=$(echo "$INPUT" | jq -r '.permission_mode // ""' 2>/dev/null)
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+PROJECT_DIR="${CWD:-$PWD}"
 
 OWNED="${TMPDIR:-/tmp}/claude-owned-tests-${SESSION_ID:-nosession}"
 
@@ -67,7 +69,7 @@ gate() {
   case "$PERMISSION_MODE" in
     bypassPermissions | dontAsk)
       local root
-      root=$(git rev-parse --show-toplevel 2>/dev/null)
+      root=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null)
       if [ -n "$root" ] && [ -f "$root/.claude-relaxed" ]; then
         allow
       fi

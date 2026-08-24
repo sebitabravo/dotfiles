@@ -229,6 +229,7 @@ fi
 # decision ni imponer una herramienta de build que el proyecto no necesita.
 QG_LIB="$(dirname "${BASH_SOURCE[0]}")/lib/test-runner.sh"
 # shellcheck source=lib/test-runner.sh
+# shellcheck disable=SC1091
 [ -f "$QG_LIB" ] && . "$QG_LIB"
 
 detect_project_at() {

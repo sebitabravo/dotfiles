@@ -46,6 +46,7 @@ SUITES=(
   .github/test/check-provider-runtime-parity.test.sh
   .github/test/sync-convergence-runtime.test.sh
   .github/test/test-runner.test.sh
+  .github/test/hooks-edge-cases.test.sh
   .github/test/test-swarmforge-workflow.sh
   .github/test/commit-msg.test.sh
 )

@@ -58,6 +58,23 @@ set -e
 [ "$rc" -eq 2 ]
 grep -Fq 'falta el receipt' "$TMP/missing.err"
 
+echo '== explicit blocked receipt preserves active state without a hook error'
+automation_activate "$PROJECT" blocked oneshot
+receipt=$(automation_receipt_path "$PROJECT" blocked)
+cat >"$receipt" <<'EOF'
+STATUS: BLOCKED
+ACCEPTANCE: PENDING
+VERIFY_EXIT: 0
+EVIDENCE: external service is unavailable
+EOF
+set +e
+payload blocked | "$HOOK" >/dev/null 2>"$TMP/blocked.err"
+rc=$?
+set -e
+[ "$rc" -eq 0 ]
+grep -Fq 'BLOCKED: se conserva el estado activo' "$TMP/blocked.err"
+[ -s "$STATE/blocked.json" ]
+
 echo '== green roadmap, receipt, diff check and native runner pass'
 activate green
 payload green | "$HOOK" >/dev/null

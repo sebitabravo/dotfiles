@@ -90,12 +90,19 @@ La instrucción del usuario es accionable. Ejecutá este ciclo completo sin que 
 6. Sólo termina cuando todos los tasks estén completos y la aceptación pase. Si falta una decisión, permiso o servicio externo real, queda BLOCKED y explica exactamente qué falta.
 
 Receipt obligatorio de esta sesión: $RECEIPT
-Antes de terminar, escribilo con estas líneas y evidencia concreta:
+Sólo si terminaste el trabajo escribilo con estas líneas y evidencia concreta:
 ROADMAP: <ruta relativa al roadmap>
 STATUS: PASS
 ACCEPTANCE: PASS
 VERIFY_EXIT: 0
 EVIDENCE: <comandos frescos y resultado observable>
+
+Si existe un bloqueo externo real que impide continuar, no inventes PASS:
+escribí un receipt interino con STATUS: BLOCKED, ACCEPTANCE: PENDING,
+VERIFY_EXIT: <código numérico> y EVIDENCE: <bloqueo concreto>. El Stop hook
+conservará el estado activo sin declarar éxito; una próxima instrucción lo
+retoma. No uses BLOCKED para trabajo simplemente incompleto: si hay subagentes
+en curso, esperá sus reportes con las herramientas nativas antes de terminar.
 
 El Stop hook revalida el roadmap, el receipt, git diff --check y el runner nativo. No digas DONE/PASS mientras ese gate no pase.
 EOF

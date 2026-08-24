@@ -116,6 +116,18 @@ set -e
 grep -Fq 'pendiente' "$TMP/blocked.err"
 [ -s "$SESSION_STATE" ]
 
+printf '%s\n' '== un bloqueo explícito conserva el estado sin simular PASS'
+cat >"$SESSION_RECEIPT" <<'EOF'
+ROADMAP: TASK-ROADMAP.md
+STATUS: BLOCKED
+ACCEPTANCE: PENDING
+VERIFY_EXIT: 0
+EVIDENCE: external dependency unavailable; work must resume later
+EOF
+stop_payload "$SESSION_ID" | "$STOP" >"$TMP/non-final.out" 2>"$TMP/non-final.err"
+grep -Fq 'BLOCKED: se conserva el estado activo' "$TMP/non-final.err"
+[ -s "$SESSION_STATE" ]
+
 printf '%s\n' '== Tasks requieren contrato y receipts PASS'
 task_payload TaskCreated task-001 '[T001] Create first artifact' \
   "$(task_description none src/one.txt 'src/one.txt existe y no está vacío' task-001)" | "$TASK_CONTRACT"

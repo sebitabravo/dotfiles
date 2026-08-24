@@ -122,7 +122,15 @@ _detect_js() {
   manager=$(_js_manager "$dir")
   command -v "$manager" >/dev/null 2>&1 || return 1
 
-  if [ "$script" = test ]; then
+  # `bun test` is not an alias for the "test" script -- Bun special-cases the
+  # bare form to invoke its own built-in native test runner instead, unlike
+  # npm/pnpm/yarn where `<manager> test` really is shorthand for `run test`.
+  # A repo whose package.json declares "test": "vitest run" (or any other
+  # non-Bun runner) would get silently run under the wrong tool, and Bun's
+  # partial Jest/Vitest-compat shim (missing `vi.mocked`, different `vi.fn`
+  # call-forwarding for tagged templates) turns passing tests red for no
+  # real reason. `bun run test` always means "run the package.json script".
+  if [ "$script" = test ] && [ "$manager" != bun ]; then
     _emit "$dir" "$root" "$manager test"
   else
     _emit "$dir" "$root" "$manager run $script"

@@ -23,9 +23,14 @@ set -u
 
 # Consume the hook payload. `stop_hook_active` no es un bypass: si la evidencia
 # sigue fallando, el segundo intento también debe quedar bloqueado.
-cat >/dev/null 2>&1 || true
+INPUT=$(cat 2>/dev/null || printf '%s' '{}')
+CWD=""
+if command -v jq >/dev/null 2>&1; then
+  CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+fi
+PROJECT_DIR="${CWD:-$PWD}"
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" 2>/dev/null || exit 0
 
 [ -f "$ROOT/.claude-relaxed" ] && exit 0

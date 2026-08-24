@@ -3,7 +3,10 @@
 # Checks that modified code has corresponding tests before declaring done.
 # Does not block (exit 0), only reports to stderr as a QA reminder.
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+INPUT=$(cat 2>/dev/null || printf '%s' '{}')
+CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+PROJECT_DIR="${CWD:-$PWD}"
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PROJECT_DIR")
 cd "$ROOT" 2>/dev/null || exit 0
 
 WARNINGS=""
@@ -25,7 +28,8 @@ if [ -n "$CHANGED_FILES" ]; then
   SRC_FILES=$(echo "$CHANGED_FILES" | grep -E '^src/|^app/|^lib/|^internal/' | grep -vE 'test|spec|__test__|\.test\.|\.spec\.' || true)
   if [ -n "$SRC_FILES" ]; then
     MISSING_TESTS=""
-    for src in $SRC_FILES; do
+    while IFS= read -r src; do
+      [ -n "$src" ] || continue
       # Find corresponding test file
       base=$(basename "$src")
       dir=$(dirname "$src")
@@ -51,7 +55,7 @@ if [ -n "$CHANGED_FILES" ]; then
       if [ "$has_test" = false ]; then
         MISSING_TESTS="${MISSING_TESTS}\n  - $src"
       fi
-    done
+    done <<< "$SRC_FILES"
     if [ -n "$MISSING_TESTS" ]; then
       WARNINGS="${WARNINGS}\n[qa-checklist] Files without corresponding test:${MISSING_TESTS}"
     fi
@@ -60,18 +64,22 @@ fi
 
 # 2. Check for debug statements in modified files
 DEBUG_FOUND=""
-for file in $CHANGED_FILES; do
+while IFS= read -r file; do
+  [ -n "$file" ] || continue
   if [ -f "$file" ]; then
     # Hook infrastructure prints JSON on stdout/stderr by contract. It is not
     # a production debug statement, so never report it as console.log/print.
     case "$file" in
       */hooks/*) continue ;;
     esac
-    if grep -nE '(console\.(log|warn|error|debug)|print\(|var_dump|dd\(|debugger|binding\.pry|byebug)' "$file" 2>/dev/null | grep -qE '^\s*[0-9]+:\s*(console|print|var_dump|dd|debugger|binding|byebug)'; then
+    # `print()` es salida normal en Python CLIs y scripts, no prueba de debug.
+    # Detectamos primitivas explícitas de debugger para no reportar falsos
+    # positivos como el de scripts/validate-task-roadmap.py.
+    if grep -nE '(console\.(log|warn|error|debug)|breakpoint\(|pdb\.set_trace|debugger|binding\.pry|byebug|var_dump|dd\()' "$file" 2>/dev/null | grep -qE '^\s*[0-9]+:\s*(console|breakpoint|pdb|debugger|binding|byebug|var_dump|dd)'; then
       DEBUG_FOUND="${DEBUG_FOUND}\n  - $file"
     fi
   fi
-done
+done <<< "$CHANGED_FILES"
 if [ -n "$DEBUG_FOUND" ]; then
   WARNINGS="${WARNINGS}\n[qa-checklist] Debug statements detected:${DEBUG_FOUND}"
 fi
@@ -80,7 +88,8 @@ fi
 # Solo archivos de codigo: en .md y en los propios hooks la palabra "TODO"
 # aparece como texto legitimo (este script se auto-reportaba por su propia regex).
 TODO_FOUND=""
-for file in $CHANGED_FILES; do
+while IFS= read -r file; do
+  [ -n "$file" ] || continue
   [ -f "$file" ] || continue
   case "$file" in
     *.md | *.txt | *.rst | *.adoc) continue ;;
@@ -91,7 +100,7 @@ for file in $CHANGED_FILES; do
   if grep -qE '(//|#|/\*|\*|<!--)[[:space:]]*(TODO|FIXME|HACK|XXX)\b' "$file" 2>/dev/null; then
     TODO_FOUND="${TODO_FOUND}\n  - $file"
   fi
-done
+done <<< "$CHANGED_FILES"
 if [ -n "$TODO_FOUND" ]; then
   WARNINGS="${WARNINGS}\n[qa-checklist] Unresolved TODO/FIXME:${TODO_FOUND}"
 fi
