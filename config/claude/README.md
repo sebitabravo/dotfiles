@@ -230,9 +230,12 @@ traversal (`.`/`..`) no prueban ownership. El validador bloquea ownership
 ausente, ambiguo o solapado.
 El hook no ejecuta texto del prompt, tasks ni receipts. El Stop hook exige
 roadmap completo, receipt `STATUS: PASS`, `ACCEPTANCE: PASS`, `VERIFY_EXIT: 0`,
-`git diff --check` y un runner nativo fresco. Si algo falla, la sesión sigue en
-iteración; si falta una decisión, permiso o integración externa, se reporta
-`BLOCKED` en vez de aceptar un resultado parcial.
+`git diff --check` y un runner nativo fresco para declarar convergencia. Si algo
+falla, la sesión sigue en iteración; si falta una decisión, permiso o
+integración externa, se reporta `STATUS: BLOCKED`, `ACCEPTANCE: PENDING`, un
+`VERIFY_EXIT` numérico y evidencia. Ese estado conserva la sesión activa sin
+simular PASS; no se debe usar para trabajo simplemente incompleto o subagentes
+que todavía no entregan sus reportes.
 
 El overlay de Qwen usa el endpoint Anthropic-compatible de **QwenCloud Token
 Plan Personal/Team**. Declara `qwen3.8-max[1m]` para Fable/Opus,

@@ -89,14 +89,17 @@ En modo automático, el agente debe:
 5. escribir el receipt de la sesión sólo después de que el roadmap esté
    completo, acceptance pase y el runner nativo termine con exit 0.
 
-El hook `automatic-workflow-stop.sh` bloquea el cierre de una sesión activa si
-falta cualquiera de esas pruebas. No ejecuta `VERIFY:` ni comandos copiados de
-prompts, tasks o receipts: sólo corre el validador versionado del roadmap,
-`openspec validate` cuando corresponde, `git diff --check` y el test runner
-nativo detectado por `hooks/lib/test-runner.sh`. `CLAUDE_SKIP_TEST_RUN` no es un
-bypass. Un bloqueo real por permisos, decisión de alcance, instalación,
-credenciales o servicio externo se reporta como `BLOCKED`; no se convierte en
-DONE ni en PASS parcial.
+El hook `automatic-workflow-stop.sh` bloquea el cierre convergente de una sesión
+activa si falta cualquiera de esas pruebas. No ejecuta `VERIFY:` ni comandos
+copiados de prompts, tasks o receipts: sólo corre el validador versionado del
+roadmap, `openspec validate` cuando corresponde, `git diff --check` y el test
+runner nativo detectado por `hooks/lib/test-runner.sh`. `CLAUDE_SKIP_TEST_RUN` no
+es un bypass. Un bloqueo real por permisos, decisión de alcance, instalación,
+credenciales o servicio externo se reporta como `STATUS: BLOCKED` con
+`ACCEPTANCE: PENDING`, `VERIFY_EXIT` numérico y evidencia; el hook conserva el
+estado activo sin emitir error ni declararlo DONE/PASS. Trabajo incompleto o
+subagentes en curso no es un bloqueo: hay que seguir trabajando o esperar sus
+reportes antes de cerrar.
 
 La activación automática es política y contexto, no una garantía de que el
 modelo entienda una aceptación semántica que el repositorio no puede ejecutar.

@@ -130,6 +130,19 @@ Before ending the session:
     VERIFY_EXIT: 0
     EVIDENCE: <fresh commands and observable result>
 
+If a real external blocker prevents continuation, write an interim receipt
+instead of fabricating PASS:
+
+    STATUS: BLOCKED
+    ACCEPTANCE: PENDING
+    VERIFY_EXIT: <numeric exit code>
+    EVIDENCE: <specific blocker and what must change>
+
+The Stop hook preserves the active state for this explicit non-final outcome
+without reporting a hook error or calling it PASS. Do not use BLOCKED merely
+because work is incomplete or background agents have not returned; wait for
+their native task results and continue the verification loop.
+
 The Stop hook is authoritative. If it blocks, diagnose its exact evidence
 failure and continue; never delete its state marker to force a response.
 

@@ -42,6 +42,7 @@ __pycache__/
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
+HANDOFF.md.archived.*
 
 # Roadmap del workflow automatico — estado de sesion, no un artefacto versionado
 TASK-ROADMAP.md

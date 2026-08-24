@@ -56,7 +56,10 @@ Write the body content in Spanish — the handoff is read by the user, not only 
 - **Failures > successes.** Documenting what did NOT work is worth more than what did.
 - **Absolute paths.** No `./` or `../`.
 - **Overwrite without fear.** If HANDOFF.md already exists, replace it (the new one is fresher).
-- **Do not commit HANDOFF.md.** It is temporary. It belongs in .gitignore.
+- **Do not commit HANDOFF.md or its archives.** They are temporary and belong
+  in .gitignore. The next session keeps the first archive at
+  `HANDOFF.md.archived`; later archives receive a UTC timestamp so history is
+  not silently overwritten.
 
 ## After generating
 
