@@ -12,7 +12,8 @@ if [ "$#" -ne 2 ]; then
 fi
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-VALIDATOR="$SCRIPT_DIR/validate-task-roadmap.py"
+REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+VALIDATOR=${CLAUDE_VALIDATOR:-$REPO_ROOT/config/claude/scripts/validate-task-roadmap.py}
 BASELINE=$1
 CANDIDATE=$2
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/task-roadmap-compare.XXXXXX")

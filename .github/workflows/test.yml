@@ -18,8 +18,11 @@ jobs:
       - name: install.sh test suite
         run: bash .github/test.sh
 
-      - name: config/claude validate.sh
-        run: bash config/claude/scripts/validate.sh
+      - name: git diff --check
+        run: git diff --check
+
+      - name: repository validation suites
+        run: bash .github/validate.sh
 
       - name: shellcheck config/macos
-        run: shellcheck config/macos/defaults.sh config/macos/verify.sh
+        run: shellcheck config/macos/defaults.sh .github/verify.sh

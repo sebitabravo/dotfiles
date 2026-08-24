@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 SCRIPT="$ROOT/config/claude/scripts/sync-convergence-runtime.sh"
-PARITY="$ROOT/config/claude/scripts/check-runtime-parity.sh"
+PARITY="$ROOT/.github/test/check-runtime-parity.sh"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/sync-convergence-runtime-test.XXXXXX")
 RUNTIME="$TMP/.claude"
 trap 'find "$TMP" -type f -delete; find "$TMP" -depth -type d -empty -delete 2>/dev/null || true' EXIT

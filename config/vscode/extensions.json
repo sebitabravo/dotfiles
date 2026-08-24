@@ -16,8 +16,7 @@
   "theme": [
     "zhuangtongfa.material-theme",
     "miguelsolorio.symbols",
-    "miguelsolorio.fluent-icons",
-    "illixion.vscode-vibrancy-continued"
+    "miguelsolorio.fluent-icons"
   ],
   "tools": [
     "wallabyjs.console-ninja",
@@ -37,8 +36,7 @@
   ],
   "frontend": [
     "bradlc.vscode-tailwindcss",
-    "astro-build.astro-vscode",
-    "vue.volar"
+    "astro-build.astro-vscode"
   ],
   "android": [
     "fwcd.kotlin",
@@ -48,19 +46,14 @@
     "swiftlang.swift-vscode",
     "llvm-vs-code-extensions.lldb-dap"
   ],
-  "dotnet": [
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.csdevkit",
-    "ms-dotnettools.vscode-dotnet-runtime",
-    "visualstudiotoolsforunity.vstuc"
-  ],
   "go": [
     "golang.go"
   ],
   "remote": [
     "ms-vscode-remote.remote-ssh",
     "ms-vscode-remote.remote-ssh-edit",
-    "ms-vscode.remote-explorer"
+    "ms-vscode.remote-explorer",
+    "ms-vscode.remote-server"
   ],
   "speech": [
     "ms-vscode.vscode-speech"

@@ -34,8 +34,8 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Drivers & Hardware
 
-- [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
-- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
+- [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers>
+- [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
 - [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
 - [ ] **Drive** - <https://workspace.google.com/products/drive>
@@ -43,46 +43,50 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Herramientas Especiales
 
-- [ ] **AlDente** - <https://apphousekitchen.com/aldente-overview/>
-- [ ] **Parsec** - <https://parsecgaming.com/downloads/>
-- [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner/>
-- [ ] **Bartender** - <https://www.macbartender.com/>
-- [ ] **CodexBar** - <https://codexbar.app/>
+- [ ] **AlDente** - <https://apphousekitchen.com/aldente-overview>
+- [ ] **Parsec** - <https://parsecgaming.com/downloads>
+- [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner>
+- [ ] **Bartender** - <https://www.macbartender.com>
+- [ ] **CodexBar** - <https://codexbar.app>
 - [ ] **Flow** - <https://wisprflow.ai>
 
 ### Terminal & Development
 
 - [ ] **Ghostty** - <https://ghostty.org/download>
-- [ ] **Visual Studio Code** - <https://code.visualstudio.com/>
-- [ ] **OrbStack** - <https://orbstack.dev/download/>
-- [ ] **Android Studio** - <https://developer.android.com/studio/>
-- [ ] **TablePlus** - <https://tableplus.com/>
-- [ ] **Tiny Shield** - <https://tinyshield.proxyman.com/>
-- [ ] **Bruno** - <https://www.usebruno.com/downloads/>
-- [ ] **Laravel Herd** - <https://herd.laravel.com/>
+- [ ] **Visual Studio Code** - <https://code.visualstudio.com>
+- [ ] **OrbStack** - <https://orbstack.dev/download>
+- [ ] **Android Studio** - <https://developer.android.com/studio>
+- [ ] **TablePlus** - <https://tableplus.com>
+- [ ] **Tiny Shield** - <https://tinyshield.proxyman.com>
+- [ ] **Bruno** - <https://www.usebruno.com/downloads>
+- [ ] **Laravel Herd** - <https://herd.laravel.com>
+- [ ] **Cyberduck** - <https://cyberduck.io/download>
+- [ ] **VMware Fusion** - <https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion>
+- [ ] **Ollama** - <https://ollama.com/download/mac>
 
 ### IA & Coding Agents
 
-- [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
+- [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect>
 
 ### Browsers
 
-- [ ] **Google Chrome** - <https://www.google.com/chrome/>
+- [ ] **Google Chrome** - <https://www.google.com/chrome>
 - [ ] **Zen** - <https://zen-browser.app/download>
 
 ### Productividad
 
-- [ ] **Raycast** - <https://www.raycast.com/>
+- [ ] **Raycast** - <https://www.raycast.com>
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
 
 ### Media & Content
 
-- [ ] **IINA** - <https://iina.io/>
-- [ ] **Affinity** - <https://www.affinity.studio/>
+- [ ] **IINA** - <https://iina.io>
+- [ ] **Affinity** - <https://www.affinity.studio>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
-- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
-- [ ] **OBS Studio** - <https://obsproject.com>
+- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
+- [ ] **Audacity** - <https://www.audacityteam.org/download/mac>
+- [ ] **Meld Studio** - <https://meldstudio.co/download>
 
 ---
 
@@ -96,6 +100,7 @@ nvm install 22
 nvm use 24
 nvm alias default 24
 corepack enable pnpm
+pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
@@ -112,21 +117,48 @@ pyenv install 3.11.1
 pyenv global 3.14.7
 ```
 
-### Oh My Zsh
+### Bootstrap de prerrequisitos y herramientas de shell/agentes
 
-Configurar Oh My Zsh manualmente:
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-```
-
-### Powerlevel10k Theme
-
-Configurar Powerlevel10k manualmente:
+Desde la raíz del repositorio, el bootstrap completo instala o verifica Apple
+Command Line Tools, Homebrew, Oh My Zsh, Powerlevel10k, Herdr, CodeGraph,
+Gentle-AI y las CLIs de agentes:
 
 ```bash
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+./install.sh --dry-run
+./install.sh
 ```
+
+El dry-run no descarga ni modifica el sistema. En modo real, `xcode-select
+--install` puede abrir una aprobación gráfica de macOS; completala y volvé a
+ejecutar `./install.sh`. Homebrew también puede requerir aprobación
+administrativa. El script omite componentes que ya estén disponibles.
+
+Estas son las fuentes oficiales actuales que ejecuta el bootstrap:
+
+```text
+https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+xcode-select --install
+https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+https://github.com/romkatv/powerlevel10k.git
+https://herdr.dev/install.sh
+https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh
+https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh
+https://opencode.ai/install
+https://chatgpt.com/codex/install.sh
+https://cursor.com/install
+https://antigravity.google/cli/install.sh
+https://claude.ai/install.sh
+https://gh.io/copilot-install
+https://kilo.ai/cli/install
+```
+
+Son fuentes remotas mutables y no tienen checksums fijados en este repositorio;
+revisá el dry-run y el contenido upstream antes de ejecutar el bootstrap si
+necesitás reproducibilidad fuerte.
+
+El bootstrap no ejecuta `brew bundle`, no instala las apps de esta guía y no
+configura autenticación de CLIs, integraciones de Herdr, `config/macos/defaults.sh`
+ni secretos/API keys. Esas decisiones y configuraciones siguen siendo manuales.
 
 ### instalar Sail
 
@@ -134,31 +166,26 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-
 php artisan sail:install
 ```
 
-### Multi agents
+### Configuracion de herdr
 
 ```bash
-curl -fsSL https://herdr.dev/install.sh | sh
-curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
-curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash
+herdr integration install codex
+herdr integration install claude
+herdr integration install opencode
+herdr integration install cursor
+herdr integration install antigravity
+herdr integration install copilot
+herdr integration install kilo
 ```
 
-### IA
-
-Instalar inteligencias artificiales IA:
+### Gentle-AI
 
 ```bash
-curl -fsSL https://opencode.ai/install | bash
-opencode auth login
-```
-
-```bash
-curl -fsSL https://chatgpt.com/codex/install.sh | sh
-curl https://cursor.com/install -fsS | bash
-curl -fsSL https://antigravity.google/cli/install.sh | bash
-curl -fsSL https://claude.ai/install.sh | bash
-curl -fsSL https://gh.io/copilot-install | bash
-curl -fsSL https://kilo.ai/cli/install | bash
-curl -fsSL https://cli.kiro.dev/install | bash
+gentle-ai install \
+  --scope global \
+  --preset full-gentleman \
+  --persona gentleman \
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
 ```
 
 ---

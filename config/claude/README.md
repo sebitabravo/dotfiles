@@ -10,7 +10,7 @@ claves son opcionales: Claude Code normal funciona sin ellos.
 ## Qué contiene
 
 | Ruta | Propósito |
-|---|---|
+| --- | --- |
 | `settings.json` | Configuración principal, permisos, hooks, MCP y `opusplan`. |
 | `CLAUDE.md` | Instrucciones globales para Claude Code. |
 | `agents/` | Agentes especializados. |
@@ -19,7 +19,7 @@ claves son opcionales: Claude Code normal funciona sin ellos.
 | `hooks/` | Validaciones y automatizaciones de ciclo de vida. |
 | `templates/` | Plantillas para SDD y documentación. |
 | `output-styles/` | Estilos de respuesta. |
-| `scripts/` | Helpers de validación, dependencias y autenticación. |
+| `scripts/` | Helpers de runtime: convergencia, RDD, autenticación y roadmap. |
 | `agent-tools/` | Manifest de herramientas Python/Node/Rust sin runtimes duplicados. |
 | `statusline.sh` | Statusline personalizada. |
 | `mcp-servers.json` | Servidores MCP declarados por esta configuración. |
@@ -27,6 +27,15 @@ claves son opcionales: Claude Code normal funciona sin ellos.
 
 Los overlays no se inyectan dentro de `settings.json`. Cada uno es un archivo
 separado que se activa con `--settings`.
+
+La carpeta contiene sólo fuentes que el runtime puede usar. Que un archivo
+contenga la palabra `test` o `validate` no lo vuelve automáticamente una suite:
+`hooks/lib/test-runner.sh` es una librería runtime consumida por varios Stop
+hooks, `scripts/validate-task-roadmap.py` valida roadmaps durante el flujo
+automático y los validadores dentro de una skill implementan capacidades de esa
+skill. Las auditorías del repositorio, smoke tests, paridad, comparación de
+roadmaps, dependencias y el doctor viven fuera de esta carpeta, en
+`.github/test/`, y no se instalan en `~/.claude`.
 
 ## Instalación
 
@@ -112,7 +121,7 @@ Todos son opcionales. Cada proveedor tiene su propio settings y su propio
 helper de autenticación:
 
 | Proveedor | Overlay | Endpoint | Fable / Opus | Sonnet | Haiku / background |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | DeepSeek | `deepseek.settings.json` | `api.deepseek.com/anthropic` | `deepseek-v4-pro[1m]` | `deepseek-v4-flash[1m]` | `deepseek-v4-flash` |
 | GLM / Z.AI | `glm.settings.json` | `api.z.ai/api/anthropic` | `glm-5.3[1m]` | `glm-5.2[1m]` | `glm-4.7` |
 | Kimi / Moonshot | `kimi.settings.json` | `api.moonshot.ai/anthropic` | `kimi-k3[1m]` | `kimi-k2.6` | `kimi-k2.5` |
@@ -254,64 +263,6 @@ con el endpoint de Coding Plan. Coding Plan usa por separado
 `https://coding-intl.dashscope.aliyuncs.com/apps/anthropic`; Pay-as-you-go usa
 `https://dashscope-intl.aliyuncs.com/apps/anthropic`.
 
-## OpenSpec y SDD
-
-Esta configuración contiene las reglas y el preflight para OpenSpec, pero no
-instala el CLI ni inicializa proyectos automáticamente. OpenSpec tiene dos
-partes distintas:
-
-- `openspec ...` corre en la terminal y pertenece al CLI global;
-- `/opsx:*` corre dentro del chat y aparece después de inicializar cada
-  proyecto con OpenSpec.
-
-El CLI usa Node.js 20.19 o superior. Con el Node existente bajo Herd, la
-instalación y activación, ejecutadas solo con autorización explícita, son:
-
-```bash
-npm install -g @fission-ai/openspec@latest
-cd /ruta/al/proyecto
-openspec init --tools claude
-openspec --version
-openspec status --json
-```
-
-`openspec init` es por proyecto: no se reemplaza copiando sus archivos
-generados a `~/.claude`. Revisá primero qué escribe en `openspec/` y `.claude/`
-para no mezclarlo con la configuración gestionada en esta carpeta. El layout
-actual usa `openspec/specs/` y `openspec/changes/`; no combines esas rutas con
-el formato legacy `specs/<slug>/` del scaffold local.
-
-Importante: `openspec status --json` sólo demuestra que el CLI encontró el root
-y pudo leer su estado. No demuestra que Claude Code tenga los comandos `/opsx:*`
-generados. Esa integración se verifica por separado después de
-`openspec init --tools claude`; la activación automática no inicializa ni
-instala nada silenciosamente. Si los comandos no existen, el hook instruye al
-agente a usar `openspec instructions`/el CLI nativo o a reportar el setup
-autorizado que falta.
-
-Además, los comandos generados por OpenSpec 1.9.0 no son equivalentes al flujo
-oneshot: `/opsx:propose` tiene un límite de planning-only y espera otra petición
-antes de aplicar. Por eso el skill `automatic-task-orchestrator` usa
-`openspec new change`, `status`, `instructions` y `validate` directamente para
-encadenar planificación y ejecución cuando el prompt es claro. `/opsx:propose`
-se conserva como workflow explícito de planificación.
-
-En este repositorio el runtime quedó verificado con OpenSpec `1.9.0`,
-`openspec doctor --json` saludable y el profile global `core`. Ese profile no
-genera `/opsx:verify`; para habilitar el workflow ampliado hay que cambiar el
-profile global y regenerar los artefactos del proyecto, siempre con
-autorización explícita:
-
-```bash
-openspec config profile expanded
-openspec update
-```
-
-Mientras el profile siga en `core`, la regla de convergencia usa los comandos
-nativos del proyecto como gate equivalente. El `openspec/config.yaml` local ya
-declara que no se puede marcar una tarea ni archivar mientras falte evidencia
-PASS de aceptación y verificación.
-
 ### Gate de convergencia real
 
 La política escrita no basta para obligar al agente a continuar. Para una
@@ -335,10 +286,10 @@ La fuente y el runtime se auditan por separado. Antes de afirmar que el gate
 está activo en Claude Code, ejecutá desde este repositorio:
 
 ```bash
-config/claude/scripts/check-runtime-parity.sh --json
-config/claude/scripts/check-runtime-parity.sh --strict
-config/claude/scripts/check-provider-runtime-parity.sh --json
-config/claude/scripts/check-provider-runtime-parity.sh --strict
+.github/test/check-runtime-parity.sh --json
+.github/test/check-runtime-parity.sh --strict
+.github/test/check-provider-runtime-parity.sh --json
+.github/test/check-provider-runtime-parity.sh --strict
 ```
 
 El auditor es de solo lectura y compara los archivos/hooks de convergencia,
@@ -369,7 +320,7 @@ Después de modificar la fuente o antes de una sesión autenticada, podés
 verificar el motor real de hooks sin tocar tu runtime ni consumir inferencia:
 
 ```bash
-bash config/claude/scripts/smoke-claude-hook-engine.sh
+bash .github/test/smoke-claude-hook-engine.sh
 ```
 
 El smoke usa un `HOME` temporal, sincroniza allí el harness, ejecuta
@@ -379,7 +330,7 @@ el smoke conversacional de `UserPromptSubmit`, Task tools y `Stop`.
 Para verificar el contrato completo sin consumir inferencia, ejecutá además:
 
 ```bash
-bash config/claude/scripts/smoke-automatic-workflow.sh
+bash .github/test/smoke-automatic-workflow.sh
 ```
 
 Ese smoke simula `UserPromptSubmit`, una sesión incompleta que Stop debe
@@ -396,7 +347,7 @@ Las claves nunca forman parte del repositorio. Los helpers de los proveedores
 HTTP buscan estos archivos locales, todos con permisos `0600`:
 
 | Proveedor | Archivo |
-|---|---|
+| --- | --- |
 | DeepSeek | `~/.config/claude/deepseek.key` |
 | GLM / Z.AI | `~/.config/claude/glm.key` |
 | Kimi / Moonshot | `~/.config/claude/kimi.key` |
@@ -461,12 +412,20 @@ No hace falta un `Makefile` ni una suite de tests para instalar estos dotfiles.
 Para revisar una copia local, desde `CLAUDE_DIR`:
 
 ```bash
-bash "$CLAUDE_DIR/scripts/validate.sh"
+bash "$CLAUDE_DIR/../../.github/validate.sh"
 ```
 
 La validación comprueba la estructura de la configuración, los manifiestos y
-las dependencias declaradas. No prueba credenciales ni garantiza que un
-proveedor externo responda.
+las dependencias declaradas. No forma parte del runtime instalado, no prueba
+credenciales ni garantiza que un proveedor externo responda. Para una auditoría
+read-only del entorno efectivo de Claude, Herdr, Engram y MCP:
+
+```bash
+bash "$CLAUDE_DIR/../../.github/test/doctor.sh"
+```
+
+Las suites, smoke tests, paridad y el doctor viven en `.github/test/` de forma
+intencional: prueban la configuración, pero Claude no los carga como runtime.
 
 ## Principios de esta configuración
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-COMPARATOR="$ROOT/config/claude/scripts/compare-task-roadmaps.sh"
+COMPARATOR="$ROOT/.github/test/compare-task-roadmaps.sh"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/task-roadmap-compare-test.XXXXXX")
 trap 'find "$TMP" -type f -delete; rmdir "$TMP" 2>/dev/null || true' EXIT
 

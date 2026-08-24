@@ -7,13 +7,14 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-CLAUDE_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+CLAUDE_DIR="$REPO_ROOT/config/claude"
 
 AUTOMATIC="$CLAUDE_DIR/hooks/automatic-workflow.sh"
 STOP="$CLAUDE_DIR/hooks/automatic-workflow-stop.sh"
 TASK_CONTRACT="$CLAUDE_DIR/hooks/task-contract.sh"
 STATE_LIB="$CLAUDE_DIR/hooks/lib/automatic-workflow-state.sh"
-VALIDATOR="$SCRIPT_DIR/validate-task-roadmap.py"
+VALIDATOR="$CLAUDE_DIR/scripts/validate-task-roadmap.py"
 RUNNER="$CLAUDE_DIR/hooks/lib/test-runner.sh"
 
 command -v jq >/dev/null 2>&1 || {

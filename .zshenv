@@ -54,6 +54,7 @@ setup_user_path() {
 
   path_promote "$HOME/.pyenv/shims"
   path_promote "$HOME/.console-ninja/.bin"
+  path_promote "$HOME/.kilo/bin"
   path_promote "$HOME/.opencode/bin"
   path_promote "$PNPM_HOME/bin"
   path_promote "$HOME/Library/Application Support/Herd/bin"

@@ -8,7 +8,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-SOURCE_ROOT=$(cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SOURCE_ROOT=${CLAUDE_SOURCE_DIR:-$REPO_ROOT/config/claude}
 RUNTIME_ROOT=${CLAUDE_RUNTIME_DIR:-$HOME/.claude}
 JSON_MODE=false
 STRICT=false

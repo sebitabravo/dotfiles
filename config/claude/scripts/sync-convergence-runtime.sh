@@ -8,7 +8,8 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SOURCE_ROOT=$(cd -- "$SCRIPT_DIR/.." && pwd)
-PARITY="$SCRIPT_DIR/check-runtime-parity.sh"
+REPO_ROOT=$(cd -- "$SOURCE_ROOT/../.." && pwd)
+PARITY=${CLAUDE_PARITY_SCRIPT:-$REPO_ROOT/.github/test/check-runtime-parity.sh}
 RUNTIME_ROOT=${CLAUDE_RUNTIME_DIR:-$HOME/.claude}
 APPLY=false
 STAMP=$(date +%Y%m%d%H%M%S)
@@ -205,6 +206,35 @@ merge_settings() {
   printf '  MERGE %s\n' "$RUNTIME_SETTINGS"
 }
 
+verify_runtime_minimal() {
+  local failures=0 relative
+  for relative in "${FILES[@]}"; do
+    if [ ! -f "$RUNTIME_ROOT/$relative" ]; then
+      printf '[sync] falta en runtime: %s\n' "$relative" >&2
+      failures=$((failures + 1))
+    elif [[ "$relative" == *.sh || "$relative" == hooks/compact-resume.py ]] \
+      && [ ! -x "$RUNTIME_ROOT/$relative" ]; then
+      printf '[sync] runtime no ejecutable: %s\n' "$relative" >&2
+      failures=$((failures + 1))
+    fi
+  done
+
+  if ! jq -e --arg automatic_user_prompt "$AUTOMATIC_USER_PROMPT_CMD" \
+    --arg user_prompt "$USER_PROMPT_CMD" \
+    --arg automatic_stop "$AUTOMATIC_STOP_CMD" \
+    --arg stop "$STOP_CMD" '
+      ([.hooks.UserPromptSubmit[]?.hooks[]?.command] | map(select(. == $automatic_user_prompt)) | length == 1)
+      and ([.hooks.UserPromptSubmit[]?.hooks[]?.command] | map(select(. == $user_prompt)) | length == 1)
+      and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $automatic_stop)) | length == 1)
+      and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $stop)) | length == 1)
+    ' "$RUNTIME_SETTINGS" >/dev/null; then
+    printf '[sync] settings.json no contiene exactamente los hooks de convergencia esperados.\n' >&2
+    failures=$((failures + 1))
+  fi
+
+  return "$failures"
+}
+
 printf 'source:  %s\nruntime: %s\nmode:    %s\n' \
   "$SOURCE_ROOT" "$RUNTIME_ROOT" "$([ "$APPLY" = true ] && printf apply || printf dry-run)"
 for relative in "${FILES[@]}"; do
@@ -213,7 +243,12 @@ done
 merge_settings
 
 if [ "$APPLY" = true ]; then
-  "$PARITY" --strict
+  if [ -f "$PARITY" ]; then
+    CLAUDE_SOURCE_DIR="$SOURCE_ROOT" bash "$PARITY" --strict
+  else
+    printf '[sync] parity suite no disponible; ejecuto verificación mínima del runtime.\n'
+    verify_runtime_minimal
+  fi
 else
   printf '[sync] dry-run: no se modificó ningún archivo.\n'
 fi

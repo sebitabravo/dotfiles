@@ -8,7 +8,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-SYNC="$SCRIPT_DIR/sync-convergence-runtime.sh"
+REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SYNC="$REPO_ROOT/config/claude/scripts/sync-convergence-runtime.sh"
 PARITY="$SCRIPT_DIR/check-runtime-parity.sh"
 
 command -v claude >/dev/null 2>&1 || {

@@ -73,7 +73,7 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(gitfast)
+plugins=(gitfast docker)
 
 # Compinit caching — evita doble inicializacion (oh-my-zsh skip global)
 skip_global_compinit=1
@@ -161,8 +161,7 @@ source <(fzf --zsh) 2>/dev/null
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
-# Engram Cloud (NAS via Tailscale) — set token in ~/.engram-cloud.env
-[[ -f "$HOME/.engram-cloud.env" ]] && source "$HOME/.engram-cloud.env"
+# Engram Cloud credentials are read by ~/.local/bin/engram from macOS Keychain.
 
 # Herd PHP configuration
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
@@ -194,6 +193,20 @@ if [[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]
 fi
 if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
   builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# Herdr — abrir automáticamente solo en shells interactivos de Ghostty.
+# HERDR_ENV, TMUX y ZELLIJ evitan sesiones anidadas; HERDR_AUTO_START=0 permite
+# abrir un shell local puntual sin entrar al workspace persistente.
+if [[ "${HERDR_AUTO_START:-1}" != "0" \
+   && "${TERM_PROGRAM:-}" == "ghostty" \
+   && $- == *i* \
+   && -t 1 \
+   && -z "${HERDR_ENV:-}" \
+   && -z "${TMUX:-}" \
+   && -z "${ZELLIJ:-}" ]] \
+   && command -v herdr >/dev/null 2>&1; then
+  exec herdr
 fi
 
 fastfetch

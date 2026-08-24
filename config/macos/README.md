@@ -14,7 +14,7 @@ reflejan como esta configurada hoy, no una propuesta teorica.
 ```bash
 chmod +x defaults.sh && ./defaults.sh --dry-run   # revisar antes de aplicar
 ./defaults.sh                                     # aplicar de verdad
-./verify.sh                                       # auditar el resultado
+../../.github/verify.sh                           # auditar el resultado (desde config/macos/)
 ```
 
 `defaults.sh` reporta cada item como `[SET]` (se aplico), `[SKIP]` (ya estaba

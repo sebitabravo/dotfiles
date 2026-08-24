@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-SCRIPT="$ROOT/config/claude/scripts/check-runtime-parity.sh"
+SCRIPT="$ROOT/.github/test/check-runtime-parity.sh"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/runtime-parity-test.XXXXXX")
 RUNTIME="$TMP/.claude"
 trap 'rm -rf "$TMP"' EXIT
