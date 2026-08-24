@@ -44,6 +44,7 @@ brew "wabt"
 brew "wget"
 brew "btop"
 brew "fastfetch"
+brew "rust"
 
 brew "ffuf"
 brew "nuclei"

@@ -1,7 +1,7 @@
 # Sebita Dotfiles
 
 Configuración personal para **macOS Apple Silicon**. Instala copias independientes
-de shell, Git, Ghostty, VS Code y Claude Code; no crea symlinks hacia el repo.
+de shell, Git, Ghostty, Fastfetch, VS Code y Claude Code; no crea symlinks hacia el repo.
 
 ## Antes de instalar
 
@@ -9,6 +9,7 @@ de shell, Git, Ghostty, VS Code y Claude Code; no crea symlinks hacia el repo.
 2. Instalá las dependencias del `Brewfile`:
 
    ```bash
+   xcode-select --install
    brew bundle --file=Brewfile
    ```
 
@@ -44,6 +45,7 @@ bash config/claude/scripts/validate.sh
 bash config/claude/scripts/check-runtime-parity.sh --strict
 bash config/claude/scripts/check-provider-runtime-parity.sh --strict
 ghostty +validate-config --config-file="$HOME/.config/ghostty/config.ghostty"
+fastfetch --config="$HOME/.config/fastfetch/config.jsonc"
 brew bundle check --no-upgrade --file=Brewfile
 ```
 
@@ -56,6 +58,7 @@ inferencia de un provider externo.
 - `.zshenv`, `.zprofile`, `.zshrc` y `.p10k.zsh`.
 - `.gitconfig`, ignore global y hooks globales.
 - configuración y shaders de Ghostty.
+- configuración y logo de Fastfetch.
 - settings, keybindings y MCP de VS Code.
 - runtime administrado de Claude Code: agentes, skills, hooks, reglas, scripts,
   templates, settings y overlays de providers.

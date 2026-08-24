@@ -113,8 +113,10 @@ completo con `--no-sudo`.
 |---|---|---|
 | Developer mode | `DevToolsSecurity -status` dice disabled | `sudo DevToolsSecurity -disable` |
 | Power Nap off | esta en 1 (AC o bateria) | `sudo pmset -a powernap 1` |
+| Wake settings | siempre fija `womp 0` y `proximitywake 1` | `sudo pmset -a womp 1 proximitywake 0` |
 | Auto-restart en freeze/corte de luz | no esta configurado | `sudo pmset -a autorestart 0` + `sudo systemsetup -setrestartfreeze off` |
 | SSH remoto apagado | esta prendido | `sudo systemsetup -setremotelogin on` — dejalo prendido si lo usas para desarrollo |
+| Login Window muestra hostname | `AdminHostInfo` no es `HostName` | `sudo defaults delete /Library/Preferences/com.apple.loginwindow AdminHostInfo` |
 | Touch ID para sudo | `/etc/pam.d/sudo_local` no existe | `sudo rm /etc/pam.d/sudo_local` |
 | `/Volumes` visible en Finder | tiene el flag hidden | `sudo chflags hidden /Volumes` |
 

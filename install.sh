@@ -112,6 +112,9 @@ copy_dir git-hooks                "$HOME/.git-hooks"
 echo "terminal"
 copy_dir config/ghostty "$HOME/.config/ghostty"
 
+echo "fastfetch"
+copy_dir config/fastfetch "$HOME/.config/fastfetch"
+
 echo "vscode"
 VSCODE="$HOME/Library/Application Support/Code/User"
 copy config/vscode/settings.json    "$VSCODE/settings.json"

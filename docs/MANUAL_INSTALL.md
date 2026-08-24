@@ -14,6 +14,7 @@ Estas apps se instalan desde la App Store de macOS:
   - [ ] PowerPoint
   - [ ] Word
   - [ ] Excel
+  - [ ] OneDrive
 - [ ] **Tailscale** - VPN fácil de usar
 - [ ] **PPTControl Desktop** - Control remoto para PowerPoint
 - [ ] **Dark Reader** - Modo oscuro para sitios web
@@ -36,6 +37,9 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers/>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition/>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
+- [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
+- [ ] **Drive** - <https://workspace.google.com/products/drive>
+- [ ] **Dropbox** - <https://www.dropbox.com/install>
 
 ### Herramientas Especiales
 
@@ -61,6 +65,11 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect/>
 
+### Browsers
+
+- [ ] **Google Chrome** - <https://www.google.com/chrome/>
+- [ ] **Zen** - <https://zen-browser.app/download>
+
 ### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com/>
@@ -73,6 +82,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Affinity** - <https://www.affinity.studio/>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34/>
+- [ ] **OBS Studio** - <https://obsproject.com>
 
 ---
 
@@ -82,6 +92,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ```bash
 nvm install 24
+nvm install 22
 nvm use 24
 nvm alias default 24
 corepack enable pnpm
@@ -96,8 +107,9 @@ npm install -g @playwright/cli@latest
 ### Python (con pyenv)
 
 ```bash
-pyenv install 3.14.3
-pyenv global 3.14.3
+pyenv install 3.14.7
+pyenv install 3.11.1
+pyenv global 3.14.7
 ```
 
 ### Oh My Zsh

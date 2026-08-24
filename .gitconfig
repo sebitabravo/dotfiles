@@ -33,6 +33,37 @@
 	ls = !eza --git --group-directories-first --icons=auto
 	ll = !eza --git --group-directories-first --icons=auto -l
 	la = !eza --git --group-directories-first --icons=auto -la
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+
+[pull]
+	rebase = true
+
+[push]
+	autoSetupRemote = true
+
+[diff]
+	algorithm = histogram
+	colorMoved = plain
+	mnemonicPrefix = true
+
+[commit]
+	verbose = true
+
+[column]
+	ui = auto
+
+[branch]
+	sort = -committerdate
+
+[tag]
+	sort = -version:refname
+
+[rerere]
+	enabled = true
+	autoupdate = true
 
 # Identidad (nombre/email/signingkey) en ~/.gitconfig.local, fuera del repo.
 # Crearlo al instalar en una maquina nueva — ver docs/MANUAL_INSTALL.md.

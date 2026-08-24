@@ -196,6 +196,8 @@ if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting
   builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
+fastfetch
+
 # claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
 # claude a secas queda igual que siempre (Anthropic).
 claude() {

@@ -86,6 +86,22 @@ else
   ok "Power Nap desactivado"
 fi
 
+if pmset -g custom 2>/dev/null | grep -Eq "womp[[:space:]]+0"; then
+  ok "Wake for network access desactivado (womp=0)"
+else
+  warn "Wake for network access activo: sudo pmset -a womp 0 proximitywake 1"
+fi
+
+if pmset -g cap 2>/dev/null | grep -qi proximitywake; then
+  if pmset -g custom 2>/dev/null | grep -Eq "proximitywake[[:space:]]+1"; then
+    ok "Wake by proximity activado"
+  else
+    warn "Wake by proximity desactivado: sudo pmset -a womp 0 proximitywake 1"
+  fi
+else
+  skip "Wake by proximity no expuesto por este hardware (pmset -g cap)"
+fi
+
 # autorestart es de los settings que pmset -g solo muestra en "Currently in
 # use" cuando la maquina esta en AC (documentado, igual que womp). Verificado
 # con el cargador puesto en este M3 Air: `pmset -g cap` no lista "autorestart"
@@ -116,13 +132,18 @@ if sudo -n true 2>/dev/null; then
   else
     warn "Bloqueo de pantalla: revisar en Ajustes > Pantalla bloqueada"
   fi
+  if sudo defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo 2>/dev/null | grep -qx "HostName"; then
+    ok "Login Window muestra HostName"
+  else
+    warn "Login Window sin HostName: sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName"
+  fi
   if sudo systemsetup -getremotelogin 2>/dev/null | grep -qi "Off"; then
     ok "SSH remoto apagado"
   else
     warn "SSH remoto prendido (puede ser intencional si lo usas para desarrollo)"
   fi
 else
-  skip "sudo sin cache: correr con 'sudo -v' antes para incluir estos 3 checks"
+  skip "sudo sin cache: correr con 'sudo -v' antes para incluir estos 4 checks"
 fi
 
 echo "--- Tier 1: keys de usuario de mayor impacto ---"

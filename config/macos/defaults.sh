@@ -143,7 +143,7 @@ apply_default "Launchpad hide speed" com.apple.dock springboard-hide-duration -f
 apply_default "Launchpad page scroll instant" com.apple.dock springboard-page-duration -float 0
 
 # ── Dock ───────────────────────────────────────────────────────────
-apply_default "Dock tile size = 48px" com.apple.dock tilesize -int 48
+apply_default "Dock tile size = 48px" com.apple.dock tilesize -int 36
 
 apply_default "Dock minimize effect = scale" com.apple.dock mineffect -string "scale"
 
@@ -189,6 +189,11 @@ elif (
 else
   echo "[FAIL] Hot corner inferior derecha desactivada"
 fi
+
+# Las cuatro esquinas quedan desactivadas con valores explicitos y versionables.
+apply_default "Hot corner superior izquierda desactivada" com.apple.dock wvous-tl-corner -int 1
+apply_default "Hot corner superior derecha desactivada" com.apple.dock wvous-tr-corner -int 1
+apply_default "Hot corner inferior izquierda desactivada" com.apple.dock wvous-bl-corner -int 1
 
 # ── Trackpad ───────────────────────────────────────────────────────
 apply_default "Trackpad tracking speed" NSGlobalDomain com.apple.trackpad.scaling -float 1.5
@@ -259,6 +264,10 @@ elif (
 else
   echo "[FAIL] Centro de notificaciones desde el borde derecho"
 fi
+
+# Paridad con Hyprland: scroll natural desactivado. Se deja separado de los
+# ajustes especificos del trackpad para conservar ambos dispositivos.
+apply_default "Scroll natural desactivado" NSGlobalDomain com.apple.swipescrolldirection -bool false
 
 # ── Keyboard ───────────────────────────────────────────────────────
 if [ "$DRY_RUN" -eq 1 ]; then
@@ -430,6 +439,9 @@ apply_default "Archive Utility auto-trash after extract" com.apple.archiveutilit
 
 # ── Apariencia ─────────────────────────────────────────────────────
 apply_default "Modo oscuro" NSGlobalDomain AppleInterfaceStyle -string "Dark"
+
+# Evita que macOS vuelva automaticamente al modo claro al cambiar la hora.
+delete_default "Modo oscuro no cambia automaticamente" NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically
 
 apply_default "Color de seleccion grafito" NSGlobalDomain AppleHighlightColor -string "0.847059 0.847059 0.862745 Graphite"
 
@@ -1095,6 +1107,13 @@ else
     echo "[SKIP] Power Nap ya desactivado"
   fi
 
+  # Wake for network access off + wake by proximity on, exactamente como la
+  # politica elegida para esta Mac. `proximitywake` solo tiene efecto en
+  # hardware compatible; pmset puede aceptar el write aunque el equipo no lo
+  # exponga en `pmset -g cap`.
+  apply_sudo "Wake settings (womp 0, proximitywake 1)" \
+    sudo pmset -a womp 0 proximitywake 1
+
   # Auto-restart tras freeze o corte de luz. Verificado con el cargador
   # puesto: `pmset -g cap` no lista "autorestart" entre las capacidades de
   # este M3 Air (si aparece en un iMac). El write de abajo devuelve exito
@@ -1135,6 +1154,13 @@ else
     echo "[SKIP] /Volumes ya visible"
   else
     apply_sudo "/Volumes visible en Finder" sudo chflags nohidden /Volumes
+  fi
+
+  if sudo defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo 2>/dev/null | grep -qx "HostName"; then
+    echo "[SKIP] Login Window muestra HostName"
+  else
+    apply_sudo "Login Window muestra HostName" \
+      sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
   fi
 
   # Touch ID para sudo — mecanismo oficial sudo_local de Apple (Sonoma+),
