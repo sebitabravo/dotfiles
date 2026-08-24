@@ -117,49 +117,6 @@ pyenv install 3.11.1
 pyenv global 3.14.7
 ```
 
-### Bootstrap de prerrequisitos y herramientas de shell/agentes
-
-Desde la raíz del repositorio, el bootstrap completo instala o verifica Apple
-Command Line Tools, Homebrew, Oh My Zsh, Powerlevel10k, Herdr, CodeGraph,
-Gentle-AI y las CLIs de agentes:
-
-```bash
-./install.sh --dry-run
-./install.sh
-```
-
-El dry-run no descarga ni modifica el sistema. En modo real, `xcode-select
---install` puede abrir una aprobación gráfica de macOS; completala y volvé a
-ejecutar `./install.sh`. Homebrew también puede requerir aprobación
-administrativa. El script omite componentes que ya estén disponibles.
-
-Estas son las fuentes oficiales actuales que ejecuta el bootstrap:
-
-```text
-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
-xcode-select --install
-https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-https://github.com/romkatv/powerlevel10k.git
-https://herdr.dev/install.sh
-https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh
-https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh
-https://opencode.ai/install
-https://chatgpt.com/codex/install.sh
-https://cursor.com/install
-https://antigravity.google/cli/install.sh
-https://claude.ai/install.sh
-https://gh.io/copilot-install
-https://kilo.ai/cli/install
-```
-
-Son fuentes remotas mutables y no tienen checksums fijados en este repositorio;
-revisá el dry-run y el contenido upstream antes de ejecutar el bootstrap si
-necesitás reproducibilidad fuerte.
-
-El bootstrap no ejecuta `brew bundle`, no instala las apps de esta guía y no
-configura autenticación de CLIs, integraciones de Herdr, `config/macos/defaults.sh`
-ni secretos/API keys. Esas decisiones y configuraciones siguen siendo manuales.
-
 ### instalar Sail
 
 ```bash
