@@ -127,6 +127,7 @@ php artisan sail:install
 ```bash
 curl -fsSL https://herdr.dev/install.sh | sh
 curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash
 ```
 
 ### IA

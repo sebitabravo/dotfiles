@@ -42,6 +42,8 @@ brew "poppler"
 brew "shellcheck"
 brew "wabt"
 brew "wget"
+brew "btop"
+brew "fastfetch"
 
 brew "ffuf"
 brew "nuclei"
