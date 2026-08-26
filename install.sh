@@ -219,11 +219,8 @@ CLAUDE_FILES=(
   config/claude/settings.json
   config/claude/deepseek.settings.json
   config/claude/glm.settings.json
-  config/claude/kimi.settings.json
-  config/claude/minimax.settings.json
   config/claude/ollama.settings.json
   config/claude/openrouter.settings.json
-  config/claude/qwen.settings.json
 )
 
 REQUIRED_FILES=(

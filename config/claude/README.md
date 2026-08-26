@@ -71,11 +71,8 @@ for file in \
   settings.json \
   deepseek.settings.json \
   glm.settings.json \
-  kimi.settings.json \
-  minimax.settings.json \
   ollama.settings.json \
-  openrouter.settings.json \
-  qwen.settings.json; do
+  openrouter.settings.json; do
   cp -p "$CLAUDE_DIR/$file" "$HOME/.claude/$file"
 done
 
@@ -124,11 +121,8 @@ helper de autenticación:
 | --- | --- | --- | --- | --- | --- |
 | DeepSeek | `deepseek.settings.json` | `api.deepseek.com/anthropic` | `deepseek-v4-pro[1m]` | `deepseek-v4-flash[1m]` | `deepseek-v4-flash` |
 | GLM / Z.AI | `glm.settings.json` | `api.z.ai/api/anthropic` | `glm-5.3[1m]` | `glm-5.2[1m]` | `glm-4.7` |
-| Kimi / Moonshot | `kimi.settings.json` | `api.moonshot.ai/anthropic` | `kimi-k3[1m]` | `kimi-k2.6` | `kimi-k2.5` |
-| MiniMax | `minimax.settings.json` | `api.minimax.io/anthropic` | `MiniMax-M3[1m]` | `MiniMax-M3[1m]` | `MiniMax-M3` |
 | Ollama Cloud (API directa) | `ollama.settings.json` | `ollama.com` | `minimax-m3:cloud` | `gemma4:31b-cloud` | `gpt-oss:120b-cloud` |
 | OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `deepseek/deepseek-v4-pro` | `openai/gpt-5.6-luna` | `openrouter/free` |
-| QwenCloud Token Plan | `qwen.settings.json` | `token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic` | `qwen3.8-max[1m]` | `qwen3.7-max[1m]` | `qwen3.6-flash` |
 
 Los modelos de la tabla son **las elecciones de esta configuración**, no
 defaults universales. La disponibilidad, los precios y los límites de cada
@@ -158,11 +152,6 @@ inferencia real. Si preferís el bridge local, la integración oficial usa
 `http://localhost:11434`, `ANTHROPIC_AUTH_TOKEN=ollama` y un Ollama instalado,
 iniciado y autenticado.
 
-La guía dedicada de Claude Code de MiniMax para su endpoint internacional
-actual recomienda `MiniMax-M3[1m]` y autocompact en `1000000`. La documentación
-genérica de la API Anthropic todavía muestra M2.7/204800, por lo que no se deben
-mezclar ambas variantes: este overlay sigue la guía dedicada de Claude Code.
-
 ### Activación
 
 Si también copiaste el wrapper de `.zshrc`, podés usar los comandos cortos:
@@ -170,11 +159,8 @@ Si también copiaste el wrapper de `.zshrc`, podés usar los comandos cortos:
 ```bash
 claude --deepseek
 claude --glm
-claude --kimi
-claude --minimax
 claude --ollama
 claude --openrouter
-claude --qwen
 ```
 
 El wrapper de `.zshrc` **no está dentro de `config/claude/`**. Si copiás sólo
@@ -183,7 +169,6 @@ esta carpeta, usá directamente el overlay que necesités:
 ```bash
 claude --settings ~/.claude/deepseek.settings.json
 claude --settings ~/.claude/openrouter.settings.json
-claude --settings ~/.claude/qwen.settings.json
 ```
 
 El resto de los overlays se activa de la misma forma cambiando el nombre del
@@ -246,23 +231,6 @@ integración externa, se reporta `STATUS: BLOCKED`, `ACCEPTANCE: PENDING`, un
 simular PASS; no se debe usar para trabajo simplemente incompleto o subagentes
 que todavía no entregan sus reportes.
 
-El overlay de Qwen usa el endpoint Anthropic-compatible de **QwenCloud Token
-Plan Personal/Team**. Declara `qwen3.8-max[1m]` para Fable/Opus,
-`qwen3.7-max[1m]` para Sonnet, `qwen3.6-flash` para Haiku/background y un
-autocompact de `983616` tokens. El sufijo `[1m]` es metadata de Claude Code y se
-elimina antes de enviar el ID de producción al provider; no es parte del ID de
-Qwen. Para seleccionar explícitamente el modelo principal:
-
-```bash
-claude --qwen --model qwen3.8-max
-```
-
-La clave de `~/.config/claude/qwen.key` debe ser la clave dedicada del Token
-Plan (`sk-sp-...`). No la mezcles con una clave general de Pay-as-you-go ni
-con el endpoint de Coding Plan. Coding Plan usa por separado
-`https://coding-intl.dashscope.aliyuncs.com/apps/anthropic`; Pay-as-you-go usa
-`https://dashscope-intl.aliyuncs.com/apps/anthropic`.
-
 ### Gate de convergencia real
 
 La política escrita no basta para obligar al agente a continuar. Para una
@@ -297,7 +265,7 @@ one-shot y el skill orquestador; no borra ni sincroniza `~/.claude`. Un `MISSING
 `--strict` significa que la fuente está preparada pero la sesión efectiva aún
 no está protegida.
 
-La auditoría de providers es independiente: compara semánticamente los siete
+La auditoría de providers es independiente: compara semánticamente los cuatro
 overlays JSON. Ignora formato/orden de claves y considera equivalentes el alias
 `opus` y el `ANTHROPIC_DEFAULT_OPUS_MODEL` declarado en ese mismo overlay; no
 ignora otros overrides. Tampoco prueba autenticación, endpoint vivo ni
@@ -350,10 +318,7 @@ HTTP buscan estos archivos locales, todos con permisos `0600`:
 | --- | --- |
 | DeepSeek | `~/.config/claude/deepseek.key` |
 | GLM / Z.AI | `~/.config/claude/glm.key` |
-| Kimi / Moonshot | `~/.config/claude/kimi.key` |
-| MiniMax | `~/.config/claude/minimax.key` |
 | OpenRouter | `~/.config/claude/openrouter.key` |
-| QwenCloud Token Plan | `~/.config/claude/qwen.key` (`sk-sp-...`) |
 
 Ejemplo para crear una clave sin dejarla en el historial del shell:
 
@@ -376,8 +341,7 @@ export DEEPSEEK_API_KEY_FILE="$HOME/.config/claude/deepseek.key"
 ```
 
 Los nombres de las variables disponibles son `DEEPSEEK_API_KEY_FILE`,
-`GLM_API_KEY_FILE`, `KIMI_API_KEY_FILE`, `MINIMAX_API_KEY_FILE`,
-`OPENROUTER_API_KEY_FILE` y `QWEN_API_KEY_FILE`.
+`GLM_API_KEY_FILE` y `OPENROUTER_API_KEY_FILE`.
 
 Claude Code ejecuta cada `apiKeyHelper` sólo en la CLI de terminal y envía su
 salida como `X-Api-Key` y `Authorization: Bearer`. Eso permite mantener las

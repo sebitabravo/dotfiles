@@ -409,7 +409,7 @@ printf '%s\n' '== Claude provider wrapper =='
 WRAPPER_HOME="$TMP_HOME/wrapper-home"
 WRAPPER_BIN="$TMP_HOME/wrapper-bin"
 mkdir -p "$WRAPPER_HOME/.claude" "$WRAPPER_BIN"
-for overlay in deepseek glm kimi minimax openrouter ollama qwen; do
+for overlay in deepseek glm openrouter ollama; do
   printf '{}\n' >"$WRAPPER_HOME/.claude/$overlay.settings.json"
 done
 cat >"$WRAPPER_BIN/claude" <<'EOF'

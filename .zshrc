@@ -234,17 +234,14 @@ claude() {
     -u ENABLE_TOOL_SEARCH
     -u API_TIMEOUT_MS
   )
-  local use_ds=false use_glm=false use_kimi=false use_mm=false use_or=false use_ol=false use_qwen=false a deepseek_settings glm_settings kimi_settings minimax_settings openrouter_settings ollama_settings qwen_settings claude_bin
+  local use_ds=false use_glm=false use_or=false use_ol=false a deepseek_settings glm_settings openrouter_settings ollama_settings claude_bin
   local provider_count=0
   for a in "$@"; do
     case "$a" in
       --deepseek)   use_ds=true; provider_count=$((provider_count + 1)) ;;
       --glm)        use_glm=true; provider_count=$((provider_count + 1)) ;;
-      --kimi)       use_kimi=true; provider_count=$((provider_count + 1)) ;;
-      --minimax)    use_mm=true; provider_count=$((provider_count + 1)) ;;
       --openrouter) use_or=true; provider_count=$((provider_count + 1)) ;;
       --ollama)     use_ol=true; provider_count=$((provider_count + 1)) ;;
-      --qwen)       use_qwen=true; provider_count=$((provider_count + 1)) ;;
       *)            args+=("$a") ;;
     esac
   done
@@ -287,36 +284,6 @@ claude() {
       "$claude_bin" \
       --settings "$glm_settings" \
       "${args[@]}"
-  elif $use_kimi; then
-    kimi_settings="$HOME/.claude/kimi.settings.json"
-    claude_bin="${commands[claude]:-}"
-    if [[ ! -r "$kimi_settings" ]]; then
-      print -u2 "claude: no se encontro el settings de Kimi: $kimi_settings"
-      return 1
-    fi
-    if [[ -z "$claude_bin" ]]; then
-      print -u2 "claude: binario de Claude Code no encontrado"
-      return 1
-    fi
-    env "${provider_env[@]}" \
-      "$claude_bin" \
-      --settings "$kimi_settings" \
-      "${args[@]}"
-  elif $use_mm; then
-    minimax_settings="$HOME/.claude/minimax.settings.json"
-    claude_bin="${commands[claude]:-}"
-    if [[ ! -r "$minimax_settings" ]]; then
-      print -u2 "claude: no se encontro el settings de MiniMax: $minimax_settings"
-      return 1
-    fi
-    if [[ -z "$claude_bin" ]]; then
-      print -u2 "claude: binario de Claude Code no encontrado"
-      return 1
-    fi
-    env "${provider_env[@]}" \
-      "$claude_bin" \
-      --settings "$minimax_settings" \
-      "${args[@]}"
   elif $use_or; then
     openrouter_settings="$HOME/.claude/openrouter.settings.json"
     claude_bin="${commands[claude]:-}"
@@ -346,21 +313,6 @@ claude() {
     env "${provider_env[@]}" \
       "$claude_bin" \
       --settings "$ollama_settings" \
-      "${args[@]}"
-  elif $use_qwen; then
-    qwen_settings="$HOME/.claude/qwen.settings.json"
-    claude_bin="${commands[claude]:-}"
-    if [[ ! -r "$qwen_settings" ]]; then
-      print -u2 "claude: no se encontro el settings de Qwen: $qwen_settings"
-      return 1
-    fi
-    if [[ -z "$claude_bin" ]]; then
-      print -u2 "claude: binario de Claude Code no encontrado"
-      return 1
-    fi
-    env "${provider_env[@]}" \
-      "$claude_bin" \
-      --settings "$qwen_settings" \
       "${args[@]}"
   else
     command claude "$@"

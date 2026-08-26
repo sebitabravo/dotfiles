@@ -103,16 +103,11 @@ printf '== provider overlays\n'
 for overlay in \
   deepseek.settings.json \
   glm.settings.json \
-  kimi.settings.json \
-  minimax.settings.json \
   ollama.settings.json \
-  openrouter.settings.json \
-  qwen.settings.json; do
+  openrouter.settings.json; do
   # Upper bound is a sanity check against typos (an extra digit), not a
-  # policy cap: kimi.settings.json legitimately declares 1048576 (2^20),
-  # Moonshot's real long-context window, since its very first commit. 2000000
-  # leaves headroom for that and similar real values without disabling the
-  # check.
+  # policy cap. 2000000 leaves headroom for real long-context values without
+  # disabling the check.
   jq -e '
     (.apiKeyHelper | type == "string" and length > 0)
     and (.env.ANTHROPIC_BASE_URL | type == "string" and length > 0)
