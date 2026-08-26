@@ -16,13 +16,13 @@ while [ -L "$SELF" ]; do
   LINK="$(readlink "$SELF")"
   case "$LINK" in
     /*) SELF="$LINK" ;;
-    *)  SELF="$(dirname -- "$SELF")/$LINK" ;;
+    *) SELF="$(dirname -- "$SELF")/$LINK" ;;
   esac
 done
 DOTFILES="$(cd -- "$(dirname -- "$SELF")" && pwd -P)"
 
 case "$#:${1:-}" in
-  0:)          DRY_RUN=0 ;;
+  0:) DRY_RUN=0 ;;
   1:--dry-run) DRY_RUN=1 ;;
   *)
     printf 'uso: %s [--dry-run]\n' "$0" >&2
@@ -91,7 +91,10 @@ prepare_homebrew_path() {
     brew_dir="$(dirname -- "$candidate")"
     case ":$PATH:" in
       *":$brew_dir:"*) ;;
-      *) PATH="$brew_dir:$PATH"; export PATH ;;
+      *)
+        PATH="$brew_dir:$PATH"
+        export PATH
+        ;;
     esac
     return 0
   done
@@ -319,7 +322,10 @@ backup_dir() {
 # configuración instalada aunque mueva o elimine este repositorio.
 copy() {
   local src="$DOTFILES/$1" dst="$2" parent stage backup_path
-  [ -e "$src" ] || { printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2; return 1; }
+  [ -e "$src" ] || {
+    printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2
+    return 1
+  }
   if [ -L "$dst" ]; then
     if [ "$(readlink "$dst")" = "$src" ]; then
       printf '  REMOVE  symlink %s\n' "$dst"
@@ -370,7 +376,10 @@ copy() {
 copy_dir() {
   local src="$DOTFILES/$1" dst="$2"
   local backup_dst changes
-  [ -d "$src" ] || { printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2; return 1; }
+  [ -d "$src" ] || {
+    printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2
+    return 1
+  }
   if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
     printf '  REMOVE  symlink %s\n' "$dst"
     run rm -- "$dst"
@@ -383,7 +392,7 @@ copy_dir() {
     if [ -n "$changes" ]; then
       case "$dst" in
         "$HOME"/*) backup_dst="$BACKUP_ROOT/${dst#"$HOME"/}" ;;
-        *)         backup_dst="$BACKUP_ROOT/absolute/${dst#/}" ;;
+        *) backup_dst="$BACKUP_ROOT/absolute/${dst#/}" ;;
       esac
       backup_dir "$dst" "$backup_dst"
     fi
@@ -408,15 +417,15 @@ install_bootstrap_tools
 printf '\n'
 
 echo "shell"
-copy .zshrc    "$HOME/.zshrc"
-copy .zshenv   "$HOME/.zshenv"
+copy .zshrc "$HOME/.zshrc"
+copy .zshenv "$HOME/.zshenv"
 copy .zprofile "$HOME/.zprofile"
 copy .p10k.zsh "$HOME/.p10k.zsh"
 
 echo "git"
-copy .gitconfig                   "$HOME/.gitconfig"
+copy .gitconfig "$HOME/.gitconfig"
 copy config/git/.gitignore_global "$HOME/.gitignore_global"
-copy_dir git-hooks                "$HOME/.git-hooks"
+copy_dir git-hooks "$HOME/.git-hooks"
 
 echo "terminal"
 copy_dir config/ghostty "$HOME/.config/ghostty"
@@ -428,9 +437,9 @@ copy_dir config/fastfetch "$HOME/.config/fastfetch"
 
 echo "vscode"
 VSCODE="$HOME/Library/Application Support/Code/User"
-copy config/vscode/settings.json    "$VSCODE/settings.json"
+copy config/vscode/settings.json "$VSCODE/settings.json"
 copy config/vscode/keybindings.json "$VSCODE/keybindings.json"
-copy config/vscode/mcp.json         "$VSCODE/mcp.json"
+copy config/vscode/mcp.json "$VSCODE/mcp.json"
 
 echo "claude"
 for d in agents skills hooks rules templates scripts output-styles agent-tools; do

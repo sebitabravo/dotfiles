@@ -30,7 +30,10 @@ payload() {
 printf '%s\n' '== hooks honor payload cwd and preserve paths with spaces'
 printf '%s\n' 'print("normal CLI output")' >>"$PROJECT/src/cli tool.py"
 qa_output=$(cd /tmp && payload qa-space | bash "$QA" 2>&1)
-[ -z "$qa_output" ] || { printf '%s\\n' "$qa_output" >&2; exit 1; }
+[ -z "$qa_output" ] || {
+  printf '%s\\n' "$qa_output" >&2
+  exit 1
+}
 
 printf '%s\n' 'breakpoint()' >>"$PROJECT/src/cli tool.py"
 qa_output=$(cd /tmp && payload qa-debug | bash "$QA" 2>&1)
@@ -41,7 +44,10 @@ if printf '%s' "$qa_output" | grep -Fq 'src/cli'; then
 fi
 
 gauntlet_output=$(cd /tmp && payload gauntlet-space | CLAUDE_SKIP_TEST_RUN=1 bash "$GAUNTLET" 2>&1)
-[ -z "$gauntlet_output" ] || { printf '%s\n' "$gauntlet_output" >&2; exit 1; }
+[ -z "$gauntlet_output" ] || {
+  printf '%s\n' "$gauntlet_output" >&2
+  exit 1
+}
 
 printf '%s\n' '== handoff archives never overwrite prior handoffs'
 printf '%s\n' 'old archive' >"$PROJECT/HANDOFF.md.archived"

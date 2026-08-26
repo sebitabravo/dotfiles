@@ -51,13 +51,13 @@ printf '%s\n' 'example-change' >"$TMP/.claude/convergence.active"
 
 run_hook() {
   (cd "$TMP" && printf '%s' "${1:-{}}" | env \
-      HOME="$TMP/home" \
-      PATH="$TMP/bin:$PATH" \
-      VERIFY_RC="${VERIFY_RC:-0}" \
-      OPEN_SPEC_STATE="${OPEN_SPEC_STATE:-ready}" \
-      OPEN_SPEC_REMAINING="${OPEN_SPEC_REMAINING:-0}" \
-      OPEN_SPEC_VALIDATE="${OPEN_SPEC_VALIDATE:-pass}" \
-      "$HOOK")
+    HOME="$TMP/home" \
+    PATH="$TMP/bin:$PATH" \
+    VERIFY_RC="${VERIFY_RC:-0}" \
+    OPEN_SPEC_STATE="${OPEN_SPEC_STATE:-ready}" \
+    OPEN_SPEC_REMAINING="${OPEN_SPEC_REMAINING:-0}" \
+    OPEN_SPEC_VALIDATE="${OPEN_SPEC_VALIDATE:-pass}" \
+    "$HOOK")
 }
 
 expect_rc() {

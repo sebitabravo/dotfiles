@@ -30,7 +30,7 @@ fi
 
 # `gh api --input` publishes a file whose contents are not visible in the hook
 # command. Fail closed rather than claiming it was reviewed.
-if echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+api\b' && \
+if echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+api\b' &&
   echo "$cmd_str" | grep -qE '(^|[[:space:]])--input([=[:space:]]|$)'; then
   echo '[Privacy Review] BLOCKED — gh api --input publishes file contents that this command-only review cannot verify. Review the file explicitly and use redacted inline fields or publish it manually.' >&2
   exit 2

@@ -39,8 +39,8 @@ run_case() {
     "HERDR_MARKER=$marker" \
     "TERM_PROGRAM=ghostty" \
     "$@" \
-    zsh -f -i "$TMP/runner.zsh" >"$TMP/$name.output" 2>&1 \
-    || fail "$name: zsh guard execution failed"
+    zsh -f -i "$TMP/runner.zsh" >"$TMP/$name.output" 2>&1 ||
+    fail "$name: zsh guard execution failed"
 }
 
 run_case starts HERDR_AUTO_START=1 HERDR_ENV= TMUX= ZELLIJ=

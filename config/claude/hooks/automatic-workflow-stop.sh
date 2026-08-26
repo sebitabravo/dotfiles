@@ -59,7 +59,7 @@ grep -Eq '^[[:space:]]*EVIDENCE:[[:space:]]*[^[:space:]].*$' "$RECEIPT" || fail 
 
 ROADMAP=$(receipt_value ROADMAP)
 case "$ROADMAP" in
-  ''|/*|..|../*|*/../*|*/..|./*|*/./*|*/.)
+  '' | /* | .. | ../* | */../* | */.. | ./* | */./* | */.)
     fail "ROADMAP debe ser una ruta relativa segura: $ROADMAP"
     ;;
 esac
@@ -122,7 +122,7 @@ case "$ROADMAP" in
     CHANGE=${ROADMAP#openspec/changes/}
     CHANGE=${CHANGE%/tasks.md}
     case "$CHANGE" in
-      ''|*[!a-zA-Z0-9._-]*|.|..) fail "change OpenSpec inválido en ROADMAP: $CHANGE" ;;
+      '' | *[!a-zA-Z0-9._-]* | . | ..) fail "change OpenSpec inválido en ROADMAP: $CHANGE" ;;
     esac
     command -v openspec >/dev/null 2>&1 || fail 'OpenSpec CLI no está en PATH'
     openspec validate "$CHANGE" --type change --json >/dev/null 2>&1 || fail "openspec validate falló para $CHANGE"

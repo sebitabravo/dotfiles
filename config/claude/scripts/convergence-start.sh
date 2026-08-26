@@ -10,7 +10,7 @@ usage() {
 [ "$#" -eq 1 ] || usage
 CHANGE=$1
 case "$CHANGE" in
-  ''|*[!a-zA-Z0-9._-]*|.|..) usage ;;
+  '' | *[!a-zA-Z0-9._-]* | . | ..) usage ;;
 esac
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {

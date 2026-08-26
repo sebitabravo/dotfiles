@@ -50,7 +50,7 @@ STATE_LIB="$(dirname "$0")/lib/automatic-workflow-state.sh"
 MODE=""
 if automation_is_active "$ROOT" "$SESSION_ID"; then
   MODE="follow_up"
-elif printf '%s' "$NORMALIZED" | grep -Eq "$ACTIONABLE_RE" || \
+elif printf '%s' "$NORMALIZED" | grep -Eq "$ACTIONABLE_RE" ||
   printf '%s' "$NORMALIZED" | grep -Eq "$OUTCOME_INTENT_RE"; then
   MODE="oneshot"
 else
@@ -74,7 +74,8 @@ else
   SPECS='Si el cambio es simple, reutiliza el único roadmap directo existente entre TASK-ROADMAP.md, task-roadmap.md y .claude/task-roadmap.md; si no existe, crea sólo TASK-ROADMAP.md en la raíz con IDs y [depends_on: ...]. No crees aliases ni una segunda copia. No uses .claude/task-roadmap.md por defecto: Claude Code puede tratar esa ruta como archivo sensible y bloquear el oneshot. Si es complejo y OpenSpec no está inicializado, reporta el bloqueo exacto en vez de inicializarlo silenciosamente.'
 fi
 
-CONTEXT=$(cat <<EOF
+CONTEXT=$(
+  cat <<EOF
 AUTOMATIC ONESHOT WORKFLOW: ACTIVE
 $PHASE
 

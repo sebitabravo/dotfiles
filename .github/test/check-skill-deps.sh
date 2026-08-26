@@ -58,12 +58,12 @@ if [ -z "$PYTHON_BIN" ] && command -v pyenv >/dev/null 2>&1; then
     PYTHON_BIN="$candidate"
   fi
 fi
-if [ -z "$PYTHON_BIN" ] && command -v python3 >/dev/null 2>&1 \
-  && python3 -c 'import sys' >/dev/null 2>&1; then
+if [ -z "$PYTHON_BIN" ] && command -v python3 >/dev/null 2>&1 &&
+  python3 -c 'import sys' >/dev/null 2>&1; then
   PYTHON_BIN="python3"
 fi
-if [ -z "$PYTHON_BIN" ] && [ -x /usr/bin/python3 ] \
-  && /usr/bin/python3 -c 'import sys' >/dev/null 2>&1; then
+if [ -z "$PYTHON_BIN" ] && [ -x /usr/bin/python3 ] &&
+  /usr/bin/python3 -c 'import sys' >/dev/null 2>&1; then
   PYTHON_BIN=/usr/bin/python3
 fi
 if [ -z "$PYTHON_BIN" ] && command -v uv >/dev/null 2>&1; then

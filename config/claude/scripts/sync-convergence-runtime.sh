@@ -16,8 +16,8 @@ STAMP=$(date +%Y%m%d%H%M%S)
 
 case "${1:-}" in
   --apply) APPLY=true ;;
-  ''|--dry-run) ;;
-  -h|--help)
+  '' | --dry-run) ;;
+  -h | --help)
     cat <<'EOF'
 Uso: sync-convergence-runtime.sh [--dry-run|--apply]
 
@@ -72,7 +72,7 @@ for relative in "${FILES[@]}"; do
     exit 1
   }
   case "$relative" in
-    *.sh|hooks/compact-resume.py)
+    *.sh | hooks/compact-resume.py)
       [ -x "$SOURCE_ROOT/$relative" ] || {
         printf '[sync] fuente no ejecutable: %s\n' "$relative" >&2
         exit 1
@@ -212,8 +212,8 @@ verify_runtime_minimal() {
     if [ ! -f "$RUNTIME_ROOT/$relative" ]; then
       printf '[sync] falta en runtime: %s\n' "$relative" >&2
       failures=$((failures + 1))
-    elif [[ "$relative" == *.sh || "$relative" == hooks/compact-resume.py ]] \
-      && [ ! -x "$RUNTIME_ROOT/$relative" ]; then
+    elif [[ "$relative" == *.sh || "$relative" == hooks/compact-resume.py ]] &&
+      [ ! -x "$RUNTIME_ROOT/$relative" ]; then
       printf '[sync] runtime no ejecutable: %s\n' "$relative" >&2
       failures=$((failures + 1))
     fi

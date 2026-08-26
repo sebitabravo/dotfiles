@@ -18,7 +18,7 @@ for arg in "$@"; do
   case "$arg" in
     --json) JSON_MODE=true ;;
     --strict) STRICT=true ;;
-    -h|--help)
+    -h | --help)
       cat <<'EOF'
 Uso: check-provider-runtime-parity.sh [--json] [--strict]
 
@@ -68,7 +68,7 @@ record() {
     '. + [{path: $path, status: $status, detail: $detail}]')
   case "$status" in
     MATCH) [ "$JSON_MODE" = true ] || printf '[provider-parity] MATCH   %s\n' "$path" ;;
-    MISSING|DRIFT|ERROR)
+    MISSING | DRIFT | ERROR)
       FAILURES=$((FAILURES + 1))
       [ "$JSON_MODE" = true ] || printf '[provider-parity] %-7s %s — %s\n' "$status" "$path" "$detail" >&2
       ;;

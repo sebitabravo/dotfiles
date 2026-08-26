@@ -73,7 +73,7 @@ fi
 
 # El nombre viaja a comandos como argumento, nunca se evalúa como shell.
 case "$CHANGE" in
-  *[!a-zA-Z0-9._-]*|.|..)
+  *[!a-zA-Z0-9._-]* | . | ..)
     echo "[convergence] nombre de change inválido: $CHANGE" >&2
     exit 2
     ;;
@@ -108,7 +108,7 @@ if [ "$STATE" = "blocked" ]; then
 fi
 
 case "$REMAINING" in
-  ''|*[!0-9]*)
+  '' | *[!0-9]*)
     echo "[convergence] OpenSpec no entregó un progreso verificable para '$CHANGE'." >&2
     exit 2
     ;;

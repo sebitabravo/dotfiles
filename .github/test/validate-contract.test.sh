@@ -26,10 +26,10 @@ done < <(
 if grep -Eq 'CONFIG VALID|SKIPPED|not present \(local suite\)' "$VALIDATE"; then
   fail 'validate.sh still contains a partial-success path for skipped suites'
 fi
-grep -q 'VALIDATION BLOCKED: required suite is missing' "$VALIDATE" \
-  || fail 'validate.sh does not block a missing declared suite'
-grep -q 'VALIDATION BLOCKED: shellcheck is required' "$VALIDATE" \
-  || fail 'validate.sh does not block missing lint coverage'
+grep -q 'VALIDATION BLOCKED: required suite is missing' "$VALIDATE" ||
+  fail 'validate.sh does not block a missing declared suite'
+grep -q 'VALIDATION BLOCKED: shellcheck is required' "$VALIDATE" ||
+  fail 'validate.sh does not block missing lint coverage'
 
 # Ejecuta el guard real con una copia mínima del árbol: no basta con que el
 # mensaje exista, una suite declarada que falte debe detener la validación.
@@ -61,7 +61,7 @@ missing_output=$(bash "$TMP/.github/validate.sh" 2>&1)
 missing_rc=$?
 set -e
 [ "$missing_rc" -eq 2 ] || fail "missing suite returned exit $missing_rc instead of 2"
-printf '%s\n' "$missing_output" | grep -q 'VALIDATION BLOCKED: required suite is missing' \
-  || fail 'missing suite did not block validation'
+printf '%s\n' "$missing_output" | grep -q 'VALIDATION BLOCKED: required suite is missing' ||
+  fail 'missing suite did not block validation'
 
 printf 'PASS: validate.sh registers %s existing suites and has no skipped-suite green path\n' "$suite_count"

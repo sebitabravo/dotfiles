@@ -29,4 +29,3 @@ set -e
 [ "$rc" -eq 2 ]
 
 printf '%s\n' 'PASS: secret detector scans prompt content without path false positives'
-

@@ -14,8 +14,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 DEFAULTS_SH="$SCRIPT_DIR/defaults.sh"
 DRIFT=0
 
-ok()   { echo "[OK] $1"; }
-warn() { echo "[WARN] $1"; DRIFT=$((DRIFT + 1)); }
+ok() { echo "[OK] $1"; }
+warn() {
+  echo "[WARN] $1"
+  DRIFT=$((DRIFT + 1))
+}
 skip() { echo "[SKIP] $1"; }
 info() { echo "[INFO] $1"; }
 

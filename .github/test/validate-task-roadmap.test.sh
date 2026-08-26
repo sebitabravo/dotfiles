@@ -33,9 +33,9 @@ cat >"$TMP/duplicate.md" <<'EOF'
 EOF
 
 printf '%s\n' '== valid DAG'
-python3 "$VALIDATOR" --strict --json "$TMP/valid.md" \
-  | jq -e '.valid and .task_count == 4 and .graph.available and .graph.critical_path_length == 3 and .graph.max_parallel_frontier == 2 and .graph.independence.status == "verified" and (.graph.runnable_now | index("T001")) != null' \
-  >/dev/null
+python3 "$VALIDATOR" --strict --json "$TMP/valid.md" |
+  jq -e '.valid and .task_count == 4 and .graph.available and .graph.critical_path_length == 3 and .graph.max_parallel_frontier == 2 and .graph.independence.status == "verified" and (.graph.runnable_now | index("T001")) != null' \
+    >/dev/null
 
 printf '%s\n' '== parallel ownership required'
 python3 "$VALIDATOR" --strict --require-paths-for-parallel "$TMP/valid.md" >/dev/null
@@ -79,9 +79,9 @@ if python3 "$VALIDATOR" --strict --require-paths-for-parallel "$TMP/glob-ownersh
   printf 'unresolved glob ownership was accepted\n' >&2
   exit 1
 fi
-python3 "$VALIDATOR" --strict --json "$TMP/glob-ownership.md" \
-  | jq -e '.graph.independence.status == "unproven" and (.graph.independence.ambiguous_parallel_tasks | sort) == ["T002", "T003"]' \
-  >/dev/null
+python3 "$VALIDATOR" --strict --json "$TMP/glob-ownership.md" |
+  jq -e '.graph.independence.status == "unproven" and (.graph.independence.ambiguous_parallel_tasks | sort) == ["T002", "T003"]' \
+    >/dev/null
 
 cat >"$TMP/unsafe-path.md" <<'EOF'
 - [ ] T001 [depends_on: none] Establish baseline

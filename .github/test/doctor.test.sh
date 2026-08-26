@@ -117,10 +117,10 @@ grep -q 'Engram' "$OUTPUT" || fail 'doctor omitted Engram'
 grep -q 'Claude harness parity' "$OUTPUT" || fail 'doctor omitted Claude parity'
 grep -q 'Claude provider parity' "$OUTPUT" || fail 'doctor omitted provider parity'
 
-[ "$before_user" = "$(shasum -a 256 "$HOME_DIR/.claude.json" | awk '{print $1}')" ] \
-  || fail 'doctor modified Claude user config'
-[ "$before_herdr" = "$(shasum -a 256 "$HOME_DIR/.config/herdr/config.toml" | awk '{print $1}')" ] \
-  || fail 'doctor modified Herdr config'
+[ "$before_user" = "$(shasum -a 256 "$HOME_DIR/.claude.json" | awk '{print $1}')" ] ||
+  fail 'doctor modified Claude user config'
+[ "$before_herdr" = "$(shasum -a 256 "$HOME_DIR/.config/herdr/config.toml" | awk '{print $1}')" ] ||
+  fail 'doctor modified Herdr config'
 
 # A managed MCP drift must fail, while the extra runtime-only env object remains
 # accepted by the semantic comparison.
@@ -141,7 +141,7 @@ HOME="$HOME_DIR" PATH="$BIN:$PATH" \
 drift_rc=$?
 set -e
 [ "$drift_rc" -eq 1 ] || fail "doctor drift returned $drift_rc instead of 1"
-grep -q 'definición administrada difiere' "$TMP/drift.log" \
-  || fail 'doctor did not report MCP drift'
+grep -q 'definición administrada difiere' "$TMP/drift.log" ||
+  fail 'doctor did not report MCP drift'
 
 printf '%s\n' 'PASS: doctor read-only validates MCP, Claude, Herdr, Engram, permissions, parity, binaries, and drift'

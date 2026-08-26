@@ -99,10 +99,10 @@ case "$BASENAME" in
   test_*.py) IS_TEST=true ;; # pytest
   *Test.java | *Tests.java | *Test.kt | *Tests.kt) IS_TEST=true ;;
   *Spec.scala | *Test.cs | *Tests.cs) IS_TEST=true ;;
-  *Test.php | *Tests.php) IS_TEST=true ;; # PHPUnit / Pest
+  *Test.php | *Tests.php) IS_TEST=true ;;     # PHPUnit / Pest
   *Test.swift | *Tests.swift) IS_TEST=true ;; # XCTest
-  *.feature) IS_TEST=true ;;  # Gherkin
-  conftest.py) IS_TEST=true ;; # fixtures pytest
+  *.feature) IS_TEST=true ;;                  # Gherkin
+  conftest.py) IS_TEST=true ;;                # fixtures pytest
   # Un snapshot ES la assertion: reescribirlo hace pasar cualquier output.
   # Es la forma mas barata de poner la suite en verde sin arreglar nada.
   *.snap | *.ambr) IS_TEST=true ;;

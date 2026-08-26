@@ -53,10 +53,18 @@ detect_test_cmd() {
 
   # 2. Makefile / justfile con target de test.
   if [ -f "$root/Makefile" ] && grep -qE '^test:' "$root/Makefile" 2>/dev/null; then
-    command -v make >/dev/null 2>&1 && { TEST_CMD="make test"; TEST_CMD_SOURCE="declared"; return 0; }
+    command -v make >/dev/null 2>&1 && {
+      TEST_CMD="make test"
+      TEST_CMD_SOURCE="declared"
+      return 0
+    }
   fi
   if [ -f "$root/justfile" ] && grep -qE '^test:' "$root/justfile" 2>/dev/null; then
-    command -v just >/dev/null 2>&1 && { TEST_CMD="just test"; TEST_CMD_SOURCE="declared"; return 0; }
+    command -v just >/dev/null 2>&1 && {
+      TEST_CMD="just test"
+      TEST_CMD_SOURCE="declared"
+      return 0
+    }
   fi
 
   # 3. Manifiesto en la raiz o un nivel adentro. El subdirectorio cubre el
@@ -221,7 +229,10 @@ _process_tree_pids() {
     next=""
     for pid in $frontier; do
       children=$(pgrep -P "$pid" 2>/dev/null || true)
-      [ -n "$children" ] && { next="$next $children"; all_pids="$all_pids $children"; }
+      [ -n "$children" ] && {
+        next="$next $children"
+        all_pids="$all_pids $children"
+      }
     done
     frontier=$next
   done
@@ -267,7 +278,7 @@ run_with_timeout() {
   while :; do
     process_state=$(ps -o state= -p "$pid" 2>/dev/null | tr -d '[:space:]')
     case "$process_state" in
-      ""|Z*) break ;;
+      "" | Z*) break ;;
     esac
     if [ "$elapsed_tenths" -ge $((timeout_seconds * 10)) ]; then
       # ONE discovery pass, signaled twice: see _process_tree_pids for why

@@ -58,7 +58,10 @@ esac
 resolve_vars() {
   local text="$1" assignments assignment var val safe_val padded
   assignments=$(printf '%s\n' "$text" | grep -oE '\b[A-Za-z_][A-Za-z0-9_]*=[^][:space:];&|]+' || true)
-  [ -z "$assignments" ] && { printf '%s' "$text"; return 0; }
+  [ -z "$assignments" ] && {
+    printf '%s' "$text"
+    return 0
+  }
   # Espacio final de centinela: '\b' (word boundary) no existe en BSD sed
   # (macOS) — el mismo problema que ya documenta SEGMENTS mas abajo con \n.
   # Se usa un grupo de captura sobre el caracter siguiente en vez de \b, y el
@@ -84,7 +87,7 @@ resolve_vars() {
     # aca, no se preservan.
     padded=$(printf '%s' "$padded" | sed -E "s/\"\\\$\\{${var}\\}\"/${safe_val}/g; s/\"\\\$${var}\"/${safe_val}/g; s/'\\\$\\{${var}\\}'/${safe_val}/g; s/'\\\$${var}'/${safe_val}/g")
     padded=$(printf '%s' "$padded" | sed -E "s/\\\$\\{${var}\\}/${safe_val}/g; s/\\\$${var}([^A-Za-z0-9_])/${safe_val}\\1/g")
-  done <<< "$assignments"
+  done <<<"$assignments"
   printf '%s' "${padded% }"
 }
 # Corre sobre $COMMAND crudo, no sobre texto ya pelado de comillas — ver el
@@ -435,7 +438,7 @@ check_segment() {
 
 while IFS= read -r segment; do
   check_segment "$segment"
-done <<< "$SEGMENTS"
+done <<<"$SEGMENTS"
 
 # Sin hallazgos: no opinamos. El flujo de permisos de settings.json decide.
 exit 0

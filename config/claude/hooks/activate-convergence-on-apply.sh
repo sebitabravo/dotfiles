@@ -10,7 +10,7 @@ fi
 INPUT=$(cat 2>/dev/null || printf '%s' '{}')
 PROMPT=$(printf '%s' "$INPUT" | jq -r '.prompt // empty' 2>/dev/null || true)
 case "$PROMPT" in
-  /opsx:apply|'/opsx:apply '*) ;;
+  /opsx:apply | '/opsx:apply '*) ;;
   *) exit 0 ;;
 esac
 
@@ -32,7 +32,7 @@ if [ -z "$CHANGE" ]; then
 fi
 
 case "$CHANGE" in
-  ''|*[!a-zA-Z0-9._-]*|.|..) exit 0 ;;
+  '' | *[!a-zA-Z0-9._-]* | . | ..) exit 0 ;;
 esac
 
 START="${CLAUDE_CONVERGENCE_START:-$HOME/.claude/scripts/convergence-start.sh}"

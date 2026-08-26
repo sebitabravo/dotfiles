@@ -55,7 +55,7 @@ if [ -n "$CHANGED_FILES" ]; then
       if [ "$has_test" = false ]; then
         MISSING_TESTS="${MISSING_TESTS}\n  - $src"
       fi
-    done <<< "$SRC_FILES"
+    done <<<"$SRC_FILES"
     if [ -n "$MISSING_TESTS" ]; then
       WARNINGS="${WARNINGS}\n[qa-checklist] Files without corresponding test:${MISSING_TESTS}"
     fi
@@ -79,7 +79,7 @@ while IFS= read -r file; do
       DEBUG_FOUND="${DEBUG_FOUND}\n  - $file"
     fi
   fi
-done <<< "$CHANGED_FILES"
+done <<<"$CHANGED_FILES"
 if [ -n "$DEBUG_FOUND" ]; then
   WARNINGS="${WARNINGS}\n[qa-checklist] Debug statements detected:${DEBUG_FOUND}"
 fi
@@ -100,7 +100,7 @@ while IFS= read -r file; do
   if grep -qE '(//|#|/\*|\*|<!--)[[:space:]]*(TODO|FIXME|HACK|XXX)\b' "$file" 2>/dev/null; then
     TODO_FOUND="${TODO_FOUND}\n  - $file"
   fi
-done <<< "$CHANGED_FILES"
+done <<<"$CHANGED_FILES"
 if [ -n "$TODO_FOUND" ]; then
   WARNINGS="${WARNINGS}\n[qa-checklist] Unresolved TODO/FIXME:${TODO_FOUND}"
 fi

@@ -23,6 +23,7 @@ done
 
 # El runtime puede fijar el ID concreto equivalente al alias `opus`; no es
 # drift funcional. El orden/formato JSON tampoco cambia la configuración.
+# shellcheck disable=SC2043
 for overlay in ollama.settings.json; do
   tmp_json="$RUNTIME/$overlay.tmp"
   jq -c '.env.ANTHROPIC_MODEL = .env.ANTHROPIC_DEFAULT_OPUS_MODEL' "$RUNTIME/$overlay" >"$tmp_json"

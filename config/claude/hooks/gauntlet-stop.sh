@@ -116,7 +116,7 @@ while IFS= read -r f; do
   fi
 
   [ "$found" = false ] && MISSING="${MISSING}  - $f"$'\n'
-done <<< "$SRC"
+done <<<"$SRC"
 
 # ── La suite existente tiene que estar verde ────────────────────────────────
 #

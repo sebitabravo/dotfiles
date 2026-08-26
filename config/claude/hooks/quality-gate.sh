@@ -209,7 +209,6 @@ if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
   [ -n "$RDD_MSG" ] && block "$RDD_MSG"
 fi
 
-
 # Detect test runner and lint.
 #
 # Primero se prueba en la raiz del repo (comportamiento historico, intacto
@@ -382,8 +381,11 @@ if [ -n "$STAGED_FILES_FOR_DETECT" ]; then
   ALL_NON_CODE=true
   while IFS= read -r f; do
     [ -z "$f" ] && continue
-    is_docs_or_config "$f" || { ALL_NON_CODE=false; break; }
-  done <<< "$STAGED_FILES_FOR_DETECT"
+    is_docs_or_config "$f" || {
+      ALL_NON_CODE=false
+      break
+    }
+  done <<<"$STAGED_FILES_FOR_DETECT"
   if [ "$ALL_NON_CODE" = true ]; then
     echo "[quality-gate] Commit with no code (docs/config/assets) — no test gate." >&2
     exit 0
@@ -400,7 +402,7 @@ if [ "$HAS_TESTS" = false ] && [ -z "$LINT_CMD" ]; then
     if [ -f "$d/package.json" ] || [ -f "$d/pyproject.toml" ] || [ -f "$d/setup.cfg" ] || [ -f "$d/pytest.ini" ] || [ -f "$d/go.mod" ]; then
       MONO_DIRS+=("$d")
     fi
-  done <<< "$STAGED_DIRS_FOR_DETECT"
+  done <<<"$STAGED_DIRS_FOR_DETECT"
   [ "${#MONO_DIRS[@]}" -gt 0 ] && PROJECT_DIRS=("${MONO_DIRS[@]}")
 fi
 
@@ -540,7 +542,9 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # gate que finge medir es peor que no tener gate, porque compra confianza falsa.
   if [ -n "$COVERAGE_CMD" ]; then
     COVERAGE_OUTPUT="$TEST_OUTPUT"
-    COV_LINE=""; COV_BRANCH=""; COV_FUNC=""
+    COV_LINE=""
+    COV_BRANCH=""
+    COV_FUNC=""
 
     case "${COVERAGE_KIND:-}" in
       istanbul)

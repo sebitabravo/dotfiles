@@ -8,4 +8,4 @@ if [ ! -r "$key_file" ]; then
   exit 1
 fi
 
-tr -d '\r\n' < "$key_file"
+tr -d '\r\n' <"$key_file"

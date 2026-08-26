@@ -13,7 +13,6 @@ BOLD='\033[1m'
 STRIKE='\033[9m'
 NC='\033[0m'
 
-
 # Read JSON from stdin
 input=$(cat)
 
@@ -78,14 +77,17 @@ case "$MODEL" in
   *Haiku*) MODEL_ICON="🍃" ;;
   # Proveedores externos: tier Opus. Los [1m] van escapados: sin escape son una
   # character class de glob y el corchete literal no matchea.
-  *deepseek-v4-pro*|*glm-5.3*|*gpt-5.6-luna-pro*)
-    MODEL_ICON="🎭" ;;
+  *deepseek-v4-pro* | *glm-5.3* | *gpt-5.6-luna-pro*)
+    MODEL_ICON="🎭"
+    ;;
   # Proveedores externos: tier Sonnet
-  *deepseek-v4-flash\[1m\]*|*glm-5.2*|*gemma4:31b-cloud*|*gpt-5.6-luna*)
-    MODEL_ICON="📝" ;;
+  *deepseek-v4-flash\[1m\]* | *glm-5.2* | *gemma4:31b-cloud* | *gpt-5.6-luna*)
+    MODEL_ICON="📝"
+    ;;
   # Proveedores externos: tier Haiku y subagentes
-  *deepseek-v4-flash*|*glm-4.7*|*gpt-oss:120b-cloud*|*openrouter/free*)
-    MODEL_ICON="🍃" ;;
+  *deepseek-v4-flash* | *glm-4.7* | *gpt-oss:120b-cloud* | *openrouter/free*)
+    MODEL_ICON="🍃"
+    ;;
 esac
 
 # Progress bar
@@ -145,8 +147,8 @@ get_peak_warning() {
   # dinámico no se puede deducir sólo del reloj.
 
   # DeepSeek V4 peak-valley (oficial, confirmado 2x exacto, lanza mid-July 2026)
-  if [[ "$model" == *deepseek-* ]] \
-    && { { [ "$UTC_HOUR" -ge 1 ] && [ "$UTC_HOUR" -lt 4 ]; } || { [ "$UTC_HOUR" -ge 6 ] && [ "$UTC_HOUR" -lt 10 ]; }; }; then
+  if [[ "$model" == *deepseek-* ]] &&
+    { { [ "$UTC_HOUR" -ge 1 ] && [ "$UTC_HOUR" -lt 4 ]; } || { [ "$UTC_HOUR" -ge 6 ] && [ "$UTC_HOUR" -lt 10 ]; }; }; then
     echo -e "${ACCENT}💸 2x${NC}"
     return
   fi

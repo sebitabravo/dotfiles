@@ -12,7 +12,7 @@ INPUT=$(cat 2>/dev/null || true)
 
 EVENT=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // empty' 2>/dev/null || true)
 case "$EVENT" in
-  TaskCreated|TaskCompleted) ;;
+  TaskCreated | TaskCompleted) ;;
   *) exit 0 ;;
 esac
 
@@ -59,7 +59,7 @@ RECEIPT=$(marker_value 'RECEIPT:')
 
 assert_safe_relative_path() {
   case "$1" in
-    ''|/*|..|../*|*/../*|*/..|./*|*/./*|*/.)
+    '' | /* | .. | ../* | */../* | */.. | ./* | */./* | */.)
       fail "$2 debe ser una ruta relativa sin . o ..: $1"
       ;;
   esac
@@ -69,7 +69,7 @@ assert_safe_paths() {
   local raw="$1" item normalized
   normalized=$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')
   case "$normalized" in
-    ''|none|-|n/a|na)
+    '' | none | - | n/a | na)
       fail 'PATHS debe declarar al menos una ruta afectada; none no prueba ownership'
       ;;
   esac
@@ -78,7 +78,7 @@ assert_safe_paths() {
     item=$(printf '%s' "$item" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$item" ] || fail 'PATHS contiene una ruta vacía'
     case "$item" in
-      /*|\\*|../*|*/../*|*/..|.|./*|*/./*)
+      /* | \\* | ../* | */../* | */.. | . | ./* | */./*)
         fail "PATHS contiene una ruta insegura: $item"
         ;;
     esac
@@ -101,7 +101,7 @@ case "$RECEIPT" in
     case "$RECEIPT" in
       /tmp/cavecrew/*)
         case "$RECEIPT" in
-          *..*|*/./*) fail 'RECEIPT no puede contener traversal de ruta' ;;
+          *..* | */./*) fail 'RECEIPT no puede contener traversal de ruta' ;;
           *) receipt_path="$RECEIPT" ;;
         esac
         ;;

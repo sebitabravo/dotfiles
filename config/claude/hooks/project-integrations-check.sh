@@ -35,7 +35,7 @@ PROJECT_ROOT_RESOLVED=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || t
 [ -d "$CWD" ] || exit 0
 
 case "$EVENT" in
-  SessionStart|UserPromptSubmit) ;;
+  SessionStart | UserPromptSubmit) ;;
   *) EVENT="UserPromptSubmit" ;;
 esac
 
@@ -64,7 +64,7 @@ gh_request() {
   while :; do
     process_state=$(ps -o state= -p "$gh_pid" 2>/dev/null | tr -d '[:space:]')
     case "$process_state" in
-      ""|Z*) break ;;
+      "" | Z*) break ;;
     esac
     if [ "$elapsed_tenths" -ge $((GH_REQUEST_TIMEOUT_SECONDS * 10)) ]; then
       kill "$gh_pid" >/dev/null 2>&1 || true
@@ -107,7 +107,7 @@ github_repo_slug() {
   [ -n "$owner" ] || return 1
   [ "$repo" != "$path" ] || return 1
   case "$repo" in
-    ""|*/*) return 1 ;;
+    "" | */*) return 1 ;;
   esac
   printf '%s/%s' "$owner" "$repo"
 }
@@ -116,11 +116,17 @@ owner_state_key() {
   local value="$1" digest
   if command -v shasum >/dev/null 2>&1; then
     digest=$(printf '%s' "$value" | shasum -a 256 2>/dev/null | awk '{print $1}' || true)
-    [ -n "$digest" ] && { printf '%s' "$digest"; return; }
+    [ -n "$digest" ] && {
+      printf '%s' "$digest"
+      return
+    }
   fi
   if command -v sha256sum >/dev/null 2>&1; then
     digest=$(printf '%s' "$value" | sha256sum 2>/dev/null | awk '{print $1}' || true)
-    [ -n "$digest" ] && { printf '%s' "$digest"; return; }
+    [ -n "$digest" ] && {
+      printf '%s' "$digest"
+      return
+    }
   fi
   printf '%s' "$value" | cksum | awk '{print $1}'
 }
@@ -371,8 +377,8 @@ claude_md_imports_agents() {
 claude_md_import_candidates() {
   local claude_file="$1" pandoc_json
   if command -v pandoc >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-    if pandoc_json=$(pandoc -f commonmark -t json -- "$claude_file" 2>/dev/null) \
-      && printf '%s' "$pandoc_json" | jq -e \
+    if pandoc_json=$(pandoc -f commonmark -t json -- "$claude_file" 2>/dev/null) &&
+      printf '%s' "$pandoc_json" | jq -e \
         'type == "object" and (.blocks | type == "array")' >/dev/null 2>&1; then
       printf '%s' "$pandoc_json" | jq -r '
         def prose_strs:
@@ -722,9 +728,9 @@ awk_claude_md_import_candidates() {
         }
         return 0
       }
-    ' "$claude_file" \
-      | grep -oE '(^|[[:space:](])@[A-Za-z0-9._/~-]+' \
-      | sed -E 's/^.*@//'
+    ' "$claude_file" |
+    grep -oE '(^|[[:space:](])@[A-Za-z0-9._/~-]+' |
+    sed -E 's/^.*@//'
 }
 
 # compute_bridge_state: same state machine for the project root AND any
@@ -823,11 +829,12 @@ if [ "$EVENT" = "SessionStart" ] && git -C "$CWD" rev-parse --show-toplevel >/de
     base=$(basename "$tracked_path")
     dirbase=$(basename "$dir")
     case "$base" in
-      README.md|package.json|pyproject.toml|go.mod|Cargo.toml|composer.json)
-        add_scope_candidate "$dir" ;;
+      README.md | package.json | pyproject.toml | go.mod | Cargo.toml | composer.json)
+        add_scope_candidate "$dir"
+        ;;
     esac
     case "$dirbase" in
-      __tests__|tests|spec) add_scope_candidate "$dir" ;;
+      __tests__ | tests | spec) add_scope_candidate "$dir" ;;
     esac
     case "$dir" in
       *supabase/functions/*)
@@ -874,7 +881,10 @@ if [ "$EVENT" = "SessionStart" ] && [ "$OWNER_GATE_STATE" = "OWNER" ]; then
       repo_hygiene_state="READY"
     else
       repo_hygiene_state="MISSING"
-      repo_hygiene_detail=$(IFS='; '; printf '%s' "${hygiene_gaps[*]}")
+      repo_hygiene_detail=$(
+        IFS='; '
+        printf '%s' "${hygiene_gaps[*]}"
+      )
     fi
   else
     repo_hygiene_state="UNAVAILABLE"
@@ -888,18 +898,30 @@ scope_candidate_reason() {
   state="${bridge%%$'\x1f'*}"
   detail="${bridge#*$'\x1f'}"
   case "$state" in
-    MISSING|LEGACY_README_ONLY)
+    MISSING | LEGACY_README_ONLY)
       # No bridge was attempted at all: fall back to the structural signal
       # that made this directory a candidate in the first place.
-      [ -f "$CWD/$dir/README.md" ] && { printf 'README.md'; return; }
+      [ -f "$CWD/$dir/README.md" ] && {
+        printf 'README.md'
+        return
+      }
       case "$(basename "$dir")" in
-        __tests__|tests|spec) printf 'test-suite directory'; return ;;
+        __tests__ | tests | spec)
+          printf 'test-suite directory'
+          return
+          ;;
       esac
       case "$dir" in
-        *supabase/functions/*) printf 'Supabase Edge Function'; return ;;
+        *supabase/functions/*)
+          printf 'Supabase Edge Function'
+          return
+          ;;
       esac
       for manifest in package.json pyproject.toml go.mod Cargo.toml composer.json; do
-        [ -f "$CWD/$dir/$manifest" ] && { printf '%s' "$manifest"; return; }
+        [ -f "$CWD/$dir/$manifest" ] && {
+          printf '%s' "$manifest"
+          return
+        }
       done
       printf 'detected scope'
       ;;
@@ -938,7 +960,8 @@ if [ "$scope_candidate_count" -gt 0 ]; then
   fi
 fi
 
-MESSAGE=$(cat <<EOF
+MESSAGE=$(
+  cat <<EOF
 PROJECT PREFLIGHT: project integrations are missing or incomplete in $CWD.
 
 CodeGraph: $codegraph_state${codegraph_detail:+ — $codegraph_detail}

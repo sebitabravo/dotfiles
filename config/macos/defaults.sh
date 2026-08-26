@@ -45,7 +45,7 @@ ARCH="$(uname -m)"
 echo "=== macOS $MACOS_VERSION ($ARCH) ==="
 if [ "$MACOS_MAJOR" -ge 26 ]; then
   echo "[!!] Tahoe 26.x no esta verificado: Launchpad lo absorbio Spotlight," \
-       "las keys springboard-* son no-op ahi. Segui con cuidado."
+    "las keys springboard-* son no-op ahi. Segui con cuidado."
 fi
 if [ "$ARCH" != "arm64" ]; then
   echo "[!!] Script verificado solo en Apple Silicon (arm64)."
@@ -744,103 +744,103 @@ fi
 if [ "$SAFARI_FDA_OK" -eq 0 ]; then
   echo "[SKIP] Bloque Safari (30 keys): la terminal no tiene Full Disk Access."
   echo "       Ajustes > Privacidad y Seguridad > Acceso total al disco >" \
-       "agregar tu terminal y reabrirla. Sin esto los writes van a un plist" \
-       "que Safari no lee."
+    "agregar tu terminal y reabrirla. Sin esto los writes van a un plist" \
+    "que Safari no lee."
 else
 
-# Desactivado en esta maquina. Safari 17+ unifico esto en "Funciones para
-# desarrolladores web"; los menus Debug e Internal Debug de mas abajo si estan.
-apply_default "Safari Develop menu off" com.apple.Safari IncludeDevelopMenu -bool false
+  # Desactivado en esta maquina. Safari 17+ unifico esto en "Funciones para
+  # desarrolladores web"; los menus Debug e Internal Debug de mas abajo si estan.
+  apply_default "Safari Develop menu off" com.apple.Safari IncludeDevelopMenu -bool false
 
-apply_default "Safari WebKit dev extras" com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+  apply_default "Safari WebKit dev extras" com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
 
-apply_default "Safari full URL in address bar" com.apple.Safari ShowFullURLInSmartSearchField -bool true
+  apply_default "Safari full URL in address bar" com.apple.Safari ShowFullURLInSmartSearchField -bool true
 
-apply_default "Safari universal search off" com.apple.Safari UniversalSearchEnabled -bool false
+  apply_default "Safari universal search off" com.apple.Safari UniversalSearchEnabled -bool false
 
-apply_default "Safari search suggestions off" com.apple.Safari SuppressSearchSuggestions -bool true
+  apply_default "Safari search suggestions off" com.apple.Safari SuppressSearchSuggestions -bool true
 
-apply_default "Safari search suggestions disabled" com.apple.Safari SearchSuggestionsEnabled -bool false
+  apply_default "Safari search suggestions disabled" com.apple.Safari SearchSuggestionsEnabled -bool false
 
-apply_default "Safari preload top hit off" com.apple.Safari PreloadTopHit -bool false
+  apply_default "Safari preload top hit off" com.apple.Safari PreloadTopHit -bool false
 
-apply_default "Safari Debug menu" com.apple.Safari IncludeDebugMenu -bool true
+  apply_default "Safari Debug menu" com.apple.Safari IncludeDebugMenu -bool true
 
-apply_default "Safari WebKit2 dev extras" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
+  apply_default "Safari WebKit2 dev extras" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
 
-apply_default "Safari spelling correction off" com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
+  apply_default "Safari spelling correction off" com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
 
-apply_default "Safari never auto-open downloads" com.apple.Safari AutoOpenSafeDownloads -bool false
+  apply_default "Safari never auto-open downloads" com.apple.Safari AutoOpenSafeDownloads -bool false
 
-# AutoFill ACTIVO en esta maquina, incluidos contrasenas y tarjetas. Comodo,
-# pero significa que Safari rellena credenciales sin pedir confirmacion.
-# Para revertir: los cuatro a -bool false
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Safari AutoFill enabled (revisar)"
-elif (
-  defaults write com.apple.Safari AutoFillFromAddressBook -bool true
-  defaults write com.apple.Safari AutoFillPasswords -bool true
-  defaults write com.apple.Safari AutoFillCreditCardData -bool true
-  defaults write com.apple.Safari AutoFillMiscellaneousForms -bool true
-) 2>/dev/null; then
-  echo "[SET] Safari AutoFill enabled (revisar)"
-else
-  echo "[FAIL] Safari AutoFill enabled (revisar)"
-fi
+  # AutoFill ACTIVO en esta maquina, incluidos contrasenas y tarjetas. Comodo,
+  # pero significa que Safari rellena credenciales sin pedir confirmacion.
+  # Para revertir: los cuatro a -bool false
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari AutoFill enabled (revisar)"
+  elif (
+    defaults write com.apple.Safari AutoFillFromAddressBook -bool true
+    defaults write com.apple.Safari AutoFillPasswords -bool true
+    defaults write com.apple.Safari AutoFillCreditCardData -bool true
+    defaults write com.apple.Safari AutoFillMiscellaneousForms -bool true
+  ) 2>/dev/null; then
+    echo "[SET] Safari AutoFill enabled (revisar)"
+  else
+    echo "[FAIL] Safari AutoFill enabled (revisar)"
+  fi
 
-# Deprecated since Safari 12.1 — harmless no-op, kept for documentation
-apply_default "Safari Do Not Track" com.apple.Safari SendDoNotTrackHTTPHeader -bool true
+  # Deprecated since Safari 12.1 — harmless no-op, kept for documentation
+  apply_default "Safari Do Not Track" com.apple.Safari SendDoNotTrackHTTPHeader -bool true
 
-# Enhanced privacy in regular browsing (not just private mode)
-apply_default "Safari enhanced privacy in regular browsing" com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
+  # Enhanced privacy in regular browsing (not just private mode)
+  apply_default "Safari enhanced privacy in regular browsing" com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
 
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Safari Tab to links"
-elif (
-  defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
-  defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
-) 2>/dev/null; then
-  echo "[SET] Safari Tab to links"
-else
-  echo "[FAIL] Safari Tab to links"
-fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari Tab to links"
+  elif (
+    defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
+    defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
+  ) 2>/dev/null; then
+    echo "[SET] Safari Tab to links"
+  else
+    echo "[FAIL] Safari Tab to links"
+  fi
 
-apply_default "Safari backspace navigation" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
+  apply_default "Safari backspace navigation" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
 
-apply_default "Safari homepage = start page" com.apple.Safari HomePage -string "https://www.apple.com/startpage/"
+  apply_default "Safari homepage = start page" com.apple.Safari HomePage -string "https://www.apple.com/startpage/"
 
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Safari hide favorites bar + sidebar"
-elif (
-  defaults write com.apple.Safari ShowFavoritesBar -bool false
-  defaults write com.apple.Safari ShowSidebarInTopSites -bool false
-) 2>/dev/null; then
-  echo "[SET] Safari hide favorites bar + sidebar"
-else
-  echo "[FAIL] Safari hide favorites bar + sidebar"
-fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari hide favorites bar + sidebar"
+  elif (
+    defaults write com.apple.Safari ShowFavoritesBar -bool false
+    defaults write com.apple.Safari ShowSidebarInTopSites -bool false
+  ) 2>/dev/null; then
+    echo "[SET] Safari hide favorites bar + sidebar"
+  else
+    echo "[FAIL] Safari hide favorites bar + sidebar"
+  fi
 
-apply_default "Safari find contains (not starts-with)" com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
+  apply_default "Safari find contains (not starts-with)" com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
 
-apply_default "Safari Internal Debug menu" com.apple.Safari IncludeInternalDebugMenu -bool true
+  apply_default "Safari Internal Debug menu" com.apple.Safari IncludeInternalDebugMenu -bool true
 
-# Security hardening
-apply_default "Safari fraudulent website warning" com.apple.Safari WarnAboutFraudulentWebsites -bool true
+  # Security hardening
+  apply_default "Safari fraudulent website warning" com.apple.Safari WarnAboutFraudulentWebsites -bool true
 
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Safari pop-ups blocked"
-elif (
-  defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
-  defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
-) 2>/dev/null; then
-  echo "[SET] Safari pop-ups blocked"
-else
-  echo "[FAIL] Safari pop-ups blocked"
-fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari pop-ups blocked"
+  elif (
+    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
+    defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
+  ) 2>/dev/null; then
+    echo "[SET] Safari pop-ups blocked"
+  else
+    echo "[FAIL] Safari pop-ups blocked"
+  fi
 
-apply_default "Safari auto-update extensions" com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
+  apply_default "Safari auto-update extensions" com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
 
-apply_default "Safari thumbnail cache off" com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
+  apply_default "Safari thumbnail cache off" com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
 fi # SAFARI_FDA_OK
 
@@ -1250,9 +1250,9 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   elif [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] touch $p/.metadata_never_index"
   else
-    touch "$p/.metadata_never_index" 2>/dev/null \
-      && echo "[SET] Spotlight excluye $p" \
-      || echo "[FAIL] Spotlight excluye $p"
+    touch "$p/.metadata_never_index" 2>/dev/null &&
+      echo "[SET] Spotlight excluye $p" ||
+      echo "[FAIL] Spotlight excluye $p"
   fi
 
   if [ "$NO_SUDO" -eq 1 ]; then
@@ -1262,9 +1262,9 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   elif tmutil isexcluded "$p" 2>/dev/null | grep -q "\[Excluded\]"; then
     echo "[SKIP] Time Machine ya excluye $p"
   else
-    sudo tmutil addexclusion -p "$p" >/dev/null 2>&1 \
-      && echo "[SET] Time Machine excluye $p" \
-      || echo "[FAIL] Time Machine excluye $p"
+    sudo tmutil addexclusion -p "$p" >/dev/null 2>&1 &&
+      echo "[SET] Time Machine excluye $p" ||
+      echo "[FAIL] Time Machine excluye $p"
   fi
 done
 
@@ -1275,8 +1275,8 @@ done
 SNAPSHOT_COUNT="$(tmutil listlocalsnapshots / 2>/dev/null | grep -c com.apple.TimeMachine || true)"
 if [ "${SNAPSHOT_COUNT:-0}" -gt 0 ]; then
   echo "[INFO] $SNAPSHOT_COUNT snapshot(s) local(es) en /. Revisar con:" \
-       "tmutil listlocalsnapshots / — liberar con:" \
-       "sudo tmutil thinlocalsnapshots / <bytes> 4"
+    "tmutil listlocalsnapshots / — liberar con:" \
+    "sudo tmutil thinlocalsnapshots / <bytes> 4"
 else
   echo "[OK] Sin snapshots locales huerfanos en /"
 fi

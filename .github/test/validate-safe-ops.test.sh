@@ -16,9 +16,9 @@ assert_decision() {
   output=$(run_hook "$command" "$mode" 2>/dev/null)
   printf '%s' "$output" | jq -e --arg expected "$expected" \
     '.hookSpecificOutput.permissionDecision == $expected' >/dev/null || {
-      printf 'expected %s for %s, got: %s\n' "$expected" "$command" "$output" >&2
-      return 1
-    }
+    printf 'expected %s for %s, got: %s\n' "$expected" "$command" "$output" >&2
+    return 1
+  }
 }
 
 assert_silent() {

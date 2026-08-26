@@ -50,8 +50,15 @@ EOF
 
 case "${1:-}" in
   '') ;;
-  -h|--help) usage; exit 0 ;;
-  *) printf '[doctor] argumento desconocido: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf '[doctor] argumento desconocido: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
 esac
 
 pass() {
@@ -119,13 +126,13 @@ file_mode() {
   local path="$1" mode
   mode=$(stat -f '%Lp' "$path" 2>/dev/null || true)
   case "$mode" in
-    ''|*[!0-9]*) mode='' ;;
+    '' | *[!0-9]*) mode='' ;;
   esac
   if [ -z "$mode" ]; then
     mode=$(stat -c '%a' "$path" 2>/dev/null || true)
   fi
   case "$mode" in
-    ''|*[!0-9]*) return 1 ;;
+    '' | *[!0-9]*) return 1 ;;
     *) printf '%s\n' "$mode" ;;
   esac
 }
@@ -237,8 +244,8 @@ EOF
 }
 
 check_engram() {
-  if jq -e '.enabledPlugins["engram@engram"] == true' "$CLAUDE_SETTINGS" >/dev/null 2>&1 \
-    && printf '%s\n' "$MCP_HEALTH_OUTPUT" | grep -E 'engram.*Connected' >/dev/null 2>&1; then
+  if jq -e '.enabledPlugins["engram@engram"] == true' "$CLAUDE_SETTINGS" >/dev/null 2>&1 &&
+    printf '%s\n' "$MCP_HEALTH_OUTPUT" | grep -E 'engram.*Connected' >/dev/null 2>&1; then
     pass 'Engram' 'plugin habilitado y conectado'
   elif printf '%s\n' "$MCP_HEALTH_OUTPUT" | grep -E 'engram.*Connected' >/dev/null 2>&1; then
     pass 'Engram' 'ruta MCP conectada'
