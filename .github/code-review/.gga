@@ -1,7 +1,8 @@
 PROVIDER="opencode"
 PR_BASE_BRANCH="origin/main"
 TIMEOUT="480"
-RULES_FILE="AGENTS.md"
+# Ruta relativa al CWD (repo root): GGA solo lee .gga desde la raiz, por eso el workflow lo copia a ./ .gga antes de correr.
+RULES_FILE=".github/code-review/AGENTS.md"
 STRICT_MODE="true"
 # Palanca de effort verificada: GGA pasa --variant a `opencode run` (ver bin/gga OPENCODE_VARIANT).
 # low = suficiente para revisiones de clasificacion; max (default) solo para coding complejo.

@@ -41,7 +41,11 @@ jobs:
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_CODING_PLAN_KEY }}
           GH_TOKEN: ${{ github.token }}
+          # OpenCode carga esta config adicional en vez de una en la raiz del repo.
+          OPENCODE_CONFIG: ${{ github.workspace }}/.github/code-review/opencode.json
         run: |
+          # GGA solo lee .gga desde el CWD; el runner es efimero, la raiz del repo queda limpia.
+          cp .github/code-review/.gga ./.gga
           set +e
           gga run --pr-mode --diff-only | tee review-output.txt
           code=${PIPESTATUS[0]}
