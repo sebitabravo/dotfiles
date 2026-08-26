@@ -1,4 +1,4 @@
-name: AI Code Review
+name: GGA Code Review
 
 on:
   pull_request:
@@ -37,7 +37,7 @@ jobs:
       - name: Install OpenCode (pinned)
         run: curl -fsSL https://opencode.ai/install | bash -s -- --version 1.18.23
 
-      - name: Run AI review and post comment
+      - name: Run code review and post comment
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_CODING_PLAN_KEY }}
           GH_TOKEN: ${{ github.token }}
@@ -59,15 +59,27 @@ jobs:
           else
             cp review-clean.md review-concise.md
           fi
-          head -n 300 review-concise.md > comment.md
+          # Quitar ruido del engine (banner, logs, indicador del CLI, trailers): solo el review del modelo
+          awk '
+            /^[━]+$/ {next}
+            /^[[:space:]]*Gentleman Guardian Angel/ {next}
+            /^[[:space:]]*Provider-agnostic code review using AI/ {next}
+            /^ℹ️/ {next}
+            /^build ·/ {next}
+            /^CODE REVIEW (PASSED|FAILED)$/ {next}
+            /^Fix the violations listed above before committing\.$/ {next}
+            /^Could not determine review status$/ {next}
+            {print}
+          ' review-concise.md > review-body.md
+          head -n 300 review-body.md > comment.md
           {
-            echo "## 🤖 AI Review (GGA + GLM-5.3 Flash)"
+            echo "## 🤖 Review (GGA)"
             echo ""
             cat comment.md
           } > comment-final.md && mv comment-final.md comment.md
           # Actualizar comentario existente (estilo CodeRabbit) en vez de duplicar por push
           comment_id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖 AI Review"))] | last | .id' 2>/dev/null)
+            --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖"))] | last | .id' 2>/dev/null)
           if [[ -n "$comment_id" ]]; then
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments/${comment_id}" \
               -F body=@comment.md >/dev/null 2>&1 || gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
