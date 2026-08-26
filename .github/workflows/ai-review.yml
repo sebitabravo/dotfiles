@@ -60,28 +60,39 @@ jobs:
           cp .github/code-review/.gga ./.gga
 
           # Reglas = AGENTS.md + skill termonuclear SIEMPRE en el prompt (deterministico).
-          cat .github/code-review/AGENTS.md > .gga-rules.md
-          printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n' >> .gga-rules.md
-          cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md >> .gga-rules.md
+          # Un solo bloque de redireccion (evita SC2129 con redirects individuales).
+          {
+            cat .github/code-review/AGENTS.md
+            printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n'
+            cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md
+            echo ""
+            echo "# Changed files (name-status):"
+            # Contexto barato de archivos cambiados (name-status). Sin diff completo:
+            # --diff-only en GGA v2.10.1 infla el payload (diff completo + files completos).
+            # opened/reopened: todo el PR (pr-mode). synchronize: solo commits nuevos (GGA --ci, incremental).
+            if [[ "${{ github.event.action }}" == "synchronize" ]]; then
+              BEFORE="${{ github.event.before }}"
+              if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+                git diff --name-status "$BEFORE"..HEAD || true
+              else
+                # Force-push o historial no disponible: revisar todo el PR.
+                git diff --name-status origin/main...HEAD || true
+              fi
+            else
+              git diff --name-status origin/main...HEAD || true
+            fi
+          } > .gga-rules.md
 
-          # Contexto barato de archivos cambiados (name-status). Sin diff completo:
-          # --diff-only en GGA v2.10.1 infla el payload (diff completo + files completos).
-          # opened/reopened: todo el PR (pr-mode). synchronize: solo commits nuevos (GGA --ci, incremental).
-          echo "" >> .gga-rules.md
-          echo "# Changed files (name-status):" >> .gga-rules.md
           set +e
           if [[ "${{ github.event.action }}" == "synchronize" ]]; then
             BEFORE="${{ github.event.before }}"
             if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              git diff --name-status "$BEFORE"..HEAD >> .gga-rules.md || true
               GGA_CI_SOURCE_COMMIT="$BEFORE" gga run --ci | tee review-output.txt
             else
               # Force-push o historial no disponible: revisar todo el PR.
-              git diff --name-status origin/main...HEAD >> .gga-rules.md || true
               gga run --pr-mode | tee review-output.txt
             fi
           else
-            git diff --name-status origin/main...HEAD >> .gga-rules.md || true
             gga run --pr-mode | tee review-output.txt
           fi
           code=${PIPESTATUS[0]}

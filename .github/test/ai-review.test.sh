@@ -59,7 +59,7 @@ bash "$SCRIPTS/ai-review-comment.sh" "$full_noise_input" > /dev/null 2>&1 \
   && ok "comment builder exits 0 on noisy input" || bad "comment builder failed on noisy input"
 
 grep -q '^## 🤖 Review (GGA)$' comment.md && ok "header present" || bad "header missing"
-grep -q '^Files to review: 3 files — see Files changed tab$' comment.md \
+grep -q '^Files to review: 3 files - see Files changed tab$' comment.md \
   && ok "file list collapsed with correct count" || bad "file list not collapsed (3 files)"
 grep -qE '^ℹ️ ' comment.md && bad "info lines leaked into comment" || ok "no info lines"
 grep -q 'Gentleman Guardian Angel' comment.md && bad "banner leaked" || ok "no banner"
@@ -71,7 +71,7 @@ grep -q '^| 🟡 ' comment.md && ok "nit row preserved" || bad "nit row lost"
 
 bash "$SCRIPTS/ai-review-comment.sh" "$empty_list_input" > /dev/null 2>&1 \
   && ok "comment builder handles empty file list" || bad "comment builder failed on empty list"
-grep -q '^Files to review: 0 files — see Files changed tab$' comment.md \
+grep -q '^Files to review: 0 files - see Files changed tab$' comment.md \
   && ok "zero-count collapse works (0, not 0\n0)" || bad "zero-count collapse broken"
 
 # ---------------------------------------------------------------- gate.sh

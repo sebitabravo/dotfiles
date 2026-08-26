@@ -3,7 +3,7 @@
 # Usage: ai-review-comment.sh <review-output.txt> [--publish]
 #   --publish  : post or PATCH the comment via gh (needs GH_TOKEN + PR_NUMBER)
 #   without it : only generates ./comment.md (used by tests)
-set -uo pipefail
+set -euo pipefail
 
 INPUT="${1:?usage: ai-review-comment.sh <review-output.txt> [--publish]}"
 PUBLISH=0
@@ -24,7 +24,7 @@ perl -pe 's/\e\[[0-9;]*m//g' "$INPUT" > "$CLEAN"
 file_count=$(awk '/^  - /{n++} END{print n+0}' "$CLEAN")
 if grep -q "^Files to review:" "$CLEAN"; then
   awk -v cnt="$file_count" '
-    /^Files to review:/ {print "Files to review: " cnt " files — see Files changed tab"; skip=1; next}
+    /^Files to review:/ {print "Files to review: " cnt " files - see Files changed tab"; skip=1; next}
     skip && (/^  - / || /^[[:space:]]*$/) {next}
     skip {skip=0}
     !skip {print}
@@ -40,7 +40,7 @@ awk '
   /^[[:space:]]*Gentleman Guardian Angel/ {next}
   /^[[:space:]]*Provider-agnostic code review using AI/ {next}
   /^ℹ️/ {next}
-  /^> build ·/ {next}
+  /^> (build|review) · / {next}
   /^[❌✅ ]*CODE REVIEW (PASSED|FAILED)$/ {next}
   /^Fix the violations listed above before committing\.$/ {next}
   /^Could not determine review status$/ {next}
