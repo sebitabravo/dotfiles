@@ -70,7 +70,7 @@ PREFER the tools as style judges:
 
 ## Scope
 
-Dotfiles: local machine provisioning, not a web service. Review only lines changed in the PR. Pre-existing issues get 🟣, never blocking.
+Dotfiles: local machine provisioning, not a web service. The prompt provides neither the raw diff nor per-line annotations; instead, "Changed files (name-status)" lists every path touched (opened/reopened: whole PR, synchronize: last push only). Scope = those paths. Judge the current content of the listed files, prioritizing the evidence in the diff stream presented; if a path is not listed, it is out of scope. Pre-existing issues get 🟣, never blocking.
 
 ## Structure
 

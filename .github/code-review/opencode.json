@@ -6,6 +6,17 @@
       "*": "allow"
     }
   },
+  "agent": {
+    "review": {
+      "description": "Read-only code review agent for GGA CI in dotfiles. Never edits files, never runs commands, never fetches the web.",
+      "mode": "primary",
+      "permission": {
+        "bash": "deny",
+        "edit": "deny",
+        "webfetch": "deny"
+      }
+    }
+  },
   "provider": {
     "zai-coding-plan": {
       "models": {

@@ -23,18 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Install GGA (pinned)
+      - name: Install GGA (pinned by SHA, not mutable tag)
         run: |
           git clone --depth 1 --branch v2.10.1 \
             https://github.com/Gentleman-Programming/gentleman-guardian-angel.git /tmp/gga
+          test "$(git -C /tmp/gga rev-parse HEAD)" = "1124c3672f082c56b033c4e23a30e95d0e8cd593" || {
+            echo "GGA clone is not the pinned commit"; exit 1
+          }
           chmod +x /tmp/gga/bin/gga
           echo "/tmp/gga/bin" >> "$GITHUB_PATH"
 
-      - name: Install OpenCode (pinned)
+      - name: Install OpenCode (pinned version)
         run: curl -fsSL https://opencode.ai/install | bash -s -- --version 1.18.23
 
       - name: Install review skill (thermo-nuclear)
@@ -47,58 +52,41 @@ jobs:
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_CODING_PLAN_KEY }}
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           # OpenCode carga esta config adicional en vez de una en la raiz del repo.
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/code-review/opencode.json
         run: |
           # GGA solo lee .gga desde el CWD; el runner es efimero, la raiz del repo queda limpia.
           cp .github/code-review/.gga ./.gga
+
           # Reglas = AGENTS.md + skill termonuclear SIEMPRE en el prompt (deterministico).
           cat .github/code-review/AGENTS.md > .gga-rules.md
           printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n' >> .gga-rules.md
           cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md >> .gga-rules.md
+
+          # Contexto barato de archivos cambiados (name-status). Sin diff completo:
+          # --diff-only en GGA v2.10.1 infla el payload (diff completo + files completos).
+          # opened/reopened: todo el PR (pr-mode). synchronize: solo commits nuevos (GGA --ci, incremental).
+          echo "" >> .gga-rules.md
+          echo "# Changed files (name-status):" >> .gga-rules.md
           set +e
-          gga run --pr-mode --diff-only | tee review-output.txt
+          if [[ "${{ github.event.action }}" == "synchronize" ]]; then
+            BEFORE="${{ github.event.before }}"
+            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              git diff --name-status "$BEFORE"..HEAD >> .gga-rules.md || true
+              GGA_CI_SOURCE_COMMIT="$BEFORE" gga run --ci | tee review-output.txt
+            else
+              # Force-push o historial no disponible: revisar todo el PR.
+              git diff --name-status origin/main...HEAD >> .gga-rules.md || true
+              gga run --pr-mode | tee review-output.txt
+            fi
+          else
+            git diff --name-status origin/main...HEAD >> .gga-rules.md || true
+            gga run --pr-mode | tee review-output.txt
+          fi
           code=${PIPESTATUS[0]}
-          perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-clean.md
-          # Colapsar lista larga de archivos a una linea y truncar a 300 lineas
-          file_count=$(grep -c "^  - " review-clean.md || echo 0)
-          # Reemplazar bloque Files to review por conteo; si no hay bloque, mantener original
-          if grep -q "^Files to review:" review-clean.md; then
-            awk -v cnt="$file_count" '
-              /^Files to review:/ {print "Files to review: " cnt " files — see Files changed tab"; skip=1; next}
-              skip && /^$/ {skip=0; next}
-              skip && /^  - / {next}
-              !skip {print}
-            ' review-clean.md > review-concise.md
-          else
-            cp review-clean.md review-concise.md
-          fi
-          # Quitar ruido del engine (banner, logs, indicador del CLI, trailers): solo el review del modelo
-          awk '
-            /^[━]+$/ {next}
-            /^[[:space:]]*Gentleman Guardian Angel/ {next}
-            /^[[:space:]]*Provider-agnostic code review using AI/ {next}
-            /^ℹ️/ {next}
-            /^> build ·/ {next}
-            /^[❌✅ ]*CODE REVIEW (PASSED|FAILED)$/ {next}
-            /^CODE REVIEW (PASSED|FAILED)$/ {next}
-            /^Fix the violations listed above before committing\.$/ {next}
-            /^Could not determine review status$/ {next}
-            {print}
-          ' review-concise.md > review-body.md
-          head -n 300 review-body.md > comment.md
-          {
-            echo "## 🤖 Review (GGA)"
-            echo ""
-            cat comment.md
-          } > comment-final.md && mv comment-final.md comment.md
-          # Actualizar comentario existente (estilo CodeRabbit) en vez de duplicar por push
-          comment_id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖"))] | last | .id' 2>/dev/null)
-          if [[ -n "$comment_id" ]]; then
-            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments/${comment_id}" \
-              -F body=@comment.md >/dev/null 2>&1 || gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
-          else
-            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
-          fi
-          exit $code
+
+          # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).
+          bash .github/scripts/ai-review-comment.sh review-output.txt --publish
+          # Gate por severidad: solo 🔴 bloquea el check (🟡/🟣 pasan).
+          bash .github/scripts/ai-review-gate.sh "$code" comment.md
