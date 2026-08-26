@@ -37,7 +37,7 @@ PREFER (soft, non-blocking):
 
 ## Review Quality
 
-REQUIRE: invoke the `skill` tool with name `thermo-nuclear-code-quality-review` before starting pass 1. Its rules apply on top of this file, and its quality bar is the binding one for structural findings.
+REQUIRE: apply the thermo-nuclear code quality review skill appended below (after the `---` separator). Its rules are part of your binding instructions, not optional context. Its quality bar is the binding one for structural findings.
 
 REQUIRE two passes in a single review:
 - REQUIRE pass 1 (Find): list candidate issues from the diff.
