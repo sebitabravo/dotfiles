@@ -96,21 +96,18 @@ if [[ "$PUBLISH" != "1" ]]; then
   exit 0
 fi
 
-# 5. Publish: update the previous bot comment in place (CodeRabbit style),
-#    otherwise create a new one.
+# 5. Publish: keep a single bot summary comment. Deleting previous bot review
+#    comments and posting one new comment is more robust than PATCH (which the
+#    issue comments API kept rejecting) and consolidates the thread.
 PR="${PR_NUMBER:?PR_NUMBER required for --publish}"
 repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY required for --publish}"
-comment_id=$(gh api "repos/${repo}/issues/${PR}/comments" \
-  --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖"))] | last | .id' 2>/dev/null || true)
-if [[ -n "$comment_id" ]]; then
-  # -F sends multipart/form-data which the issues API rejects; use --input with
-  # real JSON so the PATCH succeeds and we keep a single updated comment.
-  jq -Rs '{body: .}' comment.md | gh api -X PATCH "repos/${repo}/issues/${PR}/comments/${comment_id}" \
-    --input - >/dev/null 2>&1 \
-    || gh pr comment "$PR" --body-file comment.md
-else
-  gh pr comment "$PR" --body-file comment.md
-fi
+gh api "repos/${repo}/issues/${PR}/comments" --paginate \
+  --jq '.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖")) | .id' \
+  2>/dev/null \
+| while read -r old_id; do
+    gh api -X DELETE "repos/${repo}/issues/${PR}/comments/${old_id}" >/dev/null 2>&1 || true
+  done
+gh pr comment "$PR" --body-file comment.md
 echo "comment published: ${repo} #${PR}"
 
 # 6. Publish inline comments on the reported lines (one per finding), after
