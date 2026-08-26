@@ -51,7 +51,7 @@ REJECT fabrication:
 
 REQUIRE calibration:
 - REQUIRE severity per line: 🔴 blocking (shell safety, SHA256 bypass, idempotency break, backup loss, secrets) / 🟡 style / 🟣 pre-existing (never blocking).
-- REQUIRE confidence per finding: High (reproducible from the diff alone), Medium (depends on unseen context), Low (speculative — discarded unless verified).
+- REQUIRE confidence per finding: High (reproducible from the diff alone), Medium (depends on unseen context), Low (speculative — discarded unless verified). Never report findings with confidence below Medium.
 - REQUIRE max 5 findings total. If everything is 🟡, lead with "No blocking issues."
 
 PREFER security flow analysis for installer paths (install.sh, remote installers, cleanup):

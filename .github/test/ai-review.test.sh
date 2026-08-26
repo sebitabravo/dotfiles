@@ -74,11 +74,31 @@ bash "$SCRIPTS/ai-review-comment.sh" "$empty_list_input" > /dev/null 2>&1 \
 grep -q '^Files to review: 0 files - see Files changed tab$' comment.md \
   && ok "zero-count collapse works (0, not 0\n0)" || bad "zero-count collapse broken"
 
+# ------------------------------------------------------------- inline plan
+inline_plan="$TMP/inline-plan.txt"
+bash "$SCRIPTS/ai-review-comment.sh" "$full_noise_input" --inline-plan > "$inline_plan" 2>/dev/null \
+  && ok "inline plan exits 0" || bad "inline plan failed"
+grep -q '^install\.sh|111|🔴|' "$inline_plan" && ok "inline plan: blocking row path+line" || bad "inline plan missing install.sh:111"
+grep -q '^\.zshrc|202|🟡|' "$inline_plan" && ok "inline plan: nit row path+line" || bad "inline plan missing .zshrc:202"
+rows=$(wc -l < "$inline_plan" | tr -d ' ')
+[[ "$rows" == "2" ]] && ok "inline plan count matches findings (2)" || bad "inline plan count wrong: $rows"
+
+no_line_input="$TMP/no-line-input.txt"
+cat > "$no_line_input" <<'EOF'
+STATUS: FAILED
+| 🟡 | README.md | docs claim without evidence | rule |
+EOF
+bash "$SCRIPTS/ai-review-comment.sh" "$no_line_input" --inline-plan > "$inline_plan" 2>/dev/null \
+  && ok "inline plan handles row without line" || bad "inline plan failed on row without line"
+[[ -s "$inline_plan" ]] && bad "inline plan must skip rows without line" || ok "row without line skipped"
+
 # ---------------------------------------------------------------- gate.sh
 bash "$SCRIPTS/ai-review-gate.sh" 0 "$pass_input" >/dev/null 2>&1 \
   && ok "gate: exit 0 -> green" || bad "gate: exit 0 must pass"
 
-bash "$SCRIPTS/ai-review-gate.sh" 1 comment.md >/dev/null 2>&1 \
+red_gate="$TMP/red-only.md"
+printf 'STATUS: FAILED\n| 🔴 | install.sh:111 | curl|sh | rule\n' > "$red_gate"
+bash "$SCRIPTS/ai-review-gate.sh" 1 "$red_gate" >/dev/null 2>&1 \
   && bad "gate: 🔴 row must block" || ok "gate: 🔴 row blocks"
 
 git_gate="$TMP/nits-only.md"

@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # Builds and publishes the GGA review comment (CodeRabbit style: update in place).
-# Usage: ai-review-comment.sh <review-output.txt> [--publish]
-#   --publish  : post or PATCH the comment via gh (needs GH_TOKEN + PR_NUMBER)
-#   without it : only generates ./comment.md (used by tests)
+# Usage: ai-review-comment.sh <review-output.txt> [--publish] [--inline-plan]
+#   --publish     : post or PATCH the comment via gh (needs GH_TOKEN + PR_NUMBER)
+#   --inline-plan : print the per-finding path|line|sev|row plan (used by tests)
+#   without flags : only generates ./comment.md (used by tests)
 set -euo pipefail
 
-INPUT="${1:?usage: ai-review-comment.sh <review-output.txt> [--publish]}"
+INPUT="${1:?usage: ai-review-comment.sh <review-output.txt> [--publish] [--inline-plan]}"
 PUBLISH=0
-[[ "${2:-}" == "--publish" ]] && PUBLISH=1
+PLAN=0
+for arg in "${@:2}"; do
+  [[ "$arg" == "--publish" ]] && PUBLISH=1
+  [[ "$arg" == "--inline-plan" ]] && PLAN=1
+done
 
 OUT_DIR="$(mktemp -d)"
 trap 'rm -rf "$OUT_DIR"' EXIT
@@ -58,6 +63,27 @@ head -n 300 "$BODY" > "$COMMENT"
 # Copy to the current directory so callers (and tests) can inspect it.
 cp "$COMMENT" ./comment.md
 
+# 5. Inline plan (Claude Code/Codex/CodeRabbit style): extract path:line from
+#    the severity table so CI can post line-level comments. The full table row
+#    is kept as the inline body (no fragile field re-parsing).
+INLINE_PLAN="$OUT_DIR/inline-plan.txt"
+awk '
+  /^\| (🔴|🟡|🟣) \|/ {
+    loc=$4
+    gsub(/`/, "", loc)
+    split(loc, a, ":")
+    line=a[2]
+    sub(/,.*/, "", line)
+    if (a[1] != "" && line ~ /^[0-9]+$/)
+      print a[1] "|" line "|" $2 "|" $0
+  }
+' "$COMMENT" > "$INLINE_PLAN"
+
+if [[ "$PLAN" == "1" ]]; then
+  cat "$INLINE_PLAN"
+  exit 0
+fi
+
 if [[ "$PUBLISH" != "1" ]]; then
   echo "comment generated (publish skipped): $(pwd)/comment.md"
   exit 0
@@ -77,3 +103,26 @@ else
   gh pr comment "$PR" --body-file comment.md
 fi
 echo "comment published: ${repo} #${PR}"
+
+# 6. Publish inline comments on the reported lines (one per finding), after
+#    removing previous bot inlines so a push never accumulates duplicates.
+#    Lines not present in the PR diff are skipped (the summary table keeps them).
+head_sha=$(gh api "repos/${repo}/pulls/${PR}" --jq '.head.sha' 2>/dev/null || true)
+if [[ -n "$head_sha" && -s "$INLINE_PLAN" ]]; then
+  gh api "repos/${repo}/pulls/${PR}/comments" --paginate \
+    --jq '.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("🔴") or startswith("🟡") or startswith("🟣")) | .id' \
+    2>/dev/null \
+  | while read -r inline_id; do
+      gh api -X DELETE "repos/${repo}/pulls/comments/${inline_id}" >/dev/null 2>&1 || true
+    done
+  while IFS='|' read -r fpath fline sev row; do
+    label="Nit"
+    [[ "$sev" == "🔴" ]] && label="Important"
+    [[ "$sev" == "🟣" ]] && label="Pre-existing"
+    body="$(printf '%s **%s** - `%s:%s`\n%s' "$sev" "$label" "$fpath" "$fline" "$row")"
+    gh api -X POST "repos/${repo}/pulls/${PR}/comments" \
+      -f path="$fpath" -f line="$fline" -f commit_id="$head_sha" -f body="$body" \
+      >/dev/null 2>&1 || echo "inline skipped (not in diff?): ${fpath}:${fline}" >&2
+  done < "$INLINE_PLAN"
+  echo "inline comments published: $(wc -l < "$INLINE_PLAN" | tr -d ' ')"
+fi
