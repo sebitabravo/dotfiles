@@ -55,11 +55,8 @@ command -v jq >/dev/null 2>&1 || {
 OVERLAYS=(
   deepseek.settings.json
   glm.settings.json
-  kimi.settings.json
-  minimax.settings.json
   ollama.settings.json
   openrouter.settings.json
-  qwen.settings.json
 )
 RESULTS='[]'
 FAILURES=0

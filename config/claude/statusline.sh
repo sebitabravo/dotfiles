@@ -67,7 +67,7 @@ fi
 
 # Model icon. El display_name de Anthropic trae el tier en el nombre
 # (Opus/Sonnet/Haiku); el de proveedores externos trae el ID del modelo
-# (deepseek-v4-pro, qwen3.8-max, glm-5.2, ...), asi que cada tier lista ademas
+# (deepseek-v4-pro, glm-5.2, ...), asi que cada tier lista ademas
 # los IDs de los overlays. Ojo con el orden: los sufijos [1m] distinguen tiers
 # que comparten nombre base (deepseek-v4-flash[1m] vs deepseek-v4-flash).
 MODEL_ICON="🤖"
@@ -76,18 +76,15 @@ case "$MODEL" in
   *Opus*) MODEL_ICON="🎭" ;;
   *Sonnet*) MODEL_ICON="📝" ;;
   *Haiku*) MODEL_ICON="🍃" ;;
-  # El mismo ID sirve a Fable, Opus y Sonnet en el overlay MiniMax; sin el
-  # alias original no se puede inferir un tier honesto desde display_name.
-  *MiniMax-M3\[1m\]*) MODEL_ICON="🤖" ;;
   # Proveedores externos: tier Opus. Los [1m] van escapados: sin escape son una
   # character class de glob y el corchete literal no matchea.
-  *deepseek-v4-pro*|*glm-5.3*|*kimi-k3*|*minimax-m3:cloud*|*qwen3.8-max*|*gpt-5.6-luna-pro*)
+  *deepseek-v4-pro*|*glm-5.3*|*gpt-5.6-luna-pro*)
     MODEL_ICON="🎭" ;;
   # Proveedores externos: tier Sonnet
-  *deepseek-v4-flash\[1m\]*|*glm-5.2*|*kimi-k2.6*|*gemma4:31b-cloud*|*gpt-5.6-luna*|*qwen3.7-max*)
+  *deepseek-v4-flash\[1m\]*|*glm-5.2*|*gemma4:31b-cloud*|*gpt-5.6-luna*)
     MODEL_ICON="📝" ;;
   # Proveedores externos: tier Haiku y subagentes
-  *deepseek-v4-flash*|*glm-4.7*|*kimi-k2.5*|*MiniMax-M3*|*gpt-oss:120b-cloud*|*qwen3.6-flash*|*openrouter/free*)
+  *deepseek-v4-flash*|*glm-4.7*|*gpt-oss:120b-cloud*|*openrouter/free*)
     MODEL_ICON="🍃" ;;
 esac
 
@@ -130,8 +127,8 @@ LINE+="${SEP}"
 LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 
 # Peak hours warning — multi-provider
-# Providers WITHOUT peak/surge pricing: OpenAI, Gemini, Mistral, Groq, xAI, Kimi/Moonshot,
-#   Qwen/DashScope, StepFun, MiMo/Xiaomi, Copilot, MiniMax (flat rate or throttling only)
+# Providers WITHOUT peak/surge pricing: OpenAI, Gemini, Mistral, Groq, xAI,
+#   StepFun, MiMo/Xiaomi, Copilot (flat rate or throttling only)
 get_peak_warning() {
   local model=$1
   local UTC_HOUR

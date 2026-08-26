@@ -1,19 +1,19 @@
 # AGENTS.md — dotfiles
 
-> Review quality for GGA (Gentleman Guardian Angel) depends directly on this file.
-> Keep it accurate, concise, and aligned with the actual repository conventions.
+> Welcome — this repo provisions a macOS dev machine from scratch. Daily use and community contributions share the same rules below.
+> Review quality for GGA (Gentleman Guardian Angel) depends directly on this file. Keep it accurate, concise, and aligned with actual repo conventions.
 
 ## Hierarchy
 
 1. Project `AGENTS.md` (this file) takes precedence.
 2. `config/claude/rules/common/*.md` — always-on conduct rules.
-3. `config/claude/CLAUDE.md` — global Senior Architect instructions.
+3. `config/claude/CLAUDE.md` — global Senior Architect instructions (edit the dotfile, then sync — never the deployed `~/.claude` copy).
 
 ## Stack
 
-- Shell scripts: `zsh` / `bash` (`set -euo pipefail`), macOS `defaults` (`config/macos/defaults.sh`).
-- Package management: `Brewfile` (`brew bundle`), `install.sh` is idempotent and re-runnable.
-- Config deployment via independent copies (no symlinks) to `~/.config`, `~/.claude`, `~/Library`.
+- Shell: `zsh` / `bash` (`set -euo pipefail`), macOS `defaults` via `config/macos/defaults.sh`.
+- Packages: `Brewfile` (`brew bundle`), `install.sh` is idempotent and re-runnable (`--dry-run` for preflight).
+- Configs: deployed as independent copies (no symlinks) to `~/.config`, `~/.claude`, `~/Library`.
 
 ## Conventions
 

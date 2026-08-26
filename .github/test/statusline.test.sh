@@ -41,26 +41,17 @@ assert_icon() {
 
 assert_icon '🎭' 'deepseek-v4-pro[1m]'
 assert_icon '🎭' 'glm-5.3[1m]'
-assert_icon '🎭' 'kimi-k3[1m]'
-assert_icon '🎭' 'minimax-m3:cloud'
-assert_icon '🎭' 'qwen3.8-max[1m]'
 assert_icon '🎭' 'openai/gpt-5.6-luna-pro'
 
 assert_icon '📝' 'deepseek-v4-flash[1m]'
 assert_icon '📝' 'glm-5.2[1m]'
-assert_icon '📝' 'kimi-k2.6'
 assert_icon '📝' 'gemma4:31b-cloud'
 assert_icon '📝' 'openai/gpt-5.6-luna'
-assert_icon '📝' 'qwen3.7-max[1m]'
 
 assert_icon '🍃' 'deepseek-v4-flash'
 assert_icon '🍃' 'glm-4.7'
-assert_icon '🍃' 'kimi-k2.5'
-assert_icon '🍃' 'MiniMax-M3'
 assert_icon '🍃' 'gpt-oss:120b-cloud'
-assert_icon '🍃' 'qwen3.6-flash'
 assert_icon '🍃' 'openrouter/free'
-assert_icon '🤖' 'MiniMax-M3[1m]'
 
 # A peak warning belongs to the active provider, not merely to the current hour.
 glm_output=$(render 'glm-5.3[1m]')

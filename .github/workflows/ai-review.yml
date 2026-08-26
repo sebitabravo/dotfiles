@@ -40,10 +40,11 @@ jobs:
           set +e
           gga run --pr-mode --diff-only | tee review-output.txt
           code=${PIPESTATUS[0]}
+          perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-clean.md
           {
             echo "## 🤖 AI Review (GGA + GLM-5.3)"
             echo ""
-            cat review-output.txt
+            cat review-clean.md
           } > comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
           exit $code
