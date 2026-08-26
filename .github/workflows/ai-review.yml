@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  # gh pr comment + PATCH de issue comments requieren issues: write.
+  issues: write
   pull-requests: write
 
 concurrency:
@@ -96,6 +98,8 @@ jobs:
             gga run --pr-mode | tee review-output.txt
           fi
           code=${PIPESTATUS[0]}
+          # Re-armar set -e: los fallos del publish/gate NO deben esconderse.
+          set -e
 
           # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).
           bash .github/scripts/ai-review-comment.sh review-output.txt --publish
