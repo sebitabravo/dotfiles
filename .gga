@@ -1,2 +1,2 @@
 PROVIDER="opencode"
-PR_BASE_BRANCH="main"
+PR_BASE_BRANCH="origin/main"
