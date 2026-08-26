@@ -1,1 +1,2 @@
 PROVIDER="opencode"
+PR_BASE_BRANCH="main"
