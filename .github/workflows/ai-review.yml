@@ -65,5 +65,13 @@ jobs:
             echo ""
             cat comment.md
           } > comment-final.md && mv comment-final.md comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          # Actualizar comentario existente (estilo CodeRabbit) en vez de duplicar por push
+          comment_id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖 AI Review"))] | last | .id' 2>/dev/null)
+          if [[ -n "$comment_id" ]]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments/${comment_id}" \
+              -F body=@comment.md >/dev/null 2>&1 || gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          fi
           exit $code
