@@ -37,6 +37,8 @@ PREFER (soft, non-blocking):
 
 ## Review Quality
 
+REQUIRE: invoke the `skill` tool with name `thermo-nuclear-code-quality-review` before starting pass 1. Its rules apply on top of this file, and its quality bar is the binding one for structural findings.
+
 REQUIRE two passes in a single review:
 - REQUIRE pass 1 (Find): list candidate issues from the diff.
 - REQUIRE pass 2 (Verify): check every candidate against the ACTUAL file content, not the diff alone. Drop any that does not fail with the code as written. Only verified findings are reported.

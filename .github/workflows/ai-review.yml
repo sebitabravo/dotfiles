@@ -37,6 +37,12 @@ jobs:
       - name: Install OpenCode (pinned)
         run: curl -fsSL https://opencode.ai/install | bash -s -- --version 1.18.23
 
+      - name: Install review skill (thermo-nuclear)
+        run: |
+          mkdir -p "$HOME/.config/opencode/skills/thermo-nuclear-code-quality-review"
+          cp .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md \
+            "$HOME/.config/opencode/skills/thermo-nuclear-code-quality-review/SKILL.md"
+
       - name: Run code review and post comment
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_CODING_PLAN_KEY }}
