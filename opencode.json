@@ -1,4 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "zai-coding-plan/glm-5.3"
+  "model": "zai-coding-plan/glm-5.3",
+  "_comment": "review can use zai-coding-plan/glm-4.7 if needed later (cheaper/faster)"
 }

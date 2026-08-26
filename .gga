@@ -1,3 +1,8 @@
 PROVIDER="opencode"
 PR_BASE_BRANCH="origin/main"
 TIMEOUT="600"
+RULES_FILE="AGENTS.md"
+STRICT_MODE="true"
+# Solo patrones reales que GGA lee (ver bin/gga load_config). REVIEW_FILE/EXCLUDE/MAX_DIFF no existen.
+FILE_PATTERNS="*"
+EXCLUDE_PATTERNS="*.md,*.lock,*.png,*.json,*.sha256,config/claude/skills/**,.github/test/**,.github/workflows/*,config/vscode/*"

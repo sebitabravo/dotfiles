@@ -3,6 +3,11 @@ name: AI Code Review
 on:
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - '**.md'
+      - '**.lock'
+      - 'config/claude/skills/**'
+      - '.github/test/**'
 
 permissions:
   contents: read
@@ -14,7 +19,7 @@ concurrency:
 
 jobs:
   review:
-    if: github.actor != 'dependabot[bot]'
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-ai-review') && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -41,10 +46,24 @@ jobs:
           gga run --pr-mode --diff-only | tee review-output.txt
           code=${PIPESTATUS[0]}
           perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-clean.md
+          # Colapsar lista larga de archivos a una linea y truncar a 300 lineas
+          file_count=$(grep -c "^  - " review-clean.md || echo 0)
+          # Reemplazar bloque Files to review por conteo; si no hay bloque, mantener original
+          if grep -q "^Files to review:" review-clean.md; then
+            awk -v cnt="$file_count" '
+              /^Files to review:/ {print "Files to review: " cnt " files — see Files changed tab"; skip=1; next}
+              skip && /^$/ {skip=0; next}
+              skip && /^  - / {next}
+              !skip {print}
+            ' review-clean.md > review-concise.md
+          else
+            cp review-clean.md review-concise.md
+          fi
+          head -n 300 review-concise.md > comment.md
           {
             echo "## 🤖 AI Review (GGA + GLM-5.3)"
             echo ""
-            cat review-clean.md
-          } > comment.md
+            cat comment.md
+          } > comment-final.md && mv comment-final.md comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
           exit $code

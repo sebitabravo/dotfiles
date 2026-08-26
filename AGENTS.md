@@ -60,3 +60,9 @@ git-hooks/            # commit-msg, pre-push
 - Validate shell safety, idempotency, backup correctness, and SHA256 gating for any `install.sh` change.
 - Flag missing `--dry-run` handling, symlink introduction, or skipped `shellcheck`.
 - This is a dotfiles repo: scope is local machine provisioning, not a web service.
+
+## Review Output (concise — for LLM)
+
+- Keep output violations-only. No file list dump or diff paste. Summarize as "N files — see Files changed".
+- Reserve 🔴 for shell safety / SHA256 / idempotency / backup correctness. 🟡 for style. Cap at 5 nits per review.
+- Format: `| Sev | File:Line | Issue | Rule |` table, then `<details>` for evidence.
