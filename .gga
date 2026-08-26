@@ -1,8 +1,11 @@
 PROVIDER="opencode"
 PR_BASE_BRANCH="origin/main"
-TIMEOUT="600"
+TIMEOUT="480"
 RULES_FILE="AGENTS.md"
 STRICT_MODE="true"
+# Palanca de effort verificada: GGA pasa --variant a `opencode run` (ver bin/gga OPENCODE_VARIANT).
+# low = suficiente para revisiones de clasificacion; max (default) solo para coding complejo.
+OPENCODE_VARIANT="low"
 # Solo patrones reales que GGA lee (ver bin/gga load_config). REVIEW_FILE/EXCLUDE/MAX_DIFF no existen.
 FILE_PATTERNS="*"
 EXCLUDE_PATTERNS="*.md,*.lock,*.png,*.json,*.sha256,config/claude/skills/**,.github/test/**,.github/workflows/*,config/vscode/*"

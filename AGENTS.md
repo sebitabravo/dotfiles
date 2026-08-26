@@ -15,24 +15,36 @@
 - Packages: `Brewfile` (`brew bundle`), `install.sh` is idempotent and re-runnable (`--dry-run` for preflight).
 - Configs: deployed as independent copies (no symlinks) to `~/.config`, `~/.claude`, `~/Library`.
 
-## Conventions
+## Review Rules
 
-- Conventional Commits required. No `Co-Authored-By` or AI attribution in commits.
-- Never use `--no-verify`; fix the hook failure instead. Never push auto-save/WIP commits.
-- Always work on a branch; no direct commits to `main`.
-- `shellcheck -S warning` must pass for all shell scripts.
-- No symlinks: deployment uses independent copies so installed config survives repo moves.
-- Backups: existing targets are moved to `~/.dotfiles-backups/<timestamp>/` before overwrite.
-- Remote installers: SHA256 fail-closed verification against `config/install/remote-installers.sha256`; abort on mismatch before execution.
-- `install.sh --dry-run` must not touch filesystem or network; use for preflight.
+REJECT if (blocking — shell safety, SHA256, idempotency, backup correctness):
+- REJECT if a change to `install.sh` or any remote installer bypasses SHA256 fail-closed verification against `config/install/remote-installers.sha256`.
+- REJECT if a deployment change breaks idempotency/re-runnability or removes `--dry-run` support (must not touch filesystem/network in dry-run).
+- REJECT if a change introduces symlinks for deployed configs (independent copies only) or skips backups to `~/.dotfiles-backups/<timestamp>/`.
+- REJECT if a changed shell script fails `shellcheck -S warning` or drops `set -euo pipefail` where error-prone.
+- REJECT if PR commits include AI attribution (`Co-Authored-By`), `--no-verify`, or auto-save/WIP commits.
+- REJECT if the PR commits directly to `main` (branch required).
 
-## Prohibited
+REQUIRE (FAILED if missing):
+- REQUIRE Conventional Commits format on every commit.
+- REQUIRE evidence before claims: lint/tests actually executed and output observed.
+- REQUIRE `git diff --check` clean for staged changes.
 
-- Blind editing: read existing code before changing it.
-- Drive-by refactors: touch only what the task requires.
-- Unverified claims: evidence before claims — run tests/linters and observe output.
-- Skipping TDD for bugs: write a failing test before touching application code.
-- Guessing config syntax, CLI flags, or API signatures — verify first.
+PREFER (soft, non-blocking):
+- PREFER targeted edits over rewrites; keep diffs reviewable.
+- PREFER ASCII straight quotes (no smart quotes, em dashes, ellipsis).
+- PREFER neutral Spanish comments unless the project standard says otherwise.
+
+## Response Format
+
+- FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED`.
+- If FAILED, one line per violation: `file:line - rule - issue`. Then severity table `| Sev | File:Line | Issue | Rule |` (🔴 blocking / 🟡 style / 🟣 pre-existing), max 5 nits.
+- No preamble, no explanations, no suggestions, no diff paste, no file list dump.
+- Read-only review: never run commands, never modify files.
+
+## Scope
+
+Dotfiles: local machine provisioning, not a web service. Review only lines changed in the PR. Pre-existing issues get 🟣, never blocking.
 
 ## Structure
 
@@ -44,25 +56,7 @@ Brewfile              # CLI tools and casks
 git-hooks/            # commit-msg, pre-push
 ```
 
-## Style
-
-- Comments in neutral Spanish unless the project standard specifies another language.
-- Use straight ASCII quotes (`"`, `'`, `` ` ``); no smart quotes, em dashes, or ellipsis.
-- Targeted edits (`Edit`) over full rewrites; keep diffs reviewable.
-
 ## Verification
 
 - `bash .github/test.sh` / `bash .github/validate.sh` / `shellcheck -S warning <file>`
 - `git diff --check` before commit; `git log origin/main..HEAD --oneline` before push.
-
-## Notes for Reviewers (GGA)
-
-- Validate shell safety, idempotency, backup correctness, and SHA256 gating for any `install.sh` change.
-- Flag missing `--dry-run` handling, symlink introduction, or skipped `shellcheck`.
-- This is a dotfiles repo: scope is local machine provisioning, not a web service.
-
-## Review Output (concise — for LLM)
-
-- Keep output violations-only. No file list dump or diff paste. Summarize as "N files — see Files changed".
-- Reserve 🔴 for shell safety / SHA256 / idempotency / backup correctness. 🟡 for style. Cap at 5 nits per review.
-- Format: `| Sev | File:Line | Issue | Rule |` table, then `<details>` for evidence.

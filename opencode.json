@@ -1,5 +1,22 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "zai-coding-plan/glm-5.3",
-  "_comment": "review can use zai-coding-plan/glm-4.7 if needed later (cheaper/faster)"
+  "model": "zai-coding-plan/glm-5.3-flash",
+  "provider": {
+    "zai-coding-plan": {
+      "models": {
+        "glm-5.3-flash": {
+          "name": "GLM-5.3 Flash",
+          "limit": {
+            "context": 1000000,
+            "output": 131072
+          },
+          "variants": {
+            "low": { "reasoningEffort": "low" },
+            "high": { "reasoningEffort": "high" }
+          }
+        }
+      }
+    }
+  },
+  "_comment": "GLM-5.3 Flash: cheap multimodal, 3x quota on GLM Coding Plan (docs.z.ai/guides/vlm/glm-5.3-flash)."
 }

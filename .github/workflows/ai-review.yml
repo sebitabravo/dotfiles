@@ -21,7 +21,7 @@ jobs:
   review:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-ai-review') && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,8 +34,8 @@ jobs:
           chmod +x /tmp/gga/bin/gga
           echo "/tmp/gga/bin" >> "$GITHUB_PATH"
 
-      - name: Install OpenCode
-        run: curl -fsSL https://opencode.ai/install | bash
+      - name: Install OpenCode (pinned)
+        run: curl -fsSL https://opencode.ai/install | bash -s -- --version 1.18.23
 
       - name: Run AI review and post comment
         env:
@@ -61,7 +61,7 @@ jobs:
           fi
           head -n 300 review-concise.md > comment.md
           {
-            echo "## 🤖 AI Review (GGA + GLM-5.3)"
+            echo "## 🤖 AI Review (GGA + GLM-5.3 Flash)"
             echo ""
             cat comment.md
           } > comment-final.md && mv comment-final.md comment.md
