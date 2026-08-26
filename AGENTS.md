@@ -35,10 +35,34 @@ PREFER (soft, non-blocking):
 - PREFER ASCII straight quotes (no smart quotes, em dashes, ellipsis).
 - PREFER neutral Spanish comments unless the project standard says otherwise.
 
+## Review Quality
+
+REQUIRE two passes in a single review:
+- REQUIRE pass 1 (Find): list candidate issues from the diff.
+- REQUIRE pass 2 (Verify): check every candidate against the ACTUAL file content, not the diff alone. Drop any that does not fail with the code as written. Only verified findings are reported.
+- REQUIRE every finding cites `file:line` + the literal code snippet + why it fails NOW. No evidence, no finding.
+
+REJECT fabrication:
+- REJECT speculative findings: "could fail if..." is NOT a bug. The code must fail with current inputs and current state, not under a hypothetical 3-condition scenario. Mentally execute with 3 concrete values before reporting.
+- REJECT taste as a finding: "I would write it differently" and "this name is too short" are not violations. "THIS name is misleading" or "THIS flow breaks with X" can be, with evidence.
+- REJECT reviewing beyond the diff: the diff does not lie, only changed lines are yours to judge.
+
+REQUIRE calibration:
+- REQUIRE severity per line: 🔴 blocking (shell safety, SHA256 bypass, idempotency break, backup loss, secrets) / 🟡 style / 🟣 pre-existing (never blocking).
+- REQUIRE confidence per finding: High (reproducible from the diff alone), Medium (depends on unseen context), Low (speculative — discarded unless verified).
+- REQUIRE max 5 findings total. If everything is 🟡, lead with "No blocking issues."
+
+PREFER security flow analysis for installer paths (install.sh, remote installers, cleanup):
+- PREFER tracing Source (curl | bash, remote URL, dynamic path) → Transformation (SHA256 verification, sanitization) → Sink (file write, backup move, `~/.dotfiles-backups/<timestamp>/`). Any security finding must cite source and sink.
+- PREFER "Clean code = silence": no compliments, no strengths list. If no violations, say PASSED with one line. Silence is the judgment.
+
+PREFER the tools as style judges:
+- PREFER letting shellcheck, validate.sh, and `git diff --check` decide formatting/lint. Your taste is not a bug; report behavior, not preference.
+
 ## Response Format
 
 - FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED`.
-- If FAILED, one line per violation: `file:line - rule - issue`. Then severity table `| Sev | File:Line | Issue | Rule |` (🔴 blocking / 🟡 style / 🟣 pre-existing), max 5 nits.
+- If FAILED, one line per violation: `file:line - rule - issue`. Then severity table `| Sev | File:Line | Issue | Rule |` (🔴 blocking / 🟡 style / 🟣 pre-existing), max 5 findings.
 - No preamble, no explanations, no suggestions, no diff paste, no file list dump.
 - Read-only review: never run commands, never modify files.
 
