@@ -92,6 +92,13 @@ bash "$SCRIPTS/ai-review-comment.sh" "$no_line_input" --inline-plan > "$inline_p
   && ok "inline plan handles row without line" || bad "inline plan failed on row without line"
 [[ -s "$inline_plan" ]] && bad "inline plan must skip rows without line" || ok "row without line skipped"
 
+no_match_input="$TMP/no-match-input.txt"
+printf '⚠️  No matching files changed in last commit\n' > "$no_match_input"
+bash "$SCRIPTS/ai-review-comment.sh" "$no_match_input" --publish > "$TMP/skip-out.txt" 2>/dev/null \
+  && ok "no-match publish exits 0" || bad "no-match publish must exit 0"
+grep -q "no reviewable files changed" "$TMP/skip-out.txt" \
+  && ok "no-match skips comment" || bad "no-match must print skip message"
+
 # ---------------------------------------------------------------- gate.sh
 bash "$SCRIPTS/ai-review-gate.sh" 0 "$pass_input" >/dev/null 2>&1 \
   && ok "gate: exit 0 -> green" || bad "gate: exit 0 must pass"

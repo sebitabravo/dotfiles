@@ -63,6 +63,13 @@ head -n 300 "$BODY" > "$COMMENT"
 # Copy to the current directory so callers (and tests) can inspect it.
 cp "$COMMENT" ./comment.md
 
+# If GGA found no reviewable files (e.g. the push only touched excluded
+# paths), do not pollute the PR thread with an empty comment.
+if grep -q "No matching files changed in last commit" "$COMMENT"; then
+  echo "no reviewable files changed, skipping comment"
+  exit 0
+fi
+
 # 5. Inline plan (Claude Code/Codex/CodeRabbit style): extract path:line from
 #    the severity table so CI can post line-level comments. The full table row
 #    is kept as the inline body (no fragile field re-parsing).
@@ -96,8 +103,10 @@ repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY required for --publish}"
 comment_id=$(gh api "repos/${repo}/issues/${PR}/comments" \
   --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖"))] | last | .id' 2>/dev/null || true)
 if [[ -n "$comment_id" ]]; then
-  gh api -X PATCH "repos/${repo}/issues/${PR}/comments/${comment_id}" \
-    -F body=@comment.md >/dev/null 2>&1 \
+  # -F sends multipart/form-data which the issues API rejects; use --input with
+  # real JSON so the PATCH succeeds and we keep a single updated comment.
+  jq -Rs '{body: .}' comment.md | gh api -X PATCH "repos/${repo}/issues/${PR}/comments/${comment_id}" \
+    --input - >/dev/null 2>&1 \
     || gh pr comment "$PR" --body-file comment.md
 else
   gh pr comment "$PR" --body-file comment.md
