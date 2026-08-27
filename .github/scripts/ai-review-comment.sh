@@ -112,7 +112,7 @@ gh api "repos/${repo}/issues/${PR}/comments" --paginate \
 gh pr comment "$PR" --body-file comment.md
 echo "comment published: ${repo} #${PR}"
 
-# 6. Publish inline comments on the reported lines (one per finding), after
+# 7. Publish inline comments on the reported lines (one per finding), after
 #    removing previous bot inlines so a push never accumulates duplicates.
 #    Lines not present in the PR diff are skipped (the summary table keeps them).
 head_sha=$(gh api "repos/${repo}/pulls/${PR}" --jq '.head.sha' 2>/dev/null || true)
