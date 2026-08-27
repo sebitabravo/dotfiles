@@ -6,8 +6,8 @@ TIMEOUT="480"
 RULES_FILE=".gga-rules.md"
 STRICT_MODE="true"
 # Palanca de effort verificada: GGA pasa --variant a `opencode run` (ver bin/gga OPENCODE_VARIANT).
-# low = suficiente para revisiones de clasificacion; max (default) solo para coding complejo.
-OPENCODE_VARIANT="low"
+# high = maxima profundidad de analisis (decidido: review completo del PR en cada push).
+OPENCODE_VARIANT="high"
 # Agente read-only definido en opencode.json: el review no puede editar/correr comandos.
 OPENCODE_AGENT="review"
 # Solo patrones reales que GGA lee (ver bin/gga load_config). REVIEW_FILE/EXCLUDE/MAX_DIFF no existen.

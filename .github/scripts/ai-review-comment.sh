@@ -96,7 +96,7 @@ if [[ "$PUBLISH" != "1" ]]; then
   exit 0
 fi
 
-# 5. Publish: keep a single bot summary comment. Deleting previous bot review
+# 6. Publish: keep a single bot summary comment. Deleting previous bot review
 #    comments and posting one new comment is more robust than PATCH (which the
 #    issue comments API kept rejecting) and consolidates the thread.
 PR="${PR_NUMBER:?PR_NUMBER required for --publish}"

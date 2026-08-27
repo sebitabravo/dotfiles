@@ -64,6 +64,7 @@ PREFER the tools as style judges:
 ## Response Format
 
 - FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED`.
+- STATUS: FAILED only when at least one 🔴 finding exists. If only 🟡/🟣, use STATUS: PASSED and lead with "No blocking issues."
 - If FAILED, one line per violation: `file:line - rule - issue`. Then severity table `| Sev | File:Line | Issue | Rule |` (🔴 blocking / 🟡 style / 🟣 pre-existing), max 5 findings.
 - No preamble, no explanations, no suggestions, no diff paste, no file list dump.
 - Read-only review: never run commands, never modify files.

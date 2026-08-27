@@ -74,13 +74,11 @@ jobs:
             printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n'
             cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md
             echo ""
-            # opened/reopened: todo el PR, solo name-status (el diff completo pesa
-            # demasiado en un PR grande; --diff-only en GGA v2.10.1 lo empeora
-            # sumando diff + archivos completos, nunca reemplazandolos).
-            # synchronize: solo los commits nuevos, asi que el diff real con hunks
-            # sale barato. Es el unico caso donde los comentarios inline pueden
-            # anclar de verdad: la API de PR review comments exige que la linea
-            # reportada este dentro de un hunk del diff.
+            # Modo completo (elegido): el review cubre TODO el PR en cada push
+            # (opened y synchronize). El diff real de la push se adjunta (cap 300k)
+            # para que el modelo cite lineas '+' y los inline comments anclen.
+            # opened/reopened: name-status (el diff completo del PR pesa demasiado;
+            # --diff-only en GGA v2.10.1 lo empeora).
             if [[ "${{ github.event.action }}" == "synchronize" ]]; then
               BEFORE="${{ github.event.before }}"
               if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
@@ -98,17 +96,8 @@ jobs:
           } > .gga-rules.md
 
           set +e
-          if [[ "${{ github.event.action }}" == "synchronize" ]]; then
-            BEFORE="${{ github.event.before }}"
-            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              GGA_CI_SOURCE_COMMIT="$BEFORE" gga run --ci | tee review-output.txt
-            else
-              # Force-push o historial no disponible: revisar todo el PR.
-              gga run --pr-mode | tee review-output.txt
-            fi
-          else
-            gga run --pr-mode | tee review-output.txt
-          fi
+          # PR completo en cada push (opened y synchronize) como al principio.
+          gga run --pr-mode | tee review-output.txt
           code=${PIPESTATUS[0]}
           # Re-armar set -e: los fallos del publish/gate NO deben esconderse.
           set -e
