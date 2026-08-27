@@ -15,6 +15,12 @@ if [[ "$code" == "0" ]]; then
   exit 0
 fi
 
+# Infra guard: if comment has no STATUS line, it's not a valid review (engine failure, not a finding)
+if ! grep -q "^STATUS: \(PASSED\|FAILED\)" "$file"; then
+  echo "review: infra failure — no STATUS line in comment (not a valid review)" >&2
+  exit 1
+fi
+
 # GGA failed. Gate by severity, parsing the model's table (| Sev | File:Line | Issue | Rule |).
 if grep -qE '^\| 🔴 ' "$file"; then
   echo "review: FAILED (🔴 blocking findings)" >&2

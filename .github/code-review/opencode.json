@@ -3,7 +3,7 @@
   "model": "zai-coding-plan/glm-5.3-flash",
   "permission": {
     "skill": {
-      "*": "allow"
+      "*": "deny"
     }
   },
   "agent": {

@@ -96,6 +96,12 @@ if [[ "$PUBLISH" != "1" ]]; then
   exit 0
 fi
 
+# Infra guard: refuse to publish a comment without STATUS line (engine failure, not a review)
+if ! grep -q "^STATUS: \(PASSED\|FAILED\)" "$COMMENT"; then
+  echo "::error::Refusing to publish comment without STATUS line (infra failure)" >&2
+  exit 1
+fi
+
 # 6. Publish: keep a single bot summary comment. Deleting previous bot review
 #    comments and posting one new comment is more robust than PATCH (which the
 #    issue comments API kept rejecting) and consolidates the thread.

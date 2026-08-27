@@ -1,4 +1,5 @@
 PROVIDER="opencode"
+# Fallback base; overridden by workflow when base.ref differs (dynamic RANGE via BASE env).
 PR_BASE_BRANCH="origin/main"
 TIMEOUT="480"
 # El workflow genera .gga-rules.md (AGENTS.md + skill thermo-nuclear concatenada) y apunta aca,
@@ -12,4 +13,4 @@ OPENCODE_VARIANT="high"
 OPENCODE_AGENT="review"
 # Solo patrones reales que GGA lee (ver bin/gga load_config). REVIEW_FILE/EXCLUDE/MAX_DIFF no existen.
 FILE_PATTERNS="*"
-EXCLUDE_PATTERNS="*.md,*.lock,*.png,*.json,*.sha256,config/claude/skills/**,.github/test/**,.github/workflows/*,config/vscode/*"
+EXCLUDE_PATTERNS="*.md,*.lock,*.png,config/claude/skills/**,.github/test/**,config/vscode/*"

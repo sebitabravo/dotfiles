@@ -74,24 +74,50 @@ jobs:
             printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n'
             cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md
             echo ""
-            # Modo completo (elegido): el review cubre TODO el PR en cada push
-            # (opened y synchronize). El diff real de la push se adjunta (cap 300k)
-            # para que el modelo cite lineas '+' y los inline comments anclen.
-            # opened/reopened: name-status (el diff completo del PR pesa demasiado;
-            # --diff-only en GGA v2.10.1 lo empeora).
-            if [[ "${{ github.event.action }}" == "synchronize" ]]; then
-              BEFORE="${{ github.event.before }}"
-              if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-                echo "# Diff for this push only (${BEFORE}..HEAD):"
-                echo "Report line numbers exactly as they appear on the '+' side of this diff (new-file line numbers) so inline comments anchor correctly."
-                git diff "$BEFORE"..HEAD | head -c 300000 || true
-              else
-                echo "# Changed files (name-status; force-push, reviewing full PR):"
-                git diff --name-status origin/main...HEAD || true
-              fi
+            ACTION="${{ github.event.action }}"
+            BASE="${{ github.event.pull_request.base.ref }}"
+            BEFORE="${{ github.event.before }}"
+            BASE="${BASE:-main}"
+            if [[ "$ACTION" == "synchronize" ]] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              RANGE="${BEFORE}..HEAD"
+              LABEL="Diff for this push only"
             else
-              echo "# Changed files (name-status):"
-              git diff --name-status origin/main...HEAD || true
+              RANGE="origin/${BASE}...HEAD"
+              LABEL="Full PR diff"
+            fi
+            echo ""
+            echo "## Changed files (name-status) — $LABEL ($RANGE)"
+            echo '```'
+            git diff --name-status "$RANGE" 2>/dev/null || true
+            echo '```'
+            echo ""
+            echo "## $LABEL ($RANGE)"
+            echo "Review ONLY the changed lines shown in the diff (unified diff + name-status), cite file:line from '+' side."
+            echo '```diff'
+            # Per-file truncation up to 600k to avoid cutting hunks mid-stream (auditor #3).
+            CAP=600000
+            total=0
+            omitted=()
+            while IFS= read -r f; do
+              [[ -z "$f" ]] && continue
+              diff_out=$(git diff --unified=3 "$RANGE" -- "$f" 2>/dev/null || true)
+              [[ -z "$diff_out" ]] && continue
+              size=$(printf '%s' "$diff_out" | wc -c)
+              if (( total + size > CAP )); then
+                omitted+=("$f")
+                continue
+              fi
+              printf '%s\n' "$diff_out"
+              total=$((total + size))
+            done < <(git diff --name-only "$RANGE" 2>/dev/null || true)
+            if (( ${#omitted[@]} > 0 )); then
+              echo ""
+              echo "# Omitted files (over cap ${CAP} bytes): ${omitted[*]}"
+            fi
+            echo '```'
+            if [[ "$ACTION" == "synchronize" ]]; then
+              echo ""
+              echo "> Note: This is a synchronize push — prioritize findings in the labeled diff section above; do not re-report already-fixed files unless they still appear in the diff."
             fi
           } > .gga-rules.md
 
@@ -101,6 +127,31 @@ jobs:
           code=${PIPESTATUS[0]}
           # Re-armar set -e: los fallos del publish/gate NO deben esconderse.
           set -e
+
+          # Strip ANSI for deterministic validation (GGA hardcodes colors).
+          perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-output.clean.txt
+
+          # Infra validation: must contain STATUS line or it's an engine failure, not a review (#5).
+          if ! head -n 30 review-output.clean.txt | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
+            echo "::error::Review infra failure (no STATUS line) — not publishing comment" >&2
+            echo "--- review-output head (clean) ---" >&2
+            head -n 50 review-output.clean.txt >&2 || true
+            echo "--- review-output head (raw) ---" >&2
+            head -n 50 review-output.txt >&2 || true
+            exit 1
+          fi
+
+          # Language/format guard (deterministic, #6): first non-empty line must be STATUS, no CJK.
+          first_line=$(grep -m1 -v '^[[:space:]]*$' review-output.clean.txt || true)
+          if ! printf '%s' "$first_line" | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
+            echo "::error::Review output first non-empty line must be STATUS: PASSED/FAILED (got: $first_line)" >&2
+            exit 1
+          fi
+          if grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt >/dev/null 2>&1; then
+            echo "::error::Review output contains CJK characters — language violation" >&2
+            grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt | head -n 5 >&2 || true
+            exit 1
+          fi
 
           # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).
           bash .github/scripts/ai-review-comment.sh review-output.txt --publish
