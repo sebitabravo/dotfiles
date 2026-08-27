@@ -1257,9 +1257,11 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   elif [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] touch $p/.metadata_never_index"
   else
-    touch "$p/.metadata_never_index" 2>/dev/null &&
-      echo "[SET] Spotlight excluye $p" ||
+    if touch "$p/.metadata_never_index" 2>/dev/null; then
+      echo "[SET] Spotlight excluye $p"
+    else
       record_failure "Spotlight excluye $p"
+    fi
   fi
 
   if [ "$NO_SUDO" -eq 1 ]; then
@@ -1269,9 +1271,11 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   elif tmutil isexcluded "$p" 2>/dev/null | grep -q "\[Excluded\]"; then
     echo "[SKIP] Time Machine ya excluye $p"
   else
-    sudo tmutil addexclusion -p "$p" >/dev/null 2>&1 &&
-      echo "[SET] Time Machine excluye $p" ||
+    if sudo tmutil addexclusion -p "$p" >/dev/null 2>&1; then
+      echo "[SET] Time Machine excluye $p"
+    else
       record_failure "Time Machine excluye $p"
+    fi
   fi
 done
 

@@ -168,16 +168,12 @@ jobs:
             echo "::error::Review output first non-empty line must be STATUS: PASSED/FAILED (got: $first_status)" >&2
             exit 1
           fi
-          if grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt >/dev/null 2>&1; then
+          # CJK guard: -CSD makes perl decode UTF-8 (without it, \p{Han} never
+          # matches multibyte input); \p{Han} covers CJK ideographs cleanly.
+          if perl -CSD -ne '$f=1 if /\p{Han}/; END{exit($f?0:1)}' review-output.clean.txt; then
             echo "::error::Review output contains CJK characters — language violation" >&2
-            grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt | head -n 5 >&2 || true
+            perl -CSD -ne 'print if /\p{Han}/' review-output.clean.txt | head -n 5 >&2 || true
             exit 1
-          elif ! grep -P "" /dev/null >/dev/null 2>&1; then
-            if perl -ne 'exit 0 if /[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]/' review-output.clean.txt 2>/dev/null; then
-              echo "::error::Review output contains CJK characters — language violation" >&2
-              perl -ne 'print if /[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]/' review-output.clean.txt | head -n 5 >&2 || true
-              exit 1
-            fi
           fi
 
           # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).
