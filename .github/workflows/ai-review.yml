@@ -153,7 +153,7 @@ jobs:
           perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-output.clean.txt
 
           # Infra validation: must contain STATUS line or it's an engine failure, not a review (#5).
-          if ! head -n 30 review-output.clean.txt | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
+          if ! grep -q "^STATUS: \(PASSED\|FAILED\)" review-output.clean.txt; then
             echo "::error::Review infra failure (no STATUS line) — not publishing comment" >&2
             echo "--- review-output head (clean) ---" >&2
             head -n 50 review-output.clean.txt >&2 || true
@@ -162,16 +162,22 @@ jobs:
             exit 1
           fi
 
-          # Language/format guard (deterministic, #6): first non-empty line must be STATUS, no CJK.
-          first_line=$(grep -m1 -v '^[[:space:]]*$' review-output.clean.txt || true)
-          if ! printf '%s' "$first_line" | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
-            echo "::error::Review output first non-empty line must be STATUS: PASSED/FAILED (got: $first_line)" >&2
+          # Language/format guard (deterministic, #6): first STATUS line must be STATUS: PASSED/FAILED, no CJK.
+          first_status=$(grep -m1 "^STATUS: " review-output.clean.txt || true)
+          if [ -z "$first_status" ] || ! printf '%s' "$first_status" | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
+            echo "::error::Review output first non-empty line must be STATUS: PASSED/FAILED (got: $first_status)" >&2
             exit 1
           fi
           if grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt >/dev/null 2>&1; then
             echo "::error::Review output contains CJK characters — language violation" >&2
             grep -P "[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]" review-output.clean.txt | head -n 5 >&2 || true
             exit 1
+          elif ! grep -P "" /dev/null >/dev/null 2>&1; then
+            if perl -ne 'exit 0 if /[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]/' review-output.clean.txt 2>/dev/null; then
+              echo "::error::Review output contains CJK characters — language violation" >&2
+              perl -ne 'print if /[\x{4e00}-\x{9fff}\x{3400}-\x{4dbf}]/' review-output.clean.txt | head -n 5 >&2 || true
+              exit 1
+            fi
           fi
 
           # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).

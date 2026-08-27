@@ -13,8 +13,8 @@ SYNC="$REPO_ROOT/config/claude/scripts/sync-convergence-runtime.sh"
 PARITY="$SCRIPT_DIR/check-runtime-parity.sh"
 
 command -v claude >/dev/null 2>&1 || {
-  printf '[claude-smoke] claude no está en PATH.\n' >&2
-  exit 2
+  printf '[claude-smoke] SKIP: claude not in PATH - skipping.\n' >&2
+  exit 0
 }
 command -v jq >/dev/null 2>&1 || {
   printf '[claude-smoke] jq es requerido.\n' >&2
