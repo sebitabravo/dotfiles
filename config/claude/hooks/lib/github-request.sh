@@ -7,22 +7,17 @@
 
 GH_REQUEST_TIMEOUT_SECONDS=2
 
+# PID walk compartido — deduplicado en lib/process-utils.sh para evitar
+# duplicacion con lib/test-runner.sh. Se mantiene _gh_process_tree_pids como
+# alias historico para compatibilidad.
+# shellcheck source=process-utils.sh
+_PROCESS_UTILS_LIB="$(dirname -- "${BASH_SOURCE[0]:-${0}}")/process-utils.sh"
+# shellcheck disable=SC1090
+[ -f "$_PROCESS_UTILS_LIB" ] && . "$_PROCESS_UTILS_LIB"
+
+# Alias historico — la implementacion vive en process-utils.sh
 _gh_process_tree_pids() {
-  local frontier="$1" all_pids="$1" pid children next
-
-  while [ -n "$frontier" ]; do
-    next=""
-    for pid in $frontier; do
-      children=$(pgrep -P "$pid" 2>/dev/null || true)
-      [ -n "$children" ] && {
-        next="$next $children"
-        all_pids="$all_pids $children"
-      }
-    done
-    frontier=$next
-  done
-
-  printf '%s' "$all_pids"
+  _process_tree_pids "$@"
 }
 
 gh_request() {

@@ -97,6 +97,10 @@ resolve_vars() {
 COMMAND_VARS_RESOLVED=$(resolve_vars "$COMMAND")
 NO_QUOTES_FULL=$(echo "$COMMAND_VARS_RESOLVED" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
 
+# NOTA: tokenizer intencionalmente distinto de quality-gate:split_shell_segments
+# y privacy-review:shlex. Este resolver salta wrappers (env, time, xargs) y
+# asignaciones para encontrar el binario real; los otros separan segmentos
+# shell o tokenizan argv de gh. No son duplicacion — dominios diferentes.
 # Resolve the executable after shell command prefixes. This is deliberately a
 # small, non-evaluating tokenizer: the hook must never execute user input. It
 # skips environment assignments and common wrappers while preserving the real

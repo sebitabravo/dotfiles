@@ -9,6 +9,12 @@
 2. `config/claude/rules/common/*.md` — always-on conduct rules.
 3. `config/claude/CLAUDE.md` — global Senior Architect instructions (edit the dotfile, then sync — never the deployed `~/.claude` copy).
 
+## Response Language
+
+RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+
+REJECT if review output is not in neutral Spanish (except the STATUS line and emojis). STRICT_MODE enforces this.
+
 ## Stack
 
 - Shell: `zsh` / `bash` (`set -euo pipefail`), macOS `defaults` via `config/macos/defaults.sh`.
@@ -63,11 +69,13 @@ PREFER the tools as style judges:
 
 ## Response Format
 
-- FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED`.
-- STATUS: FAILED only when at least one 🔴 finding exists. If only 🟡/🟣, use STATUS: PASSED and lead with "No blocking issues."
-- If FAILED, one line per violation: `file:line - rule - issue`. Then severity table `| Sev | File:Line | Issue | Rule |` (🔴 blocking / 🟡 style / 🟣 pre-existing), max 5 findings.
-- No preamble, no explanations, no suggestions, no diff paste, no file list dump.
+- RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+- FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED` (English, for GGA parsing).
+- STATUS: FAILED only when at least one 🔴 finding exists. If only 🟡/🟣, use STATUS: PASSED and lead with "Sin incidencias bloqueantes." (neutral Spanish).
+- If FAILED, one line per violation: `file:line - rule - issue` (issue text in Spanish). Then severity table `| Sev | File:Line | Incidencia | Regla |` (🔴 bloqueo / 🟡 estilo / 🟣 preexistente), max 5 findings — headers and content in Spanish neutro.
+- No preamble, no explanations, no suggestions, no diff paste, no file list dump — all in Spanish neutro.
 - Read-only review: never run commands, never modify files.
+- Example: first line `STATUS: PASSED`, following content in Spanish neutro — e.g., "Sin incidencias bloqueantes." and table headers "Sev | Archivo:Línea | Incidencia | Regla".
 
 ## Scope
 

@@ -27,6 +27,15 @@
 # nuestra "equivalente pero con flag de cobertura". Uno `inferred` si, porque ya
 # es una suposicion propia.
 
+# Utilidad compartida de PID walk — deduplicada con github-request.sh
+# Ver lib/process-utils.sh. Los tokenizers de quality-gate (split_shell_segments),
+# validate-safe-ops (resolve_command_prefix) y privacy-review (shlex) son
+# intencionalmente distintos: cada uno parsea un dominio diferente (segmentos
+# de shell vs prefijo de comando vs argv de gh) y no son duplicacion.
+# shellcheck source=process-utils.sh
+_TEST_RUNNER_UTILS_LIB="$(dirname -- "${BASH_SOURCE[0]:-${0}}")/process-utils.sh"
+[ -f "$_TEST_RUNNER_UTILS_LIB" ] && . "$_TEST_RUNNER_UTILS_LIB"
+
 # Repository-owned runners are executable code, even when their path is safely
 # quoted. Stop hooks therefore require an explicit user-owned trust decision
 # before they call detect_test_cmd or execute TEST_CMD. The trust file lives
@@ -348,37 +357,30 @@ _detect_managed() {
   return 1
 }
 
-# _process_tree_pids: returns pid and every descendant, not just direct
-# children. `pkill -P "$pid"` alone only reaches one generation -- a real
-# test runner (pytest/jest/go test) can fork a worker that itself forks
-# another process, and that grandchild survives `pkill -P` untouched,
-# leaking a live process (and whatever port/CPU it holds) past the timeout
-# this function exists to enforce.
-#
-# Discovery is separate from signaling on purpose: a descendant that dies to
-# TERM can orphan ITS OWN children before a second `pgrep -P` walk would find
-# them again (reparented to init/launchd, no longer reachable from $pid at
-# all). The caller signals the ONE list this returns for both TERM and KILL
-# instead of re-walking the tree per signal -- kill(2) targets a PID
-# directly and does not care who its current parent is, so an orphaned PID
-# already captured here is still killable.
-_process_tree_pids() {
-  local frontier="$1" all_pids="$1" pid children next
+# _process_tree_pids: implementacion principal en process-utils.sh (cargado
+# arriba). Fallback solo si el archivo compartido no existe — ej. entorno de
+# test aislado que enlaza solo test-runner.sh sin process-utils.sh (ver
+# convergence-stop.test.sh SHORT_DIR). No es duplicacion intencional: es
+# compatibilidad con fixtures existentes.
+if ! declare -F _process_tree_pids >/dev/null 2>&1; then
+  _process_tree_pids() {
+    local frontier="$1" all_pids="$1" pid children next
 
-  while [ -n "$frontier" ]; do
-    next=""
-    for pid in $frontier; do
-      children=$(pgrep -P "$pid" 2>/dev/null || true)
-      [ -n "$children" ] && {
-        next="$next $children"
-        all_pids="$all_pids $children"
-      }
+    while [ -n "$frontier" ]; do
+      next=""
+      for pid in $frontier; do
+        children=$(pgrep -P "$pid" 2>/dev/null || true)
+        [ -n "$children" ] && {
+          next="$next $children"
+          all_pids="$all_pids $children"
+        }
+      done
+      frontier=$next
     done
-    frontier=$next
-  done
 
-  printf '%s' "$all_pids"
-}
+    printf '%s' "$all_pids"
+  }
+fi
 
 # run_with_timeout: bounds an arbitrary shell command string (may contain
 # `&&`, `cd`, pipes) to N seconds, portably. Execute it through a nested Bash

@@ -39,6 +39,10 @@ COMMAND=$(echo "$input" | jq -r '.tool_input.command // ""')
 # Se matchea sobre el segmento que contiene el commit, no sobre el comando
 # completo. Sin esta frontera, `git commit -m wip && git -C ~/scratch status`
 # resolvia el ultimo `-C` (el del status) y podia evaluar el repo equivocado.
+# NOTA: tokenizer intencionalmente distinto de validate-safe-ops:resolve_command_prefix
+# y privacy-review:shlex. Este splitter separa segmentos por operadores shell
+# respetando comillas y sustituciones; los otros resuelven prefijos de binario
+# o argv de gh. No son duplicacion — cada uno parsea un dominio diferente.
 # Igual que validate-safe-ops, separamos por operadores antes de revisar cada
 # segmento; solo los operadores FUERA de comillas son separadores. Un splitter
 # ciego rompe valores validos como `git -c user.name='A&B' commit` y puede hacer

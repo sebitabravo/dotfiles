@@ -52,8 +52,10 @@ EVIDENCE: test.sh exit 0
 EOF
 printf '%s\n' 'example-change' >"$TMP/.claude/convergence.active"
 
+# shellcheck disable=SC2120 # llamadas sin argumento usan default "{}" — verificado abajo
 run_hook() {
-  (cd "$TMP" && printf '%s' "${1:-{}}" | env \
+  local _payload="${1:-{}}"
+  (cd "$TMP" && printf '%s' "$_payload" | env \
     HOME="$TMP/home" \
     CLAUDE_REPOSITORY_TRUST_FILE="$TRUST_FILE" \
     PATH="$TMP/bin:$PATH" \
@@ -80,7 +82,7 @@ expect_rc() {
 
 printf '%s\n' '== no active marker is a no-op'
 mv "$TMP/.claude/convergence.active" "$TMP/.claude/convergence.active.off"
-run_hook
+run_hook "{}"
 mv "$TMP/.claude/convergence.active.off" "$TMP/.claude/convergence.active"
 
 printf '%s\n' '== pending OpenSpec tasks block'
@@ -99,7 +101,7 @@ printf '%s\n' '== stop_hook_active does not turn a failing gate green'
 expect_rc 2 env VERIFY_RC=1 bash -c 'cd "$2" && printf "%s" "$1" | env HOME="$2/home" CLAUDE_REPOSITORY_TRUST_FILE="$2/trusted-repositories" PATH="$2/bin:$PATH" VERIFY_RC=1 "$3"' sh '{"stop_hook_active":true}' "$TMP" "$HOOK"
 
 printf '%s\n' '== complete change passes with fresh native verification'
-run_hook
+run_hook "{}"
 
 printf '%s\n' '== native runner uses the portable internal timeout helper'
 grep -Fq 'run_trusted_test_once "$ROOT" "$SESSION_ID" "$TRANSCRIPT_PATH" "$TEST_TIMEOUT_SECONDS"' "$HOOK" ||

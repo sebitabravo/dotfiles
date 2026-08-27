@@ -141,7 +141,7 @@ helper de autenticación:
 | DeepSeek | `deepseek.settings.json` | `api.deepseek.com/anthropic` | `deepseek-v4-pro[1m]` | `deepseek-v4-flash[1m]` | `deepseek-v4-flash` |
 | GLM / Z.AI | `glm.settings.json` | `api.z.ai/api/anthropic` | `glm-5.3[1m]` | `glm-5.2[1m]` | `glm-4.7` |
 | Ollama Cloud (API directa) | `ollama.settings.json` | `ollama.com` | `minimax-m3:cloud` | `gemma4:31b-cloud` | `gpt-oss:120b-cloud` |
-| OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `x-ai/grok-4.6` (Fable) / `google/gemini-3.7-flash` (Opus) | `openai/gpt-5.6-luna-pro` | `openrouter/free` |
+| OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `openai/gpt-5.6-luna-pro[1m]` (Fable) / `qwen/qwen3.8-flash[1m]` (Opus) | `z-ai/glm-5.3-flash[1m]` | `openrouter/free` |
 
 Los modelos de la tabla son **las elecciones de esta configuración**, no
 defaults universales. La disponibilidad, los precios y los límites de cada
@@ -151,21 +151,14 @@ disponible en OpenRouter no se puede trasladar automáticamente al endpoint
 directo de Z.AI. OpenRouter además declara
 `ANTHROPIC_DEFAULT_FABLE_MODEL` para la cuarta clase de modelos de Claude Code;
 este overlay la ordena por calidad ascendente sobre el mismo Sonnet base
-(`openai/gpt-5.6-luna-pro`, Artificial Analysis Intelligence Index ~47-52
-según el reasoning effort): Opus usa `google/gemini-3.7-flash` (índice 56,
-$0.375/$1.875 por M, 1.05M de contexto) y Fable `x-ai/grok-4.6` (índice 61,
-$2/$6 por M, 500K de contexto), excluyendo deliberadamente los vendors que
+(`z-ai/glm-5.3-flash[1m]`): Opus usa `qwen/qwen3.8-flash[1m]` y Fable `openai/gpt-5.6-luna-pro[1m]`, excluyendo deliberadamente los vendors que
 ya tienen overlay propio en esta tabla (DeepSeek, GLM).
 No hay rotación automática de modelo por tier en Claude Code —
 `ANTHROPIC_DEFAULT_OPUS_MODEL` admite un solo string en el schema oficial—,
 así que para alternar puntualmente a otro modelo dentro de un tier se usa
 el flag `--model` por sesión, por ejemplo `claude --openrouter --model
-x-ai/grok-4.5` o `claude --deepseek --model deepseek-v4-pro`. `grok-4.6` limita a 500K de contexto real, por debajo de
-los 1.05M del resto de los tiers y del `CLAUDE_CODE_AUTO_COMPACT_WINDOW` de
-`1048576` declarado en el overlay: una sesión larga que dispare Fable
-después de acumular más de 500K tokens puede fallar por contexto antes de
-que el autocompact global actúe. Se aceptó ese trade-off porque Fable es de
-uso poco frecuente en esta configuración.
+qwen/qwen3.8-flash` o `claude --deepseek --model deepseek-v4-pro`. Todos los modelos de este overlay con sufijo `[1m]` declaran ventana de 1M y respetan el `CLAUDE_CODE_AUTO_COMPACT_WINDOW` de
+`1048576`; verificar límites reales por proveedor antes de sesiones largas con Fable, que es de uso poco frecuente en esta configuración.
 
 Claude Code actual incorpora Fable 5 como una clase de modelo separada. Todos
 los overlays declaran explícitamente `ANTHROPIC_DEFAULT_FABLE_MODEL` para que

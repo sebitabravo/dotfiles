@@ -28,6 +28,10 @@ fi
 
 [[ -z "$cmd_str" ]] && exit 0
 
+# NOTA: tokenizer intencionalmente distinto de quality-gate:split_shell_segments
+# y validate-safe-ops:resolve_command_prefix. Este usa shlex para argv de gh
+# (clasificacion de publicaciones); los otros separan segmentos shell o
+# resuelven prefijo de binario. No son duplicacion — dominios diferentes.
 # Tokenize the command before classifying it.  Raw substring matching misses
 # quoted options (`'--body-file'`) and global gh options (`gh --repo X pr ...`),
 # while splitting on whitespace alone misreads quoted values.  shlex gives us a
