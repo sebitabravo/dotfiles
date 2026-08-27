@@ -82,7 +82,7 @@ PREFER the tools as style judges:
 
 Dotfiles: local machine provisioning, not a web service. Scope is whatever the appended "Diff" or "Changed files" section lists; if a path is not listed, it is out of scope and pre-existing issues on it get 🟣, never blocking.
 
-Review ONLY the changed lines shown in the diff (unified diff + name-status), cite file:line from '+' side. The appended section always contains both name-status and a unified diff (per-file truncated, cap 600k) — on synchronize it is the push delta, on opened it is the full PR diff. Report the `file:line` of every finding using the line number on the `+` side of that diff (new-file line numbers) — this is what lets the finding anchor as an inline PR comment. If this is a synchronize push, prioritize findings in the labeled diff section; do not re-report already-fixed files.
+Review ONLY the changed lines shown in the diff (unified diff + name-status), cite file:line from '+' side. The appended section always contains both name-status and a unified diff (per-file truncated, cap 150k) — on synchronize it is the push delta, on opened it is the full PR diff. Report the `file:line` of every finding using the line number on the `+` side of that diff (new-file line numbers) — this is what lets the finding anchor as an inline PR comment. Cap 150k covers 95% of pushes; omitted files are listed. If this is a synchronize push, prioritize findings in the labeled diff section; do not re-report already-fixed files.
 
 ## Structure
 

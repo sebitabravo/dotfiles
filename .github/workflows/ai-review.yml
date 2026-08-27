@@ -23,7 +23,7 @@ jobs:
   review:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-ai-review') && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -94,8 +94,8 @@ jobs:
             echo "## $LABEL ($RANGE)"
             echo "Review ONLY the changed lines shown in the diff (unified diff + name-status), cite file:line from '+' side."
             echo '```diff'
-            # Per-file truncation up to 600k to avoid cutting hunks mid-stream (auditor #3).
-            CAP=600000
+            # Per-file truncation up to 150k covers 95% of cases; caps outlier without duplicating payload (auditor #3, veredicto 5).
+            CAP=150000
             total=0
             omitted=()
             while IFS= read -r f; do
@@ -120,6 +120,27 @@ jobs:
               echo "> Note: This is a synchronize push — prioritize findings in the labeled diff section above; do not re-report already-fixed files unless they still appear in the diff."
             fi
           } > .gga-rules.md
+
+          # Variante dinamica por tamano del diff (veredicto 5): PRs chicos -> high, grandes -> low.
+          # Antes de calibrar timeout contra outlier, calibrar payload: 600k + 74 files duplica el prompt.
+          # GGA --pr-mode ya envia "FILES TO REVIEW" (contenido completo filtrado por EXCLUDE_PATTERNS);
+          # el diff embebido en RULES_FILE es complementario (lineas '+' para anclar inline comments),
+          # no duplicado exacto, pero con CAP 150k se mantiene acotado.
+          diff_size=$(git diff "$RANGE" 2>/dev/null | wc -c)
+          diff_size=${diff_size//[^0-9]/}
+          diff_size=${diff_size:-0}
+          if (( diff_size < 60000 )); then
+            dyn_variant="high"
+          else
+            dyn_variant="low"
+          fi
+          if grep -q '^OPENCODE_VARIANT=' ./.gga 2>/dev/null; then
+            tmp_gga=$(mktemp)
+            sed "s/^OPENCODE_VARIANT=.*/OPENCODE_VARIANT=\"$dyn_variant\"/" ./.gga > "$tmp_gga" && mv "$tmp_gga" ./.gga
+          else
+            echo "OPENCODE_VARIANT=\"$dyn_variant\"" >> ./.gga
+          fi
+          echo "Review variant: $dyn_variant (diff ${diff_size} bytes, threshold 60000)" >&2
 
           set +e
           # PR completo en cada push (opened y synchronize) como al principio.

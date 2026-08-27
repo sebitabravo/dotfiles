@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install shellcheck
-        run: brew install shellcheck
+      - name: install shellcheck and coreutils
+        run: brew install shellcheck coreutils
 
       - name: install.sh test suite
         run: bash .github/test.sh
