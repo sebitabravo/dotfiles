@@ -105,7 +105,9 @@ gh api "repos/${repo}/issues/${PR}/comments" --paginate \
   --jq '.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖")) | .id' \
   2>/dev/null |
   while read -r old_id; do
-    gh api -X DELETE "repos/${repo}/issues/${PR}/comments/${old_id}" >/dev/null 2>&1 || true
+    # Issue comments are addressed by /issues/comments/{id} (not nested under
+    # the issue number). Log failures so a bot thread never silently accumulates.
+    gh api -X DELETE "repos/${repo}/issues/comments/${old_id}" || echo "failed to delete old review comment ${old_id}" >&2
   done
 gh pr comment "$PR" --body-file comment.md
 echo "comment published: ${repo} #${PR}"
