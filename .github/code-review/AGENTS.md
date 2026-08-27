@@ -70,7 +70,10 @@ PREFER the tools as style judges:
 
 ## Scope
 
-Dotfiles: local machine provisioning, not a web service. The prompt provides neither the raw diff nor per-line annotations; instead, "Changed files (name-status)" lists every path touched (opened/reopened: whole PR, synchronize: last push only). Scope = those paths. Judge the current content of the listed files, prioritizing the evidence in the diff stream presented; if a path is not listed, it is out of scope. Pre-existing issues get 🟣, never blocking.
+Dotfiles: local machine provisioning, not a web service. Scope is whatever the appended "Diff" or "Changed files" section lists; if a path is not listed, it is out of scope and pre-existing issues on it get 🟣, never blocking.
+
+- On a push to an existing PR (synchronize), that section is the real unified diff for the new commits only. Report the `file:line` of every finding using the line number on the `+` side of that diff (new-file line numbers) — this is what lets the finding anchor as an inline PR comment instead of only appearing in the summary table.
+- On a new/reopened PR, that section is only a name-status file list (no diff, to keep a full-PR review affordable). Judge the current content of those files; line numbers there are best-effort and may not land inline.
 
 ## Structure
 

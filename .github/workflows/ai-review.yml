@@ -74,19 +74,25 @@ jobs:
             printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n'
             cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md
             echo ""
-            echo "# Changed files (name-status):"
-            # Contexto barato de archivos cambiados (name-status). Sin diff completo:
-            # --diff-only en GGA v2.10.1 infla el payload (diff completo + files completos).
-            # opened/reopened: todo el PR (pr-mode). synchronize: solo commits nuevos (GGA --ci, incremental).
+            # opened/reopened: todo el PR, solo name-status (el diff completo pesa
+            # demasiado en un PR grande; --diff-only en GGA v2.10.1 lo empeora
+            # sumando diff + archivos completos, nunca reemplazandolos).
+            # synchronize: solo los commits nuevos, asi que el diff real con hunks
+            # sale barato. Es el unico caso donde los comentarios inline pueden
+            # anclar de verdad: la API de PR review comments exige que la linea
+            # reportada este dentro de un hunk del diff.
             if [[ "${{ github.event.action }}" == "synchronize" ]]; then
               BEFORE="${{ github.event.before }}"
               if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-                git diff --name-status "$BEFORE"..HEAD || true
+                echo "# Diff for this push only (${BEFORE}..HEAD):"
+                echo "Report line numbers exactly as they appear on the '+' side of this diff (new-file line numbers) so inline comments anchor correctly."
+                git diff "$BEFORE"..HEAD | head -c 300000 || true
               else
-                # Force-push o historial no disponible: revisar todo el PR.
+                echo "# Changed files (name-status; force-push, reviewing full PR):"
                 git diff --name-status origin/main...HEAD || true
               fi
             else
+              echo "# Changed files (name-status):"
               git diff --name-status origin/main...HEAD || true
             fi
           } > .gga-rules.md
