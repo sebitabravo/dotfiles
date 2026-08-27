@@ -63,6 +63,7 @@ SUITES=(
   .github/test/statusline.test.sh
   .github/test/project-integrations-check.test.sh
   .github/test/privacy-review.test.sh
+  .github/test/protect-tests.test.sh
   .github/test/protect-codegraph-tracking.test.sh
   .github/test/secret-detect.test.sh
   .github/test/quality-gate.test.sh
@@ -77,13 +78,17 @@ SUITES=(
   .github/test/validate-task-roadmap.test.sh
   .github/test/compare-task-roadmaps.test.sh
   .github/test/doctor.test.sh
+  .github/test/defaults-failure-propagation.test.sh
   .github/test/convergence-start.test.sh
   .github/test/check-runtime-parity.test.sh
   .github/test/check-provider-runtime-parity.test.sh
   .github/test/sync-convergence-runtime.test.sh
   .github/test/test-runner.test.sh
   .github/test/hooks-edge-cases.test.sh
-  .github/test/herdr-autostart.test.sh
+  .github/test/stitch-office-security.test.sh
+  .github/test/smoke-automatic-workflow.sh
+  .github/test/smoke-claude-hook-engine.sh
+  .github/test/ai-review.test.sh
 )
 
 for suite in "${SUITES[@]}"; do

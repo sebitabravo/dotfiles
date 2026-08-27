@@ -22,7 +22,7 @@ BODY="$OUT_DIR/body.md"
 COMMENT="$OUT_DIR/comment.md"
 
 # 1. Strip ANSI (GGA v2.10.1 hardcodes colors; no NO_COLOR detection).
-perl -pe 's/\e\[[0-9;]*m//g' "$INPUT" > "$CLEAN"
+perl -pe 's/\e\[[0-9;]*m//g' "$INPUT" >"$CLEAN"
 
 # 2. Collapse the "Files to review" list to one line. Count via awk to avoid
 #    the "0\n0" bug of `grep -c ... || echo 0` (grep exits 1 when count is 0).
@@ -33,7 +33,7 @@ if grep -q "^Files to review:" "$CLEAN"; then
     skip && (/^  - / || /^[[:space:]]*$/) {next}
     skip {skip=0}
     !skip {print}
-  ' "$CLEAN" > "$CONCISE"
+  ' "$CLEAN" >"$CONCISE"
 else
   cp "$CLEAN" "$CONCISE"
 fi
@@ -50,15 +50,15 @@ awk '
   /^Fix the violations listed above before committing\.$/ {next}
   /^Could not determine review status$/ {next}
   {print}
-' "$CONCISE" > "$BODY"
+' "$CONCISE" >"$BODY"
 
 # 4. Cap at 300 lines, then prepend the header.
-head -n 300 "$BODY" > "$COMMENT"
+head -n 300 "$BODY" >"$COMMENT"
 {
   echo "## 🤖 Review (GGA)"
   echo ""
   cat "$COMMENT"
-} > "$COMMENT.tmp" && mv "$COMMENT.tmp" "$COMMENT"
+} >"$COMMENT.tmp" && mv "$COMMENT.tmp" "$COMMENT"
 
 # Copy to the current directory so callers (and tests) can inspect it.
 cp "$COMMENT" ./comment.md
@@ -84,7 +84,7 @@ awk '
     if (a[1] != "" && line ~ /^[0-9]+$/)
       print a[1] "|" line "|" $2 "|" $0
   }
-' "$COMMENT" > "$INLINE_PLAN"
+' "$COMMENT" >"$INLINE_PLAN"
 
 if [[ "$PLAN" == "1" ]]; then
   cat "$INLINE_PLAN"
@@ -103,8 +103,8 @@ PR="${PR_NUMBER:?PR_NUMBER required for --publish}"
 repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY required for --publish}"
 gh api "repos/${repo}/issues/${PR}/comments" --paginate \
   --jq '.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("## 🤖")) | .id' \
-  2>/dev/null \
-| while read -r old_id; do
+  2>/dev/null |
+  while read -r old_id; do
     gh api -X DELETE "repos/${repo}/issues/${PR}/comments/${old_id}" >/dev/null 2>&1 || true
   done
 gh pr comment "$PR" --body-file comment.md
@@ -117,8 +117,8 @@ head_sha=$(gh api "repos/${repo}/pulls/${PR}" --jq '.head.sha' 2>/dev/null || tr
 if [[ -n "$head_sha" && -s "$INLINE_PLAN" ]]; then
   gh api "repos/${repo}/pulls/${PR}/comments" --paginate \
     --jq '.[] | select(.user.login=="github-actions[bot]") | select(.body | startswith("🔴") or startswith("🟡") or startswith("🟣")) | .id' \
-    2>/dev/null \
-  | while read -r inline_id; do
+    2>/dev/null |
+    while read -r inline_id; do
       gh api -X DELETE "repos/${repo}/pulls/comments/${inline_id}" >/dev/null 2>&1 || true
     done
   while IFS='|' read -r fpath fline sev row; do
@@ -129,6 +129,6 @@ if [[ -n "$head_sha" && -s "$INLINE_PLAN" ]]; then
     gh api -X POST "repos/${repo}/pulls/${PR}/comments" \
       -f path="$fpath" -f line="$fline" -f commit_id="$head_sha" -f body="$body" \
       >/dev/null 2>&1 || echo "inline skipped (not in diff?): ${fpath}:${fline}" >&2
-  done < "$INLINE_PLAN"
-  echo "inline comments published: $(wc -l < "$INLINE_PLAN" | tr -d ' ')"
+  done <"$INLINE_PLAN"
+  echo "inline comments published: $(wc -l <"$INLINE_PLAN" | tr -d ' ')"
 fi

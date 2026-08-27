@@ -41,14 +41,20 @@ jobs:
           chmod +x /tmp/gga/bin/gga
           echo "/tmp/gga/bin" >> "$GITHUB_PATH"
 
-      - name: Install OpenCode (pinned version)
-        run: curl -fsSL https://opencode.ai/install | bash -s -- --version 1.18.23
-
-      - name: Install review skill (thermo-nuclear)
+      - name: Install OpenCode (checksum-verified)
         run: |
-          mkdir -p "$HOME/.config/opencode/skills/thermo-nuclear-code-quality-review"
-          cp .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md \
-            "$HOME/.config/opencode/skills/thermo-nuclear-code-quality-review/SKILL.md"
+          expected=$(awk -F'|' '$1=="OpenCode"{print $2}' config/install/remote-installers.sha256)
+          if [[ -z "$expected" ]]; then
+            echo "::error::no OpenCode entry in config/install/remote-installers.sha256" >&2
+            exit 1
+          fi
+          curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh
+          actual=$(shasum -a 256 /tmp/opencode-install.sh | awk '{print $1}')
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::OpenCode installer checksum mismatch: expected $expected, got $actual" >&2
+            exit 1
+          fi
+          bash /tmp/opencode-install.sh --version 1.18.23
 
       - name: Run code review and post comment
         env:
