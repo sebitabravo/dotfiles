@@ -74,12 +74,11 @@ window-padding-balance = true
 
 # Apariencia
 background-opacity = 0.80
-background-blur-radius = 20
 background-opacity-cells = true
 background-blur = 40
 custom-shader = shaders/cursor_smear_gentleman.glsl
 custom-shader-animation = true
-gtk-tabs-location = hidden
+window-show-tab-bar = never
 
 
 # Gentleman theme

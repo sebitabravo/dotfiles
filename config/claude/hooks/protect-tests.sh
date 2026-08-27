@@ -69,7 +69,10 @@ gate() {
   case "$PERMISSION_MODE" in
     bypassPermissions | dontAsk)
       local root
-      root=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null)
+      # A non-git project is a valid hook context.  Keep the failed probe out
+      # of the set -e exit path so gate() can still emit its intended deny
+      # decision for permission modes without an interactive prompt.
+      root=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || root=""
       if [ -n "$root" ] && [ -f "$root/.claude-relaxed" ]; then
         allow
       fi

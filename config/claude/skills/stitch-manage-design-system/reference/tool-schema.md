@@ -10,16 +10,21 @@ Uploads a `DESIGN.md` file to a project via the `BatchCreateScreens` endpoint.
 This is the first step in creating a design system from a markdown file.
 
 > [!NOTE]
-> Use the `upload-to-stitch` skill's script instead of the `upload_design_md`
+> Use the `stitch-manage-design-system` skill's script instead of the `upload_design_md`
 > MCP tool. The script handles base64 encoding in-process, avoiding the model's
 > output token limit.
 
 ```bash
+export STITCH_API_KEY
 python3 <SKILL_DIR>/scripts/upload_to_stitch.py \
   --project-id <PROJECT_ID> \
-  --file-path /path/to/DESIGN.md \
-  --api-key <API_KEY>
+  --file-path /path/to/DESIGN.md
 ```
+
+The script uses the fixed HTTPS origin `https://stitch.googleapis.com`. Keep
+the API key in `STITCH_API_KEY`; it is never a command-line argument or part of
+the request URL. Project IDs must be safe single path components, and the
+uploader rejects symlinks, unsupported files, oversized inputs, and redirects.
 
 ---
 

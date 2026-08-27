@@ -25,8 +25,12 @@ set -u
 # sigue fallando, el segundo intento también debe quedar bloqueado.
 INPUT=$(cat 2>/dev/null || printf '%s' '{}')
 CWD=""
+SESSION_ID=""
+TRANSCRIPT_PATH=""
 if command -v jq >/dev/null 2>&1; then
   CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+  SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+  TRANSCRIPT_PATH=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
 fi
 PROJECT_DIR="${CWD:-$PWD}"
 
@@ -165,27 +169,28 @@ if ! git diff --check >/dev/null 2>&1; then
   exit 2
 fi
 
+# TEST_CMD is a public variable populated by the sourced runner helper.
+# shellcheck disable=SC2034
 TEST_CMD=""
 RUNNER="$HOME/.claude/hooks/lib/test-runner.sh"
 [ -r "$RUNNER" ] || RUNNER="$(dirname "$0")/lib/test-runner.sh"
 if [ -r "$RUNNER" ]; then
   # shellcheck source=/dev/null
   . "$RUNNER"
-  detect_test_cmd "$ROOT" || true
 fi
 
-if [ -z "${TEST_CMD:-}" ]; then
-  echo '[convergence] no se detectó una suite nativa de verificación; no se acepta convergencia sin un runner del proyecto.' >&2
+if ! declare -f run_trusted_test_once >/dev/null 2>&1; then
+  echo '[convergence] el detector de runner no expone la frontera de confianza requerida.' >&2
   exit 2
 fi
 
-TIMEOUT_BIN=""
-command -v timeout >/dev/null 2>&1 && TIMEOUT_BIN="timeout 180"
-command -v gtimeout >/dev/null 2>&1 && TIMEOUT_BIN="gtimeout 180"
-[ -z "$TIMEOUT_BIN" ] && echo '[convergence] no hay timeout/gtimeout; se ejecuta la suite sin límite del wrapper.' >&2
-
-TEST_OUT=$(eval "$TIMEOUT_BIN $TEST_CMD" 2>&1)
+TEST_TIMEOUT_SECONDS=180
+TEST_OUT=$(run_trusted_test_once "$ROOT" "$SESSION_ID" "$TRANSCRIPT_PATH" "$TEST_TIMEOUT_SECONDS" 2>&1)
 TEST_RC=$?
+if [ "$TEST_RC" = 126 ] || [ "$TEST_RC" = 127 ] || [ "$TEST_RC" = 125 ]; then
+  printf '%s\n' "$TEST_OUT" >&2
+  exit 2
+fi
 if [ "$TEST_RC" = "124" ]; then
   echo '[convergence] la suite nativa no terminó en 180s; no se puede cerrar como PASS.' >&2
   printf '%s\n' "$TEST_OUT" | tail -30 >&2

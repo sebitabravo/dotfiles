@@ -122,11 +122,15 @@ Before ending the session:
 2. run the native test/lint/type/build/acceptance checks that apply;
 3. run git diff --check;
 4. validate OpenSpec if the route uses it;
-5. write the receipt path supplied by the UserPromptSubmit hook:
+5. write the receipt path supplied by the UserPromptSubmit hook. If the
+   environment or the user's safety boundary forbids writes outside the
+   project, use the project-local fallback path supplied by that hook:
 
     ROADMAP: <relative roadmap path>
+    ACTIVATION: <activation id supplied by the hook>
     STATUS: PASS
     ACCEPTANCE: PASS
+    VERIFY_TYPE: EXECUTABLE or STRUCTURAL
     VERIFY_EXIT: 0
     EVIDENCE: <fresh commands and observable result>
 
@@ -135,6 +139,8 @@ instead of fabricating PASS:
 
     STATUS: BLOCKED
     ACCEPTANCE: PENDING
+    ACTIVATION: <activation id supplied by the hook>
+    VERIFY_TYPE: EXECUTABLE or STRUCTURAL
     VERIFY_EXIT: <numeric exit code>
     EVIDENCE: <specific blocker and what must change>
 

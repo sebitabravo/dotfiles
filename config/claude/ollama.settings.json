@@ -3,7 +3,7 @@
   "apiKeyHelper": "~/.claude/scripts/ollama-api-key.sh",
   "env": {
     "ANTHROPIC_BASE_URL": "https://ollama.com",
-    "ANTHROPIC_MODEL": "opus",
+    "ANTHROPIC_MODEL": "fable",
     "ANTHROPIC_DEFAULT_FABLE_MODEL": "minimax-m3:cloud",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "minimax-m3:cloud",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemma4:31b-cloud",

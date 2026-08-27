@@ -158,6 +158,150 @@ TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TOOL_DRY_HOME" \
 grep -qF 'SKIP   OpenCode (ya existe opencode)' "$TMP_HOME/tool-local-cli.log" || fail 'OpenCode local binary was not skipped'
 grep -qF 'SKIP   Kilo Code (ya existe kilo)' "$TMP_HOME/tool-local-cli.log" || fail 'Kilo local binary was not skipped'
 
+printf '%s\n' '== install.sh rejects altered remote bytes before shell execution =='
+HASH_MISMATCH_HOME="$TMP_HOME/hash-mismatch-home"
+HASH_MISMATCH_BIN="$TMP_HOME/hash-mismatch-bin"
+HASH_MISMATCH_CURL_LOG="$TMP_HOME/hash-mismatch-curl.log"
+HASH_MISMATCH_CURL_OUTPUT_LOG="$TMP_HOME/hash-mismatch-curl-output.log"
+HASH_MISMATCH_SHELL_LOG="$TMP_HOME/hash-mismatch-shell.log"
+mkdir -p \
+  "$HASH_MISMATCH_HOME/.oh-my-zsh/custom/themes/powerlevel10k" \
+  "$HASH_MISMATCH_BIN"
+printf '%s\n' '#!/usr/bin/env bash' >"$HASH_MISMATCH_HOME/brew"
+chmod +x "$HASH_MISMATCH_HOME/brew"
+cat >"$HASH_MISMATCH_BIN/uname" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' Darwin
+EOF
+cat >"$HASH_MISMATCH_BIN/xcode-select" <<'EOF'
+#!/usr/bin/env bash
+[ "${1:-}" = '--print-path' ] && exit 0
+exit 99
+EOF
+cat >"$HASH_MISMATCH_BIN/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"${HASH_MISMATCH_CURL_LOG:?}"
+output=''
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = '--output' ]; then
+    output="${2:?}"
+    shift 2
+  else
+    shift
+  fi
+done
+printf '%s\n' 'altered remote installer' >"${output:?}"
+printf '%s\n' "$output" >"${HASH_MISMATCH_CURL_OUTPUT_LOG:?}"
+EOF
+cat >"$HASH_MISMATCH_BIN/sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${HASH_MISMATCH_SHELL_LOG:?}"
+exit 99
+EOF
+for command_name in codegraph gentle-ai opencode codex agent agy claude copilot kilo; do
+  cat >"$HASH_MISMATCH_BIN/$command_name" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+  chmod +x "$HASH_MISMATCH_BIN/$command_name"
+done
+chmod +x "$HASH_MISMATCH_BIN/uname" "$HASH_MISMATCH_BIN/xcode-select" \
+  "$HASH_MISMATCH_BIN/curl" "$HASH_MISMATCH_BIN/sh"
+: >"$HASH_MISMATCH_CURL_LOG"
+: >"$HASH_MISMATCH_CURL_OUTPUT_LOG"
+: >"$HASH_MISMATCH_SHELL_LOG"
+set +e
+HASH_MISMATCH_CURL_LOG="$HASH_MISMATCH_CURL_LOG" HASH_MISMATCH_CURL_OUTPUT_LOG="$HASH_MISMATCH_CURL_OUTPUT_LOG" HASH_MISMATCH_SHELL_LOG="$HASH_MISMATCH_SHELL_LOG" \
+  HOME="$HASH_MISMATCH_HOME" DOTFILES_HOMEBREW_BREW_CANDIDATES="$HASH_MISMATCH_HOME/brew" \
+  PATH="$HASH_MISMATCH_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" >"$TMP_HOME/hash-mismatch.log" 2>&1
+hash_mismatch_rc=$?
+set -e
+[ "$hash_mismatch_rc" -eq 1 ] || fail "hash mismatch returned $hash_mismatch_rc instead of 1"
+[ -s "$HASH_MISMATCH_CURL_LOG" ] || fail 'hash mismatch did not exercise the fake curl download'
+[ -s "$HASH_MISMATCH_CURL_OUTPUT_LOG" ] || fail 'hash mismatch did not record its unique temporary file'
+[ ! -e "$(cat "$HASH_MISMATCH_CURL_OUTPUT_LOG")" ] || fail 'hash mismatch left the downloaded temporary file behind'
+[ ! -s "$HASH_MISMATCH_SHELL_LOG" ] || fail 'hash mismatch invoked the remote shell before verification'
+grep -qF 'checksum SHA-256 no coincide para Herdr' "$TMP_HOME/hash-mismatch.log" ||
+  fail 'hash mismatch did not report the fail-closed checksum error'
+for curl_flag in \
+  '--proto =https' '--proto-redir =https' '--tlsv1.2' '--fail' '--silent' '--show-error' \
+  '--location' '--max-time 120' '--output '; do
+  grep -qF -- "$curl_flag" "$HASH_MISMATCH_CURL_LOG" ||
+    fail "verified download omitted curl flag: $curl_flag"
+done
+
+printf '%s\n' '== install.sh executes a matching verified remote script =='
+MATCH_HOME="$TMP_HOME/matching-home"
+MATCH_BIN="$TMP_HOME/matching-bin"
+MATCH_CURL_LOG="$TMP_HOME/matching-curl.log"
+MATCH_CURL_OUTPUT_LOG="$TMP_HOME/matching-curl-output.log"
+MATCH_SHELL_LOG="$TMP_HOME/matching-shell.log"
+mkdir -p \
+  "$MATCH_HOME/.oh-my-zsh/custom/themes/powerlevel10k" \
+  "$MATCH_BIN"
+printf '%s\n' '#!/usr/bin/env bash' >"$MATCH_HOME/brew"
+chmod +x "$MATCH_HOME/brew"
+cat >"$MATCH_BIN/uname" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' Darwin
+EOF
+cat >"$MATCH_BIN/xcode-select" <<'EOF'
+#!/usr/bin/env bash
+[ "${1:-}" = '--print-path' ] && exit 0
+exit 99
+EOF
+cat >"$MATCH_BIN/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"${MATCH_CURL_LOG:?}"
+output=''
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = '--output' ]; then
+    output="${2:?}"
+    shift 2
+  else
+    shift
+  fi
+done
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"${output:?}"
+printf '%s\n' "$output" >"${MATCH_CURL_OUTPUT_LOG:?}"
+EOF
+cat >"$MATCH_BIN/shasum" <<'EOF'
+#!/usr/bin/env bash
+printf '%s  %s\n' '3db3af8375006e193a393b5e3129feb237f30bc6f053fffbe1dc75da1f3d9ac4' "${3:?}"
+EOF
+cat >"$MATCH_BIN/sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${MATCH_SHELL_LOG:?}"
+exit 42
+EOF
+for command_name in codegraph gentle-ai opencode codex agent agy claude copilot kilo; do
+  cat >"$MATCH_BIN/$command_name" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+  chmod +x "$MATCH_BIN/$command_name"
+done
+chmod +x "$MATCH_BIN/uname" "$MATCH_BIN/xcode-select" "$MATCH_BIN/curl" \
+  "$MATCH_BIN/shasum" "$MATCH_BIN/sh"
+: >"$MATCH_CURL_LOG"
+: >"$MATCH_CURL_OUTPUT_LOG"
+: >"$MATCH_SHELL_LOG"
+set +e
+MATCH_CURL_LOG="$MATCH_CURL_LOG" MATCH_CURL_OUTPUT_LOG="$MATCH_CURL_OUTPUT_LOG" MATCH_SHELL_LOG="$MATCH_SHELL_LOG" \
+  HOME="$MATCH_HOME" DOTFILES_HOMEBREW_BREW_CANDIDATES="$MATCH_HOME/brew" \
+  PATH="$MATCH_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" >"$TMP_HOME/matching.log" 2>&1
+matching_rc=$?
+set -e
+[ "$matching_rc" -eq 42 ] || fail "matching verified script returned $matching_rc instead of fake shell status 42"
+[ -s "$MATCH_CURL_LOG" ] || fail 'matching verified script did not exercise the fake curl download'
+[ -s "$MATCH_SHELL_LOG" ] || fail 'matching verified script was not executed after verification'
+[ -s "$MATCH_CURL_OUTPUT_LOG" ] || fail 'matching verified script did not record its temporary file'
+[ ! -e "$(cat "$MATCH_CURL_OUTPUT_LOG")" ] || fail 'matching verified script left the downloaded temporary file behind'
+
 printf '%s\n' '== install.sh rejects unknown arguments =='
 INVALID_HOME="$TMP_HOME/invalid-home"
 mkdir -p "$INVALID_HOME"
@@ -244,21 +388,135 @@ assert_not_exists "$INCOMPLETE_HOME/.zshrc"
 
 TEST_HOME="$TMP_HOME/home"
 BOOTSTRAP_BIN="$TMP_HOME/bootstrap-bin"
+BOOTSTRAP_CURL_LOG="$TMP_HOME/bootstrap-curl.log"
 VSCODE_HOME="$TEST_HOME/Library/Application Support/Code/User"
+MCP_JQ_BIN="$(command -v jq || true)"
+[ -x "$MCP_JQ_BIN" ] || fail 'jq is required for the isolated MCP fixture'
 mkdir -p "$BOOTSTRAP_BIN" "$TEST_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-for command_name in herdr codegraph gentle-ai opencode codex agent agy claude copilot kilo; do
+for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot kilo; do
   cat >"$BOOTSTRAP_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
   chmod +x "$BOOTSTRAP_BIN/$command_name"
 done
+cat >"$BOOTSTRAP_BIN/claude" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s\n' "$*" >>"${MCP_FAKE_LOG:?}"
+case "${1:-} ${2:-}" in
+  'mcp add-json')
+    [ "${3:-}" = '--scope' ] && [ "${4:-}" = 'user' ] || exit 2
+    name=${5:?}
+    definition=${6:?}
+    if [ "${MCP_FAKE_FAIL_ADD_NAME:-}" = "$name" ] && \
+      [ ! -e "${MCP_FAKE_ADD_FAILURE_MARKER:-}" ]; then
+      : >"${MCP_FAKE_ADD_FAILURE_MARKER:?}"
+      printf 'forced MCP add failure for %s\n' "$name" >&2
+      exit 97
+    fi
+    if "$MCP_FAKE_JQ_BIN" -e --arg name "$name" '.mcpServers[$name] != null' "$HOME/.claude.json" >/dev/null 2>&1; then
+      printf 'MCP server %s already exists in user config\n' "$name" >&2
+      exit 1
+    fi
+    "$MCP_FAKE_JQ_BIN" --arg name "$name" --argjson definition "$definition" \
+      '.mcpServers = (.mcpServers // {}) | .mcpServers[$name] = $definition' \
+      "$HOME/.claude.json" >"$HOME/.claude.json.tmp"
+    mv -- "$HOME/.claude.json.tmp" "$HOME/.claude.json"
+    ;;
+  'mcp remove')
+    [ "${3:-}" = '--scope' ] && [ "${4:-}" = 'user' ] || exit 2
+    name=${5:?}
+    "$MCP_FAKE_JQ_BIN" --arg name "$name" 'del(.mcpServers[$name])' "$HOME/.claude.json" \
+      >"$HOME/.claude.json.tmp"
+    mv -- "$HOME/.claude.json.tmp" "$HOME/.claude.json"
+    ;;
+  'mcp get')
+    "$MCP_FAKE_JQ_BIN" -e --arg name "${3:?}" '.mcpServers[$name] != null' "$HOME/.claude.json" >/dev/null
+    ;;
+  *)
+    exit 2
+    ;;
+esac
+EOF
+chmod +x "$BOOTSTRAP_BIN/claude"
 cat >"$BOOTSTRAP_BIN/xcode-select" <<'EOF'
 #!/usr/bin/env bash
 [ "${1:-}" = '--print-path' ] && exit 0
 exit 99
 EOF
 chmod +x "$BOOTSTRAP_BIN/xcode-select"
+# Font archives are the only downloads allowed by the isolated bootstrap
+# fixture. Build a valid local archive for each pinned font URL and reject all
+# other URLs so an unexpected remote installer download still fails closed.
+cat >"$BOOTSTRAP_BIN/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s\n' "$*" >>"${BOOTSTRAP_CURL_LOG:?}"
+output=''
+url=''
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = '--output' ]; then
+    output="${2:?}"
+    shift 2
+  else
+    url="$1"
+    shift
+  fi
+done
+
+case "$url" in
+  'https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip')
+    font_name='CascadiaCodePL.ttf'
+    ;;
+  'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip')
+    font_name='FiraCodeNerdFont.ttf'
+    ;;
+  'https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip')
+    font_name='JetBrainsMono.ttf'
+    ;;
+  'https://codeload.github.com/andreberg/Meslo-Font/zip/09a431d546d211130352c28eb0466e5d7d5aeaf0')
+    font_name='MesloLGSNF.ttf'
+    ;;
+  'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/IosevkaTerm.zip')
+    font_name='IosevkaTermNerdFont.ttf'
+    ;;
+  *)
+    printf 'unexpected remote download: %s\n' "$url" >&2
+    exit 99
+    ;;
+esac
+
+font_fixture_dir="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-font-fixture.XXXXXX")"
+trap 'rm -rf -- "$font_fixture_dir"' EXIT
+printf 'isolated font fixture: %s\n' "$url" >"$font_fixture_dir/$font_name"
+(cd "$font_fixture_dir" && /usr/bin/zip -q -X "$output" "$font_name")
+EOF
+cat >"$BOOTSTRAP_BIN/shasum" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+file=''
+while [ "$#" -gt 0 ]; do
+  file="$1"
+  shift
+done
+case "${file##*/}" in
+  0.zip) hash='e67a68ee3386db63f48b9054bd196ea752bc6a4ebb4df35adce6733da50c8474' ;;
+  1.zip) hash='4ee8fbafecfc90460399b9828270b8ece30ccbf60b3ab875d64ff77696c6e262' ;;
+  2.zip) hash='6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf' ;;
+  3.zip) hash='930d960c30ff582c1ca27721f74cc93c0f51e74f63b88360904eaa1af65f55e4' ;;
+  4.zip) hash='4d2c7fc44f215cd762ceab5167aa13285f179e83f36d56a1129c2871b9552080' ;;
+  *)
+    printf 'unexpected checksum target: %s\n' "$file" >&2
+    exit 99
+    ;;
+esac
+printf '%s  %s\n' "$hash" "$file"
+EOF
+chmod +x "$BOOTSTRAP_BIN/curl" "$BOOTSTRAP_BIN/shasum"
 printf '%s\n' '#!/usr/bin/env bash' >"$TEST_HOME/brew"
 chmod +x "$TEST_HOME/brew"
 mkdir -p -- \
@@ -268,6 +526,9 @@ mkdir -p -- \
   "$TEST_HOME/.claude/hooks" \
   "$TEST_HOME/.claude/skills/pptx/node_modules" \
   "$VSCODE_HOME"
+printf '%s\n' '{"userOwned":true,"mcpServers":{"user-server":{"type":"stdio","command":"user-server"}}}' \
+  >"$TEST_HOME/.claude.json"
+chmod 600 "$TEST_HOME/.claude.json"
 
 # Symlinks managed by an earlier installer version must migrate to copies.
 ln -s -- "$ROOT/.zshrc" "$TEST_HOME/.zshrc"
@@ -290,15 +551,80 @@ printf '%s\n' 'runtime dependency' >"$TEST_HOME/.claude/skills/pptx/node_modules
 printf '%s\n' 'runtime rollback' >"$TEST_HOME/.claude/hooks/example.sh.backup.20260821000000"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$EXCLUDE_FIXTURE"
 
+printf '%s\n' '== dry-run skips user-scope MCP registration =='
+MCP_DRY_HOME="$TMP_HOME/mcp-dry-home"
+MCP_DRY_LOG="$TMP_HOME/mcp-dry.log"
+mkdir -p "$MCP_DRY_HOME"
+: >"$MCP_DRY_LOG"
+MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$MCP_DRY_LOG" HOME="$MCP_DRY_HOME" \
+  DOTFILES_HOMEBREW_BREW_CANDIDATES="$MCP_DRY_HOME/brew" \
+  PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" --dry-run >"$TMP_HOME/mcp-dry-install.log"
+[ ! -s "$MCP_DRY_LOG" ] || fail 'dry-run registered a Claude MCP server'
+
+printf '%s\n' '== MCP replacement failure restores the previous definition =='
+MCP_ROLLBACK_HOME="$TMP_HOME/mcp-rollback-home"
+MCP_ROLLBACK_MARKER="$TMP_HOME/mcp-rollback-add-failed"
+MCP_ROLLBACK_LOG="$TMP_HOME/mcp-rollback.log"
+MCP_ROLLBACK_TMPDIR="$TMP_HOME/mcp-rollback-tmp"
+MCP_ROLLBACK_BEFORE="$MCP_ROLLBACK_TMPDIR/claude-before.json"
+mkdir -p "$MCP_ROLLBACK_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+mkdir -p "$MCP_ROLLBACK_TMPDIR"
+printf '%s\n' '#!/usr/bin/env bash' >"$MCP_ROLLBACK_HOME/brew"
+chmod +x "$MCP_ROLLBACK_HOME/brew"
+printf '%s\n' '{"userOwned":true,"mcpServers":{"context7":{"type":"stdio","command":"legacy-context7","args":["--legacy"]},"user-server":{"type":"stdio","command":"user-server"}}}' \
+  >"$MCP_ROLLBACK_HOME/.claude.json"
+cp -p "$MCP_ROLLBACK_HOME/.claude.json" "$MCP_ROLLBACK_BEFORE"
+old_context7_definition='{"type":"stdio","command":"legacy-context7","args":["--legacy"]}'
+if BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$MCP_ROLLBACK_LOG" \
+  MCP_FAKE_FAIL_ADD_NAME='context7' MCP_FAKE_ADD_FAILURE_MARKER="$MCP_ROLLBACK_MARKER" \
+  HOME="$MCP_ROLLBACK_HOME" TMPDIR="$MCP_ROLLBACK_TMPDIR" DOTFILES_HOMEBREW_BREW_CANDIDATES="$MCP_ROLLBACK_HOME/brew" \
+  PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" >"$TMP_HOME/mcp-rollback-install.log" 2>&1; then
+  fail 'MCP replacement failure unexpectedly succeeded'
+fi
+assert_equal "$MCP_ROLLBACK_BEFORE" "$MCP_ROLLBACK_HOME/.claude.json"
+jq -e --argjson expected "$old_context7_definition" \
+  '.mcpServers.context7 == $expected and .mcpServers["user-server"].command == "user-server"' \
+  "$MCP_ROLLBACK_HOME/.claude.json" >/dev/null ||
+  fail 'failed MCP replacement did not restore the exact old definition'
+grep -qF 'no se pudo registrar el MCP administrado context7' "$TMP_HOME/mcp-rollback-install.log" ||
+  fail 'MCP replacement failure was not reported'
+[ "$(grep -c '^mcp remove --scope user context7$' "$MCP_ROLLBACK_LOG" || true)" -eq 1 ] ||
+  fail 'MCP replacement failure did not remove the old definition once'
+[ "$(grep -c '^mcp add-json --scope user context7 ' "$MCP_ROLLBACK_LOG" || true)" -eq 2 ] ||
+  fail 'MCP replacement failure did not attempt managed add and restoration'
+
 printf '%s\n' '== isolated default bootstrap =='
 : >"$TOOL_DRY_LOG"
-TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
+: >"$BOOTSTRAP_CURL_LOG"
+BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$TMP_HOME/mcp.log" TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
   DOTFILES_HOMEBREW_BREW_CANDIDATES="$TEST_HOME/brew" \
   PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
   bash "$INSTALL" >"$TMP_HOME/install.log"
 [ ! -s "$TOOL_DRY_LOG" ] || fail 'default bootstrap invoked a real installer or download'
+[ "$(wc -l <"$BOOTSTRAP_CURL_LOG" | tr -d ' ')" -eq 5 ] || fail 'default bootstrap did not simulate exactly five font downloads'
+for font_url in \
+  'https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip' \
+  'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip' \
+  'https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip' \
+  'https://codeload.github.com/andreberg/Meslo-Font/zip/09a431d546d211130352c28eb0466e5d7d5aeaf0' \
+  'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/IosevkaTerm.zip'; do
+  grep -qF -- "$font_url" "$BOOTSTRAP_CURL_LOG" || fail "font fixture did not serve $font_url"
+done
 grep -qF 'prerrequisitos macOS' "$TMP_HOME/install.log" || fail 'default bootstrap did not check macOS prerequisites'
 grep -qF 'herramientas de shell y agentes' "$TMP_HOME/install.log" || fail 'default bootstrap did not check shell and agent tools'
+for mcp_name in context7 codegraph playwright; do
+  jq -e --arg name "$mcp_name" \
+    '.mcpServers[$name] == (input.mcpServers[$name])' \
+    "$TEST_HOME/.claude.json" "$ROOT/config/claude/mcp-servers.json" >/dev/null ||
+    fail "managed MCP server $mcp_name was not registered exactly"
+done
+jq -e '.userOwned == true and .mcpServers["user-server"].command == "user-server"' \
+  "$TEST_HOME/.claude.json" >/dev/null ||
+  fail 'unrelated user MCP configuration was not preserved'
+[ "$(grep -c '^mcp add-json --scope user ' "$TMP_HOME/mcp.log")" -eq 3 ] ||
+  fail 'normal bootstrap did not register each managed MCP server exactly once'
 
 printf '%s\n' '== independent copies =='
 # Core configuration
@@ -391,7 +717,9 @@ grep -qxF 'runtime rollback' "$TEST_HOME/.claude/hooks/example.sh.backup.2026082
 
 printf '%s\n' '== idempotent reinstall =='
 : >"$TOOL_DRY_LOG"
-TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
+MCP_ADD_COUNT="$(grep -c '^mcp add-json --scope user ' "$TMP_HOME/mcp.log")"
+MCP_REMOVE_COUNT="$(grep -c '^mcp remove --scope user ' "$TMP_HOME/mcp.log" || true)"
+BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$TMP_HOME/mcp.log" TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
   DOTFILES_HOMEBREW_BREW_CANDIDATES="$TEST_HOME/brew" \
   PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
   bash "$INSTALL" >"$TMP_HOME/reinstall.log"
@@ -399,6 +727,10 @@ TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
 if grep -q '  BACKUP ' "$TMP_HOME/reinstall.log"; then
   fail 'idempotent reinstall created a new backup'
 fi
+[ "$(grep -c '^mcp add-json --scope user ' "$TMP_HOME/mcp.log")" -eq "$MCP_ADD_COUNT" ] ||
+  fail 'idempotent reinstall added a duplicate MCP server'
+[ "$(grep -c '^mcp remove --scope user ' "$TMP_HOME/mcp.log" || true)" -eq "$MCP_REMOVE_COUNT" ] ||
+  fail 'idempotent reinstall removed an unchanged MCP server'
 
 printf '%s\n' 'PASS: install.sh syntax, shellcheck, deterministic bootstrap, symlink migration, backups, cleanup, and local preservation'
 
@@ -446,6 +778,61 @@ bash "$ROOT/.github/test/gauntlet-stop.test.sh"
 printf '%s\n' '== quality-gate.sh timeout regressions =='
 bash "$ROOT/.github/test/quality-gate.test.sh"
 
+printf '%s\n' '== verify.sh authoritative source regression =='
+bash "$ROOT/.github/test/verify.test.sh"
+
+printf '%s\n' '== Claude permission boundary regressions =='
+bash "$ROOT/.github/test/protect-tests.test.sh"
+SETTINGS="$ROOT/config/claude/settings.json"
+jq -e '.permissions.defaultMode == "auto" and .permissions.disableAutoMode != "disable" and .permissions.disableBypassPermissionsMode == "disable" and .skipDangerousModePermissionPrompt == false and (has("bypassPermissions") | not)' "$SETTINGS" >/dev/null ||
+  fail 'Claude dangerous-mode settings are not hardened while auto mode is retained'
+jq -e '.permissions.allow | index("Skill") != null' "$SETTINGS" >/dev/null ||
+  fail 'automatic workflow cannot load its required versioned skill'
+for pattern in 'Bash(git add:*)' 'Bash(git pull:*)' 'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)'; do
+  jq -e --arg pattern "$pattern" '.permissions.ask | index($pattern) != null' "$SETTINGS" >/dev/null ||
+    fail "missing explicit ask boundary: $pattern"
+  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
+    fail "dangerous broad permission remains auto-allowed: $pattern"
+  fi
+done
+for pattern in \
+  'Bash(git fetch:*)' \
+  'Bash(npm install:*)' 'Bash(npm ci:*)' 'Bash(npm publish:*)' \
+  'Bash(pnpm install:*)' 'Bash(pnpm add:*)' 'Bash(pnpm publish:*)' \
+  'Bash(bun install:*)' 'Bash(bun add:*)' 'Bash(bun publish:*)' \
+  'Bash(yarn install:*)' 'Bash(yarn add:*)' 'Bash(yarn publish:*)' \
+  'Bash(npx:*)' 'Bash(uvx:*)' 'Bash(uv pip install:*)' \
+  'Bash(cargo install:*)' 'Bash(cargo run:*)' \
+  'Bash(go install:*)' 'Bash(go run:*)' \
+  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(source:*)' 'Bash(touch:*)' 'Bash(nvim:*)' 'Bash(code:*)'; do
+  jq -e --arg pattern "$pattern" '.permissions.ask | index($pattern) != null' "$SETTINGS" >/dev/null ||
+    fail "missing explicit ask boundary: $pattern"
+done
+if jq -e 'any(.permissions.allow[]?; startswith("mcp__") and ((split("__") | length) == 2 or endswith("__*")))' "$SETTINGS" >/dev/null; then
+  fail 'broad MCP server permission remains auto-allowed; use Auto Mode classification or an exact tool rule'
+fi
+if jq -e '.permissions.allow[]? | . == "WebFetch" or startswith("WebFetch(domain:*")' "$SETTINGS" >/dev/null; then
+  fail 'unbounded WebFetch permission remains auto-allowed; use Auto Mode classification or an exact domain rule'
+fi
+for pattern in \
+  'Bash(npm test:*)' 'Bash(npm run test:*)' 'Bash(npm run lint:*)' \
+  'Bash(pnpm test:*)' 'Bash(pnpm run test:*)' \
+  'Bash(bun test:*)' 'Bash(bun run test:*)' \
+  'Bash(yarn test:*)' 'Bash(yarn run test:*)' \
+  'Bash(uv run pytest:*)' 'Bash(cargo test:*)' 'Bash(go test:*)' 'Bash(make test:*)'; do
+  jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
+    fail "missing automatic verification permission: $pattern"
+done
+for pattern in \
+  'Bash(git fetch:*)' 'Bash(npm:*)' 'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
+  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' 'Bash(uv:*)' 'Bash(cargo:*)' \
+  'Bash(rustc:*)' 'Bash(go:*)' 'Bash(make:*)' 'Bash(code:*)' 'Bash(nvim:*)' \
+  'Bash(source:*)' 'Bash(touch:*)' 'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)'; do
+  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
+    fail "dangerous broad permission remains auto-allowed: $pattern"
+  fi
+done
+
 printf '%s\n' '== hook edge cases =='
 bash "$ROOT/.github/test/hooks-edge-cases.test.sh"
 
@@ -454,9 +841,6 @@ bash "$ROOT/.github/test/statusline.test.sh"
 
 printf '%s\n' '== read-only doctor =='
 bash "$ROOT/.github/test/doctor.test.sh"
-
-printf '%s\n' '== Herdr auto-start guard =='
-bash "$ROOT/.github/test/herdr-autostart.test.sh"
 
 printf '%s\n' '== validation contract =='
 bash "$ROOT/.github/test/validate-contract.test.sh"

@@ -11,7 +11,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-DEFAULTS_SH="$SCRIPT_DIR/defaults.sh"
+ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
+DEFAULTS_SH="$ROOT/config/macos/defaults.sh"
 DRIFT=0
 
 ok() { echo "[OK] $1"; }

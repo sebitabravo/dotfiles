@@ -28,17 +28,173 @@ fi
 
 [[ -z "$cmd_str" ]] && exit 0
 
-# `gh api --input` publishes a file whose contents are not visible in the hook
-# command. Fail closed rather than claiming it was reviewed.
-if echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+api\b' &&
-  echo "$cmd_str" | grep -qE '(^|[[:space:]])--input([=[:space:]]|$)'; then
-  echo '[Privacy Review] BLOCKED — gh api --input publishes file contents that this command-only review cannot verify. Review the file explicitly and use redacted inline fields or publish it manually.' >&2
-  exit 2
+# Tokenize the command before classifying it.  Raw substring matching misses
+# quoted options (`'--body-file'`) and global gh options (`gh --repo X pr ...`),
+# while splitting on whitespace alone misreads quoted values.  shlex gives us a
+# small, non-executing argv approximation; malformed shell syntax fails closed.
+classification=""
+if command -v python3 &>/dev/null; then
+  if ! classification="$(
+    PRIVACY_REVIEW_COMMAND="$cmd_str" python3 - <<'PY'
+import os
+import shlex
+
+command = os.environ.get('PRIVACY_REVIEW_COMMAND', '')
+try:
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
+    lexer.whitespace_split = True
+    tokens = list(lexer)
+except ValueError:
+    print('AMBIGUOUS')
+    raise SystemExit(0)
+
+separators = {';', '&', '|', '&&', '||'}
+segments = [[]]
+for token in tokens:
+    if token in separators:
+        segments.append([])
+    else:
+        segments[-1].append(token)
+
+target_verbs = {
+    ('issue', 'create'), ('issue', 'comment'), ('issue', 'edit'), ('issue', 'review'),
+    ('pr', 'create'), ('pr', 'comment'), ('pr', 'edit'), ('pr', 'review'),
+    ('release', 'create'), ('gist', 'create'),
+}
+
+for segment in segments:
+    if 'gh' not in segment:
+        continue
+    gh_index = segment.index('gh')
+    args = segment[gh_index + 1:]
+    command_kind = None
+    for index in range(len(args) - 1):
+        pair = (args[index], args[index + 1])
+        if pair in target_verbs:
+            command_kind = pair
+            break
+    if command_kind is None and 'api' in args:
+        command_kind = ('api', 'write')
+    if command_kind is None:
+        continue
+
+    if command_kind == ('gist', 'create'):
+        print('OPAQUE gist')
+        raise SystemExit(0)
+
+    for index, token in enumerate(args):
+        if token == '--body-file' or token.startswith('--body-file='):
+            print('OPAQUE body-file')
+            raise SystemExit(0)
+        if command_kind == ('release', 'create') and (
+            token == '--notes-file' or token.startswith('--notes-file=')
+        ):
+            print('OPAQUE notes-file')
+            raise SystemExit(0)
+
+        # -F has no uniform meaning across gh subcommands.  For publication
+        # commands, treating it as opaque is safer than guessing whether the
+        # argument is a body source.  gh api keeps validated inline key=value
+        # fields, but rejects missing/ @file values as opaque.
+        if token == '-F' or token == '--field' or token.startswith('-F') or token.startswith('--field='):
+            if command_kind[0] in {'issue', 'pr', 'release'}:
+                print('OPAQUE field')
+                raise SystemExit(0)
+            if token in {'-F', '--field'}:
+                value = args[index + 1] if index + 1 < len(args) else ''
+            elif token.startswith('--field='):
+                value = token[len('--field='):]
+            else:
+                value = token[2:]
+            if '=' not in value or value.split('=', 1)[1].startswith('@'):
+                print('OPAQUE field')
+                raise SystemExit(0)
+
+        if command_kind == ('api', 'write') and (
+            token == '--input' or token.startswith('--input=')
+        ):
+            print('OPAQUE input')
+            raise SystemExit(0)
+
+    print('TARGET')
+    raise SystemExit(0)
+
+print('NONE')
+PY
+  )"; then
+    classification="AMBIGUOUS"
+  fi
+else
+  # Python 3 is the normal parser on supported macOS installations.  Keep a
+  # conservative fallback for minimal environments, normalizing quoted option
+  # names first; anything it cannot classify is not treated as reviewed.
+  normalized=${cmd_str//\'/}
+  normalized=${normalized//\"/}
+  if echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+((issue|pr)[[:space:]]+(create|comment|edit|review)\b|release[[:space:]]+create\b|gist[[:space:]]+create\b|api\b)'; then
+    classification="TARGET"
+  else
+    classification="NONE"
+  fi
+  # Preserve the fail-closed behavior when Python is unavailable.  The
+  # fallback intentionally recognizes only the supported global --repo form;
+  # anything more complex is left for the normal visible-payload scan rather
+  # than guessed as a file-safe command.
+  if [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+((issue|pr)[[:space:]]+(create|comment|edit|review)\b|release[[:space:]]+create\b|gist[[:space:]]+create\b|api\b)[^;&|]*--body-file([=[:space:]]|$)'; then
+    classification="OPAQUE body-file"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+(issue|pr)[[:space:]]+(create|comment|edit|review)\b[^;&|]*(-F|--field)([=[:space:]]|$)'; then
+    classification="OPAQUE field"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+release[[:space:]]+create\b[^;&|]*(-F|--field)([=[:space:]]|$)'; then
+    classification="OPAQUE field"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+release[[:space:]]+create\b[^;&|]*--notes-file([=[:space:]]|$)'; then
+    classification="OPAQUE notes-file"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+gist[[:space:]]+create\b'; then
+    classification="OPAQUE gist"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+api\b[^;&|]*--input([=[:space:]]|$)'; then
+    classification="OPAQUE input"
+  elif [ "$classification" = TARGET ] &&
+    echo "$normalized" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]+--repo([=[:space:]])[^[:space:]]+)?[[:space:]]+api\b[^;&|]*(-F|--field)([=[:space:]])[^[:space:]=]+=@'; then
+    classification="OPAQUE field"
+  fi
 fi
 
-if ! echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh[[:space:]]+((issue|pr)[[:space:]]+(create|comment|review)\b|api\b)'; then
-  exit 0
-fi
+case "$classification" in
+  OPAQUE\ body-file)
+    echo '[Privacy Review] BLOCKED — --body-file publishes file contents that this command-only review cannot verify. Review the file explicitly and use a redacted inline --body value or publish it manually.' >&2
+    exit 2
+    ;;
+  OPAQUE\ notes-file)
+    echo '[Privacy Review] BLOCKED — --notes-file publishes file contents that this command-only review cannot verify. Review the file explicitly and use a redacted inline --notes value or publish it manually.' >&2
+    exit 2
+    ;;
+  OPAQUE\ gist)
+    echo '[Privacy Review] BLOCKED — gh gist create publishes file or stdin contents that this command-only review cannot verify. Review the content explicitly and publish it manually.' >&2
+    exit 2
+    ;;
+  OPAQUE\ field)
+    echo '[Privacy Review] BLOCKED — this gh field form may publish file contents that this command-only review cannot verify. Review the source explicitly and use redacted inline fields or publish it manually.' >&2
+    exit 2
+    ;;
+  OPAQUE\ input)
+    echo '[Privacy Review] BLOCKED — gh api --input publishes file contents that this command-only review cannot verify. Review the file explicitly and use redacted inline fields or publish it manually.' >&2
+    exit 2
+    ;;
+  AMBIGUOUS)
+    if echo "$cmd_str" | grep -qE '(^|[;&|[:space:]])gh([[:space:]]|$)'; then
+      echo '[Privacy Review] BLOCKED — could not safely tokenize a GitHub CLI command before publication.' >&2
+      exit 2
+    fi
+    exit 0
+    ;;
+  NONE)
+    exit 0
+    ;;
+esac
 
 # Detect private identifiers
 PRIVATE_PATTERNS=(

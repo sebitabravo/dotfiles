@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 78
+- **Total skills:** 79
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -122,6 +122,17 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `skill-registry` | Index skills by trigger, scope, and exact path after skill changes. |
 | `judgment-day` | Run explicit blind dual adversarial review with bounded correction rounds. |
 | `rdd-defect-workflow` | Guide receipt-driven defects, lineage, recovery, and delivery-gate decisions. |
+
+## Legal & Compliance (Chile)
+
+| Skill | Trigger |
+|---|---|
+| `compliance-cl` | Auditoria y cumplimiento Ley 21.719 (datos personales) y Ley 21.595 (delitos economicos): RAT, DPA, EIPD, politica de privacidad, plan de brechas y modelo de prevencion de delitos. |
+
+> `compliance-cl` es la unica skill vendorizada desde un upstream externo:
+> https://github.com/Lelemon-studio/compliance-cl (MIT), commit
+> `4972a821ff98caf777e809baf468d72517616ada`. Se copio sin `assets/`. Para
+> actualizarla hay que volver al upstream, no editarla en su lugar.
 
 ## Quality & Testing
 

@@ -29,7 +29,9 @@ for relative in \
   hooks/activate-convergence-on-apply.sh \
   hooks/automatic-workflow.sh \
   hooks/automatic-workflow-stop.sh \
+  hooks/gauntlet-stop.sh \
   hooks/secret-detect.sh \
+  hooks/user-prompt-dispatcher.sh \
   hooks/convergence-stop.sh \
   hooks/compact-resume.py \
   hooks/lib/test-runner.sh \
@@ -69,7 +71,7 @@ case "$1 ${2:-}" in
     cat <<'MCP'
 codegraph: codegraph serve --mcp - ✔ Connected
 context7: https://mcp.context7.com/mcp (HTTP) - ✔ Connected
-playwright: npx @playwright/mcp@latest - ✔ Connected
+playwright: npx @playwright/mcp@0.0.79 - ✔ Connected
 plugin:engram:engram: engram mcp --tools=agent - ✔ Connected
 MCP
     ;;
@@ -89,7 +91,17 @@ EOF
 
 cat >"$BIN/engram" <<'EOF'
 #!/usr/bin/env bash
-[ "$1" = '--version' ] && printf '%s\n' 'engram 1.19.0'
+if [ "$1" = '--version' ]; then
+  printf '%s\n' 'engram 1.19.0'
+elif [ "$1" = 'doctor' ] && [ "$2" = '--json' ]; then
+  if [ "${ENGRAM_FIXTURE_BLOCKED:-0}" = 1 ]; then
+    printf '%s\n' '{"status":"blocked","checks":[{"result":"blocked","severity":"blocking","message":"fixture_blocked"}]}'
+  else
+    printf '%s\n' '{"status":"ready","checks":[]}'
+  fi
+else
+  exit 2
+fi
 EOF
 
 cat >"$BIN/codegraph" <<'EOF'
@@ -116,6 +128,7 @@ grep -q 'Herdr config parity' "$OUTPUT" || fail 'doctor omitted Herdr parity'
 grep -q 'Engram' "$OUTPUT" || fail 'doctor omitted Engram'
 grep -q 'Claude harness parity' "$OUTPUT" || fail 'doctor omitted Claude parity'
 grep -q 'Claude provider parity' "$OUTPUT" || fail 'doctor omitted provider parity'
+grep -q 'Engram cloud health' "$OUTPUT" || fail 'doctor omitted structured Engram health'
 
 [ "$before_user" = "$(shasum -a 256 "$HOME_DIR/.claude.json" | awk '{print $1}')" ] ||
   fail 'doctor modified Claude user config'
@@ -143,5 +156,23 @@ set -e
 [ "$drift_rc" -eq 1 ] || fail "doctor drift returned $drift_rc instead of 1"
 grep -q 'definición administrada difiere' "$TMP/drift.log" ||
   fail 'doctor did not report MCP drift'
+
+set +e
+HOME="$HOME_DIR" PATH="$BIN:$PATH" ENGRAM_FIXTURE_BLOCKED=1 \
+  DOCTOR_CLAUDE_SOURCE_ROOT="$ROOT/config/claude" \
+  DOCTOR_REPO_ROOT="$REPO" \
+  DOCTOR_ENGRAM_PROJECT=repo \
+  DOCTOR_HERDR_SOURCE="$REPO/config/herdr/config.toml" \
+  DOCTOR_CLAUDE_RUNTIME_ROOT="$RUNTIME" \
+  DOCTOR_CLAUDE_USER_CONFIG="$HOME_DIR/.claude.json" \
+  DOCTOR_HERDR_RUNTIME_CONFIG="$HOME_DIR/.config/herdr/config.toml" \
+  bash "$SCRIPT" >"$TMP/engram-blocked.log" 2>&1
+blocked_rc=$?
+set -e
+[ "$blocked_rc" -eq 1 ] || fail "doctor accepted blocked Engram cloud state with rc $blocked_rc"
+grep -q 'Engram cloud health' "$TMP/engram-blocked.log" ||
+  fail 'doctor did not report blocked Engram cloud health'
+grep -q 'status: blocked' "$TMP/engram-blocked.log" ||
+  fail 'doctor did not preserve the structured blocked status'
 
 printf '%s\n' 'PASS: doctor read-only validates MCP, Claude, Herdr, Engram, permissions, parity, binaries, and drift'

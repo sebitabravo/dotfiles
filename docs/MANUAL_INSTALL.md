@@ -88,26 +88,53 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac>
 - [ ] **Meld Studio** - <https://meldstudio.co/download>
 
+## 🔤 Fuentes requeridas por la configuración
+
+`./install.sh` descarga y valida las fuentes versionadas automáticamente en
+macOS. Si hacés una instalación manual, las configuraciones activas requieren:
+
+- [ ] **FiraCode Nerd Font Mono** — Ghostty y la terminal integrada de VS Code:
+  <https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip>
+- [ ] **Cascadia Code PL** — fuente principal del editor de VS Code:
+  <https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip>
+
+Instalalas en `~/Library/Fonts` y verificá que macOS las vea:
+
+```bash
+find "$HOME/Library/Fonts" -type f \( -iname 'FiraCode*.ttf' -o -iname 'CascadiaCode*.ttf' \) -print
+system_profiler SPFontsDataType | grep -E 'FiraCode|Cascadia Code'
+```
+
+IosevkaTerm NF, JetBrains Mono y Meslo LG están disponibles en el bootstrap como
+familias adicionales, pero no son requisitos demostrados por las
+configuraciones activas actuales.
+
 ---
 
 ## ⚙️ Configuraciones Post-Instalación
 
-### Node.js (con nvm)
+### Node.js (con Laravel Herd)
+
+El runtime de este repositorio usa el Node predeterminado de Laravel Herd; no
+instala ni requiere `nvm` como administrador separado. Verificá el runtime antes
+de continuar:
 
 ```bash
-nvm install 24
-nvm install 22
-nvm use 24
-nvm alias default 24
+node --version
+npm --version
 corepack enable pnpm
 pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
-npm install -g @fission-ai/openspec@latest
-npm i -g vercel
-npm install -g @playwright/cli@latest
+npm install --global --ignore-scripts @fission-ai/openspec@1.10.0
+npm install --global --ignore-scripts vercel@59.5.0
+npm install --global --ignore-scripts @playwright/cli@0.1.18
 ```
+
+Los CLI globales quedan fijados a las versiones revisadas el 2026-08-25. Si
+querés actualizarlos, revisá cada versión y compatibilidad de forma deliberada
+en vez de reemplazar estos pins por `@latest`.
 
 ### Python (con pyenv)
 
@@ -123,7 +150,7 @@ pyenv global 3.14.7
 php artisan sail:install
 ```
 
-### Configuracion de herdr
+### Configuración de Herdr
 
 ```bash
 herdr integration install codex

@@ -35,8 +35,15 @@ trap 'rm -rf "$TMP"' EXIT
 
 PROJECT="$TMP/project"
 STATE="$TMP/state"
+TRUST_FILE="$TMP/trusted-repositories"
 mkdir -p "$PROJECT/.claude/task-receipts" "$PROJECT/src"
 git -C "$PROJECT" init -q
+
+# The production Stop hook never executes a repository-owned test command
+# without an explicit trust decision outside the repository. The disposable
+# fixture is intentionally trusted here so this smoke test exercises the
+# convergent PASS path instead of testing the security BLOCKED path again.
+printf '%s\n' "$PROJECT" >"$TRUST_FILE"
 
 cat >"$PROJECT/test.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -62,6 +69,7 @@ export CLAUDE_AUTOMATION_STATE_DIR="$STATE"
 export CLAUDE_AUTOMATION_VALIDATOR="$VALIDATOR"
 export CLAUDE_AUTOMATION_TEST_RUNNER="$RUNNER"
 export CLAUDE_AUTOMATION_PYTHON=python3
+export CLAUDE_REPOSITORY_TRUST_FILE="$TRUST_FILE"
 
 prompt_payload() {
   jq -nc --arg cwd "$PROJECT" --arg session "$1" --arg prompt "$2" \
@@ -99,13 +107,16 @@ printf '%s' "$prompt_output" | jq -e \
   >/dev/null
 SESSION_STATE=$(automation_state_path "$PROJECT" "$SESSION_ID")
 SESSION_RECEIPT=$(automation_receipt_path "$PROJECT" "$SESSION_ID")
+ACTIVATION=$(automation_activation_id "$PROJECT" "$SESSION_ID")
 [ -s "$SESSION_STATE" ]
 
 printf '%s\n' '== Stop bloquea una sesión incompleta'
-cat >"$SESSION_RECEIPT" <<'EOF'
+cat >"$SESSION_RECEIPT" <<EOF
 ROADMAP: TASK-ROADMAP.md
+ACTIVATION: $ACTIVATION
 STATUS: PASS
 ACCEPTANCE: PASS
+VERIFY_TYPE: EXECUTABLE
 VERIFY_EXIT: 0
 EVIDENCE: intentionally incomplete roadmap
 EOF
@@ -118,10 +129,12 @@ grep -Fq 'pendiente' "$TMP/blocked.err"
 [ -s "$SESSION_STATE" ]
 
 printf '%s\n' '== un bloqueo explícito conserva el estado sin simular PASS'
-cat >"$SESSION_RECEIPT" <<'EOF'
+cat >"$SESSION_RECEIPT" <<EOF
 ROADMAP: TASK-ROADMAP.md
+ACTIVATION: $ACTIVATION
 STATUS: BLOCKED
 ACCEPTANCE: PENDING
+VERIFY_TYPE: EXECUTABLE
 VERIFY_EXIT: 0
 EVIDENCE: external dependency unavailable; work must resume later
 EOF
@@ -136,10 +149,12 @@ task_payload TaskCreated task-002 '[T002] Create second artifact' \
   "$(task_description task-001 src/two.txt 'src/two.txt existe y no está vacío' task-002)" | "$TASK_CONTRACT"
 
 printf '%s\n' 'one' >"$PROJECT/src/one.txt"
-cat >"$PROJECT/.claude/task-receipts/task-001.md" <<'EOF'
+cat >"$PROJECT/.claude/task-receipts/task-001.md" <<EOF
 TASK_ID: task-001
+ACTIVATION: $ACTIVATION
 STATUS: PASS
 ACCEPTANCE: PASS
+VERIFY_TYPE: EXECUTABLE
 VERIFY_EXIT: 0
 EVIDENCE: src/one.txt created
 EOF
@@ -147,10 +162,12 @@ task_payload TaskCompleted task-001 '[T001] Create first artifact' \
   "$(task_description none src/one.txt 'src/one.txt existe y no está vacío' task-001)" | "$TASK_CONTRACT"
 
 printf '%s\n' 'two' >"$PROJECT/src/two.txt"
-cat >"$PROJECT/.claude/task-receipts/task-002.md" <<'EOF'
+cat >"$PROJECT/.claude/task-receipts/task-002.md" <<EOF
 TASK_ID: task-002
+ACTIVATION: $ACTIVATION
 STATUS: PASS
 ACCEPTANCE: PASS
+VERIFY_TYPE: EXECUTABLE
 VERIFY_EXIT: 0
 EVIDENCE: src/two.txt created
 EOF
@@ -163,10 +180,12 @@ cat >"$PROJECT/TASK-ROADMAP.md" <<'EOF'
 - [x] T001 [depends_on: none] [paths: src/one.txt] Create the first artifact
 - [x] T002 [depends_on: T001] [paths: src/two.txt] Create the second artifact
 EOF
-cat >"$SESSION_RECEIPT" <<'EOF'
+cat >"$SESSION_RECEIPT" <<EOF
 ROADMAP: TASK-ROADMAP.md
+ACTIVATION: $ACTIVATION
 STATUS: PASS
 ACCEPTANCE: PASS
+VERIFY_TYPE: EXECUTABLE
 VERIFY_EXIT: 0
 EVIDENCE: test.sh exit 0; task receipts PASS; roadmap validator PASS
 EOF

@@ -10,6 +10,7 @@ trap 'rm -rf "$TMP"' EXIT
 # a real copy of THIS repo's source so the test is self-contained and does not
 # depend on whatever happens to be deployed at ~/.claude on the dev machine.
 FAKE_HOME="$TMP/home"
+TRUST_FILE="$TMP/trusted-repositories"
 mkdir -p "$FAKE_HOME/.claude/hooks/lib"
 cp "$ROOT/config/claude/hooks/lib/test-runner.sh" "$FAKE_HOME/.claude/hooks/lib/test-runner.sh"
 
@@ -26,7 +27,8 @@ new_repo() {
 
 run_hook() {
   local dir="$1"
-  (cd "$dir" && HOME="$FAKE_HOME" bash "$HOOK" </dev/null)
+  printf '%s\n' "$dir" >"$TRUST_FILE"
+  (cd "$dir" && HOME="$FAKE_HOME" CLAUDE_REPOSITORY_TRUST_FILE="$TRUST_FILE" bash "$HOOK" </dev/null)
 }
 
 printf '%s\n' '== no changed production code: exits 0 immediately'
@@ -50,6 +52,17 @@ chmod +x "$PASSING/test.sh"
 git -C "$PASSING" add src test.sh
 out=$(run_hook "$PASSING" 2>&1) && rc=0 || rc=$?
 [ "$rc" -eq 0 ]
+
+printf '%s\n' '== production file with a matching test but no available runner: exits 2, never infers PASS'
+NO_RUNNER="$TMP/no-runner"
+new_repo "$NO_RUNNER"
+mkdir -p "$NO_RUNNER/src"
+printf 'module.exports = () => 1;\n' >"$NO_RUNNER/src/foo.js"
+printf '// test\n' >"$NO_RUNNER/src/foo.test.js"
+out=$(PATH="/usr/bin:/bin" run_hook "$NO_RUNNER" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'no native test runner was detected'
+printf '%s' "$out" | grep -Fq 'could NOT be verified'
 
 printf '%s\n' '== production file with a matching test and a failing suite: exits 2, reports RED'
 FAILING="$TMP/failing"
@@ -116,4 +129,4 @@ out=$(run_hook "$MISSING_TEST" 2>&1) && rc=0 || rc=$?
 printf '%s' "$out" | grep -Fq 'GAUNTLET: there is production code with no test'
 printf '%s' "$out" | grep -Fq 'src/bar.js'
 
-printf '%s\n' 'PASS: gauntlet-stop.sh enforces a real, portable suite timeout and still gates untested production code'
+printf '%s\n' 'PASS: gauntlet-stop.sh fails closed for missing runners, enforces a portable timeout, and gates untested production code'

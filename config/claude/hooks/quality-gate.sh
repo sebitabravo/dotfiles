@@ -36,17 +36,147 @@ COMMAND=$(echo "$input" | jq -r '.tool_input.command // ""')
 # El patron anterior ('git commit ' literal) exigia el espacio final y no veia
 # 'git -C /ruta commit -m x', asi que el gate se saltaba entero.
 #
-# Se matchea sobre el comando SIN strings quoted, igual que validate-safe-ops.
-# Sin eso, cualquier comando que mencione 'git commit' adentro de un string lo
-# disparaba: `echo "git commit"`, un heredoc de documentacion, o un printf que
-# arma el input de este mismo hook para testearlo. El resultado era un bloqueo
-# de commit sobre un comando que no commitea nada.
-# El mensaje real de un commit tambien queda fuera, que es lo que se busca:
-# `git commit -m "fix: git commit docs"` colapsa a `git commit -m ` y sigue
-# matcheando por el binario, no por el texto del mensaje.
-NO_QUOTES=$(echo "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+# Se matchea sobre el segmento que contiene el commit, no sobre el comando
+# completo. Sin esta frontera, `git commit -m wip && git -C ~/scratch status`
+# resolvia el ultimo `-C` (el del status) y podia evaluar el repo equivocado.
+# Igual que validate-safe-ops, separamos por operadores antes de revisar cada
+# segmento; solo los operadores FUERA de comillas son separadores. Un splitter
+# ciego rompe valores validos como `git -c user.name='A&B' commit` y puede hacer
+# que el gate rechace o evalue un segmento distinto del que ejecuta Bash.
+# Un comando compuesto con mas de un commit se rechaza: validar solo uno
+# dejaria que el otro escapara al gate.
+split_shell_segments() {
+  local text="$1" normalize_nested="${2:-false}" segment="" quote="" escaped=false ch next
+  local substitution_depth=0 backtick_depth=0
+  local i=0 length=${#1}
 
-echo "$NO_QUOTES" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]]+[^[:space:]-][^[:space:]]*)?)*[[:space:]]+commit\b' || exit 0
+  while [ "$i" -lt "$length" ]; do
+    ch="${text:i:1}"
+
+    if [ "$escaped" = true ]; then
+      segment+="$ch"
+      escaped=false
+      i=$((i + 1))
+      continue
+    fi
+
+    if [ "$ch" = "\\" ] && [ "$quote" != "'" ]; then
+      segment+="$ch"
+      escaped=true
+      i=$((i + 1))
+      continue
+    fi
+
+    if [ "$ch" = '$' ] && [ "${text:i+1:1}" = '(' ] && [ "$quote" != "'" ] && [ "$backtick_depth" -eq 0 ] && [ "$substitution_depth" -eq 0 ]; then
+      segment+='$('
+      substitution_depth=1
+      i=$((i + 2))
+      continue
+    fi
+
+    # Operators inside command substitutions are part of the substitution,
+    # not separators for the outer command. Track nested `$()` without ever
+    # evaluating its contents; this keeps `git -c user.name=$(printf A &&
+    # printf B) commit` as one commit-bearing segment.
+    if [ "$substitution_depth" -gt 0 ]; then
+      if [ "$normalize_nested" = true ] && { [ "$ch" = ' ' ] || [ "$ch" = $'\t' ] || [ "$ch" = $'\n' ]; }; then
+        segment+='_'
+      else
+        segment+="$ch"
+      fi
+      if [ "$ch" = '$' ] && [ "${text:i+1:1}" = '(' ]; then
+        segment+='('
+        substitution_depth=$((substitution_depth + 1))
+        i=$((i + 1))
+      elif [ "$ch" = ')' ]; then
+        substitution_depth=$((substitution_depth - 1))
+      fi
+      i=$((i + 1))
+      continue
+    fi
+
+    # Backtick substitutions have no portable nesting syntax of their own,
+    # but their body still must be opaque to the outer operator splitter.
+    # Escaped backticks are handled by the backslash branch above.
+    if [ "$backtick_depth" -gt 0 ]; then
+      if [ "$normalize_nested" = true ] && { [ "$ch" = ' ' ] || [ "$ch" = $'\t' ] || [ "$ch" = $'\n' ]; }; then
+        segment+='_'
+      else
+        segment+="$ch"
+      fi
+      [ "$ch" = '`' ] && backtick_depth=0
+      i=$((i + 1))
+      continue
+    fi
+
+    case "$quote" in
+      "'")
+        segment+="$ch"
+        [ "$ch" = "'" ] && quote=""
+        ;;
+      '"')
+        segment+="$ch"
+        [ "$ch" = '"' ] && quote=""
+        ;;
+      '')
+        case "$ch" in
+          "'" | '"')
+            quote="$ch"
+            segment+="$ch"
+            ;;
+          '`')
+            backtick_depth=1
+            segment+="$ch"
+            ;;
+          ';' | '&' | '|')
+            printf '%s\n' "$segment"
+            segment=""
+            next="${text:i+1:1}"
+            if [ "$ch" = '&' ] || [ "$ch" = '|' ]; then
+              [ "$next" = "$ch" ] && i=$((i + 1))
+            fi
+            ;;
+          *)
+            segment+="$ch"
+            ;;
+        esac
+        ;;
+    esac
+    i=$((i + 1))
+  done
+
+  if [ -n "$quote" ] || [ "$escaped" = true ] || [ "$substitution_depth" -gt 0 ] || [ "$backtick_depth" -gt 0 ]; then
+    return 1
+  fi
+  printf '%s\n' "$segment"
+}
+
+if ! COMMAND_SEGMENTS=$(split_shell_segments "$COMMAND"); then
+  echo '[quality-gate] COMMIT BLOCKED: unable to parse command safely (unterminated quote or escape); run one simple commit command.' >&2
+  exit 2
+fi
+COMMIT_SEGMENT=""
+COMMIT_SEGMENT_MATCH=""
+COMMIT_COUNT=0
+while IFS= read -r candidate; do
+  # Collapse whitespace inside nested substitutions only for recognition. This
+  # keeps the existing commit matcher token-oriented without treating spaces
+  # from `$(...)` or backticks as separators in the outer command.
+  candidate_for_match=$(split_shell_segments "$candidate" true)
+  candidate_no_quotes=$(printf '%s' "$candidate_for_match" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+  if printf '%s' "$candidate_no_quotes" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]]+[^[:space:]-][^[:space:]]*)?)*[[:space:]]+commit\b'; then
+    COMMIT_COUNT=$((COMMIT_COUNT + 1))
+    if [ "$COMMIT_COUNT" -eq 1 ]; then
+      COMMIT_SEGMENT="$candidate"
+      COMMIT_SEGMENT_MATCH="$candidate_for_match"
+    fi
+  fi
+done <<<"$COMMAND_SEGMENTS"
+[ -n "$COMMIT_SEGMENT" ] || exit 0
+[ "$COMMIT_COUNT" -eq 1 ] || {
+  echo "[quality-gate] COMMIT BLOCKED: command contains $COMMIT_COUNT git commit segments; run one commit per command so every commit is gated." >&2
+  exit 2
+}
 
 # --amend NO se exceptua: seria un bypass de una sola flag para cualquier commit
 # que el gate acabara de bloquear. La excepcion de merge se resuelve mas abajo,
@@ -75,7 +205,10 @@ esac
 
 # El sed de BSD (macOS) no entiende \b, asi que el limite de palabra se escribe
 # a mano. Sin eso el patron no matcheaba nunca y `git -C` caia al cwd.
-GIT_C_PATH=$(echo "$COMMAND" | sed -nE "s/.*(^|[^[:alnum:]_])git[[:space:]]+-C[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\3\4\5/p")
+# Use the normalized outer segment for target extraction. Nested `$()`/backtick
+# bodies have their whitespace collapsed, so an inner `git -C` cannot redirect
+# this commit's target repository.
+GIT_C_PATH=$(echo "$COMMIT_SEGMENT_MATCH" | sed -nE "s/.*(^|[^[:alnum:]_])git[[:space:]]+-C[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\3\4\5/p")
 [ -n "$GIT_C_PATH" ] && case "$GIT_C_PATH" in
   /*) TARGET_DIR="$GIT_C_PATH" ;;
   ~*) TARGET_DIR="${GIT_C_PATH/#\~/$HOME}" ;;
@@ -236,7 +369,7 @@ detect_project_at() {
   # directorio $1 (relativo a ROOT, "." para la raiz). No cambia el cwd del
   # script: los comandos generados llevan su propio "cd" cuando dir != ".".
   local dir="$1" prefix=""
-  [ "$dir" != "." ] && prefix="cd \"$dir\" && "
+  [ "$dir" != "." ] && prefix="cd $(shell_quote "$dir") && "
 
   HAS_TESTS=false
   TEST_CMD=""

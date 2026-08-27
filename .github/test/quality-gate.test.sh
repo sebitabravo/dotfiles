@@ -25,10 +25,14 @@ new_repo() {
   printf 'module.exports = () => 1;\n' >"$dir/src/foo.js"
 }
 
-run_hook() {
-  local dir="$1"
-  jq -nc --arg cwd "$dir" '{tool_name:"Bash",tool_input:{command:"git commit -m x"},cwd:$cwd}' |
+run_hook_command() {
+  local dir="$1" command="$2"
+  jq -nc --arg cwd "$dir" --arg command "$command" '{tool_name:"Bash",tool_input:{command:$command},cwd:$cwd}' |
     (cd "$dir" && HOME="$FAKE_HOME" bash "$HOOK")
+}
+
+run_hook() {
+  run_hook_command "$1" 'git commit -m x'
 }
 
 printf '%s\n' '== declared test.sh runner, passing: commit proceeds (exit 0)'
@@ -131,7 +135,10 @@ elapsed=$((end - start))
 [ "$rc" -eq 2 ]
 [ "$elapsed" -lt 15 ]
 printf '%s' "$out" | grep -Fq 'coverage did not finish in 1s'
-! printf '%s' "$out" | grep -Fq 'NOT MEASURED'
+if printf '%s' "$out" | grep -Fq 'NOT MEASURED'; then
+  echo 'coverage timeout was incorrectly reported as NOT MEASURED' >&2
+  exit 1
+fi
 
 printf '%s\n' '== monorepo: a shared budget bounds the WHOLE run, not 90s+30s per project'
 MONOREPO="$TMP/monorepo"
@@ -166,5 +173,107 @@ elapsed=$((end - start))
 [ "$rc" -eq 2 ]
 [ "$elapsed" -lt 15 ]
 printf '%s' "$out" | grep -Eq '\[pkg-a\] (tests did not finish in [0-9]+s|the shared 2s quality-gate budget ran out)'
+
+printf '%s\n' '== git -C after commit cannot redirect the quality gate to another repository'
+SCOPED="$TMP/scoped-commit"
+SCRATCH="$TMP/scratch-status"
+new_repo "$SCOPED"
+new_repo "$SCRATCH"
+cat >"$SCOPED/test.sh" <<'EOF'
+#!/usr/bin/env bash
+echo 'real commit repository must fail its suite'
+exit 1
+EOF
+chmod +x "$SCOPED/test.sh"
+touch "$SCRATCH/.claude-relaxed"
+git -C "$SCOPED" add -A
+out=$(run_hook_command "$SCOPED" "git commit -m wip && git -C '$SCRATCH' status" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+if printf '%s' "$out" | grep -Fq 'WARNING (not blocking, .claude-relaxed)'; then
+  echo 'quality gate incorrectly used the relaxed repository' >&2
+  exit 1
+fi
+
+printf '%s\n' '== multiple commit segments fail closed instead of validating only the first one'
+MULTI_RELAXED="$TMP/multi-relaxed"
+MULTI_REAL="$TMP/multi-real"
+new_repo "$MULTI_RELAXED"
+new_repo "$MULTI_REAL"
+touch "$MULTI_RELAXED/.claude-relaxed"
+cat >"$MULTI_REAL/test.sh" <<'EOF'
+#!/usr/bin/env bash
+echo 'real commit repository must fail its suite'
+exit 1
+EOF
+chmod +x "$MULTI_REAL/test.sh"
+git -C "$MULTI_REAL" add -A
+out=$(run_hook_command "$MULTI_REAL" "git -C '$MULTI_RELAXED' commit --allow-empty -m scratch && git -C '$MULTI_REAL' commit -m real" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'contains 2 git commit segments'
+
+printf '%s\n' '== a backgrounded later git -C cannot redirect the commit gate'
+AMP_RELAXED="$TMP/amp-relaxed"
+AMP_REAL="$TMP/amp-real"
+new_repo "$AMP_RELAXED"
+new_repo "$AMP_REAL"
+touch "$AMP_RELAXED/.claude-relaxed"
+cat >"$AMP_REAL/test.sh" <<'EOF'
+#!/usr/bin/env bash
+echo 'real commit repository must fail its suite'
+exit 1
+EOF
+chmod +x "$AMP_REAL/test.sh"
+git -C "$AMP_REAL" add -A
+out=$(run_hook_command "$AMP_REAL" "git commit -m real & git -C '$AMP_RELAXED' status" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+if printf '%s' "$out" | grep -Fq 'WARNING (not blocking, .claude-relaxed)'; then
+  echo 'quality gate incorrectly used the relaxed repository for a backgrounded command' >&2
+  exit 1
+fi
+
+printf '%s\n' '== quoted git config values containing shell operators remain one commit segment'
+QUOTED_VALUES="$TMP/quoted-values"
+new_repo "$QUOTED_VALUES"
+cat >"$QUOTED_VALUES/test.sh" <<'EOF'
+#!/usr/bin/env bash
+echo 'quoted git config value fixture must still run the real failing runner'
+exit 1
+EOF
+chmod +x "$QUOTED_VALUES/test.sh"
+git -C "$QUOTED_VALUES" add -A
+out=$(run_hook_command "$QUOTED_VALUES" "git -c user.name='A&B' commit -m real" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+out=$(run_hook_command "$QUOTED_VALUES" "git -c user.name='A;B' commit -m real" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+out=$(run_hook_command "$QUOTED_VALUES" 'git -c user.name=$(printf A && printf B) commit -m real' 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+
+printf '%s\n' '== nested git -C cannot redirect the outer commit target'
+NESTED_RELAXED="$TMP/nested-relaxed"
+NESTED_REAL="$TMP/nested-real"
+new_repo "$NESTED_RELAXED"
+new_repo "$NESTED_REAL"
+touch "$NESTED_RELAXED/.claude-relaxed"
+cat >"$NESTED_REAL/test.sh" <<'EOF'
+#!/usr/bin/env bash
+echo 'outer commit repository must fail its suite'
+exit 1
+EOF
+chmod +x "$NESTED_REAL/test.sh"
+git -C "$NESTED_REAL" add -A
+nested_command='git -c user.name=$(git -C '\''PLACEHOLDER'\'' rev-parse --is-inside-work-tree) commit -m real'
+nested_command=${nested_command/PLACEHOLDER/$NESTED_RELAXED}
+out=$(run_hook_command "$NESTED_REAL" "$nested_command" 2>&1) && rc=0 || rc=$?
+[ "$rc" -eq 2 ]
+printf '%s' "$out" | grep -Fq 'tests failed'
+if printf '%s' "$out" | grep -Fq 'WARNING (not blocking, .claude-relaxed)'; then
+  echo 'quality gate incorrectly used the nested repository for the outer commit' >&2
+  exit 1
+fi
 
 printf '%s\n' 'PASS: quality-gate.sh enforces a real, portable timeout on lint/test/coverage'

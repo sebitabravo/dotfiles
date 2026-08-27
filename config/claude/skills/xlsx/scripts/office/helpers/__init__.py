@@ -20,6 +20,11 @@ _SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
 
 SLIDE_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
 
+MAX_ARCHIVE_ENTRIES = 4096
+MAX_ENTRY_UNCOMPRESSED_SIZE = 64 * 1024 * 1024
+MAX_TOTAL_UNCOMPRESSED_SIZE = 256 * 1024 * 1024
+MAX_COMPRESSION_RATIO = 1000
+
 
 def opc_target(target: str, source_part: str, target_mode: str = "") -> str | None:
     if not target:
@@ -73,12 +78,39 @@ def rendered_text(text: str, preserve: bool) -> str:
 
 def safe_extract(zf: zipfile.ZipFile, dest: Path) -> None:
     dest = dest.resolve()
-    for m in zf.infolist():
+    members = zf.infolist()
+    if len(members) > MAX_ARCHIVE_ENTRIES:
+        raise ValueError(
+            f"archive contains too many entries: {len(members)} > {MAX_ARCHIVE_ENTRIES}"
+        )
+
+    total_size = 0
+    for m in members:
         if stat.S_ISLNK(m.external_attr >> 16):
             raise ValueError(f"symlink archive entry not allowed: {m.filename!r}")
+        if m.file_size > MAX_ENTRY_UNCOMPRESSED_SIZE:
+            raise ValueError(
+                f"archive entry is too large: {m.filename!r} > "
+                f"{MAX_ENTRY_UNCOMPRESSED_SIZE} bytes"
+            )
+        total_size += m.file_size
+        if total_size > MAX_TOTAL_UNCOMPRESSED_SIZE:
+            raise ValueError(
+                f"archive is too large when uncompressed: {total_size} > "
+                f"{MAX_TOTAL_UNCOMPRESSED_SIZE} bytes"
+            )
+        if m.file_size and (
+            not m.compress_size
+            or m.file_size / m.compress_size > MAX_COMPRESSION_RATIO
+        ):
+            raise ValueError(
+                f"archive entry has a suspicious compression ratio: {m.filename!r}"
+            )
         target = (dest / m.filename).resolve()
         if not target.is_relative_to(dest):
             raise ValueError(f"unsafe archive entry: {m.filename!r}")
+
+    for m in members:
         zf.extract(m, dest)
 
 

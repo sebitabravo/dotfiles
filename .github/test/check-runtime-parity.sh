@@ -4,7 +4,9 @@
 # La fuente config/claude puede estar verde mientras ~/.claude sigue usando una
 # versión anterior. Este script compara únicamente los archivos y comandos que
 # hacen cumplir convergencia; no intenta sincronizar, borrar ni modificar el
-# runtime. El resto de ~/.claude puede contener estado local legítimo.
+# runtime. El resto de ~/.claude puede contener estado local legítimo. La
+# proyección de settings está acotada a los eventos gestionados; runtime-only
+# de otros eventos no pertenece a este gate y no se borra ni produce drift.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -42,8 +44,7 @@ command -v jq >/dev/null 2>&1 || {
 
 SOURCE_SETTINGS="$SOURCE_ROOT/settings.json"
 RUNTIME_SETTINGS="$RUNTIME_ROOT/settings.json"
-EXPECTED_AUTOMATIC_USER_PROMPT="$HOME/.claude/hooks/automatic-workflow.sh"
-EXPECTED_USER_PROMPT="$HOME/.claude/hooks/activate-convergence-on-apply.sh"
+EXPECTED_PROMPT_DISPATCHER="$HOME/.claude/hooks/user-prompt-dispatcher.sh"
 EXPECTED_AUTOMATIC_STOP="$HOME/.claude/hooks/automatic-workflow-stop.sh"
 EXPECTED_STOP="$HOME/.claude/hooks/convergence-stop.sh"
 
@@ -105,7 +106,9 @@ check_content_file() {
 check_file hooks/activate-convergence-on-apply.sh
 check_file hooks/automatic-workflow.sh
 check_file hooks/automatic-workflow-stop.sh
+check_file hooks/gauntlet-stop.sh
 check_file hooks/secret-detect.sh
+check_file hooks/user-prompt-dispatcher.sh
 check_file hooks/convergence-stop.sh
 check_file hooks/lib/test-runner.sh
 check_file hooks/lib/automatic-workflow-state.sh
@@ -114,6 +117,40 @@ check_file hooks/compact-resume.py
 check_file scripts/convergence-start.sh
 check_content_file scripts/validate-task-roadmap.py
 check_content_file skills/automatic-task-orchestrator/SKILL.md
+
+hook_projection() {
+  jq -cS '
+    [.hooks // {} | to_entries[]
+      | select(.key == "UserPromptSubmit" or .key == "Stop") as $event
+      | $event.value | to_entries[] as $group
+      | ($group.value.hooks // []) | to_entries[]
+      | {event:$event.key,
+         group_index:$group.key,
+         matcher:(if ($group.value | has("matcher")) then $group.value.matcher else "__absent__" end),
+         type:(if (.value | has("type")) then .value.type else "__absent__" end),
+         command:(if (.value | has("command")) then .value.command else "__absent__" end),
+         timeout:(if (.value | has("timeout")) then .value.timeout else "__absent__" end),
+         async:(if (.value | has("async")) then .value.async else "__absent__" end),
+         if:(if (.value | has("if")) then .value.if else "__absent__" end)}
+    ]' "$1"
+}
+
+check_hook_projection() {
+  local source_projection runtime_projection
+  if [ ! -f "$RUNTIME_SETTINGS" ]; then
+    record settings hooks MISSING "falta runtime settings.json"
+    return
+  fi
+  source_projection=$(hook_projection "$SOURCE_SETTINGS" 2>/dev/null || true)
+  runtime_projection=$(hook_projection "$RUNTIME_SETTINGS" 2>/dev/null || true)
+  if [ -z "$source_projection" ] || [ -z "$runtime_projection" ]; then
+    record settings hooks ERROR "no se pudo calcular la proyección gestionada de hooks"
+  elif [ "$source_projection" = "$runtime_projection" ]; then
+    record settings hooks MATCH "UserPromptSubmit/Stop coinciden en grupo, orden y campos"
+  else
+    record settings hooks DRIFT "la proyección gestionada de UserPromptSubmit/Stop difiere (incluye agrupamiento y orden)"
+  fi
+}
 
 check_hook_command() {
   local section="$1" expected="$2"
@@ -149,8 +186,8 @@ elif ! jq empty "$SOURCE_SETTINGS" >/dev/null 2>&1; then
 elif [ -f "$RUNTIME_SETTINGS" ] && ! jq empty "$RUNTIME_SETTINGS" >/dev/null 2>&1; then
   record settings settings.json ERROR "runtime settings.json no es JSON válido"
 else
-  check_hook_command UserPromptSubmit "$EXPECTED_AUTOMATIC_USER_PROMPT"
-  check_hook_command UserPromptSubmit "$EXPECTED_USER_PROMPT"
+  check_hook_projection
+  check_hook_command UserPromptSubmit "$EXPECTED_PROMPT_DISPATCHER"
   check_hook_command Stop "$EXPECTED_AUTOMATIC_STOP"
   check_hook_command Stop "$EXPECTED_STOP"
 fi

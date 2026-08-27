@@ -36,6 +36,7 @@
       "Glob",
       "Write",
       "Edit",
+      "Skill",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git add:*)",
@@ -89,7 +90,60 @@
       "WebFetch",
       "mcp__codegraph__*",
       "mcp__context7__*",
-      "mcp__playwright__*"
+      "mcp__playwright__*",
+      "Bash(npm test:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm run audit:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm run test:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm run check:*)",
+      "Bash(pnpm run typecheck:*)",
+      "Bash(pnpm audit:*)",
+      "Bash(pnpm run audit:*)",
+      "Bash(bun test:*)",
+      "Bash(bun run test:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run build:*)",
+      "Bash(bun run check:*)",
+      "Bash(bun run typecheck:*)",
+      "Bash(bun audit:*)",
+      "Bash(bun run audit:*)",
+      "Bash(yarn test:*)",
+      "Bash(yarn run test:*)",
+      "Bash(yarn run lint:*)",
+      "Bash(yarn run build:*)",
+      "Bash(yarn run check:*)",
+      "Bash(yarn run typecheck:*)",
+      "Bash(yarn audit:*)",
+      "Bash(yarn run audit:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo audit:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(go build:*)",
+      "Bash(make test:*)",
+      "Bash(make check:*)",
+      "Bash(make lint:*)",
+      "Bash(ng test:*)",
+      "Bash(ng build:*)",
+      "Bash(ng lint:*)",
+      "Bash(nx test:*)",
+      "Bash(nx build:*)",
+      "Bash(nx lint:*)",
+      "Bash(turbo test:*)",
+      "Bash(turbo build:*)",
+      "Bash(turbo lint:*)"
     ],
     "deny": [
       "Edit(**/.env)",
@@ -172,9 +226,54 @@
     "ask": [
       "Bash(npm install:*)",
       "Bash(npm i:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm update:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm remove:*)",
+      "Bash(npm link:*)",
+      "Bash(npm exec:*)",
+      "Bash(npm publish:*)",
       "Bash(pip install:*)",
+      "Bash(pip uninstall:*)",
       "Bash(git push:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm update:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm publish:*)",
+      "Bash(bun install:*)",
+      "Bash(bun add:*)",
+      "Bash(bun remove:*)",
+      "Bash(bun update:*)",
+      "Bash(bunx:*)",
+      "Bash(bun publish:*)",
+      "Bash(yarn install:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn remove:*)",
+      "Bash(yarn up:*)",
+      "Bash(yarn dlx:*)",
+      "Bash(yarn publish:*)",
+      "Bash(npx:*)",
+      "Bash(uvx:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv tool install:*)",
+      "Bash(cargo install:*)",
+      "Bash(cargo add:*)",
+      "Bash(cargo remove:*)",
+      "Bash(cargo update:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo publish:*)",
+      "Bash(go install:*)",
+      "Bash(go get:*)",
+      "Bash(go run:*)",
+      "Bash(fd:*)",
+      "Bash(sd:*)",
+      "Bash(source:*)",
+      "Bash(touch:*)",
+      "Bash(nvim:*)",
+      "Bash(code:*)"
     ],
     "defaultMode": "auto"
   },
@@ -224,52 +323,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/automatic-workflow.sh",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/activate-convergence-on-apply.sh",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/secret-detect.sh"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v codegraph >/dev/null 2>&1 && codegraph prompt-hook || true"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/project-integrations-check.sh",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh session",
-            "timeout": 10
+            "command": "~/.claude/hooks/user-prompt-dispatcher.sh",
+            "timeout": 60
           }
         ]
       }

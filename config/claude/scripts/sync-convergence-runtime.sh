@@ -43,7 +43,9 @@ FILES=(
   hooks/activate-convergence-on-apply.sh
   hooks/automatic-workflow.sh
   hooks/automatic-workflow-stop.sh
+  hooks/gauntlet-stop.sh
   hooks/secret-detect.sh
+  hooks/user-prompt-dispatcher.sh
   hooks/convergence-stop.sh
   hooks/compact-resume.py
   hooks/lib/test-runner.sh
@@ -55,16 +57,6 @@ FILES=(
 )
 SOURCE_SETTINGS="$SOURCE_ROOT/settings.json"
 RUNTIME_SETTINGS="$RUNTIME_ROOT/settings.json"
-# Claude Code expande `~` al ejecutar el handler. Se conserva literal para que
-# settings.json sea portable y no duplique el mismo hook con una ruta absoluta.
-# shellcheck disable=SC2088
-AUTOMATIC_USER_PROMPT_CMD='~/.claude/hooks/automatic-workflow.sh'
-# shellcheck disable=SC2088
-USER_PROMPT_CMD='~/.claude/hooks/activate-convergence-on-apply.sh'
-# shellcheck disable=SC2088
-AUTOMATIC_STOP_CMD='~/.claude/hooks/automatic-workflow-stop.sh'
-# shellcheck disable=SC2088
-STOP_CMD='~/.claude/hooks/convergence-stop.sh'
 
 for relative in "${FILES[@]}"; do
   [ -f "$SOURCE_ROOT/$relative" ] || {
@@ -133,62 +125,23 @@ copy_file() {
 merge_settings() {
   local temp filter
   if [ "$APPLY" = false ]; then
-    printf '  DRY MERGE %s (preserva hooks existentes y agrega sólo convergencia)\n' "$RUNTIME_SETTINGS"
+    printf '  DRY MERGE %s (reconcilia UserPromptSubmit/Stop desde la fuente y preserva otros eventos)\n' "$RUNTIME_SETTINGS"
     return 0
   fi
 
   mkdir -p -- "$RUNTIME_ROOT"
   temp="$RUNTIME_SETTINGS.tmp.$$"
   filter='
-    def without_commands($commands):
-      map(
-        .hooks = ((.hooks // []) | map(select((.command // "") as $command | ($commands | index($command) | not))))
-      )
-      | map(select((.hooks | length) > 0));
-
     .hooks = (.hooks // {})
-    | .hooks.UserPromptSubmit = (.hooks.UserPromptSubmit // [])
-    | .hooks.Stop = (.hooks.Stop // [])
-    | .hooks.UserPromptSubmit = (
-        .hooks.UserPromptSubmit
-        | without_commands([$automatic_user_prompt, $automatic_user_prompt_absolute])
-        + [{hooks: [{type: "command", command: $automatic_user_prompt, timeout: 10}]}]
-      )
-    | .hooks.UserPromptSubmit = (
-        .hooks.UserPromptSubmit
-        | without_commands([$user_prompt, $user_prompt_absolute])
-        + [{hooks: [{type: "command", command: $user_prompt, timeout: 10}]}]
-      )
-    | .hooks.Stop = (
-        .hooks.Stop
-        | without_commands([$automatic_stop, $automatic_stop_absolute])
-        + [{hooks: [{type: "command", command: $automatic_stop, timeout: 180}]}]
-      )
-    | .hooks.Stop = (
-        .hooks.Stop
-        | without_commands([$stop, $stop_absolute])
-        + [{hooks: [{type: "command", command: $stop, timeout: 180}]}]
-      )
+    | .hooks.UserPromptSubmit = ($source[0].hooks.UserPromptSubmit // [])
+    | .hooks.Stop = ($source[0].hooks.Stop // [])
   '
   if [ -f "$RUNTIME_SETTINGS" ]; then
-    jq --arg automatic_user_prompt "$AUTOMATIC_USER_PROMPT_CMD" \
-      --arg automatic_user_prompt_absolute "$HOME/.claude/hooks/automatic-workflow.sh" \
-      --arg user_prompt "$USER_PROMPT_CMD" \
-      --arg user_prompt_absolute "$HOME/.claude/hooks/activate-convergence-on-apply.sh" \
-      --arg automatic_stop "$AUTOMATIC_STOP_CMD" \
-      --arg automatic_stop_absolute "$HOME/.claude/hooks/automatic-workflow-stop.sh" \
-      --arg stop "$STOP_CMD" \
-      --arg stop_absolute "$HOME/.claude/hooks/convergence-stop.sh" "$filter" \
+    jq --slurpfile source "$SOURCE_SETTINGS" "$filter" \
       "$RUNTIME_SETTINGS" 2>/dev/null >"$temp"
   else
-    jq -n --arg automatic_user_prompt "$AUTOMATIC_USER_PROMPT_CMD" \
-      --arg automatic_user_prompt_absolute "$HOME/.claude/hooks/automatic-workflow.sh" \
-      --arg user_prompt "$USER_PROMPT_CMD" \
-      --arg user_prompt_absolute "$HOME/.claude/hooks/activate-convergence-on-apply.sh" \
-      --arg automatic_stop "$AUTOMATIC_STOP_CMD" \
-      --arg automatic_stop_absolute "$HOME/.claude/hooks/automatic-workflow-stop.sh" \
-      --arg stop "$STOP_CMD" \
-      --arg stop_absolute "$HOME/.claude/hooks/convergence-stop.sh" "$filter" \
+    jq -n --slurpfile source "$SOURCE_SETTINGS" \
+      '{hooks: {UserPromptSubmit: ($source[0].hooks.UserPromptSubmit // []), Stop: ($source[0].hooks.Stop // [])}}' \
       >"$temp"
   fi || {
     [ -f "$temp" ] && rm -- "$temp"
@@ -219,16 +172,11 @@ verify_runtime_minimal() {
     fi
   done
 
-  if ! jq -e --arg automatic_user_prompt "$AUTOMATIC_USER_PROMPT_CMD" \
-    --arg user_prompt "$USER_PROMPT_CMD" \
-    --arg automatic_stop "$AUTOMATIC_STOP_CMD" \
-    --arg stop "$STOP_CMD" '
-      ([.hooks.UserPromptSubmit[]?.hooks[]?.command] | map(select(. == $automatic_user_prompt)) | length == 1)
-      and ([.hooks.UserPromptSubmit[]?.hooks[]?.command] | map(select(. == $user_prompt)) | length == 1)
-      and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $automatic_stop)) | length == 1)
-      and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $stop)) | length == 1)
+  if ! jq -e --slurpfile source "$SOURCE_SETTINGS" '
+      (.hooks.UserPromptSubmit // []) == ($source[0].hooks.UserPromptSubmit // [])
+      and (.hooks.Stop // []) == ($source[0].hooks.Stop // [])
     ' "$RUNTIME_SETTINGS" >/dev/null; then
-    printf '[sync] settings.json no contiene exactamente los hooks de convergencia esperados.\n' >&2
+    printf '[sync] settings.json no contiene la proyección gestionada de hooks de la fuente.\n' >&2
     failures=$((failures + 1))
   fi
 

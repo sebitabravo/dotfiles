@@ -67,6 +67,40 @@ run_hook_healthy_deps() {
   CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" run_hook "$1" "${2:-SessionStart}"
 }
 
+printf '%s\n' '== gh request timeout does not depend on ps/pgrep completion inspection'
+TIMEOUT_REPO="$TMP/timeout-gh-repo"
+new_repo "$TIMEOUT_REPO"
+TIMEOUT_GH_BIN="$TMP/timeout-gh-bin"
+TIMEOUT_INSPECTOR_BIN="$TMP/timeout-inspectors"
+mkdir -p "$TIMEOUT_GH_BIN" "$TIMEOUT_INSPECTOR_BIN"
+cat >"$TIMEOUT_GH_BIN/gh" <<'EOF'
+#!/usr/bin/env bash
+if [ "$1" = auth ] && [ "$2" = status ]; then
+  exec sleep 30
+  exit 0
+fi
+exit 1
+EOF
+cat >"$TIMEOUT_INSPECTOR_BIN/ps" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+cat >"$TIMEOUT_INSPECTOR_BIN/pgrep" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod +x "$TIMEOUT_GH_BIN/gh" "$TIMEOUT_INSPECTOR_BIN/ps" "$TIMEOUT_INSPECTOR_BIN/pgrep"
+timeout_start=$(date +%s)
+timeout_output=$(PATH="$TIMEOUT_GH_BIN:$TIMEOUT_INSPECTOR_BIN:$PATH" \
+  CODEGRAPH_BIN="$MOCK_CODEGRAPH" CLAUDE_CONFIG="$MOCK_CLAUDE_CONFIG" \
+  run_hook "$TIMEOUT_REPO" SessionStart timeout-session 2>&1)
+timeout_rc=$?
+timeout_end=$(date +%s)
+timeout_elapsed=$((timeout_end - timeout_start))
+[ "$timeout_rc" -eq 0 ]
+[ "$timeout_elapsed" -lt 10 ]
+printf '%s\n' "$timeout_output" | grep -Fq 'NOT_APPLICABLE'
+
 # A PATH with jq but WITHOUT pandoc, so claude_md_import_candidates falls
 # back to the awk heuristic even on a host (like this dev machine) that has
 # pandoc installed — the fallback path needs its own coverage, not just the

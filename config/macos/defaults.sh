@@ -57,6 +57,13 @@ fi
 # incluso cuando el write fallaba (ej: dominio protegido por TCC sin Full
 # Disk Access). set -e no detiene el script porque el resultado del `if`
 # siempre es 0.
+DEFAULTS_FAILURES=0
+
+record_failure() {
+  DEFAULTS_FAILURES=$((DEFAULTS_FAILURES + 1))
+  echo "[FAIL] $1"
+}
+
 apply_default() {
   local label="$1"
   shift
@@ -67,7 +74,7 @@ apply_default() {
   if defaults write "$@" 2>/dev/null; then
     echo "[SET] $label"
   else
-    echo "[FAIL] $label"
+    record_failure "$label"
   fi
 }
 
@@ -82,7 +89,7 @@ apply_default_host() {
   if defaults -currentHost write "$@" 2>/dev/null; then
     echo "[SET] $label"
   else
-    echo "[FAIL] $label"
+    record_failure "$label"
   fi
 }
 
@@ -159,13 +166,13 @@ apply_default "Dock scroll to Exposé" com.apple.dock scroll-to-open -bool true
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Dock auto-hide instantaneo"
 elif (
-  defaults write com.apple.dock autohide -bool true
-  defaults write com.apple.dock autohide-delay -float 0
-  defaults write com.apple.dock autohide-time-modifier -float 0
+  defaults write com.apple.dock autohide -bool true &&
+    defaults write com.apple.dock autohide-delay -float 0 &&
+    defaults write com.apple.dock autohide-time-modifier -float 0
 ) 2>/dev/null; then
   echo "[SET] Dock auto-hide instantaneo"
 else
-  echo "[FAIL] Dock auto-hide instantaneo"
+  record_failure "Dock auto-hide instantaneo"
 fi
 
 apply_default "Sin animacion de rebote al abrir apps" com.apple.dock launchanim -bool false
@@ -182,12 +189,12 @@ apply_default "Dock highlight stacks on hover" com.apple.dock mouse-over-hilite-
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Hot corner inferior derecha desactivada"
 elif (
-  defaults write com.apple.dock wvous-br-corner -int 1
-  defaults write com.apple.dock wvous-br-modifier -int 0
+  defaults write com.apple.dock wvous-br-corner -int 1 &&
+    defaults write com.apple.dock wvous-br-modifier -int 0
 ) 2>/dev/null; then
   echo "[SET] Hot corner inferior derecha desactivada"
 else
-  echo "[FAIL] Hot corner inferior derecha desactivada"
+  record_failure "Hot corner inferior derecha desactivada"
 fi
 
 # Las cuatro esquinas quedan desactivadas con valores explicitos y versionables.
@@ -201,23 +208,23 @@ apply_default "Trackpad tracking speed" NSGlobalDomain com.apple.trackpad.scalin
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Tap to click"
 elif (
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
-  defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
 ) 2>/dev/null; then
   echo "[SET] Tap to click"
 else
-  echo "[FAIL] Tap to click"
+  record_failure "Tap to click"
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Two-finger right click"
 elif (
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
+  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
 ) 2>/dev/null; then
   echo "[SET] Two-finger right click"
 else
-  echo "[FAIL] Two-finger right click"
+  record_failure "Two-finger right click"
 fi
 
 # Arrastre con tres dedos. Vive en Accesibilidad, no en las prefs de trackpad,
@@ -226,43 +233,43 @@ fi
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Arrastre con tres dedos (gestos de tres dedos liberados)"
 elif (
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 0
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 0
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 0
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 0
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int 0
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerTapGesture -int 0
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 0 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 0 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerTapGesture -int 0
 ) 2>/dev/null; then
   echo "[SET] Arrastre con tres dedos (gestos de tres dedos liberados)"
 else
-  echo "[FAIL] Arrastre con tres dedos (gestos de tres dedos liberados)"
+  record_failure "Arrastre con tres dedos (gestos de tres dedos liberados)"
 fi
 
 # Los swipes de escritorio/Mission Control pasan a cuatro dedos.
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Swipes de espacios y Mission Control con cuatro dedos"
 elif (
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 2
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 2
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 2 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 2 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2
 ) 2>/dev/null; then
   echo "[SET] Swipes de espacios y Mission Control con cuatro dedos"
 else
-  echo "[FAIL] Swipes de espacios y Mission Control con cuatro dedos"
+  record_failure "Swipes de espacios y Mission Control con cuatro dedos"
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Centro de notificaciones desde el borde derecho"
 elif (
-  defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
-  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
 ) 2>/dev/null; then
   echo "[SET] Centro de notificaciones desde el borde derecho"
 else
-  echo "[FAIL] Centro de notificaciones desde el borde derecho"
+  record_failure "Centro de notificaciones desde el borde derecho"
 fi
 
 # Paridad con Hyprland: scroll natural desactivado. Se deja separado de los
@@ -273,12 +280,12 @@ apply_default "Scroll natural desactivado" NSGlobalDomain com.apple.swipescrolld
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Key repeat: delay 225ms, rate 30ms"
 elif (
-  defaults write NSGlobalDomain InitialKeyRepeat -int 15
-  defaults write NSGlobalDomain KeyRepeat -int 2
+  defaults write NSGlobalDomain InitialKeyRepeat -int 15 &&
+    defaults write NSGlobalDomain KeyRepeat -int 2
 ) 2>/dev/null; then
   echo "[SET] Key repeat: delay 225ms, rate 30ms"
 else
-  echo "[FAIL] Key repeat: delay 225ms, rate 30ms"
+  record_failure "Key repeat: delay 225ms, rate 30ms"
 fi
 
 # ── Bluetooth ──────────────────────────────────────────────────────
@@ -288,17 +295,17 @@ fi
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
 elif (
-  defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
-  defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Max (editable)" -int 80
-  defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool Min (editable)" -int 80
-  defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool (editable)" -int 80
-  defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool" -int 80
-  defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Max" -int 80
-  defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Min" -int 48
+  defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Max (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool Min (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Max" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Min" -int 48
 ) 2>/dev/null; then
   echo "[SET] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
 else
-  echo "[FAIL] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
+  record_failure "Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
 fi
 
 # ── WindowManager (Sequoia 15.x) ───────────────────────────────────
@@ -313,12 +320,12 @@ apply_default "Clic en el fondo no revela el escritorio" com.apple.WindowManager
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Iconos del escritorio ocultos mientras trabajas"
 elif (
-  defaults write com.apple.WindowManager HideDesktop -bool true
-  defaults write com.apple.WindowManager StandardHideDesktopIcons -bool true
+  defaults write com.apple.WindowManager HideDesktop -bool true &&
+    defaults write com.apple.WindowManager StandardHideDesktopIcons -bool true
 ) 2>/dev/null; then
   echo "[SET] Iconos del escritorio ocultos mientras trabajas"
 else
-  echo "[FAIL] Iconos del escritorio ocultos mientras trabajas"
+  record_failure "Iconos del escritorio ocultos mientras trabajas"
 fi
 
 apply_default "Ventanas agrupadas por aplicacion" com.apple.WindowManager AppWindowGroupingBehavior -int 1
@@ -357,23 +364,23 @@ apply_default "Seccion iCloud Drive colapsada" com.apple.finder SidebariCloudDri
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Finder new window = Home"
 elif (
-  defaults write com.apple.finder NewWindowTarget -string "PfHm"
-  defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
+  defaults write com.apple.finder NewWindowTarget -string "PfHm" &&
+    defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
 ) 2>/dev/null; then
   echo "[SET] Finder new window = Home"
 else
-  echo "[FAIL] Finder new window = Home"
+  record_failure "Finder new window = Home"
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Finder list view columns: name, date, size"
 elif (
-  defaults write com.apple.finder FK_StandardViewSettings -dict-add ListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
-  defaults write com.apple.finder FK_StandardViewSettings -dict-add ExtendedListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
+  defaults write com.apple.finder FK_StandardViewSettings -dict-add ListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }' &&
+    defaults write com.apple.finder FK_StandardViewSettings -dict-add ExtendedListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
 ) 2>/dev/null; then
   echo "[SET] Finder list view columns: name, date, size"
 else
-  echo "[FAIL] Finder list view columns: name, date, size"
+  record_failure "Finder list view columns: name, date, size"
 fi
 
 # Keep folders on top when sorting by name
@@ -383,12 +390,12 @@ apply_default "Finder folders on top" com.apple.finder _FXSortFoldersFirst -bool
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Finder spring-loading instant"
 elif (
-  defaults write NSGlobalDomain com.apple.springing.enabled -bool true
-  defaults write NSGlobalDomain com.apple.springing.delay -float 0
+  defaults write NSGlobalDomain com.apple.springing.enabled -bool true &&
+    defaults write NSGlobalDomain com.apple.springing.delay -float 0
 ) 2>/dev/null; then
   echo "[SET] Finder spring-loading instant"
 else
-  echo "[FAIL] Finder spring-loading instant"
+  record_failure "Finder spring-loading instant"
 fi
 
 delete_default "Finder info panes reset" com.apple.finder FXInfoPanesExpanded
@@ -407,13 +414,13 @@ apply_default "Agrupar por tipo" com.apple.finder FXPreferredGroupBy -string "Ki
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Escritorio sin iconos de discos ni medios extraibles"
 elif (
-  defaults write com.apple.finder ShowHardDrivesOnDesktop -bool false
-  defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false
-  defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
+  defaults write com.apple.finder ShowHardDrivesOnDesktop -bool false &&
+    defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false &&
+    defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
 ) 2>/dev/null; then
   echo "[SET] Escritorio sin iconos de discos ni medios extraibles"
 else
-  echo "[FAIL] Escritorio sin iconos de discos ni medios extraibles"
+  record_failure "Escritorio sin iconos de discos ni medios extraibles"
 fi
 
 # ── Papelera ───────────────────────────────────────────────────────
@@ -453,13 +460,13 @@ apply_default "Iconos chicos en sidebars" NSGlobalDomain NSTableViewDefaultSizeM
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Unidades metricas y Celsius"
 elif (
-  defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters"
-  defaults write NSGlobalDomain AppleMetricUnits -bool true
-  defaults write NSGlobalDomain AppleTemperatureUnit -string "Celsius"
+  defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters" &&
+    defaults write NSGlobalDomain AppleMetricUnits -bool true &&
+    defaults write NSGlobalDomain AppleTemperatureUnit -string "Celsius"
 ) 2>/dev/null; then
   echo "[SET] Unidades metricas y Celsius"
 else
-  echo "[FAIL] Unidades metricas y Celsius"
+  record_failure "Unidades metricas y Celsius"
 fi
 
 apply_default "La semana empieza el lunes" NSGlobalDomain AppleFirstWeekday -dict gregorian -int 2
@@ -471,12 +478,12 @@ apply_default "Fecha corta en ISO (y-MM-dd)" NSGlobalDomain AppleICUDateFormatSt
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Doble clic en la barra de titulo = Fill"
 elif (
-  defaults write NSGlobalDomain AppleActionOnDoubleClick -string "Fill"
-  defaults write NSGlobalDomain AppleMiniaturizeOnDoubleClick -bool false
+  defaults write NSGlobalDomain AppleActionOnDoubleClick -string "Fill" &&
+    defaults write NSGlobalDomain AppleMiniaturizeOnDoubleClick -bool false
 ) 2>/dev/null; then
   echo "[SET] Doble clic en la barra de titulo = Fill"
 else
-  echo "[FAIL] Doble clic en la barra de titulo = Fill"
+  record_failure "Doble clic en la barra de titulo = Fill"
 fi
 
 # Mover una ventana desde cualquier punto con ctrl+cmd, sin apuntarle a la barra.
@@ -529,12 +536,12 @@ apply_default "Toolbar title rollover instant" NSGlobalDomain NSToolbarTitleView
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Save dialog always expanded"
 elif (
-  defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-  defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+  defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true &&
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
 ) 2>/dev/null; then
   echo "[SET] Save dialog always expanded"
 else
-  echo "[FAIL] Save dialog always expanded"
+  record_failure "Save dialog always expanded"
 fi
 
 apply_default "Save to disk by default (not iCloud)" NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
@@ -542,12 +549,12 @@ apply_default "Save to disk by default (not iCloud)" NSGlobalDomain NSDocumentSa
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Print dialog always expanded"
 elif (
-  defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-  defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
+  defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true &&
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
 ) 2>/dev/null; then
   echo "[SET] Print dialog always expanded"
 else
-  echo "[FAIL] Print dialog always expanded"
+  record_failure "Print dialog always expanded"
 fi
 
 apply_default "Print dialog auto-close after job" com.apple.print.PrintingPrefs "Quit When Finished" -bool true
@@ -588,12 +595,12 @@ apply_default "Preview no window restoration" com.apple.Preview NSQuitAlwaysKeep
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] QuickTime no window restoration + auto-play on open"
 elif (
-  defaults write com.apple.QuickTimePlayerX NSQuitAlwaysKeepsWindow -bool false
-  defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool true
+  defaults write com.apple.QuickTimePlayerX NSQuitAlwaysKeepsWindow -bool false &&
+    defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool true
 ) 2>/dev/null; then
   echo "[SET] QuickTime no window restoration + auto-play on open"
 else
-  echo "[FAIL] QuickTime no window restoration + auto-play on open"
+  record_failure "QuickTime no window restoration + auto-play on open"
 fi
 
 # ── Mail ───────────────────────────────────────────────────────────
@@ -622,23 +629,23 @@ echo "[SKIP] DMG verification kept at system default (security)"
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Auto-open DMG root after mount"
 elif (
-  defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true
-  defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
+  defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true &&
+    defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
 ) 2>/dev/null; then
   echo "[SET] Auto-open DMG root after mount"
 else
-  echo "[FAIL] Auto-open DMG root after mount"
+  record_failure "Auto-open DMG root after mount"
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Disk Utility debug menu + advanced image options"
 elif (
-  defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true
-  defaults write com.apple.DiskUtility advanced-image-options -bool true
+  defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true &&
+    defaults write com.apple.DiskUtility advanced-image-options -bool true
 ) 2>/dev/null; then
   echo "[SET] Disk Utility debug menu + advanced image options"
 else
-  echo "[FAIL] Disk Utility debug menu + advanced image options"
+  record_failure "Disk Utility debug menu + advanced image options"
 fi
 
 # ── Time Machine ───────────────────────────────────────────────────
@@ -652,13 +659,13 @@ apply_default "Crash reporter dialogs disabled" com.apple.CrashReporter DialogTy
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Siri disabled + menu bar icon removed"
 elif (
-  defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
-  defaults write com.apple.Siri StatusMenuVisible -bool false
-  defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
+  defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false &&
+    defaults write com.apple.Siri StatusMenuVisible -bool false &&
+    defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
 ) 2>/dev/null; then
   echo "[SET] Siri disabled + menu bar icon removed"
 else
-  echo "[FAIL] Siri disabled + menu bar icon removed"
+  record_failure "Siri disabled + menu bar icon removed"
 fi
 
 # Prevent "Enable Siri?" prompts after updates
@@ -778,14 +785,14 @@ else
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] Safari AutoFill enabled (revisar)"
   elif (
-    defaults write com.apple.Safari AutoFillFromAddressBook -bool true
-    defaults write com.apple.Safari AutoFillPasswords -bool true
-    defaults write com.apple.Safari AutoFillCreditCardData -bool true
-    defaults write com.apple.Safari AutoFillMiscellaneousForms -bool true
+    defaults write com.apple.Safari AutoFillFromAddressBook -bool true &&
+      defaults write com.apple.Safari AutoFillPasswords -bool true &&
+      defaults write com.apple.Safari AutoFillCreditCardData -bool true &&
+      defaults write com.apple.Safari AutoFillMiscellaneousForms -bool true
   ) 2>/dev/null; then
     echo "[SET] Safari AutoFill enabled (revisar)"
   else
-    echo "[FAIL] Safari AutoFill enabled (revisar)"
+    record_failure "Safari AutoFill enabled (revisar)"
   fi
 
   # Deprecated since Safari 12.1 — harmless no-op, kept for documentation
@@ -797,12 +804,12 @@ else
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] Safari Tab to links"
   elif (
-    defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
-    defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
+    defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true &&
+      defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
   ) 2>/dev/null; then
     echo "[SET] Safari Tab to links"
   else
-    echo "[FAIL] Safari Tab to links"
+    record_failure "Safari Tab to links"
   fi
 
   apply_default "Safari backspace navigation" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
@@ -812,12 +819,12 @@ else
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] Safari hide favorites bar + sidebar"
   elif (
-    defaults write com.apple.Safari ShowFavoritesBar -bool false
-    defaults write com.apple.Safari ShowSidebarInTopSites -bool false
+    defaults write com.apple.Safari ShowFavoritesBar -bool false &&
+      defaults write com.apple.Safari ShowSidebarInTopSites -bool false
   ) 2>/dev/null; then
     echo "[SET] Safari hide favorites bar + sidebar"
   else
-    echo "[FAIL] Safari hide favorites bar + sidebar"
+    record_failure "Safari hide favorites bar + sidebar"
   fi
 
   apply_default "Safari find contains (not starts-with)" com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
@@ -830,12 +837,12 @@ else
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] Safari pop-ups blocked"
   elif (
-    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
-    defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
+    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false &&
+      defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
   ) 2>/dev/null; then
     echo "[SET] Safari pop-ups blocked"
   else
-    echo "[FAIL] Safari pop-ups blocked"
+    record_failure "Safari pop-ups blocked"
   fi
 
   apply_default "Safari auto-update extensions" com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
@@ -882,12 +889,12 @@ apply_default "TextEdit plain text default" com.apple.TextEdit RichText -bool fa
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] TextEdit UTF-8 encoding"
 elif (
-  defaults write com.apple.TextEdit PlainTextEncoding -int 4
-  defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+  defaults write com.apple.TextEdit PlainTextEncoding -int 4 &&
+    defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 ) 2>/dev/null; then
   echo "[SET] TextEdit UTF-8 encoding"
 else
-  echo "[FAIL] TextEdit UTF-8 encoding"
+  record_failure "TextEdit UTF-8 encoding"
 fi
 
 # ── Activity Monitor ───────────────────────────────────────────────
@@ -899,12 +906,12 @@ apply_default "Activity Monitor refresh = 2s" com.apple.ActivityMonitor UpdatePe
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Activity Monitor sort by CPU usage"
 elif (
-  defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
-  defaults write com.apple.ActivityMonitor SortDirection -int 0
+  defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage" &&
+    defaults write com.apple.ActivityMonitor SortDirection -int 0
 ) 2>/dev/null; then
   echo "[SET] Activity Monitor sort by CPU usage"
 else
-  echo "[FAIL] Activity Monitor sort by CPU usage"
+  record_failure "Activity Monitor sort by CPU usage"
 fi
 
 # 100 = todos los procesos. El 0 anterior era otra categoria, no "todos".
@@ -914,12 +921,12 @@ apply_default "Activity Monitor show all processes" com.apple.ActivityMonitor Sh
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Console debug menu + private logs"
 elif (
-  defaults write com.apple.Console DebugMenuEnabled -bool true
-  defaults write com.apple.Console PrivateLogsEnabled -bool true
+  defaults write com.apple.Console DebugMenuEnabled -bool true &&
+    defaults write com.apple.Console PrivateLogsEnabled -bool true
 ) 2>/dev/null; then
   echo "[SET] Console debug menu + private logs"
 else
-  echo "[FAIL] Console debug menu + private logs"
+  record_failure "Console debug menu + private logs"
 fi
 
 # ── Help Viewer ────────────────────────────────────────────────────
@@ -940,15 +947,15 @@ apply_default "Battery percentage in menu bar" com.apple.menuextra.battery ShowP
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Clock: digital, 24h, minimal"
 elif (
-  defaults write com.apple.menuextra.clock IsAnalog -bool false
-  defaults write com.apple.menuextra.clock ShowSeconds -bool false
-  defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false
-  defaults write com.apple.menuextra.clock ShowDate -int 0
-  defaults write com.apple.menuextra.clock Show24Hour -bool true
+  defaults write com.apple.menuextra.clock IsAnalog -bool false &&
+    defaults write com.apple.menuextra.clock ShowSeconds -bool false &&
+    defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false &&
+    defaults write com.apple.menuextra.clock ShowDate -int 0 &&
+    defaults write com.apple.menuextra.clock Show24Hour -bool true
 ) 2>/dev/null; then
   echo "[SET] Clock: digital, 24h, minimal"
 else
-  echo "[FAIL] Clock: digital, 24h, minimal"
+  record_failure "Clock: digital, 24h, minimal"
 fi
 # DateFormat unificado (reemplaza keys individuales en Sequoia+).
 # OJO: en esta maquina esta key no persiste — macOS la borra y deja el formato
@@ -959,40 +966,40 @@ apply_default "Clock: digital, 24h, minimal" com.apple.menuextra.clock DateForma
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] App Store debug menu enabled"
 elif (
-  defaults write com.apple.appstore ShowDebugMenu -bool true
-  defaults write com.apple.appstore IncludeDebugMenu -bool true
-  defaults write com.apple.appstore WebKitDeveloperExtras -bool true
+  defaults write com.apple.appstore ShowDebugMenu -bool true &&
+    defaults write com.apple.appstore IncludeDebugMenu -bool true &&
+    defaults write com.apple.appstore WebKitDeveloperExtras -bool true
 ) 2>/dev/null; then
   echo "[SET] App Store debug menu enabled"
 else
-  echo "[FAIL] App Store debug menu enabled"
+  record_failure "App Store debug menu enabled"
 fi
 
 # Auto-update App Store apps (security: outdated apps = attack surface)
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] App Store auto-update + auto-restart"
 elif (
-  defaults write com.apple.commerce AutoUpdate -bool true
-  defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
+  defaults write com.apple.commerce AutoUpdate -bool true &&
+    defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
 ) 2>/dev/null; then
   echo "[SET] App Store auto-update + auto-restart"
 else
-  echo "[FAIL] App Store auto-update + auto-restart"
+  record_failure "App Store auto-update + auto-restart"
 fi
 
 # ── Software Update ────────────────────────────────────────────────
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Software Update: daily check + auto critical installs"
 elif (
-  defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
-  defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
-  defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
-  defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
-  defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
+  defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true &&
+    defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1 &&
+    defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1 &&
+    defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1 &&
+    defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
 ) 2>/dev/null; then
   echo "[SET] Software Update: daily check + auto critical installs"
 else
-  echo "[FAIL] Software Update: daily check + auto critical installs"
+  record_failure "Software Update: daily check + auto critical installs"
 fi
 
 # ── Spotlight ──────────────────────────────────────────────────────
@@ -1011,7 +1018,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
 elif chflags nohidden "$HOME/Library"; then
   echo "[SET] ~/Library visible"
 else
-  echo "[FAIL] ~/Library visible"
+  record_failure "${HOME}/Library visible"
 fi
 
 # Reduce Transparency: alivia ~15-20% de CPU de WindowServer en Sequoia (donde
@@ -1028,12 +1035,12 @@ fi
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Zoom con ctrl + scroll"
 elif (
-  defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
-  defaults write com.apple.universalaccess closeViewScrollWheelModifiersInt -int 262144
+  defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true &&
+    defaults write com.apple.universalaccess closeViewScrollWheelModifiersInt -int 262144
 ) 2>/dev/null; then
   echo "[SET] Zoom con ctrl + scroll"
 else
-  echo "[FAIL] Zoom con ctrl + scroll"
+  record_failure "Zoom con ctrl + scroll"
 fi
 
 apply_default "Sin atajos de teclado para el zoom" com.apple.universalaccess closeViewHotkeysEnabled -bool false
@@ -1044,19 +1051,19 @@ apply_default "Sin atajos de teclado para el zoom" com.apple.universalaccess clo
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Barra de menu minima (reloj + Control Center)"
 elif (
-  defaults write com.apple.controlcenter "NSStatusItem Visible BentoBox" -bool true
-  defaults write com.apple.controlcenter "NSStatusItem Visible Clock" -bool true
-  defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool false
-  defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool false
-  defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
-  defaults write com.apple.controlcenter "NSStatusItem Visible NowPlaying" -bool false
-  defaults write com.apple.controlcenter "NSStatusItem Visible FocusModes" -bool false
-  defaults write com.apple.controlcenter "NSStatusItem Visible AudioVideoModule" -bool false
-  defaults write com.apple.controlcenter "NSStatusItem Visible Timer" -bool false
+  defaults write com.apple.controlcenter "NSStatusItem Visible BentoBox" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Clock" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible NowPlaying" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible FocusModes" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible AudioVideoModule" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Timer" -bool false
 ) 2>/dev/null; then
   echo "[SET] Barra de menu minima (reloj + Control Center)"
 else
-  echo "[FAIL] Barra de menu minima (reloj + Control Center)"
+  record_failure "Barra de menu minima (reloj + Control Center)"
 fi
 
 # La barra de menu se oculta hasta que pasas el mouse arriba. Promovido desde
@@ -1087,7 +1094,7 @@ else
     if "$@" >/dev/null 2>&1; then
       echo "[SET] $label"
     else
-      echo "[FAIL] $label"
+      record_failure "$label"
     fi
   }
 
@@ -1252,7 +1259,7 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   else
     touch "$p/.metadata_never_index" 2>/dev/null &&
       echo "[SET] Spotlight excluye $p" ||
-      echo "[FAIL] Spotlight excluye $p"
+      record_failure "Spotlight excluye $p"
   fi
 
   if [ "$NO_SUDO" -eq 1 ]; then
@@ -1264,7 +1271,7 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   else
     sudo tmutil addexclusion -p "$p" >/dev/null 2>&1 &&
       echo "[SET] Time Machine excluye $p" ||
-      echo "[FAIL] Time Machine excluye $p"
+      record_failure "Time Machine excluye $p"
   fi
 done
 
@@ -1293,6 +1300,11 @@ else
   killall "Clock" "WorldClockWidget" 2>/dev/null || true
   killall cfprefsd 2>/dev/null && echo "[OK] cfprefsd restarted"
   killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
+fi
+
+if [ "$DEFAULTS_FAILURES" -gt 0 ]; then
+  echo "=== $DEFAULTS_FAILURES defaults operation(s) failed ===" >&2
+  exit 1
 fi
 
 echo "=== Done ==="

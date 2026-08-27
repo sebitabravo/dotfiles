@@ -72,12 +72,12 @@ design system in Stitch.
 > before proceeding. Do **NOT** upload until the user confirms.
 
 1. **Upload `DESIGN.md`**:
-   - **Option A (Recommended - Uploader Script)**: Use the modified `upload-to-stitch` Python script which natively handles `.md` files. It base64-encodes the markdown file in-process and sends it to the `/v1/projects/{projectId}/screens:batchCreate` endpoint, bypassing output token limits.
+   - **Option A (Recommended - Uploader Script)**: Use the `stitch-manage-design-system` uploader script, which natively handles `.md` files. It base64-encodes the markdown file in-process and sends it to the `/v1/projects/{projectId}/screens:batchCreate` endpoint, bypassing output token limits.
      ```bash
+     export STITCH_API_KEY
      python3 "$SKILL_DIR/scripts/upload_to_stitch.py" \
        --project-id <PROJECT_ID> \
        --file-path /path/to/DESIGN.md \
-       --api-key <API_KEY> \
        --generated-by <GENERATED_BY>
      ```
      Set `<GENERATED_BY>` to identify the skill or tool that produced the
@@ -85,6 +85,11 @@ design system in Stitch.
      (e.g. `stitch::code-to-design`), or the agent/tool name for standalone
      use (e.g. `Gemini`, `Claude Code`). If omitted, the script defaults to
      `UserUploadedDesignMd`.
+
+     The uploader always uses `https://stitch.googleapis.com`, reads the API
+     key from `STITCH_API_KEY`, and rejects missing or empty keys. It accepts
+     only safe single-component project IDs and regular supported files up to
+     its explicit size limit; it does not follow redirects.
 
      This returns the `sourceScreen` ID and the `screenInstance` ID.
    - **Option B (Direct MCP Tool)**: If the `DESIGN.md` is small (under ~5KB), you can call the `upload_design_md` MCP tool directly, passing the base64-encoded design markdown content as `designMdBase64`.

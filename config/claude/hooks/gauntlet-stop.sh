@@ -36,6 +36,8 @@ fi
 PROJECT_DIR="$PWD"
 if command -v jq >/dev/null 2>&1; then
   CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+  SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+  TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
   [ -n "$CWD" ] && PROJECT_DIR="$CWD"
 fi
 ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0
@@ -128,23 +130,43 @@ done <<<"$SRC"
 # turno se termina desactivando entera, y un gate desactivado no protege nada.
 # Si no entra en el timeout, se dice — no se asume verde.
 if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
+  # TEST_CMD is a public variable populated by the sourced runner helper.
+  # shellcheck disable=SC2034
   TEST_CMD=""
   # shellcheck source=lib/test-runner.sh
   # shellcheck disable=SC1091
   if [ -r "$HOME/.claude/hooks/lib/test-runner.sh" ]; then
     . "$HOME/.claude/hooks/lib/test-runner.sh"
-    detect_test_cmd "$ROOT" || true
+    if ! declare -f run_trusted_test_once >/dev/null 2>&1; then
+      echo '[gauntlet] BLOCKED: el detector de runner no expone la frontera de confianza requerida.' >&2
+      exit 2
+    fi
   fi
 
-  if [ -n "$TEST_CMD" ]; then
+  if declare -f run_trusted_test_once >/dev/null 2>&1; then
     # run_with_timeout (lib/test-runner.sh) bounds this even without
     # coreutils: a stock macOS host has neither timeout nor gtimeout, and
     # without an internal bound the suite ran fully unbounded, relying only
     # on the OUTER Stop-hook harness timeout to ever cut it off -- silently,
     # before this hook could report anything.
     GAUNTLET_TEST_TIMEOUT_SECONDS="${GAUNTLET_TEST_TIMEOUT_SECONDS:-90}"
-    TEST_OUT=$(run_with_timeout "$GAUNTLET_TEST_TIMEOUT_SECONDS" "$TEST_CMD")
+    TEST_OUT=$(run_trusted_test_once "$ROOT" "${SESSION_ID:-}" "${TRANSCRIPT_PATH:-}" "$GAUNTLET_TEST_TIMEOUT_SECONDS")
     TEST_RC=$?
+
+    if [ "$TEST_RC" = 126 ] || [ "$TEST_RC" = 125 ]; then
+      printf '%s\n' "$TEST_OUT" >&2
+      exit 2
+    fi
+    if [ "$TEST_RC" = 127 ]; then
+      {
+        echo "GAUNTLET: no native test runner was detected. The suite could NOT be verified."
+        echo ""
+        printf '%s\n' "$TEST_OUT"
+        echo "Do not close the turn calling it green. Make the repository's declared runner available, declare a test.sh/Makefile/manifest runner, or explicitly narrow this repo with:"
+        echo "  touch .claude-relaxed"
+      } >&2
+      exit 2
+    fi
 
     # Un timeout BLOQUEA. Antes solo imprimia y seguia, y como abajo se sale 0
     # cuando no falta ningun test, el turno se cerraba igual: "no se pudo

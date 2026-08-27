@@ -37,6 +37,25 @@ skill. Las auditorías del repositorio, smoke tests, paridad, comparación de
 roadmaps, dependencias y el doctor viven fuera de esta carpeta, en
 `.github/test/`, y no se instalan en `~/.claude`.
 
+### Confianza de runners en Stop
+
+Los Stop hooks no ejecutan automáticamente `test.sh`, `.github/test.sh`,
+Make/Just, scripts de manifiestos ni wrappers del repositorio sólo porque los
+detecten. Esos comandos son código controlado por el repositorio y requieren
+una decisión explícita del usuario fuera del repositorio. Agregá la ruta
+absoluta exacta del root Git, una por línea, a:
+
+```text
+~/.claude/trusted-repositories
+```
+
+La ruta alternativa `CLAUDE_REPOSITORY_TRUST_FILE` permite probar una política
+aislada sin tocar la configuración real; `CLAUDE_TRUSTED_REPOSITORY` es un
+opt-in equivalente para una invocación puntual. Si falta la confianza, el Stop
+hook devuelve un bloqueo tipado y no ejecuta el runner ni inventa PASS. La
+decisión no se puede almacenar dentro del repositorio porque el repositorio
+controla su propio contenido.
+
 ## Instalación
 
 Ejecutá esto apuntando `CLAUDE_DIR` a la carpeta que contiene esta
@@ -122,7 +141,7 @@ helper de autenticación:
 | DeepSeek | `deepseek.settings.json` | `api.deepseek.com/anthropic` | `deepseek-v4-pro[1m]` | `deepseek-v4-flash[1m]` | `deepseek-v4-flash` |
 | GLM / Z.AI | `glm.settings.json` | `api.z.ai/api/anthropic` | `glm-5.3[1m]` | `glm-5.2[1m]` | `glm-4.7` |
 | Ollama Cloud (API directa) | `ollama.settings.json` | `ollama.com` | `minimax-m3:cloud` | `gemma4:31b-cloud` | `gpt-oss:120b-cloud` |
-| OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `deepseek/deepseek-v4-pro` | `openai/gpt-5.6-luna` | `openrouter/free` |
+| OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `x-ai/grok-4.6` (Fable) / `google/gemini-3.7-flash` (Opus) | `openai/gpt-5.6-luna-pro` | `openrouter/free` |
 
 Los modelos de la tabla son **las elecciones de esta configuración**, no
 defaults universales. La disponibilidad, los precios y los límites de cada
@@ -131,7 +150,22 @@ Z.AI recomienda `glm-5.3[1m]` para el endpoint directo; un ID de GLM
 disponible en OpenRouter no se puede trasladar automáticamente al endpoint
 directo de Z.AI. OpenRouter además declara
 `ANTHROPIC_DEFAULT_FABLE_MODEL` para la cuarta clase de modelos de Claude Code;
-este overlay la mapea al mismo DeepSeek Pro que usa para Opus.
+este overlay la ordena por calidad ascendente sobre el mismo Sonnet base
+(`openai/gpt-5.6-luna-pro`, Artificial Analysis Intelligence Index ~47-52
+según el reasoning effort): Opus usa `google/gemini-3.7-flash` (índice 56,
+$0.375/$1.875 por M, 1.05M de contexto) y Fable `x-ai/grok-4.6` (índice 61,
+$2/$6 por M, 500K de contexto), excluyendo deliberadamente los vendors que
+ya tienen overlay propio en esta tabla (DeepSeek, GLM).
+No hay rotación automática de modelo por tier en Claude Code —
+`ANTHROPIC_DEFAULT_OPUS_MODEL` admite un solo string en el schema oficial—,
+así que para alternar puntualmente a otro modelo dentro de un tier se usa
+el flag `--model` por sesión, por ejemplo `claude --openrouter --model
+x-ai/grok-4.5` o `claude --deepseek --model deepseek-v4-pro`. `grok-4.6` limita a 500K de contexto real, por debajo de
+los 1.05M del resto de los tiers y del `CLAUDE_CODE_AUTO_COMPACT_WINDOW` de
+`1048576` declarado en el overlay: una sesión larga que dispare Fable
+después de acumular más de 500K tokens puede fallar por contexto antes de
+que el autocompact global actúe. Se aceptó ese trade-off porque Fable es de
+uso poco frecuente en esta configuración.
 
 Claude Code actual incorpora Fable 5 como una clase de modelo separada. Todos
 los overlays declaran explícitamente `ANTHROPIC_DEFAULT_FABLE_MODEL` para que
@@ -280,9 +314,15 @@ config/claude/scripts/sync-convergence-runtime.sh --apply
 ```
 
 `--apply` crea backups, instala los archivos críticos del harness y el skill
-orquestador, fusiona los cuatro hooks en el `settings.json` existente y
-preserva archivos/hooks runtime-only; no hace `rsync --delete` ni modifica
-OpenSpec, providers o `.gitignore`.
+orquestador, y reconcilia los eventos gestionados `UserPromptSubmit` y `Stop`
+con la proyección exacta de `config/claude/settings.json`: conserva su
+agrupamiento, orden y campos, elimina aliases/siblings viejos que el dispatcher
+reemplaza y evita consumidores paralelos de `UserPromptSubmit`. Los hooks
+runtime-only de otros eventos y los archivos no administrados se preservan; no
+hace `rsync --delete` ni modifica OpenSpec, providers o `.gitignore`. La
+reconciliación se calcula en un temporal del mismo directorio y se mueve de
+forma atómica después de crear el backup; los symlinks se rechazan antes de
+copiar para evitar reemplazos ambiguos.
 
 Después de modificar la fuente o antes de una sesión autenticada, podés
 verificar el motor real de hooks sin tocar tu runtime ni consumir inferencia:

@@ -195,20 +195,6 @@ if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting
   builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
-# Herdr — abrir automáticamente solo en shells interactivos de Ghostty.
-# HERDR_ENV, TMUX y ZELLIJ evitan sesiones anidadas; HERDR_AUTO_START=0 permite
-# abrir un shell local puntual sin entrar al workspace persistente.
-if [[ "${HERDR_AUTO_START:-1}" != "0" \
-   && "${TERM_PROGRAM:-}" == "ghostty" \
-   && $- == *i* \
-   && -t 1 \
-   && -z "${HERDR_ENV:-}" \
-   && -z "${TMUX:-}" \
-   && -z "${ZELLIJ:-}" ]] \
-   && command -v herdr >/dev/null 2>&1; then
-  exec herdr
-fi
-
 fastfetch
 
 # claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.

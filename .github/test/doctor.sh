@@ -9,6 +9,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 DEFAULT_REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd -P)
 REPO_ROOT=${DOCTOR_REPO_ROOT:-$DEFAULT_REPO_ROOT}
+ENGRAM_PROJECT=${DOCTOR_ENGRAM_PROJECT:-$(basename "$REPO_ROOT")}
 CLAUDE_SOURCE_ROOT=${DOCTOR_CLAUDE_SOURCE_ROOT:-$REPO_ROOT/config/claude}
 CLAUDE_RUNTIME_ROOT=${DOCTOR_CLAUDE_RUNTIME_ROOT:-$HOME/.claude}
 CLAUDE_USER_CONFIG=${DOCTOR_CLAUDE_USER_CONFIG:-$HOME/.claude.json}
@@ -42,7 +43,8 @@ Audita sin modificar:
   - binarios requeridos y salud de servidores MCP
 
 Variables opcionales para fixtures:
-  DOCTOR_CLAUDE_SOURCE_ROOT, DOCTOR_REPO_ROOT, DOCTOR_CLAUDE_RUNTIME_ROOT
+  DOCTOR_CLAUDE_SOURCE_ROOT, DOCTOR_REPO_ROOT, DOCTOR_ENGRAM_PROJECT
+  DOCTOR_CLAUDE_RUNTIME_ROOT
   DOCTOR_CLAUDE_USER_CONFIG, DOCTOR_CLAUDE_MANAGED_MCP, DOCTOR_MCP_SOURCE
   DOCTOR_HERDR_SOURCE, DOCTOR_HERDR_RUNTIME_CONFIG
 EOF
@@ -244,6 +246,7 @@ EOF
 }
 
 check_engram() {
+  local health_output health_status health_detail
   if jq -e '.enabledPlugins["engram@engram"] == true' "$CLAUDE_SETTINGS" >/dev/null 2>&1 &&
     printf '%s\n' "$MCP_HEALTH_OUTPUT" | grep -E 'engram.*Connected' >/dev/null 2>&1; then
     pass 'Engram' 'plugin habilitado y conectado'
@@ -251,7 +254,44 @@ check_engram() {
     pass 'Engram' 'ruta MCP conectada'
   else
     fail 'Engram' 'no aparece conectado en Claude'
+    return
   fi
+
+  # MCP connectivity does not prove local/cloud-sync health. Engram can return
+  # exit 0 while its structured doctor reports a blocked legacy mutation, so
+  # inspect JSON status instead of trusting the process code alone.
+  if ! health_output=$(engram doctor --json --project "$ENGRAM_PROJECT" 2>&1); then
+    fail 'Engram cloud health' "doctor falló: $(last_line "$health_output")"
+    return
+  fi
+  if ! health_status=$(printf '%s' "$health_output" | jq -er '.status | strings' 2>/dev/null); then
+    fail 'Engram cloud health' 'doctor no devolvió un JSON con status string'
+    return
+  fi
+  health_detail=$(printf '%s' "$health_output" | jq -r '
+    [
+      (.checks[]? | select(.result == "blocked" or .severity == "blocking") | .message),
+      (.checks[]?.findings[]? | select(.severity == "blocking") | .message)
+    ] | map(select(type == "string" and length > 0)) | unique | join("; ")
+  ' 2>/dev/null || true)
+  case "$health_status" in
+    ready | ok | healthy | complete)
+      pass 'Engram cloud health' "status: $health_status"
+      ;;
+    disabled | unconfigured | not_enrolled | opted_out)
+      info 'Engram cloud health' "status: $health_status (cloud opt-in not active)"
+      ;;
+    blocked | degraded | error)
+      if [ -n "$health_detail" ]; then
+        fail 'Engram cloud health' "status: $health_status — $health_detail"
+      else
+        fail 'Engram cloud health' "status: $health_status"
+      fi
+      ;;
+    *)
+      fail 'Engram cloud health' "status desconocido: ${health_status:-missing}"
+      ;;
+  esac
 }
 
 run_parity() {

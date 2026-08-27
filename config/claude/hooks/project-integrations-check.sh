@@ -14,6 +14,10 @@
 # arbitrary repository.
 set -u
 
+HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=/dev/null
+source "$HOOK_DIR/lib/github-request.sh"
+
 INPUT=$(cat 2>/dev/null || printf '%s' '{}')
 
 if command -v jq >/dev/null 2>&1; then
@@ -38,50 +42,6 @@ case "$EVENT" in
   SessionStart | UserPromptSubmit) ;;
   *) EVENT="UserPromptSubmit" ;;
 esac
-
-# GitHub CLI has no portable per-request timeout on a stock macOS install.
-# Prefer coreutils when present, otherwise inspect the real child process and
-# kill it ourselves. The SessionStart/UserPromptSubmit hook has a 30s outer
-# timeout, so a bounded request is still required here; otherwise a stalled
-# network call can make the entire hook appear broken.
-GH_REQUEST_TIMEOUT_SECONDS=2
-gh_request() {
-  local result_file gh_pid elapsed_tenths request_rc process_state
-
-  if command -v timeout >/dev/null 2>&1; then
-    timeout "$GH_REQUEST_TIMEOUT_SECONDS" gh "$@"
-    return $?
-  fi
-  if command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "$GH_REQUEST_TIMEOUT_SECONDS" gh "$@"
-    return $?
-  fi
-
-  result_file=$(mktemp "${TMPDIR:-/tmp}/project-integrations-check.XXXXXX") || return 125
-  gh "$@" >"$result_file" 2>/dev/null &
-  gh_pid=$!
-  elapsed_tenths=0
-  while :; do
-    process_state=$(ps -o state= -p "$gh_pid" 2>/dev/null | tr -d '[:space:]')
-    case "$process_state" in
-      "" | Z*) break ;;
-    esac
-    if [ "$elapsed_tenths" -ge $((GH_REQUEST_TIMEOUT_SECONDS * 10)) ]; then
-      kill "$gh_pid" >/dev/null 2>&1 || true
-      wait "$gh_pid" >/dev/null 2>&1 || true
-      rm -f "$result_file"
-      return 124
-    fi
-    sleep 0.1
-    elapsed_tenths=$((elapsed_tenths + 1))
-  done
-
-  wait "$gh_pid"
-  request_rc=$?
-  cat "$result_file"
-  rm -f "$result_file"
-  return "$request_rc"
-}
 
 github_repo_slug() {
   local remote_url="$1" path owner repo
