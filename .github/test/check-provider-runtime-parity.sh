@@ -3,8 +3,9 @@
 #
 # La paridad del harness y la paridad de providers son gates distintos. Este
 # script compara semánticamente sólo los overlays JSON versionados; no prueba
-# credenciales, endpoints vivos ni inferencia autenticada. `opus` y el ID que
-# el mismo overlay declara como DEFAULT_OPUS son selecciones equivalentes.
+# credenciales, endpoints vivos ni inferencia autenticada. `opus`/`fable` y el ID
+# que el mismo overlay declara como DEFAULT_OPUS/DEFAULT_FABLE son selecciones
+# equivalentes.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -23,8 +24,9 @@ for arg in "$@"; do
 Uso: check-provider-runtime-parity.sh [--json] [--strict]
 
 Audita los overlays JSON de providers entre config/claude y ~/.claude.
-Es de solo lectura. Ignora formato/orden de claves y trata `opus` como
-equivalente al DEFAULT_OPUS del mismo overlay. --strict devuelve exit 1 si
+Es de solo lectura. Ignora formato/orden de claves y trata `opus`/`fable`
+como equivalente al DEFAULT_OPUS/DEFAULT_FABLE del mismo overlay. --strict
+devuelve exit 1 si
 falta o difiere semánticamente un overlay.
 CLAUDE_RUNTIME_DIR permite auditar un runtime temporal.
 EOF
@@ -41,6 +43,8 @@ normalize_overlay() {
   jq -cS '
     if .env.ANTHROPIC_MODEL == "opus" then
       .env.ANTHROPIC_MODEL = .env.ANTHROPIC_DEFAULT_OPUS_MODEL
+    elif .env.ANTHROPIC_MODEL == "fable" then
+      .env.ANTHROPIC_MODEL = .env.ANTHROPIC_DEFAULT_FABLE_MODEL
     else
       .
     end

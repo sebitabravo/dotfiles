@@ -11,7 +11,9 @@
 
 ## Response Language
 
-RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. The STATUS line is the ONLY English line allowed; everything AFTER the first line must be in neutral Spanish. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+
+CRITICAL: The FIRST LINE of the review MUST be EXACTLY `STATUS: PASSED` or `STATUS: FAILED` in ENGLISH, UPPERCASE, verbatim. NEVER translate STATUS to ESTAO/ESTADO. NEVER write `ESTADO:`. This line is machine-parsed (STRICT_MODE) and must stay English. Everything AFTER the first line must be in neutral Spanish.
 
 REJECT if review output is not in neutral Spanish (except the STATUS line and emojis). STRICT_MODE enforces this.
 
@@ -69,13 +71,14 @@ PREFER the tools as style judges:
 
 ## Response Format
 
-- RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+- RESPONSE LANGUAGE: All review output MUST be in neutral Spanish (español neutro) — table headers, Issue descriptions, Rule citations context, verification summaries. The ONLY English tokens allowed are the first-line STATUS: PASSED / STATUS: FAILED and severity emojis. The STATUS line is the ONLY English line allowed; everything AFTER the first line must be in neutral Spanish. Never answer in Chinese, English, or any other language. If uncertain, default to Spanish neutro.
+- CRITICAL: The FIRST LINE of the review MUST be EXACTLY `STATUS: PASSED` or `STATUS: FAILED` in ENGLISH, UPPERCASE, verbatim. NEVER translate STATUS to ESTAO/ESTADO. NEVER write `ESTADO:`. This line is machine-parsed (STRICT_MODE) and must stay English. Everything AFTER the first line must be in neutral Spanish.
 - FIRST LINE exactly one of: `STATUS: PASSED` or `STATUS: FAILED` (English, for GGA parsing).
 - STATUS: FAILED only when at least one 🔴 finding exists. If only 🟡/🟣, use STATUS: PASSED and lead with "Sin incidencias bloqueantes." (neutral Spanish).
 - If FAILED, one line per violation: `file:line - rule - issue` (issue text in Spanish). Then severity table `| Sev | File:Line | Incidencia | Regla |` (🔴 bloqueo / 🟡 estilo / 🟣 preexistente), max 5 findings — headers and content in Spanish neutro.
 - No preamble, no explanations, no suggestions, no diff paste, no file list dump — all in Spanish neutro.
 - Read-only review: never run commands, never modify files.
-- Example: first line `STATUS: PASSED`, following content in Spanish neutro — e.g., "Sin incidencias bloqueantes." and table headers "Sev | Archivo:Línea | Incidencia | Regla".
+- Example: first line `STATUS: PASSED`, second line "Sin incidencias bloqueantes." in Spanish neutro — e.g., table headers "Sev | Archivo:Línea | Incidencia | Regla".
 
 ## Scope
 

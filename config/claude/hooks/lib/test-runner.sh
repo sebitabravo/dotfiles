@@ -357,31 +357,6 @@ _detect_managed() {
   return 1
 }
 
-# _process_tree_pids: implementacion principal en process-utils.sh (cargado
-# arriba). Fallback solo si el archivo compartido no existe — ej. entorno de
-# test aislado que enlaza solo test-runner.sh sin process-utils.sh (ver
-# convergence-stop.test.sh SHORT_DIR). No es duplicacion intencional: es
-# compatibilidad con fixtures existentes.
-if ! declare -F _process_tree_pids >/dev/null 2>&1; then
-  _process_tree_pids() {
-    local frontier="$1" all_pids="$1" pid children next
-
-    while [ -n "$frontier" ]; do
-      next=""
-      for pid in $frontier; do
-        children=$(pgrep -P "$pid" 2>/dev/null || true)
-        [ -n "$children" ] && {
-          next="$next $children"
-          all_pids="$all_pids $children"
-        }
-      done
-      frontier=$next
-    done
-
-    printf '%s' "$all_pids"
-  }
-fi
-
 # run_with_timeout: bounds an arbitrary shell command string (may contain
 # `&&`, `cd`, pipes) to N seconds, portably. Execute it through a nested Bash
 # rather than `eval` in the status-writing shell: a command containing `exit`
