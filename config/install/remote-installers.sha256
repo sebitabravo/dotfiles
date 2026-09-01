@@ -1,9 +1,7 @@
 # SHA-256 pins for the HTTPS installer payloads used by install.sh.
 Homebrew|12479a24be3f5307eecac7cde670fad7118640f031229e964f544b1367b52a41|https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 Oh My Zsh|5b16896b831243ebd2f409ecd99c3d231385cc706fbc564625057929ebee5e6e|https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-Herdr|3db3af8375006e193a393b5e3129feb237f30bc6f053fffbe1dc75da1f3d9ac4|https://herdr.dev/install.sh
 CodeGraph|f4e90c6e0c1d2ac95a43fa6e82e4caf76fabdb18310afc72597314b58632e56c|https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh
-Gentle AI|bd2cb21f77994fb9d36f2e086fc32cf212e97036cd75f0b0c30e3fe637a779fd|https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh
 OpenCode|fc3c1b2123f49b6df545a7622e5127d21cd794b15134fc3b66e1ca49f7fb297e|https://opencode.ai/install
 Codex|ba92dd27e5c06f0d3bbc58bfa4b9cfb6599cd2742fbb1f92a2765e6c07dedb5a|https://chatgpt.com/codex/install.sh
 Cursor Agent|b1af27b9556c5f1c58d166742dbb33425ebd90a4bbd7e5453d66b920bf1f9f6b|https://cursor.com/install

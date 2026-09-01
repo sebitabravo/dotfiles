@@ -152,11 +152,16 @@ pyenv() {
 eval "$(zoxide init zsh)"
 
 # fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
-# fd as backend: faster, gitignore-aware. Ctrl-R lo toma fzf-history-widget.
+# fd as backend: faster, gitignore-aware. Ctrl-R queda para Atuin (mas abajo).
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 source <(fzf --zsh) 2>/dev/null
+
+# Atuin — historial de shell buscable (Ctrl-R). Se inicializa despues de fzf
+# a proposito: los dos bindean Ctrl-R y el ultimo init gana. fzf conserva
+# Ctrl-T/Alt-C sin cambios.
+eval "$(atuin init zsh)"
 
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
@@ -195,7 +200,12 @@ if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting
   builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
-fastfetch
+if [[ -o interactive ]] &&
+   [[ -t 0 ]] &&
+   [[ -z "$VSCODE_INJECTION" ]] &&
+   [[ -z "$JETBRAINS_IDE" ]]; then
+  fastfetch
+fi
 
 # claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
 # claude a secas queda igual que siempre (Anthropic).

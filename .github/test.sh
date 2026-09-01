@@ -199,7 +199,12 @@ cat >"$HASH_MISMATCH_BIN/sh" <<'EOF'
 printf '%s\n' "$*" >>"${HASH_MISMATCH_SHELL_LOG:?}"
 exit 99
 EOF
-for command_name in codegraph gentle-ai opencode codex agent agy claude copilot kilo; do
+# codegraph queda fuera a proposito: cada stub de esta lista hace que
+# install.sh salte ese remote tool por "ya existe", asi que exactamente uno
+# tiene que faltar para forzar el path real de descarga y ejercitar el
+# checksum fail-closed. CodeGraph es el primer remote tool que install.sh
+# intenta tras Homebrew/Oh My Zsh (que se saltan por fixture aparte).
+for command_name in gentle-ai opencode codex agent agy claude copilot kilo; do
   cat >"$HASH_MISMATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -223,7 +228,7 @@ set -e
 [ -s "$HASH_MISMATCH_CURL_OUTPUT_LOG" ] || fail 'hash mismatch did not record its unique temporary file'
 [ ! -e "$(cat "$HASH_MISMATCH_CURL_OUTPUT_LOG")" ] || fail 'hash mismatch left the downloaded temporary file behind'
 [ ! -s "$HASH_MISMATCH_SHELL_LOG" ] || fail 'hash mismatch invoked the remote shell before verification'
-grep -qF 'checksum SHA-256 no coincide para Herdr' "$TMP_HOME/hash-mismatch.log" ||
+grep -qF 'checksum SHA-256 no coincide para CodeGraph' "$TMP_HOME/hash-mismatch.log" ||
   fail 'hash mismatch did not report the fail-closed checksum error'
 for curl_flag in \
   '--proto =https' '--proto-redir =https' '--tlsv1.2' '--fail' '--silent' '--show-error' \
@@ -270,14 +275,17 @@ printf '%s\n' "$output" >"${MATCH_CURL_OUTPUT_LOG:?}"
 EOF
 cat >"$MATCH_BIN/shasum" <<'EOF'
 #!/usr/bin/env bash
-printf '%s  %s\n' '3db3af8375006e193a393b5e3129feb237f30bc6f053fffbe1dc75da1f3d9ac4' "${3:?}"
+printf '%s  %s\n' 'f4e90c6e0c1d2ac95a43fa6e82e4caf76fabdb18310afc72597314b58632e56c' "${3:?}"
 EOF
 cat >"$MATCH_BIN/sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"${MATCH_SHELL_LOG:?}"
 exit 42
 EOF
-for command_name in codegraph gentle-ai opencode codex agent agy claude copilot kilo; do
+# codegraph queda fuera del loop de stubs por el mismo motivo que en el bloque
+# de hash mismatch: es el primer remote tool real tras Homebrew/Oh My Zsh, y
+# el shasum de arriba esta fijado a su checksum real para simular un match.
+for command_name in gentle-ai opencode codex agent agy claude copilot kilo; do
   cat >"$MATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -784,36 +792,36 @@ bash "$ROOT/.github/test/verify.test.sh"
 printf '%s\n' '== Claude permission boundary regressions =='
 bash "$ROOT/.github/test/protect-tests.test.sh"
 SETTINGS="$ROOT/config/claude/settings.json"
-jq -e '.permissions.defaultMode == "auto" and .permissions.disableAutoMode != "disable" and .permissions.disableBypassPermissionsMode == "disable" and .skipDangerousModePermissionPrompt == false and (has("bypassPermissions") | not)' "$SETTINGS" >/dev/null ||
-  fail 'Claude dangerous-mode settings are not hardened while auto mode is retained'
+jq -e '
+  .permissions.defaultMode == "auto"
+  and .permissions.disableAutoMode != "disable"
+  and (.permissions | has("disableBypassPermissionsMode") | not)
+  and .skipDangerousModePermissionPrompt == true
+  and (has("bypassPermissions") | not)
+' "$SETTINGS" >/dev/null ||
+  fail 'Claude permissive Auto Mode contract drifted'
 jq -e '.permissions.allow | index("Skill") != null' "$SETTINGS" >/dev/null ||
   fail 'automatic workflow cannot load its required versioned skill'
-for pattern in 'Bash(git add:*)' 'Bash(git pull:*)' 'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)'; do
-  jq -e --arg pattern "$pattern" '.permissions.ask | index($pattern) != null' "$SETTINGS" >/dev/null ||
-    fail "missing explicit ask boundary: $pattern"
-  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
-    fail "dangerous broad permission remains auto-allowed: $pattern"
-  fi
-done
+jq -e '.permissions.ask == [
+  "Bash(npm install:*)",
+  "Bash(npm i:*)",
+  "Bash(pip install:*)",
+  "Bash(git push:*)",
+  "Bash(git rebase:*)"
+]' "$SETTINGS" >/dev/null ||
+  fail 'Claude ask rules drifted from the historical five-command boundary'
 for pattern in \
-  'Bash(git fetch:*)' \
-  'Bash(npm install:*)' 'Bash(npm ci:*)' 'Bash(npm publish:*)' \
-  'Bash(pnpm install:*)' 'Bash(pnpm add:*)' 'Bash(pnpm publish:*)' \
-  'Bash(bun install:*)' 'Bash(bun add:*)' 'Bash(bun publish:*)' \
-  'Bash(yarn install:*)' 'Bash(yarn add:*)' 'Bash(yarn publish:*)' \
-  'Bash(npx:*)' 'Bash(uvx:*)' 'Bash(uv pip install:*)' \
-  'Bash(cargo install:*)' 'Bash(cargo run:*)' \
-  'Bash(go install:*)' 'Bash(go run:*)' \
-  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(source:*)' 'Bash(touch:*)' 'Bash(nvim:*)' 'Bash(code:*)'; do
-  jq -e --arg pattern "$pattern" '.permissions.ask | index($pattern) != null' "$SETTINGS" >/dev/null ||
-    fail "missing explicit ask boundary: $pattern"
+  'Bash(git fetch:*)' 'Bash(git add:*)' 'Bash(git pull:*)' \
+  'Bash(npm:*)' 'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
+  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(brew:*)' 'Bash(pip:*)' \
+  'Bash(uvx:*)' 'Bash(uv:*)' 'Bash(cargo:*)' 'Bash(rustc:*)' \
+  'Bash(go:*)' 'Bash(make:*)' 'Bash(docker:*)' 'Bash(gh:*)' \
+  'Bash(code:*)' 'Bash(nvim:*)' 'Bash(touch:*)' 'Bash(source:*)' \
+  'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)' \
+  'WebFetch' 'mcp__codegraph__*' 'mcp__context7__*' 'mcp__playwright__*'; do
+  jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
+    fail "missing intentional permissive allow rule: $pattern"
 done
-if jq -e 'any(.permissions.allow[]?; startswith("mcp__") and ((split("__") | length) == 2 or endswith("__*")))' "$SETTINGS" >/dev/null; then
-  fail 'broad MCP server permission remains auto-allowed; use Auto Mode classification or an exact tool rule'
-fi
-if jq -e '.permissions.allow[]? | . == "WebFetch" or startswith("WebFetch(domain:*")' "$SETTINGS" >/dev/null; then
-  fail 'unbounded WebFetch permission remains auto-allowed; use Auto Mode classification or an exact domain rule'
-fi
 for pattern in \
   'Bash(npm test:*)' 'Bash(npm run test:*)' 'Bash(npm run lint:*)' \
   'Bash(pnpm test:*)' 'Bash(pnpm run test:*)' \
@@ -824,13 +832,9 @@ for pattern in \
     fail "missing automatic verification permission: $pattern"
 done
 for pattern in \
-  'Bash(git fetch:*)' 'Bash(npm:*)' 'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
-  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' 'Bash(uv:*)' 'Bash(cargo:*)' \
-  'Bash(rustc:*)' 'Bash(go:*)' 'Bash(make:*)' 'Bash(code:*)' 'Bash(nvim:*)' \
-  'Bash(source:*)' 'Bash(touch:*)' 'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)'; do
-  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
-    fail "dangerous broad permission remains auto-allowed: $pattern"
-  fi
+  'Edit(**/.env)' 'Read(**/.env)' 'Read(~/.ssh/**)' 'Bash(rm -rf /)'; do
+  jq -e --arg pattern "$pattern" '.permissions.deny | index($pattern) != null' "$SETTINGS" >/dev/null ||
+    fail "missing deterministic secret/destructive deny rule: $pattern"
 done
 
 printf '%s\n' '== hook edge cases =='

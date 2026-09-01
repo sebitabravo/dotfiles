@@ -32,6 +32,7 @@ brew "fd"
 brew "fzf"
 brew "uv"
 brew "engram"
+brew "gentle-ai"
 brew "ffmpeg"
 brew "imagemagick"
 brew "pandoc"
@@ -44,7 +45,10 @@ brew "wabt"
 brew "wget"
 brew "btop"
 brew "fastfetch"
+brew "atuin", restart_service: true
 brew "rust"
+brew "herdr"
+brew "displayplacer"
 
 brew "ffuf"
 brew "nuclei"
@@ -56,3 +60,5 @@ brew "gitleaks"
 # ============================================================================
 # Applications (Casks)
 # ============================================================================
+
+cask "dotnet-sdk"

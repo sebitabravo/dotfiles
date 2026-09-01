@@ -83,9 +83,7 @@ FONT_NESTED_SHA256S=(
 REMOTE_INSTALLER_LABELS=(
   'Homebrew'
   'Oh My Zsh'
-  'Herdr'
   'CodeGraph'
-  'Gentle AI'
   'OpenCode'
   'Codex'
   'Cursor Agent'
@@ -97,9 +95,7 @@ REMOTE_INSTALLER_LABELS=(
 REMOTE_INSTALLER_URLS=(
   'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
   'https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh'
-  'https://herdr.dev/install.sh'
   'https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh'
-  'https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh'
   'https://opencode.ai/install'
   'https://chatgpt.com/codex/install.sh'
   'https://cursor.com/install'
@@ -603,9 +599,7 @@ install_bootstrap_tools() {
     P10K_STAGE=''
   fi
 
-  install_remote_tool 'Herdr' herdr sh
   install_remote_tool 'CodeGraph' codegraph sh
-  install_remote_tool 'Gentle AI' gentle-ai bash
   install_remote_tool 'OpenCode' opencode bash --no-modify-path
   install_remote_tool 'Codex' codex sh
   install_remote_tool 'Cursor Agent' agent bash
@@ -765,6 +759,7 @@ REQUIRED_FILES=(
   config/git/.gitignore_global
   config/herdr/config.toml
   config/btop/btop.conf
+  config/atuin/config.toml
   config/vscode/settings.json
   config/vscode/keybindings.json
   config/vscode/mcp.json
@@ -774,6 +769,8 @@ REQUIRED_DIRS=(
   git-hooks
   config/ghostty
   config/fastfetch
+  config/atuin/themes
+  config/raycast/scripts
   config/claude/agents
   config/claude/skills
   config/claude/hooks
@@ -965,6 +962,11 @@ echo "terminal"
 copy_dir config/ghostty "$HOME/.config/ghostty"
 copy config/herdr/config.toml "$HOME/.config/herdr/config.toml"
 copy config/btop/btop.conf "$HOME/.config/btop/btop.conf"
+copy config/atuin/config.toml "$HOME/.config/atuin/config.toml"
+copy_dir config/atuin/themes "$HOME/.config/atuin/themes"
+
+echo "raycast"
+copy_dir config/raycast/scripts "$HOME/.raycast/scripts"
 
 echo "fastfetch"
 copy_dir config/fastfetch "$HOME/.config/fastfetch"

@@ -37,6 +37,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
+- [ ] **Wave Link** - <https://www.elgato.com/lm/es/s/downloads>
 - [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
 - [ ] **Drive** - <https://workspace.google.com/products/drive>
 - [ ] **Dropbox** - <https://www.dropbox.com/install>
@@ -129,6 +130,7 @@ npm config set allow-git none
 npm config set min-release-age 3
 npm install --global --ignore-scripts @fission-ai/openspec@1.10.0
 npm install --global --ignore-scripts vercel@59.5.0
+vercel login
 npm install --global --ignore-scripts @playwright/cli@0.1.18
 ```
 
