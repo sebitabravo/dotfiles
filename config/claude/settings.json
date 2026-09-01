@@ -44,7 +44,6 @@
       "Bash(git log:*)",
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
-      "Bash(npm:*)",
       "Bash(pnpm:*)",
       "Bash(bun:*)",
       "Bash(yarn:*)",
@@ -54,7 +53,6 @@
       "Bash(rg:*)",
       "Bash(sd:*)",
       "Bash(which:*)",
-      "Bash(brew:*)",
       "Bash(pip:*)",
       "Bash(uvx:*)",
       "Bash(uv:*)",
@@ -62,8 +60,6 @@
       "Bash(rustc:*)",
       "Bash(go:*)",
       "Bash(make:*)",
-      "Bash(docker:*)",
-      "Bash(gh:*)",
       "Bash(code:*)",
       "Bash(nvim:*)",
       "Bash(cat:*)",
@@ -226,9 +222,14 @@
     "ask": [
       "Bash(npm install:*)",
       "Bash(npm i:*)",
+      "Bash(npm exec:*)",
+      "Bash(npm publish:*)",
       "Bash(pip install:*)",
       "Bash(git push:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(brew:*)",
+      "Bash(docker:*)",
+      "Bash(gh:*)"
     ],
     "defaultMode": "auto"
   },

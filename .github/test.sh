@@ -805,22 +805,33 @@ jq -e '.permissions.allow | index("Skill") != null' "$SETTINGS" >/dev/null ||
 jq -e '.permissions.ask == [
   "Bash(npm install:*)",
   "Bash(npm i:*)",
+  "Bash(npm exec:*)",
+  "Bash(npm publish:*)",
   "Bash(pip install:*)",
   "Bash(git push:*)",
-  "Bash(git rebase:*)"
+  "Bash(git rebase:*)",
+  "Bash(brew:*)",
+  "Bash(docker:*)",
+  "Bash(gh:*)"
 ]' "$SETTINGS" >/dev/null ||
-  fail 'Claude ask rules drifted from the historical five-command boundary'
+  fail 'Claude ask rules drifted from the code-execution/token-leak boundary'
 for pattern in \
   'Bash(git fetch:*)' 'Bash(git add:*)' 'Bash(git pull:*)' \
-  'Bash(npm:*)' 'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
-  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(brew:*)' 'Bash(pip:*)' \
+  'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
+  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' \
   'Bash(uvx:*)' 'Bash(uv:*)' 'Bash(cargo:*)' 'Bash(rustc:*)' \
-  'Bash(go:*)' 'Bash(make:*)' 'Bash(docker:*)' 'Bash(gh:*)' \
+  'Bash(go:*)' 'Bash(make:*)' \
   'Bash(code:*)' 'Bash(nvim:*)' 'Bash(touch:*)' 'Bash(source:*)' \
   'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)' \
   'WebFetch' 'mcp__codegraph__*' 'mcp__context7__*' 'mcp__playwright__*'; do
   jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
     fail "missing intentional permissive allow rule: $pattern"
+done
+for pattern in \
+  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)'; do
+  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
+    fail "code-execution/token-leak risk remains auto-allowed: $pattern"
+  fi
 done
 for pattern in \
   'Bash(npm test:*)' 'Bash(npm run test:*)' 'Bash(npm run lint:*)' \

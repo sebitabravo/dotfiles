@@ -28,7 +28,7 @@ SELF_PID=$$
 KILL_SCRIPT=$(mktemp -t restart-elgato.XXXXXX)
 trap 'rm -f "$KILL_SCRIPT"' EXIT
 
-cat > "$KILL_SCRIPT" <<'KILLEOF'
+cat >"$KILL_SCRIPT" <<'KILLEOF'
 #!/bin/bash
 EXCLUDE_PID="$1"
 for pattern in elgato "stream deck" streamdeck "wave link" wavelink; do

@@ -20,8 +20,6 @@ store_failed = true
 # password o secret en el historial local ni en sync.
 secrets_filter = true
 
-# Tema de Gentleman.Dots (config/atuin/themes/gentleman.toml). La variante
-# "gentleman-cute" vive en el mismo directorio, cambiá el name acá si la
-# preferís.
+# Tema de Gentleman.Dots (config/atuin/themes/gentleman.toml).
 [theme]
 name = "gentleman"
