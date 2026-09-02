@@ -70,13 +70,21 @@ jobs:
           [ ${#FILES[@]} -eq 0 ] && echo "No shell scripts — skipping shfmt" && exit 0
           "$SHFMT" -d -i 2 -ci "${FILES[@]}"
       - name: git diff --check (whitespace)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          git diff --check HEAD 2>&1 || { echo "::error::git diff --check failed"; exit 1; }
-          git diff --check || true
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            echo "::error::workflow_dispatch has no immutable PR/push range" >&2
+            exit 1
+          fi
+          case "$BASE_SHA$HEAD_SHA" in
+            *0000000000000000000000000000000000000000*) echo "::error::missing immutable diff SHAs" >&2; exit 1 ;;
+          esac
+          git diff --check "$BASE_SHA...$HEAD_SHA" 2>&1 || { echo "::error::git diff --check failed for immutable PR range"; exit 1; }
       - name: gitleaks detect
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: detect --source . --no-banner --redact -v --log-opts="--all"

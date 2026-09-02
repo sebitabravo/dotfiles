@@ -1,16 +1,9 @@
+# Optional local GGA compatibility configuration. CI does not execute GGA.
 PROVIDER="opencode"
-# Fallback base; overridden by workflow when base.ref differs (dynamic RANGE via BASE env).
 PR_BASE_BRANCH="origin/main"
 TIMEOUT="600"
-# El workflow genera .gga-rules.md (AGENTS.md + skill thermo-nuclear concatenada) y apunta aca,
-# asi la skill siempre esta en el prompt sin depender de la invocacion on-demand del modelo.
-RULES_FILE=".gga-rules.md"
+RULES_FILE=".github/code-review/AGENTS.md"
 STRICT_MODE="true"
-# Palanca de effort verificada: GGA pasa --variant a `opencode run` (ver bin/gga OPENCODE_VARIANT).
-# high = maxima profundidad de analisis (decidido: review completo del PR en cada push).
-OPENCODE_VARIANT="high"
-# Agente read-only definido en opencode.json: el review no puede editar/correr comandos.
 OPENCODE_AGENT="review"
-# Solo patrones reales que GGA lee (ver bin/gga load_config). REVIEW_FILE/EXCLUDE/MAX_DIFF no existen.
 FILE_PATTERNS="*"
-EXCLUDE_PATTERNS="*.md,*.lock,*.png,config/claude/skills/**,.github/test/**,config/vscode/*"
+EXCLUDE_PATTERNS="*.md,*.lock,config/claude/skills/**,.github/test/**"

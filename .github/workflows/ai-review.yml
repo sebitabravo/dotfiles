@@ -1,182 +1,231 @@
-name: GGA Code Review
+name: AI Code Review
 
 on:
-  pull_request:
-    types: [opened, synchronize]
-    paths-ignore:
-      - '**.md'
-      - '**.lock'
-      - 'config/claude/skills/**'
-      - '.github/test/**'
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
 
-permissions:
-  contents: read
-  # gh pr comment + PATCH de issue comments requieren issues: write.
-  issues: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   group: ai-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  OPENCODE_VERSION: 1.18.23
+  OPENCODE_ASSET: opencode-linux-x64.tar.gz
+  OPENCODE_SHA256: bbcd235256720445552f345a32e86a1a7fb1f5d28487828bd1ff0d58648601ad
+
 jobs:
-  review:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-ai-review') && github.actor != 'dependabot[bot]' }}
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+    outputs:
+      base_sha: ${{ steps.bind.outputs.base_sha }}
+      head_sha: ${{ steps.bind.outputs.head_sha }}
+      check_run_id: ${{ steps.bind.outputs.check_run_id }}
+    steps:
+      - name: Checkout trusted base only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - id: bind
+        name: Fetch and bind immutable PR objects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          [[ "$BASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "invalid base SHA" >&2; exit 1; }
+          [[ "$HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "invalid head SHA" >&2; exit 1; }
+          [[ "$HEAD_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "invalid head repository" >&2; exit 1; }
+          git -c core.hooksPath=/dev/null -c protocol.version=2 fetch --no-tags origin "$BASE_SHA"
+          git -c core.hooksPath=/dev/null -c protocol.version=2 fetch --no-tags --unshallow origin
+          git -c core.hooksPath=/dev/null -c protocol.version=2 fetch --no-tags "https://github.com/${HEAD_REPO}.git" "$HEAD_SHA"
+          git -c core.hooksPath=/dev/null cat-file -e "${BASE_SHA}^{commit}"
+          git -c core.hooksPath=/dev/null cat-file -e "${HEAD_SHA}^{commit}"
+          MERGE_BASE=$(git -c core.hooksPath=/dev/null merge-base "$BASE_SHA" "$HEAD_SHA")
+          git -c core.hooksPath=/dev/null merge-base --is-ancestor "$MERGE_BASE" "$HEAD_SHA"
+          test -n "$MERGE_BASE"
+          check_run_id=$(REPOSITORY="$REPOSITORY" PR_NUMBER="$PR_NUMBER" BASE_SHA="$BASE_SHA" HEAD_SHA="$HEAD_SHA" RUN_ID="$RUN_ID" RUN_ATTEMPT="$RUN_ATTEMPT" .github/scripts/ai-review-check-run.sh create)
+          [[ "$check_run_id" =~ ^[0-9]+$ ]] || { echo "invalid check run id" >&2; exit 1; }
+          python3 .github/scripts/ai-review-manifest.py --repo . --base "$BASE_SHA" --head "$HEAD_SHA" --policy .github/code-review/AGENTS.md --manifest "$RUNNER_TEMP/review-manifest.json" --prompt "$RUNNER_TEMP/review-prompt.txt"
+          cp "$RUNNER_TEMP/review-manifest.json" .
+          cp "$RUNNER_TEMP/review-prompt.txt" .
+          {
+            echo "base_sha=$BASE_SHA"
+            echo "head_sha=$HEAD_SHA"
+            echo "check_run_id=$check_run_id"
+          } >> "$GITHUB_OUTPUT"
+      - name: Upload immutable review input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ai-review-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            review-manifest.json
+            review-prompt.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  analyze:
+    name: analyze
+    needs: prepare
+    if: needs.prepare.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout trusted base only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Install GGA (pinned by SHA, not mutable tag)
+          repository: ${{ github.repository }}
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Download immutable review input
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ai-review-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: review-input
+      - name: Install verified OpenCode release
         run: |
-          git clone --depth 1 --branch v2.10.1 \
-            https://github.com/Gentleman-Programming/gentleman-guardian-angel.git /tmp/gga
-          test "$(git -C /tmp/gga rev-parse HEAD)" = "1124c3672f082c56b033c4e23a30e95d0e8cd593" || {
-            echo "GGA clone is not the pinned commit"; exit 1
-          }
-          chmod +x /tmp/gga/bin/gga
-          echo "/tmp/gga/bin" >> "$GITHUB_PATH"
-
-      - name: Install OpenCode (checksum-verified)
-        run: |
-          expected=$(awk -F'|' '$1=="OpenCode"{print $2}' config/install/remote-installers.sha256)
-          if [[ -z "$expected" ]]; then
-            echo "::error::no OpenCode entry in config/install/remote-installers.sha256" >&2
-            exit 1
-          fi
-          curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh
-          actual=$(shasum -a 256 /tmp/opencode-install.sh | awk '{print $1}')
-          if [[ "$actual" != "$expected" ]]; then
-            echo "::error::OpenCode installer checksum mismatch: expected $expected, got $actual" >&2
-            exit 1
-          fi
-          bash /tmp/opencode-install.sh --version 1.18.23
-
-      - name: Run code review and post comment
+          set -euo pipefail
+          api="https://api.github.com/repos/anomalyco/opencode/releases/tags/v${OPENCODE_VERSION}"
+          release_json=""
+          release_json=$(curl --fail --silent --show-error --location "$api")
+          asset_url=$(python3 -c 'import json,sys; d=json.load(sys.stdin); a=[x for x in d.get("assets",[]) if x.get("name")==sys.argv[1]]; assert len(a)==1 and a[0].get("browser_download_url","").startswith("https://github.com/anomalyco/opencode/releases/download/v"+sys.argv[2]+"/"); print(a[0]["browser_download_url"])' "$OPENCODE_ASSET" "$OPENCODE_VERSION" <<<"$release_json")
+          curl --fail --silent --show-error --location "$asset_url" -o "$RUNNER_TEMP/$OPENCODE_ASSET"
+          echo "$OPENCODE_SHA256  $RUNNER_TEMP/$OPENCODE_ASSET" | sha256sum --check --status
+          mkdir -p "$RUNNER_TEMP/opencode"
+          tar -xzf "$RUNNER_TEMP/$OPENCODE_ASSET" -C "$RUNNER_TEMP/opencode"
+          test -x "$RUNNER_TEMP/opencode/opencode"
+      - name: Run isolated review and validate strict report
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_CODING_PLAN_KEY }}
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          # OpenCode carga esta config adicional en vez de una en la raiz del repo.
-          OPENCODE_CONFIG: ${{ github.workspace }}/.github/code-review/opencode.json
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          OPENCODE_PURE: "1"
+          OPENCODE_DISABLE_PROJECT_CONFIG: "1"
+          OPENCODE_DISABLE_EXTERNAL_SKILLS: "1"
+          OPENCODE_DISABLE_CLAUDE_CODE: "1"
+          OPENCODE_DISABLE_MODELS_FETCH: "1"
         run: |
-          # GGA solo lee .gga desde el CWD; el runner es efimero, la raiz del repo queda limpia.
-          cp .github/code-review/.gga ./.gga
-
-          # Reglas = AGENTS.md + skill termonuclear SIEMPRE en el prompt (deterministico).
-          # Un solo bloque de redireccion (evita SC2129 con redirects individuales).
-          {
-            cat .github/code-review/AGENTS.md
-            printf '\n\n---\n\n# Appended: mandatory review skill (its quality bar applies on top of the rules above)\n\n'
-            cat .github/code-review/skills/thermo-nuclear-code-quality-review/SKILL.md
-            echo ""
-            ACTION="${{ github.event.action }}"
-            BASE="${{ github.event.pull_request.base.ref }}"
-            BEFORE="${{ github.event.before }}"
-            BASE="${BASE:-main}"
-            if [[ "$ACTION" == "synchronize" ]] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              RANGE="${BEFORE}..HEAD"
-              LABEL="Diff for this push only"
-            else
-              RANGE="origin/${BASE}...HEAD"
-              LABEL="Full PR diff"
-            fi
-            echo ""
-            echo "## Changed files (name-status) — $LABEL ($RANGE)"
-            echo '```'
-            git diff --name-status "$RANGE" 2>/dev/null || true
-            echo '```'
-            echo ""
-            echo "## $LABEL ($RANGE)"
-            echo "Review ONLY the changed lines shown in the diff (unified diff + name-status), cite file:line from '+' side."
-            echo '```diff'
-            # Per-file truncation up to 150k covers 95% of cases; caps outlier without duplicating payload (auditor #3, veredicto 5).
-            CAP=150000
-            total=0
-            omitted=()
-            while IFS= read -r f; do
-              [[ -z "$f" ]] && continue
-              diff_out=$(git diff --unified=3 "$RANGE" -- "$f" 2>/dev/null || true)
-              [[ -z "$diff_out" ]] && continue
-              size=$(printf '%s' "$diff_out" | wc -c)
-              if (( total + size > CAP )); then
-                omitted+=("$f")
-                continue
-              fi
-              printf '%s\n' "$diff_out"
-              total=$((total + size))
-            done < <(git diff --name-only "$RANGE" 2>/dev/null || true)
-            if (( ${#omitted[@]} > 0 )); then
-              echo ""
-              echo "# Omitted files (over cap ${CAP} bytes): ${omitted[*]}"
-            fi
-            echo '```'
-            if [[ "$ACTION" == "synchronize" ]]; then
-              echo ""
-              echo "> Note: This is a synchronize push — prioritize findings in the labeled diff section above; do not re-report already-fixed files unless they still appear in the diff."
-            fi
-          } > .gga-rules.md
-
-          # Variante dinamica por tamano del diff (veredicto 5): PRs chicos -> high, grandes -> low.
-          # Antes de calibrar timeout contra outlier, calibrar payload: 600k + 74 files duplica el prompt.
-          # GGA --pr-mode ya envia "FILES TO REVIEW" (contenido completo filtrado por EXCLUDE_PATTERNS);
-          # el diff embebido en RULES_FILE es complementario (lineas '+' para anclar inline comments),
-          # no duplicado exacto, pero con CAP 150k se mantiene acotado.
-          diff_size=$(git diff "$RANGE" 2>/dev/null | wc -c)
-          diff_size=${diff_size//[^0-9]/}
-          diff_size=${diff_size:-0}
-          if (( diff_size < 60000 )); then
-            dyn_variant="high"
+          set -euo pipefail
+          export HOME="$RUNNER_TEMP/isolated-home"
+          export XDG_CONFIG_HOME="$HOME/config"
+          export XDG_DATA_HOME="$HOME/data"
+          export XDG_CACHE_HOME="$HOME/cache"
+          mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+          OPENCODE_CONFIG_CONTENT=""
+          OPENCODE_CONFIG_CONTENT="$(python3 -c 'import json; c=json.load(open(".github/code-review/opencode.json")); c["agent"]["review"]["prompt"]=open(".github/code-review/AGENTS.md", encoding="utf-8").read(); print(json.dumps(c, ensure_ascii=False))')"
+          export OPENCODE_CONFIG_CONTENT
+          mkdir -p "$RUNNER_TEMP/empty-cwd"
+          if python3 -c 'import json; import sys; sys.exit(0 if json.load(open("review-input/review-manifest.json"))["state"] == "NOT_APPLICABLE" else 1)'; then
+            python3 .github/scripts/ai-review-report.py --not-applicable --manifest review-input/review-manifest.json --output "$RUNNER_TEMP/validated-report.json"
           else
-            dyn_variant="low"
+            set +e
+            (cd "$RUNNER_TEMP/empty-cwd" && timeout 600 "$RUNNER_TEMP/opencode/opencode" run --format json --variant high --agent review < "$GITHUB_WORKSPACE/review-input/review-prompt.txt") > "$RUNNER_TEMP/review-output.jsonl"
+            engine=$?
+            set -e
+            if [[ "$engine" -ne 0 ]]; then echo "OpenCode failed: $engine" >&2; exit 1; fi
+            output_bytes=$(wc -c < "$RUNNER_TEMP/review-output.jsonl")
+            (( output_bytes <= 600000 )) || { echo "OpenCode output exceeds bounded limit" >&2; exit 1; }
+            python3 .github/scripts/ai-review-report.py --input "$RUNNER_TEMP/review-output.jsonl" --manifest review-input/review-manifest.json --output "$RUNNER_TEMP/validated-report.json"
           fi
-          if grep -q '^OPENCODE_VARIANT=' ./.gga 2>/dev/null; then
-            tmp_gga=$(mktemp)
-            sed "s/^OPENCODE_VARIANT=.*/OPENCODE_VARIANT=\"$dyn_variant\"/" ./.gga > "$tmp_gga" && mv "$tmp_gga" ./.gga
-          else
-            echo "OPENCODE_VARIANT=\"$dyn_variant\"" >> ./.gga
+      - name: Upload validated report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ai-review-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/validated-report.json
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: publish
+    needs: [prepare, analyze]
+    if: needs.analyze.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout trusted base only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ai-review-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: review-report
+      - name: Publish owned review comments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+        run: python3 .github/scripts/ai-review-comment.py review-report/validated-report.json --publish --base-sha "$BASE_SHA" --head-sha "$HEAD_SHA"
+
+  review-gate:
+    name: review-gate
+    if: always()
+    needs: [prepare, analyze, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - name: Checkout trusted base only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Download validated report when available
+        if: always()
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        continue-on-error: true
+        with:
+          name: ai-review-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: review-report
+      - name: Enforce terminal review gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHECK_RUN_ID: ${{ needs.prepare.outputs.check_run_id }}
+          ANALYZE_RESULT: ${{ needs.analyze.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+        run: |
+          set -euo pipefail
+          gate_status=success
+          if [[ "$ANALYZE_RESULT" != success || "$PUBLISH_RESULT" != success || ! -s review-report/validated-report.json ]]; then
+            gate_status=failure
+          elif ! UPSTREAM_STATUS=success .github/scripts/ai-review-gate.sh review-report/validated-report.json; then
+            gate_status=failure
           fi
-          echo "Review variant: $dyn_variant (diff ${diff_size} bytes, threshold 60000)" >&2
-
-          set +e
-          # PR completo en cada push (opened y synchronize) como al principio.
-          gga run --pr-mode | tee review-output.txt
-          code=${PIPESTATUS[0]}
-          # Re-armar set -e: los fallos del publish/gate NO deben esconderse.
-          set -e
-
-          # Strip ANSI for deterministic validation (GGA hardcodes colors).
-          perl -pe 's/\e\[[0-9;]*m//g' review-output.txt > review-output.clean.txt
-
-          # Infra validation: must contain STATUS line or it's an engine failure, not a review (#5).
-          if ! grep -q "^STATUS: \(PASSED\|FAILED\)" review-output.clean.txt; then
-            echo "::error::Review infra failure (no STATUS line) — not publishing comment" >&2
-            echo "--- review-output head (clean) ---" >&2
-            head -n 50 review-output.clean.txt >&2 || true
-            echo "--- review-output head (raw) ---" >&2
-            head -n 50 review-output.txt >&2 || true
-            exit 1
-          fi
-
-          # Language/format guard (deterministic, #6): first STATUS line must be STATUS: PASSED/FAILED, no CJK.
-          first_status=$(grep -m1 "^STATUS: " review-output.clean.txt || true)
-          if [ -z "$first_status" ] || ! printf '%s' "$first_status" | grep -q "^STATUS: \(PASSED\|FAILED\)"; then
-            echo "::error::Review output first non-empty line must be STATUS: PASSED/FAILED (got: $first_status)" >&2
-            exit 1
-          fi
-          # CJK guard: -CSD makes perl decode UTF-8 (without it, \p{Han} never
-          # matches multibyte input); \p{Han} covers CJK ideographs cleanly.
-          if perl -CSD -ne '$f=1 if /\p{Han}/; END{exit($f?0:1)}' review-output.clean.txt; then
-            echo "::error::Review output contains CJK characters — language violation" >&2
-            perl -CSD -ne 'print if /\p{Han}/' review-output.clean.txt | head -n 5 >&2 || true
-            exit 1
-          fi
-
-          # Comentario (CodeRabbit style: actualiza el anterior, solo el review, cap 300 lineas).
-          bash .github/scripts/ai-review-comment.sh review-output.txt --publish
-          # Gate por severidad: solo 🔴 bloquea el check (🟡/🟣 pasan).
-          bash .github/scripts/ai-review-gate.sh "$code" comment.md
+          test -n "$CHECK_RUN_ID"
+          REPOSITORY="$REPOSITORY" PR_NUMBER="$PR_NUMBER" BASE_SHA="$BASE_SHA" HEAD_SHA="$HEAD_SHA" CHECK_RUN_ID="$CHECK_RUN_ID" GATE_CONCLUSION="$gate_status" .github/scripts/ai-review-check-run.sh finalize
+          [[ "$gate_status" == success ]]
