@@ -38,7 +38,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
-- [ ] **Wave Link** - <https://www.elgato.com/lm/es/s/downloads>
 - [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
 - [ ] **Drive** - <https://workspace.google.com/products/drive>
 - [ ] **Dropbox** - <https://www.dropbox.com/install>
@@ -82,6 +81,8 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Raycast** - <https://www.raycast.com>
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
+- [ ] **Discord** - <https://discord.com/download>
+- [ ] **Teams** - <https://www.microsoft.com/en-us/microsoft-teams/download-app>
 
 ### Media & Content
 

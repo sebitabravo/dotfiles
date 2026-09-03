@@ -12,7 +12,6 @@
 # Apps to detect/relaunch
 ELGATO_APPS=(
   "Elgato Stream Deck"
-  "Elgato Wave Link"
 )
 
 # Detect running apps before killing
@@ -31,7 +30,7 @@ trap 'rm -f "$KILL_SCRIPT"' EXIT
 cat >"$KILL_SCRIPT" <<'KILLEOF'
 #!/bin/bash
 EXCLUDE_PID="$1"
-for pattern in elgato "stream deck" streamdeck "wave link" wavelink; do
+for pattern in elgato "stream deck" streamdeck; do
   pids=$(pgrep -fi "$pattern" 2>/dev/null | grep -v "^${EXCLUDE_PID}$")
   [ -n "$pids" ] && echo "$pids" | xargs kill -9 2>/dev/null
 done
