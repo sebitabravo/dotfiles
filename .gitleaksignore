@@ -1,0 +1,10 @@
+# False positives históricos revisados: ejemplos explícitos de código inseguro
+# y un ejemplo curl contra api.example.com. Los fingerprints acotan la excepción
+# al finding y commit exactos; hallazgos futuros en esas rutas siguen activos.
+06cd66fc2f1b018bd471e5e160e6bd98ce8807ac:config/opencode/skills/security-review/SKILL.md:generic-api-key:143
+1160183196442b54b054e4e8cc597d79f4c353ac:config/opencode/agents/security-auditor.md:generic-api-key:184
+1160183196442b54b054e4e8cc597d79f4c353ac:config/opencode/skill/code-review-pro/SKILL.md:generic-api-key:213
+2c8b9d59bf29c227e85592f0572130142cf9acae:config/claude/agents/security-auditor.md:generic-api-key:55
+77b68e96b374fc5293b92385c37114f5750fd117:config/opencode/skills/security-review/SKILL.md:generic-api-key:141
+c9ac033236c9c264e15d85bceac22164b5002700:config/opencode/skills/security-review/SKILL.md:generic-api-key:143
+f65be5eb8d941182cd941120e16e5d718f8e46fc:config/claude/commands/tools/doc-generate.md:curl-auth-header:851

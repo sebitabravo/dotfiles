@@ -1,5 +1,9 @@
 # Checklist — {{FEATURE_NAME}}
 
+> **Legacy compatibility template:** OpenSpec projects use the generated
+> change artifacts and `/opsx:verify`; do not copy this into a parallel
+> `specs/` tree.
+
 > **Purpose:** systematic verification for each phase of the SDD flow. NOT optional — every item must be checked before moving to the next phase.
 >
 > **Usage:** copy into `specs/{{FEATURE_NAME}}/checklist.md` when the feature starts.
@@ -77,7 +81,8 @@
 ## Phase 7: Archive
 
 - [ ] CHK039 `apply-progress.md` complete and finalized
-- [ ] CHK040 Specs moved to `specs/archived/` or equivalent
+- [ ] CHK040 Change archived through `/opsx:archive` (OpenSpec) or the
+      explicitly approved legacy archive procedure
 - [ ] CHK041 Lessons learned documented (if anything was non-obvious)
 
 ---

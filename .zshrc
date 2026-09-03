@@ -73,7 +73,7 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(gitfast)
+plugins=(gitfast docker)
 
 # Compinit caching — evita doble inicializacion (oh-my-zsh skip global)
 skip_global_compinit=1
@@ -152,17 +152,21 @@ pyenv() {
 eval "$(zoxide init zsh)"
 
 # fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
-# fd as backend: faster, gitignore-aware. Ctrl-R lo toma fzf-history-widget.
+# fd as backend: faster, gitignore-aware. Ctrl-R queda para Atuin (mas abajo).
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 source <(fzf --zsh) 2>/dev/null
 
+# Atuin — historial de shell buscable (Ctrl-R). Se inicializa despues de fzf
+# a proposito: los dos bindean Ctrl-R y el ultimo init gana. fzf conserva
+# Ctrl-T/Alt-C sin cambios.
+eval "$(atuin init zsh)"
+
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }
 
-# Engram Cloud (NAS via Tailscale) — set token in ~/.engram-cloud.env
-[[ -f "$HOME/.engram-cloud.env" ]] && source "$HOME/.engram-cloud.env"
+# Engram Cloud credentials are read by ~/.local/bin/engram from macOS Keychain.
 
 # Herd PHP configuration
 [[ -d "$HOME/Library/Application Support/Herd/config/php/84" ]] && \
@@ -187,7 +191,126 @@ nvm()   { _nvm_lazy_load; nvm "$@"; }
 # p10k transient prompt
 typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
 
-# Show system info on interactive terminal only (skip IDE terminals, pipes, tmux internals)
-if [[ -o interactive ]] && [[ -t 0 ]] && [[ -z "$VSCODE_INJECTION" ]] && [[ -z "$JETBRAINS_IDE" ]]; then
-command -v fastfetch &>/dev/null && fastfetch
+# Zsh usability plugins — optional at runtime, managed by Brewfile.
+# Syntax highlighting must load after Oh My Zsh and the other widgets.
+if [[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  builtin source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
+if [[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  builtin source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+if [[ -o interactive ]] &&
+   [[ -t 0 ]] &&
+   [[ -z "$VSCODE_INJECTION" ]] &&
+   [[ -z "$JETBRAINS_IDE" ]]; then
+  fastfetch
+fi
+
+# claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
+# claude a secas queda igual que siempre (Anthropic).
+claude() {
+  local -a args=()
+  local -a provider_env=(
+    -u ANTHROPIC_API_KEY
+    -u ANTHROPIC_AUTH_TOKEN
+    -u ANTHROPIC_BASE_URL
+    -u ANTHROPIC_MODEL
+    -u ANTHROPIC_DEFAULT_OPUS_MODEL
+    -u ANTHROPIC_DEFAULT_SONNET_MODEL
+    -u ANTHROPIC_DEFAULT_HAIKU_MODEL
+    -u ANTHROPIC_DEFAULT_FABLE_MODEL
+    -u CLAUDE_CODE_SUBAGENT_MODEL
+    -u CLAUDE_CODE_AUTO_COMPACT_WINDOW
+    -u CLAUDE_CODE_MAX_CONTEXT_TOKENS
+    -u CLAUDE_CODE_EFFORT_LEVEL
+    -u CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY
+    -u CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS
+    -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    -u ENABLE_TOOL_SEARCH
+    -u API_TIMEOUT_MS
+  )
+  local use_ds=false use_glm=false use_or=false use_ol=false a deepseek_settings glm_settings openrouter_settings ollama_settings claude_bin
+  local provider_count=0
+  for a in "$@"; do
+    case "$a" in
+      --deepseek)   use_ds=true; provider_count=$((provider_count + 1)) ;;
+      --glm)        use_glm=true; provider_count=$((provider_count + 1)) ;;
+      --openrouter) use_or=true; provider_count=$((provider_count + 1)) ;;
+      --ollama)     use_ol=true; provider_count=$((provider_count + 1)) ;;
+      *)            args+=("$a") ;;
+    esac
+  done
+  if (( provider_count > 1 )); then
+    print -u2 'claude: selecciona un solo provider por invocacion'
+    return 2
+  fi
+  if $use_ds; then
+    deepseek_settings="$HOME/.claude/deepseek.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$deepseek_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de DeepSeek: $deepseek_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    # Aislar el overlay: las variables exportadas por otro provider no deben
+    # ganar sobre el settings seleccionado.
+    env "${provider_env[@]}" \
+      "$claude_bin" \
+      --settings "$deepseek_settings" \
+      "${args[@]}"
+  elif $use_glm; then
+    glm_settings="$HOME/.claude/glm.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$glm_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de GLM: $glm_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    # Mismo patron que --deepseek: apiKeyHelper en el settings, sin tocar el
+    # entorno aca. Z.AI documenta ANTHROPIC_AUTH_TOKEN, pero acepta X-Api-Key
+    # igual (verificado con curl: 429 de saldo en ambos, ninguno 401 de auth).
+    env "${provider_env[@]}" \
+      "$claude_bin" \
+      --settings "$glm_settings" \
+      "${args[@]}"
+  elif $use_or; then
+    openrouter_settings="$HOME/.claude/openrouter.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$openrouter_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de OpenRouter: $openrouter_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env "${provider_env[@]}" \
+      "$claude_bin" \
+      --settings "$openrouter_settings" \
+      "${args[@]}"
+  elif $use_ol; then
+    ollama_settings="$HOME/.claude/ollama.settings.json"
+    claude_bin="${commands[claude]:-}"
+    if [[ ! -r "$ollama_settings" ]]; then
+      print -u2 "claude: no se encontro el settings de Ollama: $ollama_settings"
+      return 1
+    fi
+    if [[ -z "$claude_bin" ]]; then
+      print -u2 "claude: binario de Claude Code no encontrado"
+      return 1
+    fi
+    env "${provider_env[@]}" \
+      "$claude_bin" \
+      --settings "$ollama_settings" \
+      "${args[@]}"
+  else
+    command claude "$@"
+  fi
+}

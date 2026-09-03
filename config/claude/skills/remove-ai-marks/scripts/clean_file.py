@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified clean: text Layer A, PNG/JPEG metadata, and document containers."""
+"""Unified clean: text Layer A, raster metadata, and document containers."""
 
 from __future__ import annotations
 
@@ -10,51 +10,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from common import (  # noqa: E402
+from av_meta import clean_av
+from common import (
     MAX_INPUT_BYTES,
+    ROUTER_ADVICE,
     backup_path,
     cleaned_path,
     eprint,
-    ROUTER_ADVICE,
     guard_binary,
     safe_write_text,
 )
-from container_meta import clean_container, detect_container_format  # noqa: E402
-from image_meta import clean_image, detect_format as detect_image_format  # noqa: E402
-from text_unicode import clean_text  # noqa: E402
-
-IMAGE_EXTS = {".png", ".jpg", ".jpeg"}
-CONTAINER_EXTS = {".svg", ".pdf", ".docx", ".odt", ".html", ".htm", ".md", ".markdown", ".mdx"}
-TEXT_EXTS = {
-    ".txt",
-    ".text",
-    ".css",
-    ".js",
-    ".py",
-    ".rs",
-    ".go",
-    ".json",
-    ".yaml",
-    ".yml",
-    ".toml",
-    ".csv",
-}
-
-
-def classify(path: Path) -> str:
-    ext = path.suffix.lower()
-    if ext in IMAGE_EXTS:
-        return "image"
-    if ext in CONTAINER_EXTS:
-        return "container"
-    if ext in TEXT_EXTS:
-        return "text"
-    data = path.read_bytes()
-    if detect_image_format(data) in ("png", "jpeg"):
-        return "image"
-    if detect_container_format(path, data) != "unknown":
-        return "container"
-    return "text"
+from container_meta import clean_container, detect_container_format
+from format_dispatch import classify
+from image_meta import clean_image
+from text_unicode import clean_text
 
 
 def main() -> int:
@@ -68,12 +37,12 @@ def main() -> int:
     p.add_argument(
         "--keep-non-ai-metadata",
         action="store_true",
-        help="Images: only drop C2PA/AI-looking segments",
+        help="Images/audio/video: only drop C2PA/AI-looking segments",
     )
     p.add_argument(
         "--as",
         dest="force_type",
-        choices=("auto", "text", "image", "container"),
+        choices=("auto", "text", "image", "container", "av"),
         default="auto",
     )
     p.add_argument(
@@ -92,6 +61,27 @@ def main() -> int:
         return 2
 
     kind = args.force_type if args.force_type != "auto" else classify(args.path)
+
+    # classify() reports "unknown" for bytes that match no supported format.
+    # Never mutate those in auto mode: a binary with valid UTF-8 runs would
+    # be decoded and written back mangled. --as text / --force-text are the
+    # explicit opt-ins and both route through the text pipeline below.
+    if kind == "unknown":
+        if args.force_type == "text" or args.force_text:
+            kind = "text"
+        else:
+            eprint(f"refusing to classify {args.path}: unrecognized format")
+            for line in ROUTER_ADVICE:
+                eprint(line)
+            return 2
+
+    # In-place cleaning reads from a .bak copy whose suffix would make
+    # markdown/HTML (detected by extension, not magic bytes) classify as
+    # "unknown". Pin the format from the original path so --in-place and -o
+    # route identically.
+    container_fmt = None
+    if kind == "container":
+        container_fmt = detect_container_format(args.path, args.path.read_bytes())
 
     # classify() falls back to "text" for unrecognised bytes, so an unknown
     # binary would otherwise be decoded, scrubbed and written back mangled.
@@ -159,8 +149,30 @@ def main() -> int:
                 eprint("warning: residual C2PA/AI signals may remain")
         return 1 if residual else 0
 
+    if kind == "av":
+        try:
+            result = clean_av(
+                src,
+                dest,
+                strip_all_metadata=not args.keep_non_ai_metadata,
+            )
+        except Exception as e:
+            eprint(f"error: {e}")
+            return 1
+        result = {"kind": "av", **result}
+        residual = result["still_has_c2pa"] or result["still_has_ai_metadata"]
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            eprint(f"wrote {result['output']} ({result['bytes_in']} -> {result['bytes_out']})")
+            for a in result["actions"]:
+                eprint(f"  - {a}")
+            if residual:
+                eprint("warning: residual C2PA/AI signals may remain")
+        return 1 if residual else 0
+
     try:
-        result = clean_container(src, dest)
+        result = clean_container(src, dest, fmt=container_fmt)
     except Exception as e:
         eprint(f"error: {e}")
         return 1

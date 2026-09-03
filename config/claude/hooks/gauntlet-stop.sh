@@ -26,13 +26,21 @@ if command -v jq >/dev/null 2>&1; then
   [ "$ACTIVE" = "true" ] && exit 0
 fi
 
-# El modo de permisos NO relaja este hook.
-# `defaultMode` es bypassPermissions de forma permanente, asi que degradar por
-# modo lo dejaba inerte siempre. Bypass saca los prompts de permiso; no declara
-# que el codigo sin tests este terminado. El escape es `.claude-relaxed`, una
-# decision explicita por repo.
+# El modo de permisos NO relaja este hook, cualquiera sea.
+# Un modo de permisos responde "tenes derecho a hacer esto"; este hook responde
+# "esto todavia no esta terminado". Son preguntas distintas y no deberian
+# compartir interruptor, asi que degradar por modo lo dejaria inerte sin que eso
+# signifique nada sobre el codigo. El escape es `.claude-relaxed`, una decision
+# explicita por repo.
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+PROJECT_DIR="$PWD"
+if command -v jq >/dev/null 2>&1; then
+  CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+  SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+  TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
+  [ -n "$CWD" ] && PROJECT_DIR="$CWD"
+fi
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" 2>/dev/null || exit 0
 [ -f "$ROOT/.claude-relaxed" ] && exit 0
 
@@ -65,7 +73,8 @@ SRC=$(echo "$CHANGED" |
 [ -z "$SRC" ] && exit 0
 
 MISSING=""
-for f in $SRC; do
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
   [ -f "$f" ] || continue
   base=$(basename "$f")
   dir=$(dirname "$f")
@@ -73,8 +82,9 @@ for f in $SRC; do
 
   found=false
   # Convenciones por ecosistema: junto al archivo, en un __tests__/ hermano, o
-  # en un tests/ al lado del directorio padre.
-  for d in "$dir" "$dir/__tests__" "$dir/tests" "$(dirname "$dir")/tests" "$(dirname "$dir")/__tests__"; do
+  # en un tests/ al lado del directorio padre, o en el tests/ de la raiz
+  # (convencion Astro/Vite/Vitest).
+  for d in "$dir" "$dir/__tests__" "$dir/tests" "$(dirname "$dir")/tests" "$(dirname "$dir")/__tests__" "$ROOT/tests" "$ROOT/__tests__"; do
     [ -d "$d" ] || continue
     for pat in "${stem}.test" "${stem}.spec" "test_${stem}" "${stem}_test"; do
       if find "$d" -maxdepth 1 -name "${pat}.*" 2>/dev/null | grep -q .; then
@@ -86,15 +96,29 @@ for f in $SRC; do
 
   # Ultimo recurso: cualquier test en el repo cuyo nombre contenga el stem.
   # Cubre layouts que no siguen ninguna de las convenciones de arriba.
+  # Los DOS flags son necesarios y no son aditivos por defecto: --cached mira el
+  # indice (tests ya versionados) y --others el working tree (tests nuevos sin
+  # commitear). Con --others solo, un test ya trackeado se reporta inexistente.
   if [ "$found" = false ]; then
-    if git ls-files "*${stem}*" 2>/dev/null |
+    if git ls-files --cached --others --exclude-standard "*${stem}*" 2>/dev/null |
       grep -qE '(\.(test|spec)\.|_test\.|(^|/)test_)'; then
       found=true
     fi
   fi
 
+  # Ultimo recurso por contenido: un modulo puede estar cubierto por un test
+  # que importa la facade del directorio (src/lib/data) sin nombrar al archivo
+  # individual. La suite ya corrio verde arriba; este grep solo evita el falso
+  # "missing" para archivos cubiertos via import.
+  if [ "$found" = false ] && [ -d "$ROOT/tests" ]; then
+    rel="${dir#./}"
+    if grep -rlE "['\"][^'\"]*${rel}/${stem}['\"]|['\"][^'\"]*${rel}['\"]" "$ROOT/tests" 2>/dev/null | grep -q .; then
+      found=true
+    fi
+  fi
+
   [ "$found" = false ] && MISSING="${MISSING}  - $f"$'\n'
-done
+done <<<"$SRC"
 
 # ── La suite existente tiene que estar verde ────────────────────────────────
 #
@@ -106,25 +130,60 @@ done
 # turno se termina desactivando entera, y un gate desactivado no protege nada.
 # Si no entra en el timeout, se dice — no se asume verde.
 if [ -z "${CLAUDE_SKIP_TEST_RUN:-}" ]; then
+  # TEST_CMD is a public variable populated by the sourced runner helper.
+  # shellcheck disable=SC2034
   TEST_CMD=""
   # shellcheck source=lib/test-runner.sh
+  # shellcheck disable=SC1091
   if [ -r "$HOME/.claude/hooks/lib/test-runner.sh" ]; then
     . "$HOME/.claude/hooks/lib/test-runner.sh"
-    detect_test_cmd "$ROOT" || true
+    if ! declare -f run_trusted_test_once >/dev/null 2>&1; then
+      echo '[gauntlet] BLOCKED: el detector de runner no expone la frontera de confianza requerida.' >&2
+      exit 2
+    fi
   fi
 
-  if [ -n "$TEST_CMD" ]; then
-    TIMEOUT_BIN=""
-    command -v timeout >/dev/null 2>&1 && TIMEOUT_BIN="timeout 90"
-    command -v gtimeout >/dev/null 2>&1 && TIMEOUT_BIN="gtimeout 90"
-
-    # eval: el comando puede venir como `cd backend && uv run pytest`, y sin
-    # eval el `&&` y el cd llegarian como argumentos literales al runner.
-    TEST_OUT=$(eval "$TIMEOUT_BIN $TEST_CMD" 2>&1)
+  if declare -f run_trusted_test_once >/dev/null 2>&1; then
+    # run_with_timeout (lib/test-runner.sh) bounds this even without
+    # coreutils: a stock macOS host has neither timeout nor gtimeout, and
+    # without an internal bound the suite ran fully unbounded, relying only
+    # on the OUTER Stop-hook harness timeout to ever cut it off -- silently,
+    # before this hook could report anything.
+    GAUNTLET_TEST_TIMEOUT_SECONDS="${GAUNTLET_TEST_TIMEOUT_SECONDS:-90}"
+    TEST_OUT=$(run_trusted_test_once "$ROOT" "${SESSION_ID:-}" "${TRANSCRIPT_PATH:-}" "$GAUNTLET_TEST_TIMEOUT_SECONDS")
     TEST_RC=$?
 
+    if [ "$TEST_RC" = 126 ] || [ "$TEST_RC" = 125 ]; then
+      printf '%s\n' "$TEST_OUT" >&2
+      exit 2
+    fi
+    if [ "$TEST_RC" = 127 ]; then
+      {
+        echo "GAUNTLET: no native test runner was detected. The suite could NOT be verified."
+        echo ""
+        printf '%s\n' "$TEST_OUT"
+        echo "Do not close the turn calling it green. Make the repository's declared runner available, declare a test.sh/Makefile/manifest runner, or explicitly narrow this repo with:"
+        echo "  touch .claude-relaxed"
+      } >&2
+      exit 2
+    fi
+
+    # Un timeout BLOQUEA. Antes solo imprimia y seguia, y como abajo se sale 0
+    # cuando no falta ningun test, el turno se cerraba igual: "no se pudo
+    # verificar" terminaba teniendo el mismo efecto practico que "verde", que es
+    # justo lo que el comentario de arriba dice no querer.
     if [ "$TEST_RC" = 124 ]; then
-      echo "[gauntlet] the suite did not finish in 90s; it could not be verified. Do NOT call it green." >&2
+      {
+        echo "GAUNTLET: the suite did not finish in ${GAUNTLET_TEST_TIMEOUT_SECONDS}s. It could NOT be verified."
+        echo ""
+        echo "Do not close the turn calling it green. Either:"
+        echo "  1. run the suite yourself and wait for it, or"
+        echo "  2. narrow the run to the affected scope, or"
+        echo "  3. fix what is hanging it (a test with no timeout, a real service, a busy port)."
+        echo ""
+        echo "Escape for this repo, if it is genuinely a slow suite: touch .claude-relaxed"
+      } >&2
+      exit 2
     elif [ "$TEST_RC" != 0 ]; then
       {
         echo "GAUNTLET: the suite is RED. Do not close the turn."

@@ -71,6 +71,19 @@ coverage, the CRAP report, and focused tests for the risky branches.
 - **Metrics are signals, not laws**. If a function has complexity 12 but is clear and cannot be simplified, document the exception.
 - **CRAP is a prioritization signal, not a universal merge threshold**. A
   project may choose a threshold; Claude must not invent one from this skill.
+- **Refactoring to hit a CRAP target inflates the code**. Measured in
+  unclebob/negative-test-experiment (eight independent Hunt the Wumpus builds,
+  same acceptance criteria): refactoring every function below CRAP 4 grew the
+  implementations from 331-396 lines to 478-603, and from 33-52 functions to
+  86-118, "without changing observable behavior". Every CRAP-on variant traded
+  cleanliness for coverage. Chase the metric and you get more surface area to
+  maintain, not a better design. Use CRAP to pick WHERE to look; decide the
+  refactor on the code.
+- **Coverage barely discriminates between testing disciplines**. In the same
+  experiment, line coverage stayed at 97-99% across TDD, test-last and
+  bundling, while assertion counts diverged sharply. A coverage number that
+  cannot tell those apart cannot certify test quality either — that is what
+  mutation testing is for.
 - **Technical debt is tracked**. If a metric is below threshold and not fixed now, create TODO with justification.
 
 ## Quality gates (see hooks/quality-gate.sh)

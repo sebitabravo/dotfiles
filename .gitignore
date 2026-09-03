@@ -34,15 +34,34 @@ package-lock.json
 bun.lock
 __pycache__/
 
+# Las skills gestionadas de Claude sí versionan su lockfile para reproducir
+# dependencias locales con el Node existente, sin instalar paquetes globales.
+!config/claude/skills/pptx/package-lock.json
+!config/claude/skills/stitch-react-components/package-lock.json
+
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
+HANDOFF.md.archived.*
 
-# Suites de verificacion: se corren en local, no se versionan.
-# run-all-tests.sh las ejecuta si estan presentes y reporta la etapa omitida
-# si no lo estan, para no confundir "no corrio" con "paso".
-*.test.sh
+# Roadmap del workflow automatico — estado de sesion, no un artefacto versionado
+TASK-ROADMAP.md
+task-roadmap.md
+
+# Todos los tests viven en .github/test/ (versionado, corre en CI). No hace
+# falta ignorar *.test.sh en ningun directorio administrado: ninguno vuelve a
+# tener suites propias, asi que no hay nada que install.sh deba excluir por
+# convencion de nombre. El --exclude='*.test.sh' de install.sh queda igual,
+# como defensa en profundidad, no porque algo lo necesite hoy.
 config/claude/scripts/test-swarmforge-workflow.sh
+
+# Planificacion y herramientas propias: no son parte de la configuracion que se
+# instala. specs/ son artefactos SDD locales (Hard Rule 8) y tools/ es un banco
+# de pruebas de CLIs de proveedores, util para desarrollar esto, no para usarlo.
+# Anclados a la raiz con `/` para no tapar un tools/ dentro de config/.
+/specs/
+/tools/
+/openspec/
 
 # IA
 .playwright-mcp/
@@ -53,3 +72,4 @@ config/claude/scripts/test-swarmforge-workflow.sh
 .codex/
 .claude-relaxed
 .atl
+Makefile

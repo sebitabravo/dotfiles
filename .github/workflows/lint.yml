@@ -1,0 +1,90 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.sh"
+      - ".github/**"
+      - "config/**"
+      - "git-hooks/**"
+      - "Brewfile"
+      - "install.sh"
+      - ".gitleaksignore"
+      - ".shellcheckrc"
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.sh"
+      - ".github/**"
+      - "config/**"
+      - "git-hooks/**"
+      - "Brewfile"
+      - "install.sh"
+      - ".gitleaksignore"
+      - ".shellcheckrc"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: rhysd/actionlint@03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
+        with:
+          fail-on-error: true
+      - name: Install shellcheck and shfmt
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck --version
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.11.0
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          "$HOME/go/bin/shfmt" --version
+      - name: shellcheck (-S warning)
+        run: |
+          set -euo pipefail
+          SCRIPTS=()
+          while IFS= read -r f; do [ -n "$f" ] || continue; [ -f "$f" ] && SCRIPTS+=("$f"); done < <(
+            { git ls-files '*.sh' ':!:config/claude/skills/*' 2>/dev/null || true; git ls-files --others --exclude-standard '*.sh' ':!:config/claude/skills/*' 2>/dev/null || true; } | sort -u)
+          [ ${#SCRIPTS[@]} -eq 0 ] && echo "No shell scripts — skipping shellcheck" && exit 0
+          shellcheck -S warning "${SCRIPTS[@]}"
+      - name: shfmt (-d -i 2 -ci)
+        run: |
+          set -euo pipefail
+          SHFMT="$HOME/go/bin/shfmt"; [ -x "$SHFMT" ] || SHFMT="$(command -v shfmt || true)"
+          [ -n "$SHFMT" ] && [ -x "$SHFMT" ] || { echo "shfmt not found" >&2; exit 1; }
+          FILES=()
+          while IFS= read -r f; do [ -n "$f" ] || continue; [ -f "$f" ] && FILES+=("$f"); done < <(
+            { git ls-files '*.sh' ':!:config/claude/skills/*' 2>/dev/null || true; git ls-files --others --exclude-standard '*.sh' ':!:config/claude/skills/*' 2>/dev/null || true; } | sort -u)
+          [ ${#FILES[@]} -eq 0 ] && echo "No shell scripts — skipping shfmt" && exit 0
+          "$SHFMT" -d -i 2 -ci "${FILES[@]}"
+      - name: git diff --check (whitespace)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            echo "::error::workflow_dispatch has no immutable PR/push range" >&2
+            exit 1
+          fi
+          case "$BASE_SHA$HEAD_SHA" in
+            *0000000000000000000000000000000000000000*) echo "::error::missing immutable diff SHAs" >&2; exit 1 ;;
+          esac
+          git diff --check "$BASE_SHA...$HEAD_SHA" 2>&1 || { echo "::error::git diff --check failed for immutable PR range"; exit 1; }
+      - name: gitleaks detect
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

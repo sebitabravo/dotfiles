@@ -7,12 +7,12 @@ description: >-
   UI/UX terminology, design tokens and theme system capabilities.
   Use when generating a new screen in Stitch from a prompt or image, editing an existing screen, or producing design variants.
 allowed-tools:
+  - "ToolSearch"
   - "Bash"
   - "Read"
   - "Write"
   - "WebFetch"
 ---
-
 # Generate Design
 
 Create new design screens from text descriptions, images, or mockups, edit
@@ -165,7 +165,8 @@ exists, create one using `create_project`.
 
 #### 2. Upload the Image
 
-Delegate to the **upload-to-stitch** skill to upload the image to the project.
+Delegate to the **stitch-manage-design-system** skill to upload the image to
+the project with its fixed-origin uploader.
 This creates a new screen with the image as its content.
 
 #### 3. Refine with Edit
@@ -251,8 +252,7 @@ versions to ensure the local files reflect the latest edits.
 After downloading assets, update `.stitch/metadata.json` to reflect any changes
 (e.g., updated screen titles or new screen IDs from the edit). The metadata
 file tracks all screens, their device types, and design system info. See the
-[`stitch-manage-design-system` skill's metadata example](../stitch-manage-design-system/examples/metadata.json)
-for the format.
+**manage-design-system** skill's `examples/metadata.json` for the format.
 
 #### 7. Verify and Repeat
 

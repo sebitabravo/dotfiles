@@ -20,7 +20,7 @@
       "source": "local",
       "python_version": "3.10",
       "optional_system": ["c2patool", "exiftool"],
-      "notes": "Scripts stdlib-only. Opcionales (auto-usados si existen): c2patool, exiftool. Backends CtrlRegen y reverse-SynthID se bootstrapean on demand con setup_*.sh."
+      "notes": "El servicio HTTP core vendorizado y sus scripts son stdlib-only; la skill usa /health, /capabilities, /inspect, /detect y /clean. Opcionales (auto-usados si existen): c2patool, exiftool, qpdf. Backends CtrlRegen, reverse-SynthID, MarkLLM y MarkDiffusion se bootstrapean on demand con setup_*.sh."
     },
     "inacap": {
       "source": "local",

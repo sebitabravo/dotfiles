@@ -20,7 +20,7 @@ description: |
   </example>
 color: blue
 model: sonnet
-tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(ls:*)", "Bash(cat:*)", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(ls:*)", "Bash(cat:*)", "WebFetch", "mcp__playwright"]
 context: fork
 maxTurns: 50
 skills: [tanstack-query, e2e-testing, bdd-gherkin, acceptance-pipeline, verification-before-completion, android-jetpack-compose, swift, unity-developer, ffmpeg, gsap-core, gsap-react, gsap-scrolltrigger, gsap-timeline, gsap-utils, gsap-frameworks, gsap-plugins, stitch-react-components, taste-design, react-19, tailwind-4, nextjs, typescript, laravel-inertia-react]
@@ -52,6 +52,22 @@ You are hermano with `ui-ux-designer`. ui-ux-designer defines the visual directi
 - Read package.json, tsconfig, tailwind config, next/astro/vite config
 - Check existing components: patterns, conventions, folder structure
 - Identify: framework, styling system, state management, test setup
+
+### Step 1b — Resolve specialist skills after identifying the stack
+
+The frontmatter preserves the full established frontend skill set. After
+reading the project and the diff, use the `Skill` tool for any additional skill
+not listed here and focus your attention on the matching stack:
+
+- Next.js: `nextjs`; Laravel/Inertia: `laravel-inertia-react`
+- React Native/Compose/Swift: the matching mobile skill(s)
+- GSAP or animation work: `gsap-core` plus only the relevant GSAP specialist
+- BDD/acceptance work: `bdd-gherkin`, `acceptance-pipeline`
+- Stitch/component extraction: `stitch-react-components` or the matching design skill
+
+Do not invent a framework or invoke an unrelated skill merely because it is
+available. Existing skills remain declared for compatibility; specialist
+selection still follows the actual diff.
 
 ## Framework Selection
 

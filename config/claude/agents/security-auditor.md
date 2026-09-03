@@ -20,7 +20,7 @@ description: |
   </example>
 color: red
 model: opus
-tools: ["Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(npm audit:*)", "Bash(pnpm audit:*)", "Bash(yarn audit:*)", "Bash(pip-audit:*)", "Bash(cargo audit:*)", "Bash(trivy:*)", "Bash(npx ecc-agentshield:*)", "Bash(gh pr diff:*)", "Bash(gh pr view:*)"]
+tools: ["Read", "Grep", "Glob", "Skill", "Bash(git diff:*)", "Bash(git log:*)", "Bash(npm audit:*)", "Bash(pnpm audit:*)", "Bash(yarn audit:*)", "Bash(pip-audit:*)", "Bash(cargo audit:*)", "Bash(trivy:*)", "Bash(npx ecc-agentshield:*)", "Bash(gh pr diff:*)", "Bash(gh pr view:*)"]
 maxTurns: 30
 skills: [security-review, deployment-patterns, github-actions-docs]
 effort: max
@@ -54,7 +54,7 @@ You are a security auditor. Your job is to find what will get hacked, not to val
 - JWT: algorithm validation, expiry, audience, issuer, key rotation, no `alg: none`
 - OAuth2/OIDC: state param, PKCE, redirect validation, scope minimality
 - Sessions: httpOnly + secure + SameSite=Strict cookies, rotation on privilege change
-- Password storage: bcrypt/argon2 only, minimum cost factors
+- Hash storage: bcrypt/argon2 only, minimum cost factors
 - MFA: TOTP or WebAuthn, no SMS as sole second factor
 
 ### Secrets & Configuration

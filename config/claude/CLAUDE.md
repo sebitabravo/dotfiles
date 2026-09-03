@@ -23,18 +23,30 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Acceptance pipelines, generated entry points, acceptance mutation, Gherkin IR | `acceptance-pipeline` |
 | SwarmForge-style role workflow, TDD/acceptance/CRAP/DRY/mutation/QA handoffs | `swarmforge-workflow` |
 | Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
+| Actionable one-shot, durable roadmap, acceptance receipt, verify-diagnose-apply loop | `automatic-task-orchestrator` |
 | Spec-Driven Development, OpenSpec projects, proposals, requirements, design, tasks, apply, verify | `sdd-workflow` |
 | Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
 | Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
+| PRs over 400 changed lines, stacked PRs, review slices | `chained-pr` |
+| Planning commits as reviewable work units | `work-unit-commits` |
+| Writing guides, READMEs, RFCs, onboarding, or review-facing docs | `cognitive-doc-design` |
+| Writing GitHub, issue, Slack, or collaboration comments | `comment-writer` |
+| Creating, drafting, or triaging GitHub issues | `issue-creation` |
+| Triage of repeated issues, backlogs, or root-cause clusters | `systemic-issue-triage` |
+| Writing or reviewing Go tests, Bubbletea tests, or golden files | `go-testing` |
 | Designing or optimizing a prompt, choosing a model tier, setting up evals | `prompt-engineering` |
 | Finding/installing a skill for a task the user describes | `find-skills` |
 | Creating a new agent skill, adding agent instructions, documenting a pattern | `skill-creator` |
-| Complex feature, multi-file behavior change, ambiguous architecture, resuming a `specs/` folder | `sdd-workflow` |
+| Auditing or improving existing `SKILL.md` files | `skill-improver` |
+| Adding, removing, moving, or indexing skills | `skill-registry` |
+| Explicit Judgment Day or dual/adversarial review | `judgment-day` |
+| RDD defects, receipts, lineage, recovery, or delivery gates | `rdd-defect-workflow` |
 | Session is long, model is looping, or before /clear | `handoff` |
 | Analyzing a Stitch project into a DESIGN.md design system | `design-md` |
 | Stripping C2PA/AI metadata from owned files, invisible-Unicode hygiene in text, cleaning provenance marks on content the user owns | `remove-ai-marks` |
+| Chilean compliance: Ley 21.719 (personal data), Ley 21.595 (economic crimes), RAT, DPA, EIPD, privacy policy, breach protocol, Modelo de Prevención de Delitos | `compliance-cl` |
 
 ## Context
 
@@ -50,6 +62,51 @@ When the task genuinely needs a shell (piping, builds, inspecting a tree), prefe
 
 `z` (zoxide) is a shell function and does NOT exist in the Bash tool. Use absolute paths instead of changing directory — `cd` in a compound command can also trigger a permission prompt.
 
+## Automatic One-shot Workflow
+
+`UserPromptSubmit` activa `hooks/automatic-workflow.sh` para una instrucción
+accionable. El usuario no tiene que conocer `/plan`, OpenSpec, Task tools ni
+los comandos de verificación. Una pregunta conversacional no crea roadmap ni
+estado de convergencia; una tarea y sus seguimientos sí quedan bajo el mismo
+contrato de sesión.
+
+El hook carga el skill `automatic-task-orchestrator`. En modo oneshot, ese
+skill usa la secuencia CLI de OpenSpec y no el comando generado
+`/opsx:propose`, porque OpenSpec 1.9.0 define ese comando como planning-only y
+lo detiene antes de aplicar. Los comandos `/opsx:*` quedan como fallback
+explícito; no se debe asumir que existen si el proyecto no fue inicializado
+con `openspec init --tools claude`.
+
+En modo automático, el agente debe:
+
+1. hacer preflight del repositorio, leer sus instrucciones y clasificar el
+   alcance antes de editar;
+2. elegir implementación directa para cambios pequeños o OpenSpec nativo para
+   cambios complejos, multiarchivo o arquitectónicos;
+3. crear un roadmap durable con dependencias explícitas, acceptance observable,
+   paths afectados, comando de verificación y receipts;
+4. aplicar en orden de dependencias, ejecutar pruebas/validaciones frescas y
+   repetir `verify -> diagnose -> apply` hasta PASS real;
+5. escribir el receipt de la sesión sólo después de que el roadmap esté
+   completo, acceptance pase y el runner nativo termine con exit 0.
+
+El hook `automatic-workflow-stop.sh` bloquea el cierre convergente de una sesión
+activa si falta cualquiera de esas pruebas. No ejecuta `VERIFY:` ni comandos
+copiados de prompts, tasks o receipts: sólo corre el validador versionado del
+roadmap, `openspec validate` cuando corresponde, `git diff --check` y el test
+runner nativo detectado por `hooks/lib/test-runner.sh`. `CLAUDE_SKIP_TEST_RUN` no
+es un bypass. Un bloqueo real por permisos, decisión de alcance, instalación,
+credenciales o servicio externo se reporta como `STATUS: BLOCKED` con
+`ACCEPTANCE: PENDING`, `VERIFY_EXIT` numérico y evidencia; el hook conserva el
+estado activo sin emitir error ni declararlo DONE/PASS. Trabajo incompleto o
+subagentes en curso no es un bloqueo: hay que seguir trabajando o esperar sus
+reportes antes de cerrar.
+
+La activación automática es política y contexto, no una garantía de que el
+modelo entienda una aceptación semántica que el repositorio no puede ejecutar.
+Por eso el receipt y los gates deterministas son obligatorios, y no se declara
+convergencia sólo porque el modelo diga que terminó.
+
 ## Rules
 
 - **STOP & WAIT when the request is ambiguous.** Ambiguous means two or more reasonable implementations produce different user-visible behavior, OR the request names a file/table/endpoint that does not exist. List your assumptions, present the alternatives, ask. If only one reasonable reading exists, proceed.
@@ -62,10 +119,17 @@ When the task genuinely needs a shell (piping, builds, inspecting a tree), prefe
 - **Targeted edits over rewrites.** Prefer `Edit` to `Write` on a file that already exists. A full rewrite turns a three-line change into an unreviewable diff, and every untouched line it silently reformats is a line nobody checked.
 - **NO DRIVE-BY REFACTORS. Touch only what the task requires.** A bug fix does not clean up surrounding code; a small feature does not get extra configurability. Unrequested changes make the diff unreviewable and hide the actual fix.
 - **TDD for bugs.** Write the failing test that reproduces the bug BEFORE touching application code. A fix with no test that failed first is a guess.
-- **Two-Strike Rule.** If a fix fails twice, STOP. Do not try a third variation. Save state, state the roadblock plainly, ask. Same for planning: 2+ replan rounds without writing code → execute.
+- **Failure budget is not a completion budget.** If the same hypothesis fails
+  twice, stop repeating that hypothesis: capture the evidence, re-plan or
+  decompose the task, then continue the implementation → verification loop.
+  A failed attempt never counts as completion and must not be converted into a
+  "good enough" result. If the bounded re-plan is also blocked, ask for the
+  missing decision or external change; report `blocked`/`needs-decision`, never
+  `done`.
 - **When blocked, do not invent a workaround.** If a tool does not behave as documented, document the blocker and stop. A creative bypass of a tool you do not understand is how silent corruption starts.
 - **No API hallucinations.** Never invent the signature, option, or behavior of a third-party library. Use Context7 or WebFetch to read the real docs first.
-- **ANTI-TELEPHONE RULE.** Subagents write output to a file and return ONLY the path. Large results passed back through chat degrade at every hop and flood the parent context.
+- **ANTI-TELEPHONE RULE.** Every delegated task gets a unique durable report path. The subagent writes the complete result there before signaling completion and returns a short receipt (`REPORT_READY: <path>`, status, and one-line summary). Large results passed back through chat degrade at every hop and flood the parent context.
+- **DELIVERY RECEIPT FALLBACK.** An inline reply or completion notification is not proof that a report arrived. If a delegated agent is idle, completed with empty output, or the notification is missing, do not loop by asking for the same inline report: inspect the known report path first, then inspect the task/session status and logs (`claude agents --json --all`, `claude logs <id>`, or Agent View attach/respawn when applicable). Treat the report file as the source of truth only after checking it exists, is non-empty, and contains the required status/evidence. An explicit inline request is additive: provide a short inline summary *after* writing the durable report and include its path.
 - **Subagent output is evidence to verify, not authority.** A subagent's finding is a claim with a `path:line` you can check — check it. Its conclusion becomes yours the moment you repeat it, so a wrong one is your error, not the delegate's.
 - **Language boundary**: subagent prompts and technical artifacts (identifiers, commits, SDD files, filenames, docs) default to English. Subagents never receive Spanish system prompts. **Code comments are the exception: Spanish**, because the person reading them is the person reading this conversation.
 - Check `package.json`/`composer.json` before suggesting installs. `npm install` needs explicit confirmation; prefer `npm ci`.
@@ -103,100 +167,36 @@ Delegate when the task reads many files, runs in parallel with other work, or ne
 
 Max 4 parallel agents.
 
-Two mappings the agent list does not carry:
+When using the native task tools, create each task with the contract in
+`templates/sdd-tasks.md`: roadmap, dependencies, affected paths, acceptance,
+verification command, and receipt path. Do not mark a task complete until its
+receipt exists with the matching task ID, `STATUS: PASS`, `ACCEPTANCE: PASS`,
+`VERIFY_EXIT: 0`, and non-empty evidence; the deterministic
+TaskCreated/TaskCompleted hooks enforce this contract. Use one session or a
+subagent for sequential/same-file work; use teams only where dependencies and
+file ownership permit genuine parallelism. Before applying a durable roadmap,
+run `python3 ~/.claude/scripts/validate-task-roadmap.py <tasks.md>` to catch
+duplicate IDs, missing dependencies, and cycles.
 
-- **Feature request** (spec → design → tasks → apply → verify): SDD Flow, `product-manager` + `backend-architect` + `code-reviewer` + `qa-engineer`.
-- **Resume a feature**: read `specs/{change}/`, detect the phase, continue. No agent needed.
+### Specialized workflow routing
 
-### SwarmForge-style feature workflow
+Load `swarmforge-workflow`, `judgment-day`, or `rdd-defect-workflow` before
+using those modes. Their skills contain the pack selection, bounded review,
+handoff, receipt, and escalation contracts; do not duplicate them here.
 
-For a non-trivial feature, select the smallest `swarmforge-workflow` pack that
-covers the risk before editing. Reuse existing agents instead of creating a
-new agent per role:
+## SDD and project context
 
-- **two-pack:** existing implementer → `code-reviewer` → implementer if
-  corrections are needed.
-- **four-pack:** `product-manager` (specifier) → existing domain implementer →
-  `code-reviewer` (cleanup/refactor) → `backend-architect` or domain review.
-- **six-pack:** `product-manager` → existing implementer → `code-reviewer` →
-  architecture review → `qa-engineer` mutation hardening → `qa-engineer` final
-  QA.
+For complex features, load `sdd-workflow`; it owns the OpenSpec CLI artifact
+sequence, decision gates, DAG validation, receipts, and convergence loop.
+Generated `/opsx:*` commands are an explicit fallback, not the automatic
+planning primitive. The automatic one-shot route is owned by
+`automatic-task-orchestrator`; its Stop hook remains authoritative.
 
-The specifier approval gate is mandatory for four-pack and six-pack. Each
-handoff must include exact commands and evidence; a hook cannot substitute for
-a role. Use the standalone SwarmForge launcher only when the project explicitly
-has its project-local `swarmforge/` setup and the user authorizes tmux/worktrees.
-
-## SDD Flow (complex features only)
-
-DAG: `[constitution] → explore → propose → spec ∥ design → tasks → apply → verify → archive`
-
-Artifacts in `specs/{change-name}/`, one template per phase in `templates/`: `sdd-constitution` (once per project, defines non-negotiable principles), `sdd-proposal`, `sdd-requirements` + `sdd-design`, `sdd-tasks`, `sdd-apply-progress`, `sdd-checklist` (CHK001–CHK041). Archived specs move to `specs/archived/`. Scaffold them with `skills/sdd-workflow/scripts/scaffold-sdd.sh <slug>`; the `sdd-workflow` skill carries the per-phase detail.
-
-Human gates at proposal and spec+design. Max 2 verify→apply cycles. Trivial features: direct implementation, no SDD.
-
-**Project context**: a project without its own `CLAUDE.md` gives you no domain knowledge — you will infer the stack correctly and the business rules wrong. If it lacks one and the work touches business logic, offer to create it from `templates/project-claude-md.md`: inviolable domain rules, glossary, anti-goals, gotchas.
+A missing project `CLAUDE.md` gives no domain knowledge; offer `templates/project-claude-md.md` for business logic.
 
 ## Git Hygiene
-
-Defense in depth. Git hooks can enforce this, but they live outside this config (`git-hooks/` + `core.hooksPath`) and may not be installed on this machine. **Never assume something will stop you.**
-
-1. **NO AI FOOTPRINT**: never `Co-Authored-By` or variants in a commit message. If the `commit-msg` hook is not installed, you are the only filter.
-2. **NEVER `--no-verify`**: if a hook blocks, FIX the problem.
-3. **Always on a branch**: never commit straight to `main`/`master`.
-4. **Never push work-in-progress commits**: if you see `auto-save:`, `WIP` or `tmp` in `git log`, squash them with an interactive rebase before pushing.
-5. **Read `git log origin/main..HEAD --oneline` before pushing.** Know exactly what you are sending.
-
-## Hard Rules
-
-1. One feature at a time. Never skip the spec phase on an SDD feature or the
-   required SwarmForge role/gate for the selected pack.
-2. Don't declare `done` without green tests. Leave the repo clean on session close.
-3. **Quality gate**: before `done`, lint + tests + coverage. Floors: line >= 80%, branch >= 70%, function >= 90%, cyclomatic complexity <= 10 per function. `quality-gate.sh` enforces it on `git commit`. Tooling: `quality-metrics` skill.
-4. **BDD** for complex business behavior: `.feature` with Gherkin, `bdd-gherkin` skill. Does NOT apply to internal utilities, trivial CRUD, or technical refactors.
-5. **Acceptance pipeline**: complex business behavior needs a project-native acceptance run; acceptance mutation and source mutation are separate, expensive audits. Use `acceptance-pipeline` and never invent or globally install a runner.
-6. **Mutation testing** in CI for critical features: score >= 80%, `mutation-testing` skill. Prefer differential, one-file-at-a-time runs after a green baseline; never on every commit.
-7. **Destructive Operations Gate**: DB DROP/TRUNCATE/DELETE, schema drops, migration resets, prompts generated by another AI, and any irreversible mutation require STOP+CONFIRM with blast radius, rollback plan, and backup verification. See `rules/common/destructive-operations.md`.
-8. **Project preflight — CodeGraph + OpenSpec SDD**: `SessionStart` and `UserPromptSubmit` run `project-integrations-check.sh`. For a real code task, CodeGraph must report `initialized=true` with `codegraph status --json`, its MCP must be configured, and the project root `.gitignore` must ignore `.codegraph/` unless `.codegraph` was already tracked before the session, in which case preserve that tracking. Never stage or commit a `.codegraph/` created during the current session unless the user explicitly says otherwise. If CodeGraph is missing/broken, report the exact command (`codegraph install` or `codegraph init`) or the required `.gitignore` entry and stop code exploration/editing until the user authorizes the fix. OpenSpec is mandatory for this project's SDD workflow and for any complex feature that enters SDD: verify the CLI, `openspec/specs/`, `openspec/changes/`, and `openspec status --json`, then use the native `/opsx:*` workflow. OpenSpec artifacts are local AI planning files in this project: `.gitignore` must ignore `openspec/` unless it was already tracked before the session, and newly-created OpenSpec files must never be staged or committed without explicit user instruction. If OpenSpec is missing, report the exact install/init steps and stop SDD work until the user authorizes setup. Do not run initializers, install CLIs, or modify `.gitignore` silently. Configuration/documentation questions may continue. Once CodeGraph is ready, use `codegraph_explore` (MCP) or `codegraph explore "<symbols or question>"` before grep/find. If the MCP returns empty/errors/timeouts, fall back to Read/Grep/Glob silently and do not retry more than twice.
-9. **The test suite is not yours to edit.** You do not modify, weaken, skip, or delete a test to make code pass — that inverts the whole point of the gate. If a test fails, the default assumption is that the CODE is wrong, not the test. For a legitimate change (a requirement that genuinely changed, or a new test for a new feature): STOP and ask for explicit authorization, stating which test, why, and what it covers afterwards.
-
-   `protect-tests.sh` covers tests that already existed when the session started; the ones you author in the session are your drafts and stay editable, so TDD works. **It is a speed bump, not a boundary**: it only matches `Edit|Write|NotebookEdit`, so a Bash write slips past it. That it is possible does not make it permitted. In this repo the suites are local-only and there is no CI, so the hook is the only automated check there is — which makes the rule above load-bearing rather than redundant.
-
-10. **Judgment Day (blind dual review)**: TWO `code-reviewer` agents in parallel as blind judges — zero coordination, zero shared context beyond the frozen diff. Neither sees the other's verdict. Plus `security-auditor` in parallel for auth/secrets/permissions. Never self-review.
-
-   **Activation**: only on explicit request, or when the change is genuinely risky (auth, payments, data migrations, concurrency, anything irreversible). It REPLACES the ordinary review — never both.
-
-   **When NOT to run it**: critique is for debugging, not polishing. On work that already passes tests, lint and types, a reviewer primed to find problems invents them — measured degradation from 98% to 57% accuracy on easy tasks. Do not run it on green, low-risk diffs.
-
-   | Condition | Action |
-   |---|---|
-   | Target unclear | ONE scope question, then stop |
-   | Both judges confirm BLOCKER/CRITICAL | Ask the user, then fix only those IDs |
-   | Only one judge reports it | Record as `suspect`. NO auto-fix |
-   | Judges contradict each other | Escalate to a human decision. Do not break the tie yourself |
-   | Anything unresolved after round two | Escalate and stop |
-
-   **Bounded rounds**: at most TWO fix rounds and TWO re-judgments, which see only the frozen ledger plus the fix delta. Terminal states: `APPROVED` or `ESCALATED`. Never reset an exhausted round budget.
-
-   **No refuter fan-out**: agreement between the two judges IS the corroboration. If you still run refuters, the ceiling is ONE for the whole list, or THREE with distinct lenses (correctness / exploitability / reproducibility, 2-of-3 vote). NEVER one per finding.
-
-   **Severity floor**: only BLOCKER/CRITICAL confirmed by both enter the fix loop. WARNING/SUGGESTION are reported once as `info` and never block.
-
-   **Known limitation**: both judges are the same model family and share training-correlated blind spots. Two PASS verdicts mean "no obvious defect found", never proof of correctness. The automated gates are the real guarantee; the judges are a second net.
-
-11. **RDD — Receipt Driven Development.** "It works" is an opinion; a receipt is evidence. In repos with `.claude-rdd/enabled`, a commit requires a receipt bound to the exact staged bytes:
-
-    ```
-    rdd freeze [max_fix_lines]   # freeze the candidate (hash of the staged diff)
-    # review THOSE bytes
-    rdd receipt <test cmd>       # run the evidence and sign the hash (argv, unquoted)
-    git commit                   # quality-gate.sh validates the receipt
-    ```
-
-    Four properties justify it: the **frozen candidate** makes touching the code afterwards invalidate the receipt by itself; the **bounded correction** capped at `max_fix_lines` is the mechanical brake on the over-engineering loop; **no receipt is issued** unless the evidence command exits 0, so you cannot talk your way into one; and the **kill switch** (`rdd off`, off by default) exists because a guardrail nobody can disable ends up worked around.
-
-    Enable it on risky or irreversible work. Not on a scratch repo — the friction has to buy something.
+No AI footprint or `--no-verify`; fix blocked hooks. Work on a branch, never
+push WIP, and inspect `git log origin/main..HEAD --oneline` before pushing.
 
 ## Session Close
-
-Verification green (tests, linters, exit 0). No temporary artifacts, no debug statements, no dangling TODOs. With Engram: `mem_session_summary`.
+Verification green (tests, linters, exit 0); no temporary artifacts, debug statements, or dangling TODOs. With Engram: `mem_session_summary`.

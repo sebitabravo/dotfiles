@@ -1,0 +1,9 @@
+# Optional local GGA compatibility configuration. CI does not execute GGA.
+PROVIDER="opencode"
+PR_BASE_BRANCH="origin/main"
+TIMEOUT="600"
+RULES_FILE=".github/code-review/AGENTS.md"
+STRICT_MODE="true"
+OPENCODE_AGENT="review"
+FILE_PATTERNS="*"
+EXCLUDE_PATTERNS="*.md,*.lock,config/claude/skills/**,.github/test/**"

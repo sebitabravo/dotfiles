@@ -1,0 +1,25 @@
+# Atuin — historial de shell con búsqueda por directorio, host y exit-code.
+# Referencia completa: https://docs.atuin.sh/configuration/config/
+
+# fuzzy es el default, pero se declara explícito para no depender de un
+# default que Atuin puede cambiar entre versiones.
+search_mode = "fuzzy"
+
+# Empieza filtrando por el directorio actual: el caso de uso más frecuente
+# es "qué corrí antes en este repo", no el historial global de la máquina.
+filter_mode = "directory"
+
+style = "compact"
+show_preview = true
+
+# store_failed en true (default) para no perder comandos que fallaron: son
+# justamente los que más se buscan después para ver qué se hizo distinto.
+store_failed = true
+
+# secrets_filter en true (default): no persiste comandos que huelen a token,
+# password o secret en el historial local ni en sync.
+secrets_filter = true
+
+# Tema de Gentleman.Dots (config/atuin/themes/gentleman.toml).
+[theme]
+name = "gentleman"

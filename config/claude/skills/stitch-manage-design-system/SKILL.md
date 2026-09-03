@@ -5,13 +5,22 @@ description: >-
   creating/updating design systems in Stitch, and applying them to screens.
   Use when retrieving, creating, updating, or applying a Stitch design system via the Stitch MCP tools.
 allowed-tools:
+  - "ToolSearch"
   - "Bash"
   - "Read"
   - "Write"
   - "WebFetch"
 ---
-
 # Design-System
+
+## Skill-local tools
+
+The uploader is bundled with this installed skill. Override the default path
+when running from a repository checkout:
+
+```bash
+SKILL_DIR="${STITCH_MANAGE_DESIGN_SYSTEM_SKILL_DIR:-$HOME/.claude/skills/stitch-manage-design-system}"
+```
 
 Create a "source of truth" for your project's design language to ensure
 consistency across all future screens.
@@ -63,13 +72,25 @@ design system in Stitch.
 > before proceeding. Do **NOT** upload until the user confirms.
 
 1. **Upload `DESIGN.md`**:
-   - **Option A (Recommended - Uploader Script)**: Use the modified `upload-to-stitch` Python script which natively handles `.md` files. It base64-encodes the markdown file in-process and sends it to the `/v1/projects/{projectId}/screens:batchCreate` endpoint, bypassing output token limits.
+   - **Option A (Recommended - Uploader Script)**: Use the `stitch-manage-design-system` uploader script, which natively handles `.md` files. It base64-encodes the markdown file in-process and sends it to the `/v1/projects/{projectId}/screens:batchCreate` endpoint, bypassing output token limits.
      ```bash
-     uv run --no-project --python 3.12 ~/.claude/skills/stitch-manage-design-system/scripts/upload_to_stitch.py \
+     export STITCH_API_KEY
+     python3 "$SKILL_DIR/scripts/upload_to_stitch.py" \
        --project-id <PROJECT_ID> \
        --file-path /path/to/DESIGN.md \
-       --api-key <API_KEY>
+       --generated-by <GENERATED_BY>
      ```
+     Set `<GENERATED_BY>` to identify the skill or tool that produced the
+     `DESIGN.md`. Use the calling skill name when invoked from another skill
+     (e.g. `stitch::code-to-design`), or the agent/tool name for standalone
+     use (e.g. `Gemini`, `Claude Code`). If omitted, the script defaults to
+     `UserUploadedDesignMd`.
+
+     The uploader always uses `https://stitch.googleapis.com`, reads the API
+     key from `STITCH_API_KEY`, and rejects missing or empty keys. It accepts
+     only safe single-component project IDs and regular supported files up to
+     its explicit size limit; it does not follow redirects.
+
      This returns the `sourceScreen` ID and the `screenInstance` ID.
    - **Option B (Direct MCP Tool)**: If the `DESIGN.md` is small (under ~5KB), you can call the `upload_design_md` MCP tool directly, passing the base64-encoded design markdown content as `designMdBase64`.
 2. **Create Design System**: Call the `create_design_system_from_design_md` tool immediately after the upload, passing the `projectId` and the `selectedScreenInstance` (containing the `id` and `sourceScreen` returned from the upload step).

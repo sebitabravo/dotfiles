@@ -20,7 +20,7 @@ description: |
   </example>
 color: green
 model: sonnet
-tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(pytest:*)", "Bash(jest:*)", "Bash(vitest:*)", "Bash(curl:*)", "Bash(docker:*)", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(pytest:*)", "Bash(jest:*)", "Bash(vitest:*)", "Bash(curl:*)", "Bash(docker:*)", "WebFetch", "mcp__playwright"]
 context: fork
 maxTurns: 50
 skills: [e2e-testing, mobile-app-testing, python-testing-patterns, bdd-gherkin, acceptance-pipeline, mutation-testing, quality-metrics, verification-before-completion]

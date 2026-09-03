@@ -9,8 +9,11 @@
 INPUT=$(cat 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // ""' 2>/dev/null || echo "")
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+PROJECT_DIR="${CWD:-$PWD}"
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PROJECT_DIR")
 
-[ -f "$PWD/HANDOFF.md" ] && exit 0
+[ -f "$ROOT/HANDOFF.md" ] && exit 0
 
 # Menos de ~200KB de transcript = sesion corta, no hay nada que traspasar.
 MIN_TRANSCRIPT_BYTES=200000

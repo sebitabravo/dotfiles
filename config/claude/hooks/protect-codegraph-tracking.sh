@@ -28,16 +28,22 @@ deny() {
   exit 0
 }
 
+# Quoted text is not a command: `claude -p "...git commit..."` names git
+# inside an argument string, not a shell invocation. Strip quoted spans
+# before matching so prompt text passed to another program stops looking
+# like an actual git add/commit.
+UNQUOTED=$(printf '%s' "$COMMAND" | sed -E 's/"[^"]*"//g; s/'"'"'[^'"'"']*'"'"'//g')
+
 IS_COMMIT=false
-printf '%s' "$COMMAND" | grep -qE '(^|[[:space:];|])git[[:space:]]+commit([[:space:];|]|$)' && IS_COMMIT=true
+printf '%s' "$UNQUOTED" | grep -qE '(^|[[:space:];|])git[[:space:]]+commit([[:space:];|]|$)' && IS_COMMIT=true
 IS_ADD=false
-printf '%s' "$COMMAND" | grep -qE '(^|[[:space:];|])git[[:space:]]+add([[:space:]]|$)' && IS_ADD=true
+printf '%s' "$UNQUOTED" | grep -qE '(^|[[:space:];|])git[[:space:]]+add([[:space:]]|$)' && IS_ADD=true
 
 # A direct .gitignore update is allowed so the user/agent can repair
 # protection. Any broad staging command remains blocked while a new artifact
 # is unignored.
 ONLY_GITIGNORE_ADD=false
-printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+add([[:space:]]+--)?[[:space:]]+\.gitignore([[:space:]]*|[;&|])' && ONLY_GITIGNORE_ADD=true
+printf '%s' "$UNQUOTED" | grep -qE 'git[[:space:]]+add([[:space:]]+--)?[[:space:]]+\.gitignore([[:space:]]*|[;&|])' && ONLY_GITIGNORE_ADD=true
 
 for artifact in ".codegraph:CodeGraph" "openspec:OpenSpec"; do
   RELATIVE_PATH=${artifact%%:*}

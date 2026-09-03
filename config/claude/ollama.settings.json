@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "apiKeyHelper": "~/.claude/scripts/ollama-api-key.sh",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://ollama.com",
+    "ANTHROPIC_MODEL": "fable",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "minimax-m3:cloud",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "minimax-m3:cloud",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemma4:31b-cloud",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-oss:120b-cloud",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "262144"
+  }
+}

@@ -1,0 +1,28 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  install-and-macos-checks:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: install shellcheck and coreutils
+        run: brew install shellcheck coreutils
+
+      - name: install.sh test suite
+        run: bash .github/test.sh
+
+      - name: git diff --check
+        run: git diff --check
+
+      - name: repository validation suites
+        run: bash .github/validate.sh
+
+      - name: shellcheck config/macos
+        run: shellcheck config/macos/defaults.sh .github/verify.sh

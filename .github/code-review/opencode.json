@@ -1,0 +1,43 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "zai-coding-plan/glm-5.3-flash",
+  "permission": {
+    "*": "deny",
+    "bash": "deny",
+    "edit": "deny",
+    "write": "deny",
+    "read": "deny",
+    "webfetch": "deny",
+    "task": "deny",
+    "skill": "deny",
+    "mcp": "deny"
+  },
+  "agent": {
+    "review": {
+      "description": "Deterministic, read-only reviewer. The prompt is the complete input; repository and external tools are unavailable.",
+      "mode": "primary",
+      "permission": {
+        "*": "deny",
+        "bash": "deny",
+        "edit": "deny",
+        "write": "deny",
+        "read": "deny",
+        "webfetch": "deny",
+        "task": "deny",
+        "skill": "deny",
+        "mcp": "deny"
+      }
+    }
+  },
+  "provider": {
+    "zai-coding-plan": {
+      "models": {
+        "glm-5.3-flash": {
+          "name": "GLM-5.3 Flash",
+          "limit": { "context": 1000000, "output": 131072 },
+          "variants": { "high": { "reasoningEffort": "high" } }
+        }
+      }
+    }
+  }
+}

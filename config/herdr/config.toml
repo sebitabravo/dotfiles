@@ -1,0 +1,72 @@
+# herdr configuration managed
+onboarding = false
+
+[theme]
+name = "one-dark"
+
+[theme.custom]
+panel_bg = "#06080f"
+surface0 = "#241822"
+surface1 = "#342230"
+surface_dim = "#20161E"
+overlay0 = "#B99AA9"
+overlay1 = "#D7A0B8"
+text = "#F6EFF3"
+subtext0 = "#A78E9B"
+accent = "#6FA0AF"
+mauve = "#FFB1DD"
+green = "#B7CC85"
+blue = "#6FA0AF"
+red = "#CB7C94"
+yellow = "#DEBA87"
+teal = "#D7A0B8"
+peach = "#F2B86D"
+
+[ui]
+accent = "#6FA0AF"
+agent_panel_sort = "priority"
+show_agent_labels_on_pane_borders = true
+status_indicators = "symbols"
+
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace", "tab"],
+  ["state_text", "agent"],
+]
+
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status"],
+]
+
+[ui.toast]
+delivery = "herdr"
+delay_seconds = 1
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[keys]
+# Match tmux/Zellij-style prefix muscle memory.
+prefix = "ctrl+a"
+
+# Move between agents in the sidebar.
+# Avoid Herdr's built-in prefix+shift+j/k pane-swap bindings.
+previous_agent = "prefix+alt+k"
+next_agent = "prefix+alt+j"
+
+# Jump straight to agent N (1..9) as listed in the sidebar.
+# Use Ctrl after the prefix: Alt+number is owned by skhd/yabai spaces,
+# and Shift+number did not reach Herdr reliably in the current terminal setup.
+focus_agent = "prefix+ctrl+1..9"
+
+[session]
+resume_agents_on_restore = true
+
+[experimental]
+allow_nested = false
+kitty_graphics = true
+pane_history = false

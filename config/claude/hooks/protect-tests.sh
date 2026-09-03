@@ -32,6 +32,9 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
+PERMISSION_MODE=$(echo "$INPUT" | jq -r '.permission_mode // ""' 2>/dev/null)
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+PROJECT_DIR="${CWD:-$PWD}"
 
 OWNED="${TMPDIR:-/tmp}/claude-owned-tests-${SESSION_ID:-nosession}"
 
@@ -42,12 +45,42 @@ allow() {
   exit 0
 }
 
-# jq -n arma el JSON y escapa el reason. Interpolar la razon directo rompia el
-# decision cuando el filename traia comillas o backslashes, y un decision
-# malformado se ignora: el bloqueo fallaba abierto justo con el input raro.
-deny() {
-  jq -nc --arg reason "$1" \
-    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+# Un test existente no se edita silenciosamente, pero una modificacion
+# legitima puede aprobarse desde el prompt nativo de permisos de Claude Code.
+# La autorizacion conversacional no llega al hook, asi que `ask` es el unico
+# punto de aprobacion que este guardarrail puede consumir de forma confiable.
+#
+# ...siempre que haya alguien para responderlo. En bypassPermissions y dontAsk
+# no hay prompt: nadie contesta, y un `ask` que nadie puede contestar no es una
+# aprobacion, es un resultado que este hook no controla. Ahi se deniega, que es
+# la unica interpretacion segura de "no se pudo pedir permiso".
+#
+# La documentacion de hooks no define que hace el harness con un `ask` sin
+# interlocutor, asi que la decision no se delega: se toma aca leyendo
+# permission_mode, que si viene en el input.
+#
+# El deny NO vuelve a ser incondicional. Este hook ya bloqueaba siempre una vez
+# y se cambio a `ask` justamente porque impedia autorizaciones legitimas; en los
+# modos sin prompt no hay canal de aprobacion, asi que el escape es el mismo que
+# usan quality-gate y gauntlet-stop: `.claude-relaxed`, una decision explicita
+# por repo. Un guardarrail sin salida se termina esquivando por caminos peores.
+gate() {
+  local decision=ask
+  case "$PERMISSION_MODE" in
+    bypassPermissions | dontAsk)
+      local root
+      # A non-git project is a valid hook context.  Keep the failed probe out
+      # of the set -e exit path so gate() can still emit its intended deny
+      # decision for permission modes without an interactive prompt.
+      root=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) || root=""
+      if [ -n "$root" ] && [ -f "$root/.claude-relaxed" ]; then
+        allow
+      fi
+      decision=deny
+      ;;
+  esac
+  jq -nc --arg reason "$1" --arg d "$decision" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:$d,permissionDecisionReason:$reason}}'
   exit 0
 }
 
@@ -69,10 +102,10 @@ case "$BASENAME" in
   test_*.py) IS_TEST=true ;; # pytest
   *Test.java | *Tests.java | *Test.kt | *Tests.kt) IS_TEST=true ;;
   *Spec.scala | *Test.cs | *Tests.cs) IS_TEST=true ;;
-  *Test.php | *Tests.php) IS_TEST=true ;; # PHPUnit / Pest
+  *Test.php | *Tests.php) IS_TEST=true ;;     # PHPUnit / Pest
   *Test.swift | *Tests.swift) IS_TEST=true ;; # XCTest
-  *.feature) IS_TEST=true ;;  # Gherkin
-  conftest.py) IS_TEST=true ;; # fixtures pytest
+  *.feature) IS_TEST=true ;;                  # Gherkin
+  conftest.py) IS_TEST=true ;;                # fixtures pytest
   # Un snapshot ES la assertion: reescribirlo hace pasar cualquier output.
   # Es la forma mas barata de poner la suite en verde sin arreglar nada.
   *.snap | *.ambr) IS_TEST=true ;;
@@ -104,4 +137,4 @@ if [ -f "$OWNED" ] && grep -qxF -- "$FILE_PATH" "$OWNED" 2>/dev/null; then
   allow
 fi
 
-deny "TEST PROTECTION: '$BASENAME' already existed when this session started, so it is coverage that verifies your work and not a draft of yours. Do not modify it on your own. If the change is legitimate (the requirement genuinely changed), STOP and ask the user for explicit authorization, stating: (1) which test you are touching, (2) why, (3) what it covers after the change. Never delete or weaken a test to make the code pass. NOTE: this hook only covers Edit/Write/NotebookEdit — a write through Bash slips past it. That it is possible does not make it permitted: bypassing it is breaking the rule, not working around it."
+gate "TEST PROTECTION: '$BASENAME' ya existia antes de esta sesion y protege cobertura que verifica tu trabajo. La edicion no se permite silenciosamente: aprobala en el prompt nativo solo si el requisito cambio. Indica (1) que test tocas, (2) por que y (3) que cubrira despues. Nunca borres ni debilites un test para hacer pasar el codigo. Este hook solo cubre Edit/Write/NotebookEdit; escribir por Bash lo esquiva, pero hacerlo rompe esta politica y no es un workaround valido."

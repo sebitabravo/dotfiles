@@ -1,13 +1,30 @@
 {
   "servers": {
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
-      "type": "stdio"
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
     },
     "engram": {
       "command": "engram",
-      "args": ["mcp", "--tools=agent"]
+      "args": [
+        "mcp",
+        "--tools=agent"
+      ]
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+      "@playwright/mcp@0.0.79"
+      ]
     }
   },
   "inputs": []

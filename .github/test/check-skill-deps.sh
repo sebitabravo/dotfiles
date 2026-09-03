@@ -4,14 +4,16 @@
 # Las dependencias declaradas deben poder verificarse antes de una tarea; las
 # dependencias que solo viven dentro de un proyecto se informan, no se instalan.
 #
-# Uso: bash scripts/check-skill-deps.sh [--quiet]
+# Uso: bash .github/test/check-skill-deps.sh [--quiet]
 set -uo pipefail
 
 QUIET=0
 [ "${1:-}" = "--quiet" ] && QUIET=1
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCK="$DIR/skills-lock.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+CLAUDE_DIR=${CLAUDE_SOURCE_DIR:-$REPO_ROOT/config/claude}
+LOCK="$CLAUDE_DIR/skills-lock.json"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "check-skill-deps: jq is not installed; cannot read skills-lock.json" >&2
@@ -43,25 +45,32 @@ echo "Checking skill dependencies..."
 
 # Version minima de python por skill. No asumas que el primer python3 del PATH
 # funciona: en macOS un shim pyenv roto puede abortar el proceso antes de
-# devolver una version y producir un falso `0.0`. Preferimos ese interprete si
-# responde; si no, usamos el Python administrado por uv.
+# devolver una version y producir un falso `0.0`. Preferimos el Python
+# administrado por pyenv o el python3 activo; uv queda como fallback para
+# instalaciones que no tengan un gestor local de Python.
 PYTHON_BIN="${PYTHON_BIN:-}"
 if [ -n "$PYTHON_BIN" ] && ! "$PYTHON_BIN" -c 'import sys' >/dev/null 2>&1; then
   PYTHON_BIN=""
+fi
+if [ -z "$PYTHON_BIN" ] && command -v pyenv >/dev/null 2>&1; then
+  candidate=$(pyenv which python 2>/dev/null || true)
+  if [ -n "$candidate" ] && "$candidate" -c 'import sys' >/dev/null 2>&1; then
+    PYTHON_BIN="$candidate"
+  fi
+fi
+if [ -z "$PYTHON_BIN" ] && command -v python3 >/dev/null 2>&1 &&
+  python3 -c 'import sys' >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+fi
+if [ -z "$PYTHON_BIN" ] && [ -x /usr/bin/python3 ] &&
+  /usr/bin/python3 -c 'import sys' >/dev/null 2>&1; then
+  PYTHON_BIN=/usr/bin/python3
 fi
 if [ -z "$PYTHON_BIN" ] && command -v uv >/dev/null 2>&1; then
   candidate=$(uv python find 3.12 2>/dev/null || true)
   if [ -n "$candidate" ] && "$candidate" -c 'import sys' >/dev/null 2>&1; then
     PYTHON_BIN="$candidate"
   fi
-fi
-if [ -z "$PYTHON_BIN" ] && command -v python3 >/dev/null 2>&1 \
-  && python3 -c 'import sys' >/dev/null 2>&1; then
-  PYTHON_BIN="python3"
-fi
-if [ -z "$PYTHON_BIN" ] && [ -x /usr/bin/python3 ] \
-  && /usr/bin/python3 -c 'import sys' >/dev/null 2>&1; then
-  PYTHON_BIN=/usr/bin/python3
 fi
 
 PY_VERSION="0.0"
@@ -101,7 +110,7 @@ done < <(jq -r '.skills | to_entries[] | .key as $s | .value.deps // {} | to_ent
 # carpeta de la skill. No las instales durante un hook: informa si todavía no
 # están provisionadas para evitar que un OK oculte una capacidad pendiente.
 local_node_info=0
-SKILLS_ROOT_FOR_PACKAGES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills" && pwd)"
+SKILLS_ROOT_FOR_PACKAGES="$CLAUDE_DIR/skills"
 while IFS= read -r package_json; do
   [ -f "$package_json" ] || continue
   skill_dir=$(dirname "$package_json")
@@ -111,7 +120,7 @@ while IFS= read -r package_json; do
     dep_path="$skill_dir/node_modules/$dep"
     if [ ! -e "$dep_path" ]; then
       local_node_info=$((local_node_info + 1))
-      [ "$QUIET" -eq 1 ] || echo "  info   local node: $dep is not provisioned (skill: $skill_name; run npm install inside the skill when it applies)"
+      [ "$QUIET" -eq 1 ] || echo "  info   local node: $dep is not provisioned (skill: $skill_name; ask first, then run npm ci --ignore-scripts inside the skill when it applies)"
     fi
   done < <(jq -r '.dependencies // {} | keys[]' "$package_json")
 done < <(find "$SKILLS_ROOT_FOR_PACKAGES" -mindepth 2 -maxdepth 2 -name package.json -type f -print)
@@ -140,7 +149,7 @@ done < <(jq -r '.skills | to_entries[] | .key as $s | .value.optional_system // 
 # Frontmatter de cada skill. Un SKILL.md sin `name:` o sin `description:` no lo
 # carga el harness: la skill queda instalada, invisible, y no falla nunca de
 # forma ruidosa. Chequear las deps de una skill que no carga no sirve de nada.
-SKILLS_ROOT="${SKILLS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/skills}"
+SKILLS_ROOT="${SKILLS_ROOT:-$CLAUDE_DIR/skills}"
 if [ -d "$SKILLS_ROOT" ]; then
   invalid=0
   while IFS= read -r skill_file; do

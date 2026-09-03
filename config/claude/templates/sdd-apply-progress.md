@@ -1,5 +1,9 @@
 # Apply Progress — {{FEATURE_NAME}}
 
+> **Legacy compatibility template:** OpenSpec projects use the generated
+> `openspec/changes/<name>/tasks.md` and the automatic CLI workflow instead;
+> generated `/opsx:*` commands are an explicit fallback.
+
 ## Meta
 
 - **Feature:** {{FEATURE_NAME}}

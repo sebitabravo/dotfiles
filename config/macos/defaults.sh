@@ -1,638 +1,1314 @@
 #!/usr/bin/env bash
-# macOS Sequoia 15.x / Tahoe 26.x — defaults write optimizations
-# 226 defaults write, 3 defaults delete, 50 secciones
+# macOS — defaults write optimizations
+# Verificado en Sequoia 15.7.9. Tahoe 26.x NO verificado: ahi Launchpad ya no
+# existe (lo absorbio Spotlight), asi que las keys springboard-* son no-op.
+# El inventario ejecutable se puede revisar sin escrituras con --dry-run.
+#
 # Apply: chmod +x defaults.sh && ./defaults.sh
+# Flags:
+#   --dry-run      imprime cada comando sin ejecutarlo
+#   --no-sudo      salta el tier con sudo (DevToolsSecurity, powernap, etc.)
+#   --bonjour-off  agrega el opt-in de NoMulticastAdvertisements (rompe
+#                  descubrimiento de impresoras/DLNA/Home Assistant en LAN)
+#   --help         esta ayuda
+#
+# Reconciliado contra el estado real de la maquina: los valores de aca son los
+# que la Mac tiene hoy, no los que el script proponia originalmente. Donde el
+# valor vivo baja la privacidad respecto del original hay un comentario
+# "Para revertir:" con el valor endurecido.
 set -euo pipefail
+
+DRY_RUN=0
+NO_SUDO=0
+BONJOUR_OFF=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --no-sudo) NO_SUDO=1 ;;
+    --bonjour-off) BONJOUR_OFF=1 ;;
+    --help)
+      sed -n '2,15p' "$0"
+      exit 0
+      ;;
+    *)
+      echo "Flag desconocida: $arg (ver --help)" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ── Preflight ──────────────────────────────────────────────────────
+MACOS_VERSION="$(sw_vers -productVersion)"
+MACOS_MAJOR="${MACOS_VERSION%%.*}"
+ARCH="$(uname -m)"
+echo "=== macOS $MACOS_VERSION ($ARCH) ==="
+if [ "$MACOS_MAJOR" -ge 26 ]; then
+  echo "[!!] Tahoe 26.x no esta verificado: Launchpad lo absorbio Spotlight," \
+    "las keys springboard-* son no-op ahi. Segui con cuidado."
+fi
+if [ "$ARCH" != "arm64" ]; then
+  echo "[!!] Script verificado solo en Apple Silicon (arm64)."
+fi
+
+# ── Helpers de reporte ─────────────────────────────────────────────
+# apply_default: forwarda todo a `defaults write` y reporta si el write
+# realmente tuvo exito. Antes cada bloque hacia echo "[OK]" incondicional,
+# incluso cuando el write fallaba (ej: dominio protegido por TCC sin Full
+# Disk Access). set -e no detiene el script porque el resultado del `if`
+# siempre es 0.
+DEFAULTS_FAILURES=0
+
+record_failure() {
+  DEFAULTS_FAILURES=$((DEFAULTS_FAILURES + 1))
+  echo "[FAIL] $1"
+}
+
+apply_default() {
+  local label="$1"
+  shift
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] defaults write $*"
+    return 0
+  fi
+  if defaults write "$@" 2>/dev/null; then
+    echo "[SET] $label"
+  else
+    record_failure "$label"
+  fi
+}
+
+# Variante para `defaults -currentHost write ...` (el host va antes del verbo).
+apply_default_host() {
+  local label="$1"
+  shift
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] defaults -currentHost write $*"
+    return 0
+  fi
+  if defaults -currentHost write "$@" 2>/dev/null; then
+    echo "[SET] $label"
+  else
+    record_failure "$label"
+  fi
+}
+
+delete_default() {
+  local label="$1"
+  shift
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] defaults delete $*"
+    return 0
+  fi
+  if defaults delete "$@" 2>/dev/null; then
+    echo "[SET] $label"
+  else
+    echo "[SKIP] $label (key ausente)"
+  fi
+}
 
 echo "=== Aplicando defaults de macOS ==="
 
 # ── Animaciones de ventanas ────────────────────────────────────────
-defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
-echo "[OK] Window resize instant"
+apply_default "Window resize instant" NSGlobalDomain NSWindowResizeTime -float 0.001
 
 # Window animations: stock macOS (animations are part of the experience)
 # NSAutomaticWindowAnimationsEnabled kept at default (true)
 
-defaults write NSGlobalDomain NSDocumentRevisionsWindowTransformAnimation -bool false
-echo "[OK] Document revisions animation disabled"
+apply_default "Document revisions animation disabled" NSGlobalDomain NSDocumentRevisionsWindowTransformAnimation -bool false
 
-defaults write NSGlobalDomain NSToolbarFullScreenAnimationDuration -float 0
-echo "[OK] Full-screen toolbar animation instant"
+apply_default "Full-screen toolbar animation instant" NSGlobalDomain NSToolbarFullScreenAnimationDuration -float 0
 
 # Column view animation: stock macOS (smooth navigation feel)
 
 # Scroll: stock macOS (smooth scrolling + elastic feel are iconic)
 
 # ── Quick Look ─────────────────────────────────────────────────────
-defaults write -g QLPanelAnimationDuration -float 0
-echo "[OK] Quick Look animation = 0"
+apply_default "Quick Look animation = 0" -g QLPanelAnimationDuration -float 0
 
 # Cursor magnification: stock macOS (no perf/security/stability impact)
 
 # ── Mission Control ────────────────────────────────────────────────
-defaults write com.apple.dock expose-animation-duration -float 0.1
-echo "[OK] Mission Control speed"
+apply_default "Mission Control speed" com.apple.dock expose-animation-duration -float 0.1
 
-# Mission Control: stock macOS space ordering and auto-switch
+# Escritorios en orden fijo: sin esto Mission Control los reordena por uso
+# reciente y los atajos ctrl+numero dejan de apuntar siempre al mismo.
+apply_default "Escritorios en orden fijo" com.apple.dock mru-spaces -bool false
+
+apply_default "Sin cambio automatico de escritorio al activar una app" com.apple.dock workspaces-auto-swoosh -bool false
+
+# Agrupa las ventanas por aplicacion en Mission Control (Exposé). No es
+# animacion, es organizacion: menos scroll visual para encontrar una ventana
+# especifica cuando tenes varias apps con multiples ventanas abiertas.
+apply_default "Mission Control agrupa ventanas por app" com.apple.dock expose-group-by-app -bool true
 
 # ── Launchpad (removed in Tahoe 26.x — no-op there) ────────────────
-defaults write com.apple.dock springboard-show-duration -float 0.1
-echo "[OK] Launchpad show speed"
+apply_default "Launchpad show speed" com.apple.dock springboard-show-duration -float 0.1
 
-defaults write com.apple.dock springboard-hide-duration -float 0.1
-echo "[OK] Launchpad hide speed"
+apply_default "Launchpad hide speed" com.apple.dock springboard-hide-duration -float 0.1
 
-defaults write com.apple.dock springboard-page-duration -float 0
-echo "[OK] Launchpad page scroll instant"
+apply_default "Launchpad page scroll instant" com.apple.dock springboard-page-duration -float 0
 
 # ── Dock ───────────────────────────────────────────────────────────
-defaults write com.apple.dock tilesize -int 48
-echo "[OK] Dock tile size = 48px"
+apply_default "Dock tile size = 48px" com.apple.dock tilesize -int 36
 
-defaults write com.apple.dock mineffect -string "scale"
-echo "[OK] Dock minimize effect = scale"
+apply_default "Dock minimize effect = scale" com.apple.dock mineffect -string "scale"
 
-defaults write com.apple.dock minimize-to-application -bool true
-echo "[OK] Minimize into app icon"
+apply_default "Minimize to separate Dock slot (not into app icon)" com.apple.dock minimize-to-application -bool false
 
-defaults write com.apple.dock show-recents -bool false
-echo "[OK] No recent apps in Dock"
+apply_default "No recent apps in Dock" com.apple.dock show-recents -bool false
 
-# App launch animation: stock macOS (bounce is iconic feedback)
-defaults write com.apple.dock scroll-to-open -bool true
-echo "[OK] Dock scroll to Exposé"
+apply_default "Dock scroll to Exposé" com.apple.dock scroll-to-open -bool true
 
-defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
-echo "[OK] Spring-load all Dock items"
+# ── Dock: auto-hide instantaneo ────────────────────────────────────
+# El README ya prometia "auto-hide instantaneo (sin delay)" pero el script
+# nunca lo escribia. Los tres van juntos: sin delay y sin animacion de salida.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Dock auto-hide instantaneo"
+elif (
+  defaults write com.apple.dock autohide -bool true &&
+    defaults write com.apple.dock autohide-delay -float 0 &&
+    defaults write com.apple.dock autohide-time-modifier -float 0
+) 2>/dev/null; then
+  echo "[SET] Dock auto-hide instantaneo"
+else
+  record_failure "Dock auto-hide instantaneo"
+fi
 
-defaults write com.apple.dock showhidden -bool true
-echo "[OK] Dock show hidden app icons"
+apply_default "Sin animacion de rebote al abrir apps" com.apple.dock launchanim -bool false
 
-# Dock: stock macOS (visible, bouncing icons — iconic experience)
+apply_default "Iconos del Dock no rebotan por notificacion" com.apple.dock no-bouncing -bool true
 
-defaults write com.apple.dock mouse-over-hilite-stack -bool true
-echo "[OK] Dock highlight stacks on hover"
+apply_default "Spring-load all Dock items" com.apple.dock enable-spring-load-actions-on-all-items -bool true
+
+apply_default "Dock show hidden app icons" com.apple.dock showhidden -bool true
+
+apply_default "Dock highlight stacks on hover" com.apple.dock mouse-over-hilite-stack -bool true
+
+# Esquina inferior derecha sin accion (1 = ninguna), sin modificador.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Hot corner inferior derecha desactivada"
+elif (
+  defaults write com.apple.dock wvous-br-corner -int 1 &&
+    defaults write com.apple.dock wvous-br-modifier -int 0
+) 2>/dev/null; then
+  echo "[SET] Hot corner inferior derecha desactivada"
+else
+  record_failure "Hot corner inferior derecha desactivada"
+fi
+
+# Las cuatro esquinas quedan desactivadas con valores explicitos y versionables.
+apply_default "Hot corner superior izquierda desactivada" com.apple.dock wvous-tl-corner -int 1
+apply_default "Hot corner superior derecha desactivada" com.apple.dock wvous-tr-corner -int 1
+apply_default "Hot corner inferior izquierda desactivada" com.apple.dock wvous-bl-corner -int 1
 
 # ── Trackpad ───────────────────────────────────────────────────────
-defaults write NSGlobalDomain com.apple.trackpad.scaling -float 1.5
-echo "[OK] Trackpad tracking speed"
+apply_default "Trackpad tracking speed" NSGlobalDomain com.apple.trackpad.scaling -float 1.5
 
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
-defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
-echo "[OK] Tap to click"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Tap to click"
+elif (
+  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+) 2>/dev/null; then
+  echo "[SET] Tap to click"
+else
+  record_failure "Tap to click"
+fi
 
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
-defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
-echo "[OK] Two-finger right click"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Two-finger right click"
+elif (
+  defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
+) 2>/dev/null; then
+  echo "[SET] Two-finger right click"
+else
+  record_failure "Two-finger right click"
+fi
+
+# Arrastre con tres dedos. Vive en Accesibilidad, no en las prefs de trackpad,
+# y obliga a liberar los gestos de tres dedos: si el swipe horizontal/vertical
+# de tres dedos sigue asignado, el arrastre se corta a la mitad.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Arrastre con tres dedos (gestos de tres dedos liberados)"
+elif (
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 0 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 0 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int 0 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerTapGesture -int 0
+) 2>/dev/null; then
+  echo "[SET] Arrastre con tres dedos (gestos de tres dedos liberados)"
+else
+  record_failure "Arrastre con tres dedos (gestos de tres dedos liberados)"
+fi
+
+# Los swipes de escritorio/Mission Control pasan a cuatro dedos.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Swipes de espacios y Mission Control con cuatro dedos"
+elif (
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 2 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2 &&
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 2 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2
+) 2>/dev/null; then
+  echo "[SET] Swipes de espacios y Mission Control con cuatro dedos"
+else
+  record_failure "Swipes de espacios y Mission Control con cuatro dedos"
+fi
+
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Centro de notificaciones desde el borde derecho"
+elif (
+  defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3 &&
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
+) 2>/dev/null; then
+  echo "[SET] Centro de notificaciones desde el borde derecho"
+else
+  record_failure "Centro de notificaciones desde el borde derecho"
+fi
+
+# Paridad con Hyprland: scroll natural desactivado. Se deja separado de los
+# ajustes especificos del trackpad para conservar ambos dispositivos.
+apply_default "Scroll natural desactivado" NSGlobalDomain com.apple.swipescrolldirection -bool false
 
 # ── Keyboard ───────────────────────────────────────────────────────
-defaults write NSGlobalDomain InitialKeyRepeat -int 15
-defaults write NSGlobalDomain KeyRepeat -int 2
-echo "[OK] Key repeat: delay 225ms, rate 30ms"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Key repeat: delay 225ms, rate 30ms"
+elif (
+  defaults write NSGlobalDomain InitialKeyRepeat -int 15 &&
+    defaults write NSGlobalDomain KeyRepeat -int 2
+) 2>/dev/null; then
+  echo "[SET] Key repeat: delay 225ms, rate 30ms"
+else
+  record_failure "Key repeat: delay 225ms, rate 30ms"
+fi
 
 # ── Bluetooth ──────────────────────────────────────────────────────
-# Default min ~40; boost to 48 for better audio quality
-defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
-defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Max (editable)" -int 80
-defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool Min (editable)" -int 80
-defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool (editable)" -int 80
-defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool" -int 80
-defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Max" -int 80
-defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Min" -int 48
-echo "[OK] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
+# Tuning heredado de SBC/A2DP (sube el bitpool minimo negociado). Con AAC en
+# Apple Silicon el codec no pasa por este parametro, asi que no hay evidencia
+# de que cambie la calidad percibida hoy. Se deja: es inocuo, no rompe nada.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
+elif (
+  defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Max (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool Min (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Apple Initial Bitpool (editable)" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Max" -int 80 &&
+    defaults write com.apple.BluetoothAudioAgent "Negotiated Bitpool Min" -int 48
+) 2>/dev/null; then
+  echo "[SET] Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
+else
+  record_failure "Bluetooth audio bitpool optimized (40-80, negotiated 48-80)"
+fi
 
 # ── WindowManager (Sequoia 15.x) ───────────────────────────────────
-defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
-echo "[OK] WindowManager tiling no margins"
+apply_default "WindowManager tiling no margins" com.apple.WindowManager EnableTiledWindowMargins -bool false
+
+apply_default "Stage Manager desactivado" com.apple.WindowManager GloballyEnabled -bool false
+
+# El clic en el fondo NO manda las ventanas atras para mostrar el escritorio:
+# con Stage Manager apagado ese gesto solo estorba.
+apply_default "Clic en el fondo no revela el escritorio" com.apple.WindowManager EnableStandardClickToShowDesktop -bool false
+
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Iconos del escritorio ocultos mientras trabajas"
+elif (
+  defaults write com.apple.WindowManager HideDesktop -bool true &&
+    defaults write com.apple.WindowManager StandardHideDesktopIcons -bool true
+) 2>/dev/null; then
+  echo "[SET] Iconos del escritorio ocultos mientras trabajas"
+else
+  record_failure "Iconos del escritorio ocultos mientras trabajas"
+fi
+
+apply_default "Ventanas agrupadas por aplicacion" com.apple.WindowManager AppWindowGroupingBehavior -int 1
 
 # ── Finder ─────────────────────────────────────────────────────────
-defaults write com.apple.finder DisableAllAnimations -bool true
-echo "[OK] Finder animations disabled"
+apply_default "Finder animations disabled" com.apple.finder DisableAllAnimations -bool true
 
-defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
-echo "[OK] Finder default list view"
+apply_default "Finder default list view" com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
-defaults write com.apple.finder AppleShowAllFiles -bool true
-echo "[OK] Finder show hidden files"
+apply_default "Finder show hidden files" com.apple.finder AppleShowAllFiles -bool true
 
-defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-echo "[OK] No extension change warning"
+apply_default "No extension change warning" com.apple.finder FXEnableExtensionChangeWarning -bool false
 
-defaults write com.apple.finder FinderSpawnTab -bool true
-echo "[OK] Finder open in tabs"
+apply_default "Finder open in tabs" com.apple.finder FinderSpawnTab -bool true
 
-defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-echo "[OK] Finder search current folder"
+apply_default "Finder search current folder" com.apple.finder FXDefaultSearchScope -string "SCcf"
 
-defaults write com.apple.finder ShowStatusBar -bool true
-echo "[OK] Finder status bar"
+apply_default "Finder status bar" com.apple.finder ShowStatusBar -bool true
 
-defaults write com.apple.finder ShowPathbar -bool true
-echo "[OK] Finder path bar"
+apply_default "Finder path bar" com.apple.finder ShowPathbar -bool true
 
-defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
-echo "[OK] Finder full POSIX path in title"
+# Titulo de la ventana: stock macOS (solo el nombre de la carpeta).
+# _FXShowPosixPathInTitle mostraria la ruta completa "$HOME/Developer"
+# en vez de "Developer". La barra de ruta de abajo (ShowPathbar) ya da esa
+# informacion sin ocupar el titulo.
 
-defaults write com.apple.finder SidebarDevicesSectionDisclosedState -bool true
-echo "[OK] Sidebar devices section"
+apply_default "Sidebar devices section" com.apple.finder SidebarDevicesSectionDisclosedState -bool true
 
-defaults write com.apple.finder SidebarPlacesSectionDisclosedState -bool true
-echo "[OK] Sidebar places section"
+apply_default "Sidebar places section" com.apple.finder SidebarPlacesSectionDisclosedState -bool true
 
-defaults write com.apple.finder SidebarShowingiCloudDesktop -bool false
-echo "[OK] Hide iCloud Desktop from sidebar"
+apply_default "iCloud Desktop visible en la sidebar" com.apple.finder SidebarShowingiCloudDesktop -bool true
+
+apply_default "Seccion iCloud Drive colapsada" com.apple.finder SidebariCloudDriveSectionDisclosedState -bool false
 
 # PfHm = Home folder (not Recents)
-defaults write com.apple.finder NewWindowTarget -string "PfHm"
-defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
-echo "[OK] Finder new window = Home"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Finder new window = Home"
+elif (
+  defaults write com.apple.finder NewWindowTarget -string "PfHm" &&
+    defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
+) 2>/dev/null; then
+  echo "[SET] Finder new window = Home"
+else
+  record_failure "Finder new window = Home"
+fi
 
-defaults write com.apple.finder FK_StandardViewSettings -dict-add ListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
-defaults write com.apple.finder FK_StandardViewSettings -dict-add ExtendedListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
-echo "[OK] Finder list view columns: name, date, size"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Finder list view columns: name, date, size"
+elif (
+  defaults write com.apple.finder FK_StandardViewSettings -dict-add ListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }' &&
+    defaults write com.apple.finder FK_StandardViewSettings -dict-add ExtendedListViewSettings '{ "columns" = ( { "ascending" = 1; "identifier" = "name"; "visible" = 1; "width" = 300; }, { "ascending" = 0; "identifier" = "dateModified"; "visible" = 1; "width" = 181; }, { "ascending" = 0; "identifier" = "size"; "visible" = 1; "width" = 97; } ); "iconSize" = 16; "showIconPreview" = 0; "sortColumn" = "name"; "textSize" = 12; "useRelativeDates" = 1; }'
+) 2>/dev/null; then
+  echo "[SET] Finder list view columns: name, date, size"
+else
+  record_failure "Finder list view columns: name, date, size"
+fi
 
 # Keep folders on top when sorting by name
-defaults write com.apple.finder _FXSortFoldersFirst -bool true
-echo "[OK] Finder folders on top"
+apply_default "Finder folders on top" com.apple.finder _FXSortFoldersFirst -bool true
 
 # Spring-loading: folders spring open instantly when dragging files over them
-defaults write NSGlobalDomain com.apple.springing.enabled -bool true
-defaults write NSGlobalDomain com.apple.springing.delay -float 0
-echo "[OK] Finder spring-loading instant"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Finder spring-loading instant"
+elif (
+  defaults write NSGlobalDomain com.apple.springing.enabled -bool true &&
+    defaults write NSGlobalDomain com.apple.springing.delay -float 0
+) 2>/dev/null; then
+  echo "[SET] Finder spring-loading instant"
+else
+  record_failure "Finder spring-loading instant"
+fi
 
-defaults delete com.apple.finder FXInfoPanesExpanded 2>/dev/null || true
-echo "[OK] Finder info panes reset"
+delete_default "Finder info panes reset" com.apple.finder FXInfoPanesExpanded
 
-defaults delete com.apple.finder FXDesktopVolumePositions 2>/dev/null || true
-echo "[OK] Desktop icon positions reset"
+delete_default "Desktop icon positions reset" com.apple.finder FXDesktopVolumePositions
 
-defaults write com.apple.finder QLEnableTextSelection -bool true
-echo "[OK] Quick Look text selection"
+apply_default "Quick Look text selection" com.apple.finder QLEnableTextSelection -bool true
 
-# Desktop icons stay visible (stock macOS experience)
-# Trash: stock behavior (user controls when to empty)
+apply_default "Panel de vista previa visible" com.apple.finder ShowPreviewPane -bool true
+
+apply_default "Agrupar por tipo" com.apple.finder FXPreferredGroupBy -string "Kind"
+
+# ── Escritorio: sin iconos de volumenes ────────────────────────────
+# Los discos siguen montados y accesibles desde la sidebar; solo se saca el
+# icono del escritorio.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Escritorio sin iconos de discos ni medios extraibles"
+elif (
+  defaults write com.apple.finder ShowHardDrivesOnDesktop -bool false &&
+    defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false &&
+    defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
+) 2>/dev/null; then
+  echo "[SET] Escritorio sin iconos de discos ni medios extraibles"
+else
+  record_failure "Escritorio sin iconos de discos ni medios extraibles"
+fi
+
+# ── Papelera ───────────────────────────────────────────────────────
+apply_default "Sin confirmacion al vaciar la papelera" com.apple.finder WarnOnEmptyTrash -bool false
+
+apply_default "Papelera se vacia sola pasados 30 dias" com.apple.finder FXRemoveOldTrashItems -bool true
 
 # ── Network Browser ────────────────────────────────────────────────
-defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
-echo "[OK] Network browser show all interfaces"
+apply_default "Network browser show all interfaces" com.apple.NetworkBrowser BrowseAllInterfaces -bool true
 
 # ── .DS_Store ──────────────────────────────────────────────────────
 # Requires logout to take effect
-defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-echo "[OK] No .DS_Store on network volumes"
+apply_default "No .DS_Store on network volumes" com.apple.desktopservices DSDontWriteNetworkStores -bool true
 
-defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
-echo "[OK] No .DS_Store on USB drives"
+apply_default "No .DS_Store on USB drives" com.apple.desktopservices DSDontWriteUSBStores -bool true
 
 # ── Archive Utility ────────────────────────────────────────────────
-defaults write com.apple.archiveutility "com.apple.archiveutility.disable-resourceforks" -bool true
-echo "[OK] Archive Utility no __MACOSX folders"
+apply_default "Archive Utility no __MACOSX folders" com.apple.archiveutility "com.apple.archiveutility.disable-resourceforks" -bool true
 
-defaults write com.apple.archiveutility "dearchive-into-subfolder" -bool false
-echo "[OK] Archive Utility extract in current folder"
+apply_default "Archive Utility extract in current folder" com.apple.archiveutility "dearchive-into-subfolder" -bool false
 
-defaults write com.apple.archiveutility "move-archive-to-trash" -bool true
-echo "[OK] Archive Utility auto-trash after extract"
+apply_default "Archive Utility auto-trash after extract" com.apple.archiveutility "move-archive-to-trash" -bool true
+
+# ── Apariencia ─────────────────────────────────────────────────────
+apply_default "Modo oscuro" NSGlobalDomain AppleInterfaceStyle -string "Dark"
+
+# Evita que macOS vuelva automaticamente al modo claro al cambiar la hora.
+delete_default "Modo oscuro no cambia automaticamente" NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically
+
+apply_default "Color de seleccion grafito" NSGlobalDomain AppleHighlightColor -string "0.847059 0.847059 0.862745 Graphite"
+
+apply_default "Tinte del fondo en las ventanas activo" NSGlobalDomain AppleReduceDesktopTinting -bool false
+
+apply_default "Iconos chicos en sidebars" NSGlobalDomain NSTableViewDefaultSizeMode -int 1
+
+# ── Region: Chile (metrico, ISO, semana en lunes) ──────────────────
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Unidades metricas y Celsius"
+elif (
+  defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters" &&
+    defaults write NSGlobalDomain AppleMetricUnits -bool true &&
+    defaults write NSGlobalDomain AppleTemperatureUnit -string "Celsius"
+) 2>/dev/null; then
+  echo "[SET] Unidades metricas y Celsius"
+else
+  record_failure "Unidades metricas y Celsius"
+fi
+
+apply_default "La semana empieza el lunes" NSGlobalDomain AppleFirstWeekday -dict gregorian -int 2
+
+apply_default "Fecha corta en ISO (y-MM-dd)" NSGlobalDomain AppleICUDateFormatStrings -dict 1 -string "y-MM-dd"
+
+# ── Ventanas ───────────────────────────────────────────────────────
+# Doble clic en la barra de titulo llena la pantalla en vez de minimizar.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Doble clic en la barra de titulo = Fill"
+elif (
+  defaults write NSGlobalDomain AppleActionOnDoubleClick -string "Fill" &&
+    defaults write NSGlobalDomain AppleMiniaturizeOnDoubleClick -bool false
+) 2>/dev/null; then
+  echo "[SET] Doble clic en la barra de titulo = Fill"
+else
+  record_failure "Doble clic en la barra de titulo = Fill"
+fi
+
+# Mover una ventana desde cualquier punto con ctrl+cmd, sin apuntarle a la barra.
+apply_default "Arrastrar ventanas con ctrl+cmd desde cualquier lugar" NSGlobalDomain NSWindowShouldDragOnGesture -bool true
+
+# Clic en la barra de scroll salta a esa posicion en vez de avanzar una pagina.
+apply_default "Clic en el scroll salta a la posicion" NSGlobalDomain AppleScrollerPagingBehavior -bool true
+
+# Sin swipe de dos dedos para atras/adelante: se dispara solo al hacer scroll
+# horizontal dentro de una pagina.
+apply_default "Sin navegacion atras/adelante por swipe" NSGlobalDomain AppleEnableSwipeNavigateWithScrolls -bool false
+
+# App Nap: se deja en el default de Apple (activo). Desactivarlo mantenia las
+# apps de fondo con scheduling completo permanente — mas consumo y mas riesgo
+# de throttle termico en un chasis sin ventilador (Air). Esta key quedo escrita
+# en la maquina por una version anterior del script; se revierte.
+delete_default "App Nap vuelve al default de Apple (activo)" NSGlobalDomain NSAppSleepDisabled
 
 # ── Global ─────────────────────────────────────────────────────────
-defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-echo "[OK] Show all file extensions"
+apply_default "Show all file extensions" NSGlobalDomain AppleShowAllExtensions -bool true
 
-defaults write NSGlobalDomain AppleShowScrollBars -string "WhenScrolling"
-echo "[OK] Scroll bars visible on scroll"
+apply_default "Scroll bars visible on scroll" NSGlobalDomain AppleShowScrollBars -string "WhenScrolling"
 
-defaults write NSGlobalDomain NSTextShowsControlCharacters -bool true
-echo "[OK] Show invisible characters"
+apply_default "Show invisible characters" NSGlobalDomain NSTextShowsControlCharacters -bool true
 
-defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
-echo "[OK] Auto-capitalization off"
+apply_default "Auto-capitalization off" NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
-defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
-echo "[OK] Smart dashes off"
+apply_default "Smart dashes off" NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
 
-defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
-echo "[OK] Auto-period off"
+apply_default "Auto-period off" NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 
-defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-echo "[OK] Smart quotes off"
+apply_default "Smart quotes off" NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 
-defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
-echo "[OK] Spelling correction off"
+apply_default "Spelling correction off" NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
-defaults write NSGlobalDomain WebAutomaticSpellingCorrectionEnabled -bool false
-echo "[OK] Web spelling correction off"
+apply_default "Web spelling correction off" NSGlobalDomain WebAutomaticSpellingCorrectionEnabled -bool false
 
-# Keyboard navigation: stock macOS (Tab = text fields only, not all controls)
+# Tab navega TODOS los controles, no solo campos de texto. Es lo que hace
+# utilizables los dialogos sin mouse.
+apply_default "Navegacion completa por teclado" NSGlobalDomain AppleKeyboardUIMode -int 3
 
-defaults write NSGlobalDomain NSAutomaticTextCompletionEnabled -bool false
-echo "[OK] Auto text completion off"
+apply_default "Auto text completion off" NSGlobalDomain NSAutomaticTextCompletionEnabled -bool false
 
 # Apple Intelligence inline predictions (Sequoia+)
-defaults write NSGlobalDomain NSAutomaticInlinePredictionEnabled -bool false
-echo "[OK] Inline predictions off"
+apply_default "Inline predictions off" NSGlobalDomain NSAutomaticInlinePredictionEnabled -bool false
 
-defaults write NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0
-echo "[OK] Toolbar title rollover instant"
+apply_default "Toolbar title rollover instant" NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0
 
 # ── Diálogos Save/Print ────────────────────────────────────────────
-defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
-echo "[OK] Save dialog always expanded"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Save dialog always expanded"
+elif (
+  defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true &&
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+) 2>/dev/null; then
+  echo "[SET] Save dialog always expanded"
+else
+  record_failure "Save dialog always expanded"
+fi
 
-defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
-echo "[OK] Save to disk by default (not iCloud)"
+apply_default "Save to disk by default (not iCloud)" NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 
-defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-echo "[OK] Print dialog always expanded"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Print dialog always expanded"
+elif (
+  defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true &&
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
+) 2>/dev/null; then
+  echo "[SET] Print dialog always expanded"
+else
+  record_failure "Print dialog always expanded"
+fi
 
-defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
-echo "[OK] Print dialog auto-close after job"
+apply_default "Print dialog auto-close after job" com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 
 # ── Screensaver ────────────────────────────────────────────────────
-defaults write com.apple.screensaver askForPassword -int 1
-defaults write com.apple.screensaver askForPasswordDelay -int 0
-defaults write com.apple.screensaver idleTime -int 300
-echo "[OK] Screensaver password immediate (5 min idle)"
+# idleTime vive en el dominio por-host: el dominio plano se escribe pero macOS
+# no lo lee. Verificado en 15.7.9 — el valor efectivo esta en
+# ~/Library/Preferences/ByHost/com.apple.screensaver.<UUID>.plist
+apply_default_host "Salvapantallas a los 5 min" com.apple.screensaver idleTime -int 300
+
+# NO-OP desde macOS 10.13.4: estas dos keys se escriben pero el sistema dejo de
+# leerlas. El bloqueo inmediato se configura en Ajustes > Pantalla bloqueada, y
+# se verifica con `sysadminctl -screenLock status` (debe decir "immediate").
+# Se dejan porque documentan la intencion, no porque hagan algo.
+apply_default "Screen saver password requested" com.apple.screensaver askForPassword -int 1
+apply_default "Screen saver password delay = 0" com.apple.screensaver askForPasswordDelay -int 0
+echo "[--] askForPassword: no-op, configurar en Ajustes (ver comentario)"
 
 # ── Screenshots ────────────────────────────────────────────────────
-defaults write com.apple.screencapture disable-shadow -bool true
-echo "[OK] Screenshot shadows off"
+apply_default "Screenshot shadows off" com.apple.screencapture disable-shadow -bool true
+
+apply_default "Capturas en PNG" com.apple.screencapture type -string "png"
+
+# Nombre corto: "Screenshot.png" en vez de "Screenshot 2026-08-15 at 04.01.36".
+apply_default "Capturas sin fecha en el nombre" com.apple.screencapture include-date -bool false
+
+# La ubicacion queda en el Escritorio (default de macOS) a proposito.
+# Si algun dia la queres mover, `location` por defaults es poco fiable desde
+# Monterey: hacelo por Screenshot.app > Opciones > Guardar en.
 
 # ── Window Restoration ─────────────────────────────────────────────
 # Window restoration: stock macOS (windows reopen on app relaunch)
 
 # ── Preview ────────────────────────────────────────────────────────
-defaults write com.apple.Preview NSQuitAlwaysKeepsWindow -bool false
-echo "[OK] Preview no window restoration"
+apply_default "Preview no window restoration" com.apple.Preview NSQuitAlwaysKeepsWindow -bool false
 
 # ── QuickTime ──────────────────────────────────────────────────────
-defaults write com.apple.QuickTimePlayerX NSQuitAlwaysKeepsWindow -bool false
-defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool true
-echo "[OK] QuickTime no window restoration + auto-play on open"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] QuickTime no window restoration + auto-play on open"
+elif (
+  defaults write com.apple.QuickTimePlayerX NSQuitAlwaysKeepsWindow -bool false &&
+    defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool true
+) 2>/dev/null; then
+  echo "[SET] QuickTime no window restoration + auto-play on open"
+else
+  record_failure "QuickTime no window restoration + auto-play on open"
+fi
 
 # ── Mail ───────────────────────────────────────────────────────────
-defaults write com.apple.mail DisableReplyAnimations -bool true
-echo "[OK] Mail reply animations off"
+apply_default "Mail reply animations off" com.apple.mail DisableReplyAnimations -bool true
 
-defaults write com.apple.mail DisableSendAnimations -bool true
-echo "[OK] Mail send animations off"
+apply_default "Mail send animations off" com.apple.mail DisableSendAnimations -bool true
 
 # Copy email address without person's name (user@domain.com, not "John Doe <user@domain.com>")
-defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
-echo "[OK] Mail copy email without name"
+apply_default "Mail copy email without name" com.apple.mail AddressesIncludeNameOnPasteboard -bool false
 
-defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
-echo "[OK] Mail inline attachments off"
+apply_default "Mail inline attachments off" com.apple.mail DisableInlineAttachmentViewing -bool true
 
-defaults write com.apple.mail PreferPlainText -bool true
-echo "[OK] Mail plain text compose"
+apply_default "Mail plain text compose" com.apple.mail PreferPlainText -bool true
 
 # Mail spell check: stock macOS (spell checking is useful, no security impact)
 
 # ── Messages ───────────────────────────────────────────────────────
-defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
-echo "[OK] Messages: auto-emoji off"
+apply_default "Messages: auto-emoji off" com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
 
-defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
-echo "[OK] Messages: smart quotes off"
+apply_default "Messages: smart quotes off" com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
 
 # ── Disk Utility ───────────────────────────────────────────────────
 # Skipping DMG verification disable for security
 echo "[SKIP] DMG verification kept at system default (security)"
 
-defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true
-defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
-echo "[OK] Auto-open DMG root after mount"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Auto-open DMG root after mount"
+elif (
+  defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true &&
+    defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
+) 2>/dev/null; then
+  echo "[SET] Auto-open DMG root after mount"
+else
+  record_failure "Auto-open DMG root after mount"
+fi
 
-defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true
-defaults write com.apple.DiskUtility advanced-image-options -bool true
-echo "[OK] Disk Utility debug menu + advanced image options"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Disk Utility debug menu + advanced image options"
+elif (
+  defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true &&
+    defaults write com.apple.DiskUtility advanced-image-options -bool true
+) 2>/dev/null; then
+  echo "[SET] Disk Utility debug menu + advanced image options"
+else
+  record_failure "Disk Utility debug menu + advanced image options"
+fi
 
 # ── Time Machine ───────────────────────────────────────────────────
-defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
-echo "[OK] No Time Machine prompts"
+apply_default "No Time Machine prompts" com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 
 # ── Privacidad ─────────────────────────────────────────────────────
-defaults write com.apple.SubmitDiagInfo AutoSubmit -bool false
-echo "[OK] Don't send diagnostics to Apple"
+apply_default "Don't send diagnostics to Apple" com.apple.SubmitDiagInfo AutoSubmit -bool false
 
-defaults write com.apple.CrashReporter DialogType -string "none"
-echo "[OK] Crash reporter dialogs disabled"
+apply_default "Crash reporter dialogs disabled" com.apple.CrashReporter DialogType -string "none"
 
-defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
-defaults write com.apple.Siri StatusMenuVisible -bool false
-defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
-echo "[OK] Siri disabled + menu bar icon removed"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Siri disabled + menu bar icon removed"
+elif (
+  defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false &&
+    defaults write com.apple.Siri StatusMenuVisible -bool false &&
+    defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
+) 2>/dev/null; then
+  echo "[SET] Siri disabled + menu bar icon removed"
+else
+  record_failure "Siri disabled + menu bar icon removed"
+fi
 
 # Prevent "Enable Siri?" prompts after updates
-defaults write com.apple.Siri UserHasDeclinedEnable -bool true
-echo "[OK] Siri declined permanently"
+apply_default "Siri declined permanently" com.apple.Siri UserHasDeclinedEnable -bool true
 
-# Dictation disabled (avoids sending audio to Apple servers)
-defaults write com.apple.assistant.support "Dictation Enabled" -bool false
-echo "[OK] Dictation disabled"
+# Dictado ACTIVO en esta maquina. Implica que el audio puede salir a los
+# servidores de Apple salvo que uses dictado en el dispositivo.
+# Para revertir: -bool false
+apply_default "Dictation enabled" com.apple.assistant.support "Dictation Enabled" -bool true
 
-defaults write com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
-echo "[OK] Search queries data sharing off"
+apply_default "Search queries data sharing off" com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
 
-defaults write com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
-echo "[OK] Siri data sharing opt-out"
+apply_default "Siri data sharing opt-out" com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
 
-defaults write com.apple.suggestions SiriSuggestionsEnabled -bool false
-echo "[OK] Siri suggestions engine off"
+apply_default "Siri suggestions engine off" com.apple.suggestions SiriSuggestionsEnabled -bool false
 
-defaults write com.apple.assistant.support "Assistant Enabled" -bool false
-echo "[OK] Siri Assistant core disabled"
+apply_default "Siri Assistant core disabled" com.apple.assistant.support "Assistant Enabled" -bool false
 
-defaults write com.apple.appleseed.FeedbackAssistant Autogather -bool false
-echo "[OK] Feedback Assistant no auto-gather"
+apply_default "Feedback Assistant no auto-gather" com.apple.appleseed.FeedbackAssistant Autogather -bool false
 
-# IDFA (Identifier for Advertisers) — cross-app tracking
-defaults write com.apple.AdLib allowIdentifierForAdvertising -int 0
-echo "[OK] Advertising identifier disabled"
+# IDFA (Identifier for Advertisers) — cross-app tracking.
+# Vuelve a 0: dejarlo en 1 contradice a las otras dos keys de este mismo
+# dominio, que ya restringen personalizacion y fuerzan el limite de tracking.
+# No es AutoFill ni ninguna feature que uses: es el identificador publicitario
+# cross-app. Para revertir: -int 1
+apply_default "Advertising identifier disabled" com.apple.AdLib allowIdentifierForAdvertising -int 0
 
-defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
-echo "[OK] Apple personalized advertising off"
+apply_default "Apple personalized advertising off" com.apple.AdLib allowApplePersonalizedAdvertising -bool false
 
-defaults write com.apple.AdLib forceLimitAdTracking -bool true
-echo "[OK] Ad tracking force-limited"
+apply_default "Ad tracking force-limited" com.apple.AdLib forceLimitAdTracking -bool true
 
 # ── Telemetría ─────────────────────────────────────────────────────
-defaults write com.apple.SubmitDiagInfo ThirdPartyDataSubmit -bool false
-echo "[OK] Third-party diagnostic data off"
+apply_default "Third-party diagnostic data off" com.apple.SubmitDiagInfo ThirdPartyDataSubmit -bool false
 
-defaults write com.apple.analyticsd AnalyticsEnabled -bool false
-echo "[OK] Analytics disabled"
+apply_default "Analytics disabled" com.apple.analyticsd AnalyticsEnabled -bool false
 
-defaults write com.apple.iCloud EnableAnalytics -bool false
-echo "[OK] iCloud analytics off"
+apply_default "iCloud analytics off" com.apple.iCloud EnableAnalytics -bool false
 
-defaults write com.apple.UsageTracking CoreDonationsEnabled -bool false
-echo "[OK] Core donations tracking off"
+apply_default "Core donations tracking off" com.apple.UsageTracking CoreDonationsEnabled -bool false
 
-defaults write com.apple.UsageTracking UDCAutomationEnabled -bool false
-echo "[OK] UDC automation off"
+apply_default "UDC automation off" com.apple.UsageTracking UDCAutomationEnabled -bool false
 
-defaults write com.apple.appstore SendDiagnosticData -bool false
-echo "[OK] App Store diagnostic data off"
+apply_default "App Store diagnostic data off" com.apple.appstore SendDiagnosticData -bool false
 
 # ── Apps: anonymous usage ──────────────────────────────────────────
-defaults write com.apple.Maps UserSelectedAnonymousUsageOptIn -bool false
-echo "[OK] Maps anonymous usage off"
+apply_default "Maps anonymous usage off" com.apple.Maps UserSelectedAnonymousUsageOptIn -bool false
 
-defaults write com.apple.Health UserSelectedAnonymousUsageOptIn -bool false
-echo "[OK] Health anonymous usage off"
+apply_default "Health anonymous usage off" com.apple.Health UserSelectedAnonymousUsageOptIn -bool false
 
-defaults write com.apple.imessage UserSelectedAnonymousUsageOptIn -bool false
-echo "[OK] iMessage anonymous usage off"
+apply_default "iMessage anonymous usage off" com.apple.imessage UserSelectedAnonymousUsageOptIn -bool false
 
-defaults write com.apple.Photos UserSelectedAnonymousUsageOptIn -bool false
-echo "[OK] Photos anonymous usage off"
+apply_default "Photos anonymous usage off" com.apple.Photos UserSelectedAnonymousUsageOptIn -bool false
 
 # Handoff logging only — Handoff itself stays enabled
-defaults write -g NSUserActivityLoggingEnabled -bool false
-echo "[OK] Handoff activity logging off"
+apply_default "Handoff activity logging off" -g NSUserActivityLoggingEnabled -bool false
 
 # ── Image Capture ──────────────────────────────────────────────────
-defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
-echo "[OK] Image Capture no auto-launch"
+apply_default_host "Image Capture no auto-launch" com.apple.ImageCapture disableHotPlug -bool true
 
 # ── Safari / WebKit ────────────────────────────────────────────────
-defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
-echo "[OK] WebKit developer extras"
+apply_default "WebKit developer extras" NSGlobalDomain WebKitDeveloperExtras -bool true
 
-defaults write com.apple.Safari IncludeDevelopMenu -bool true
-echo "[OK] Safari Develop menu"
+# Safari esta sandboxed: su plist real vive en
+# ~/Library/Containers/com.apple.Safari/... protegido por TCC. Sin Full Disk
+# Access para la terminal, `defaults write com.apple.Safari` no falla — cae
+# en silencio a ~/Library/Preferences/com.apple.Safari.plist, un archivo que
+# Safari sandboxed nunca lee. El resultado: 30 "[SET]" que no hicieron nada.
+# Se detecta escribiendo una key canario y leyendola desde el plist del
+# container; si no aparece ahi, no hay FDA y se salta todo el bloque en vez
+# de mentir. Fuente: lapcatsoftware.com/articles/containers.html
+SAFARI_CONTAINER_PLIST="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
+SAFARI_FDA_OK=1
+if [ "$DRY_RUN" -eq 0 ]; then
+  _safari_canary="__dotfiles_fda_probe_$$"
+  defaults write com.apple.Safari "$_safari_canary" -bool true 2>/dev/null || true
+  if ! defaults read "$SAFARI_CONTAINER_PLIST" "$_safari_canary" >/dev/null 2>&1; then
+    SAFARI_FDA_OK=0
+  fi
+  defaults delete com.apple.Safari "$_safari_canary" 2>/dev/null || true
+  defaults delete "$SAFARI_CONTAINER_PLIST" "$_safari_canary" 2>/dev/null || true
+fi
 
-defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
-echo "[OK] Safari WebKit dev extras"
+if [ "$SAFARI_FDA_OK" -eq 0 ]; then
+  echo "[SKIP] Bloque Safari (30 keys): la terminal no tiene Full Disk Access."
+  echo "       Ajustes > Privacidad y Seguridad > Acceso total al disco >" \
+    "agregar tu terminal y reabrirla. Sin esto los writes van a un plist" \
+    "que Safari no lee."
+else
 
-defaults write com.apple.Safari ShowFullURLInSmartSearchField -bool true
-echo "[OK] Safari full URL in address bar"
+  # Desactivado en esta maquina. Safari 17+ unifico esto en "Funciones para
+  # desarrolladores web"; los menus Debug e Internal Debug de mas abajo si estan.
+  apply_default "Safari Develop menu off" com.apple.Safari IncludeDevelopMenu -bool false
 
-defaults write com.apple.Safari UniversalSearchEnabled -bool false
-echo "[OK] Safari universal search off"
+  apply_default "Safari WebKit dev extras" com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
 
-defaults write com.apple.Safari SuppressSearchSuggestions -bool true
-echo "[OK] Safari search suggestions off"
+  apply_default "Safari full URL in address bar" com.apple.Safari ShowFullURLInSmartSearchField -bool true
 
-defaults write com.apple.Safari SearchSuggestionsEnabled -bool false
-echo "[OK] Safari search suggestions disabled"
+  apply_default "Safari universal search off" com.apple.Safari UniversalSearchEnabled -bool false
 
-defaults write com.apple.Safari PreloadTopHit -bool false
-echo "[OK] Safari preload top hit off"
+  apply_default "Safari search suggestions off" com.apple.Safari SuppressSearchSuggestions -bool true
 
-defaults write com.apple.Safari IncludeDebugMenu -bool true
-echo "[OK] Safari Debug menu"
+  apply_default "Safari search suggestions disabled" com.apple.Safari SearchSuggestionsEnabled -bool false
 
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
-echo "[OK] Safari WebKit2 dev extras"
+  apply_default "Safari preload top hit off" com.apple.Safari PreloadTopHit -bool false
 
-defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
-echo "[OK] Safari spelling correction off"
+  apply_default "Safari Debug menu" com.apple.Safari IncludeDebugMenu -bool true
 
-defaults write com.apple.Safari AutoOpenSafeDownloads -bool false
-echo "[OK] Safari never auto-open downloads"
+  apply_default "Safari WebKit2 dev extras" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
 
-defaults write com.apple.Safari AutoFillFromAddressBook -bool false
-defaults write com.apple.Safari AutoFillPasswords -bool false
-defaults write com.apple.Safari AutoFillCreditCardData -bool false
-defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
-echo "[OK] Safari AutoFill disabled"
+  apply_default "Safari spelling correction off" com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
 
-# Deprecated since Safari 12.1 — harmless no-op, kept for documentation
-defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
-echo "[OK] Safari Do Not Track"
+  apply_default "Safari never auto-open downloads" com.apple.Safari AutoOpenSafeDownloads -bool false
 
-# Enhanced privacy in regular browsing (not just private mode)
-defaults write com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
-echo "[OK] Safari enhanced privacy in regular browsing"
+  # AutoFill ACTIVO en esta maquina, incluidos contrasenas y tarjetas. Comodo,
+  # pero significa que Safari rellena credenciales sin pedir confirmacion.
+  # Para revertir: los cuatro a -bool false
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari AutoFill enabled (revisar)"
+  elif (
+    defaults write com.apple.Safari AutoFillFromAddressBook -bool true &&
+      defaults write com.apple.Safari AutoFillPasswords -bool true &&
+      defaults write com.apple.Safari AutoFillCreditCardData -bool true &&
+      defaults write com.apple.Safari AutoFillMiscellaneousForms -bool true
+  ) 2>/dev/null; then
+    echo "[SET] Safari AutoFill enabled (revisar)"
+  else
+    record_failure "Safari AutoFill enabled (revisar)"
+  fi
 
-defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
-echo "[OK] Safari Tab to links"
+  # Deprecated since Safari 12.1 — harmless no-op, kept for documentation
+  apply_default "Safari Do Not Track" com.apple.Safari SendDoNotTrackHTTPHeader -bool true
 
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
-echo "[OK] Safari backspace navigation"
+  # Enhanced privacy in regular browsing (not just private mode)
+  apply_default "Safari enhanced privacy in regular browsing" com.apple.Safari EnableEnhancedPrivacyInRegularBrowsing -bool true
 
-defaults write com.apple.Safari HomePage -string "about:blank"
-echo "[OK] Safari blank homepage"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari Tab to links"
+  elif (
+    defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true &&
+      defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" -bool true
+  ) 2>/dev/null; then
+    echo "[SET] Safari Tab to links"
+  else
+    record_failure "Safari Tab to links"
+  fi
 
-defaults write com.apple.Safari ShowFavoritesBar -bool false
-defaults write com.apple.Safari ShowSidebarInTopSites -bool false
-echo "[OK] Safari hide favorites bar + sidebar"
+  apply_default "Safari backspace navigation" com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" -bool true
 
-defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
-echo "[OK] Safari find contains (not starts-with)"
+  apply_default "Safari homepage = start page" com.apple.Safari HomePage -string "https://www.apple.com/startpage/"
 
-defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
-echo "[OK] Safari Internal Debug menu"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari hide favorites bar + sidebar"
+  elif (
+    defaults write com.apple.Safari ShowFavoritesBar -bool false &&
+      defaults write com.apple.Safari ShowSidebarInTopSites -bool false
+  ) 2>/dev/null; then
+    echo "[SET] Safari hide favorites bar + sidebar"
+  else
+    record_failure "Safari hide favorites bar + sidebar"
+  fi
 
-# Security hardening
-defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
-echo "[OK] Safari fraudulent website warning"
+  apply_default "Safari find contains (not starts-with)" com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
 
-defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
-defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
-echo "[OK] Safari pop-ups blocked"
+  apply_default "Safari Internal Debug menu" com.apple.Safari IncludeInternalDebugMenu -bool true
 
-defaults write com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
-echo "[OK] Safari auto-update extensions"
+  # Security hardening
+  apply_default "Safari fraudulent website warning" com.apple.Safari WarnAboutFraudulentWebsites -bool true
 
-defaults write com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
-echo "[OK] Safari thumbnail cache off"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] Safari pop-ups blocked"
+  elif (
+    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false &&
+      defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool false
+  ) 2>/dev/null; then
+    echo "[SET] Safari pop-ups blocked"
+  else
+    record_failure "Safari pop-ups blocked"
+  fi
+
+  apply_default "Safari auto-update extensions" com.apple.Safari InstallExtensionUpdatesAutomatically -bool true
+
+  apply_default "Safari thumbnail cache off" com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
+
+fi # SAFARI_FDA_OK
 
 # ── Apple Intelligence ─────────────────────────────────────────────
 # Feature ID 545129924 (Sequoia 15.x)
-defaults write com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool false
-echo "[OK] Apple Intelligence opt-out"
+apply_default "Apple Intelligence opt-out" com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool false
 
 # ── Xcode & Simulator ──────────────────────────────────────────────
-defaults write com.apple.dt.Xcode ShowDVTDebugMenu -bool YES
-echo "[OK] Xcode DVT debug menu"
+apply_default "Xcode DVT debug menu" com.apple.dt.Xcode ShowDVTDebugMenu -bool YES
 
-defaults write com.apple.dt.Xcode XcodeCloudUpsellPromptEnabled -bool false
-echo "[OK] Xcode Cloud upsell suppressed"
+apply_default "Xcode Cloud upsell suppressed" com.apple.dt.Xcode XcodeCloudUpsellPromptEnabled -bool false
 
-defaults write com.apple.dt.Xcode IDEIndexerActivityShowNumericProgress -bool true
-echo "[OK] Xcode indexing numeric progress"
+apply_default "Xcode indexing numeric progress" com.apple.dt.Xcode IDEIndexerActivityShowNumericProgress -bool true
 
-defaults write com.apple.dt.Xcode IDEFileExtensionDisplayMode -int 1
-echo "[OK] Xcode file extensions visible"
+apply_default "Xcode file extensions visible" com.apple.dt.Xcode IDEFileExtensionDisplayMode -int 1
 
-defaults write com.apple.dt.Xcode DVTEnableDockIconVersionNumber -bool YES
-echo "[OK] Xcode build version in Dock icon"
+apply_default "Xcode build version in Dock icon" com.apple.dt.Xcode DVTEnableDockIconVersionNumber -bool YES
 
-defaults write com.apple.dt.Xcode IDEDisableStateRestoration -bool YES
-echo "[OK] Xcode no state restoration on launch"
+apply_default "Xcode no state restoration on launch" com.apple.dt.Xcode IDEDisableStateRestoration -bool YES
 
-defaults write com.apple.dt.Xcode ApplePersistenceIgnoreState -bool YES
-echo "[OK] Xcode no auto-reopen last project"
+apply_default "Xcode no auto-reopen last project" com.apple.dt.Xcode ApplePersistenceIgnoreState -bool YES
 
-defaults write com.apple.iphonesimulator ShowSingleTouches -int 1
-echo "[OK] Simulator show touches"
+apply_default "Simulator show touches" com.apple.iphonesimulator ShowSingleTouches -int 1
 
 # Parallel build: usa todos los cores disponibles (no limitar a 1-2)
-defaults write com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks -int 0
-echo "[OK] Xcode parallel build (max cores)"
+apply_default "Xcode parallel build (max cores)" com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks -int 0
 
 # ── Terminal ───────────────────────────────────────────────────────
-defaults write com.apple.Terminal ShowLineMarks -int 0
-echo "[OK] Terminal hide line marks"
+apply_default "Terminal hide line marks" com.apple.Terminal ShowLineMarks -int 0
 
-defaults write com.apple.Terminal SecureKeyboardEntry -bool true
-echo "[OK] Terminal Secure Keyboard Entry"
+apply_default "Terminal Secure Keyboard Entry" com.apple.Terminal SecureKeyboardEntry -bool true
 
 # UTF-8 only (prevents fallback to legacy encodings like MacRoman)
-defaults write com.apple.Terminal StringEncodings -array 4
-echo "[OK] Terminal UTF-8 only"
+apply_default "Terminal UTF-8 only" com.apple.Terminal StringEncodings -array 4
 
 # ── TextEdit ───────────────────────────────────────────────────────
-defaults write com.apple.TextEdit RichText -bool false
-echo "[OK] TextEdit plain text default"
+apply_default "TextEdit plain text default" com.apple.TextEdit RichText -bool false
 
-defaults write com.apple.TextEdit PlainTextEncoding -int 4
-defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
-echo "[OK] TextEdit UTF-8 encoding"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] TextEdit UTF-8 encoding"
+elif (
+  defaults write com.apple.TextEdit PlainTextEncoding -int 4 &&
+    defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+) 2>/dev/null; then
+  echo "[SET] TextEdit UTF-8 encoding"
+else
+  record_failure "TextEdit UTF-8 encoding"
+fi
 
 # ── Activity Monitor ───────────────────────────────────────────────
 # Delete old key to reset Dock icon to default
-defaults delete com.apple.ActivityMonitor IconType 2>/dev/null || true
-echo "[OK] Activity Monitor default Dock icon"
+delete_default "Activity Monitor default Dock icon" com.apple.ActivityMonitor IconType
 
-defaults write com.apple.ActivityMonitor UpdatePeriod -int 2
-echo "[OK] Activity Monitor refresh = 2s"
+apply_default "Activity Monitor refresh = 2s" com.apple.ActivityMonitor UpdatePeriod -int 2
 
-defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
-defaults write com.apple.ActivityMonitor SortDirection -int 0
-echo "[OK] Activity Monitor sort by CPU usage"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Activity Monitor sort by CPU usage"
+elif (
+  defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage" &&
+    defaults write com.apple.ActivityMonitor SortDirection -int 0
+) 2>/dev/null; then
+  echo "[SET] Activity Monitor sort by CPU usage"
+else
+  record_failure "Activity Monitor sort by CPU usage"
+fi
 
-defaults write com.apple.ActivityMonitor ShowCategory -int 0
-echo "[OK] Activity Monitor show all processes"
+# 100 = todos los procesos. El 0 anterior era otra categoria, no "todos".
+apply_default "Activity Monitor show all processes" com.apple.ActivityMonitor ShowCategory -int 100
 
 # ── Console ────────────────────────────────────────────────────────
-defaults write com.apple.Console DebugMenuEnabled -bool true
-defaults write com.apple.Console PrivateLogsEnabled -bool true
-echo "[OK] Console debug menu + private logs"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Console debug menu + private logs"
+elif (
+  defaults write com.apple.Console DebugMenuEnabled -bool true &&
+    defaults write com.apple.Console PrivateLogsEnabled -bool true
+) 2>/dev/null; then
+  echo "[SET] Console debug menu + private logs"
+else
+  record_failure "Console debug menu + private logs"
+fi
 
 # ── Help Viewer ────────────────────────────────────────────────────
-defaults write com.apple.helpviewer DevMode -bool true
-echo "[OK] Help Viewer doesn't float on top"
+apply_default "Help Viewer doesn't float on top" com.apple.helpviewer DevMode -bool true
 
 # ── Calendar ───────────────────────────────────────────────────────
-defaults write com.apple.iCal IncludeDebugMenu -bool true
-echo "[OK] Calendar debug menu"
+apply_default "Calendar debug menu" com.apple.iCal IncludeDebugMenu -bool true
 
 # ── Notification Center ────────────────────────────────────────────
-defaults write com.apple.notificationcenterui bannerTime -int 3
-echo "[OK] Notification banner time = 3s"
+apply_default "Notification banner time = 3s" com.apple.notificationcenterui bannerTime -int 3
 
 # ── Login Window ───────────────────────────────────────────────────
-defaults write com.apple.loginwindow SHOWFULLNAME -bool true
-echo "[OK] Login window show full name"
+apply_default "Login window show full name" com.apple.loginwindow SHOWFULLNAME -bool true
 
 # ── Menu Bar ───────────────────────────────────────────────────────
-defaults write com.apple.menuextra.battery ShowPercent -bool true
-echo "[OK] Battery percentage in menu bar"
+apply_default "Battery percentage in menu bar" com.apple.menuextra.battery ShowPercent -bool true
 
-defaults write com.apple.menuextra.clock IsAnalog -bool false
-defaults write com.apple.menuextra.clock ShowSeconds -bool false
-defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false
-defaults write com.apple.menuextra.clock ShowDate -int 0
-# DateFormat unificado (reemplaza keys individuales en Sequoia+)
-defaults write com.apple.menuextra.clock DateFormat -string "HH:mm"
-echo "[OK] Clock: digital, minimal (HH:mm)"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Clock: digital, 24h, minimal"
+elif (
+  defaults write com.apple.menuextra.clock IsAnalog -bool false &&
+    defaults write com.apple.menuextra.clock ShowSeconds -bool false &&
+    defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false &&
+    defaults write com.apple.menuextra.clock ShowDate -int 0 &&
+    defaults write com.apple.menuextra.clock Show24Hour -bool true
+) 2>/dev/null; then
+  echo "[SET] Clock: digital, 24h, minimal"
+else
+  record_failure "Clock: digital, 24h, minimal"
+fi
+# DateFormat unificado (reemplaza keys individuales en Sequoia+).
+# OJO: en esta maquina esta key no persiste — macOS la borra y deja el formato
+# derivado de Show24Hour + la region. Se mantiene por si en otra version pega.
+apply_default "Clock: digital, 24h, minimal" com.apple.menuextra.clock DateFormat -string "HH:mm"
 
 # ── App Store ──────────────────────────────────────────────────────
-defaults write com.apple.appstore ShowDebugMenu -bool true
-defaults write com.apple.appstore IncludeDebugMenu -bool true
-defaults write com.apple.appstore WebKitDeveloperExtras -bool true
-echo "[OK] App Store debug menu enabled"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] App Store debug menu enabled"
+elif (
+  defaults write com.apple.appstore ShowDebugMenu -bool true &&
+    defaults write com.apple.appstore IncludeDebugMenu -bool true &&
+    defaults write com.apple.appstore WebKitDeveloperExtras -bool true
+) 2>/dev/null; then
+  echo "[SET] App Store debug menu enabled"
+else
+  record_failure "App Store debug menu enabled"
+fi
 
 # Auto-update App Store apps (security: outdated apps = attack surface)
-defaults write com.apple.commerce AutoUpdate -bool true
-defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
-echo "[OK] App Store auto-update + auto-restart"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] App Store auto-update + auto-restart"
+elif (
+  defaults write com.apple.commerce AutoUpdate -bool true &&
+    defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
+) 2>/dev/null; then
+  echo "[SET] App Store auto-update + auto-restart"
+else
+  record_failure "App Store auto-update + auto-restart"
+fi
 
 # ── Software Update ────────────────────────────────────────────────
-defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
-defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
-defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
-defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
-defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
-echo "[OK] Software Update: daily check + auto critical installs"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Software Update: daily check + auto critical installs"
+elif (
+  defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true &&
+    defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1 &&
+    defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1 &&
+    defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1 &&
+    defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
+) 2>/dev/null; then
+  echo "[SET] Software Update: daily check + auto critical installs"
+else
+  record_failure "Software Update: daily check + auto critical installs"
+fi
 
 # ── Spotlight ──────────────────────────────────────────────────────
-defaults write com.apple.Spotlight SuggestionsEnabled -bool false
-echo "[OK] Spotlight suggestions disabled"
+apply_default "Spotlight suggestions disabled" com.apple.Spotlight SuggestionsEnabled -bool false
 
-defaults write com.apple.Spotlight ServerSuggestionsEnabled -bool false
-echo "[OK] Spotlight server suggestions disabled"
+apply_default "Spotlight server suggestions disabled" com.apple.Spotlight ServerSuggestionsEnabled -bool false
 
-defaults write com.apple.Spotlight MenuBarSpotlightIcon -bool false
-echo "[OK] Spotlight menu bar icon hidden"
+apply_default "Spotlight menu bar icon hidden" com.apple.Spotlight MenuBarSpotlightIcon -bool false
 
 # ── Sound ──────────────────────────────────────────────────────────
-defaults write -g com.apple.sound.beep.feedback -int 0
-echo "[OK] Volume change feedback silent"
+apply_default "Volume change feedback silent" -g com.apple.sound.beep.feedback -int 0
 
 # ── Library ────────────────────────────────────────────────────────
-chflags nohidden ~/Library
-echo "[OK] ~/Library visible"
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] chflags nohidden ~/Library"
+elif chflags nohidden "$HOME/Library"; then
+  echo "[SET] ~/Library visible"
+else
+  record_failure "${HOME}/Library visible"
+fi
 
-# Tahoe Liquid Glass: stock macOS (transparency/glass aesthetic is iconic)
-# Tahoe (macOS 26) usa Liquid Glass — reduceTransparency puede causar artefactos visuales
-# Descomentar solo si tení macOS <26 o desactivaste Liquid Glass
-defaults write com.apple.universalaccess reduceTransparency -bool true
-echo "[OK] Disable transparency (reduce motion on liquid glass)"
+# Reduce Transparency: alivia ~15-20% de CPU de WindowServer en Sequoia (donde
+# esta verificado). En Tahoe (26.x) el compositor Liquid Glass no esta hecho
+# para esta key y puede producir artefactos visuales — se salta ahi.
+if [ "$MACOS_MAJOR" -ge 26 ]; then
+  echo "[SKIP] Reduce Transparency (Tahoe 26.x: Liquid Glass, puede dar artefactos)"
+else
+  apply_default "Reduce Transparency (alivio de WindowServer)" com.apple.universalaccess reduceTransparency -bool true
+fi
+
+# ── Zoom de pantalla ───────────────────────────────────────────────
+# ctrl + scroll hace zoom. 262144 es la mascara del modificador Control.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Zoom con ctrl + scroll"
+elif (
+  defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true &&
+    defaults write com.apple.universalaccess closeViewScrollWheelModifiersInt -int 262144
+) 2>/dev/null; then
+  echo "[SET] Zoom con ctrl + scroll"
+else
+  record_failure "Zoom con ctrl + scroll"
+fi
+
+apply_default "Sin atajos de teclado para el zoom" com.apple.universalaccess closeViewHotkeysEnabled -bool false
+
+# ── Control Center / barra de menu ─────────────────────────────────
+# Barra de menu al minimo: reloj, Control Center y Sonido. El resto sigue
+# accesible desde el BentoBox, no se desactiva nada.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Barra de menu minima (reloj + Control Center)"
+elif (
+  defaults write com.apple.controlcenter "NSStatusItem Visible BentoBox" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Clock" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible NowPlaying" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible FocusModes" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible AudioVideoModule" -bool false &&
+    defaults write com.apple.controlcenter "NSStatusItem Visible Timer" -bool false
+) 2>/dev/null; then
+  echo "[SET] Barra de menu minima (reloj + Control Center)"
+else
+  record_failure "Barra de menu minima (reloj + Control Center)"
+fi
+
+# La barra de menu se oculta hasta que pasas el mouse arriba. Promovido desde
+# "Minimalismo Extremo": mas espacio vertical, pero desorienta al principio y
+# si usas Bartender u otro gestor de iconos, revisa que no compita con el.
+# Revertir: defaults delete NSGlobalDomain _HIHideMenuBar
+apply_default "Menu bar auto-hide" NSGlobalDomain _HIHideMenuBar -bool true
+
+# ══════════════════════════════════════════════════════════════════
+# TIER 2 — requiere sudo
+# ══════════════════════════════════════════════════════════════════
+# Vivia como texto suelto en el README bajo "Recomendaciones con sudo" y
+# nunca se ejecutaba. Cada item verifica el estado real antes de escribir;
+# lo que ya esta bien en esta instalacion se reporta y no se toca. Nada de
+# esto es SIP, Gatekeeper ni el firewall — esos se verifican mas abajo, no
+# se modifican nunca desde este script.
+if [ "$NO_SUDO" -eq 1 ]; then
+  echo "=== Tier sudo saltado (--no-sudo) ==="
+elif [ "$DRY_RUN" -eq 1 ]; then
+  echo "=== Tier sudo (dry-run, no pide password) ==="
+else
+  echo "=== Tier sudo: puede pedir tu password ==="
+  sudo -v
+
+  apply_sudo() {
+    local label="$1"
+    shift
+    if "$@" >/dev/null 2>&1; then
+      echo "[SET] $label"
+    else
+      record_failure "$label"
+    fi
+  }
+
+  # Developer mode: sin esto Xcode y los debuggers piden auth cada vez que
+  # se adjuntan a un proceso. La lectura de status no pide sudo.
+  if DevToolsSecurity -status 2>/dev/null | grep -qi "enabled"; then
+    echo "[SKIP] Developer mode ya habilitado"
+  else
+    apply_sudo "Developer mode (DevToolsSecurity)" sudo DevToolsSecurity -enable
+  fi
+
+  # Power Nap: despierta la Mac dormida para mail/iCloud/Time Machine —
+  # bateria y snapshots de Time Machine de fondo sin que la pidas.
+  if pmset -g custom | grep -Eq "powernap[[:space:]]+1"; then
+    apply_sudo "Power Nap off (AC + bateria)" sudo pmset -a powernap 0
+  else
+    echo "[SKIP] Power Nap ya desactivado"
+  fi
+
+  # Wake for network access off + wake by proximity on, exactamente como la
+  # politica elegida para esta Mac. `proximitywake` solo tiene efecto en
+  # hardware compatible; pmset puede aceptar el write aunque el equipo no lo
+  # exponga en `pmset -g cap`.
+  apply_sudo "Wake settings (womp 0, proximitywake 1)" \
+    sudo pmset -a womp 0 proximitywake 1
+
+  # Auto-restart tras freeze o corte de luz. Verificado con el cargador
+  # puesto: `pmset -g cap` no lista "autorestart" entre las capacidades de
+  # este M3 Air (si aparece en un iMac). El write de abajo devuelve exito
+  # igual — probable no-op de hardware, mismo patron que askForPassword en
+  # screensaver. Se deja (es inocuo, sudo -a autorestart 1 no rompe nada) pero
+  # no asumas que hizo algo solo porque no fallo.
+  if pmset -g | grep -Eq "^ autorestart[[:space:]]+1$"; then
+    echo "[SKIP] Auto-restart ya configurado"
+  else
+    apply_sudo "Auto-restart en freeze/corte de luz (pmset)" sudo pmset -a autorestart 1
+    apply_sudo "Auto-restart en freeze (systemsetup)" sudo systemsetup -setrestartfreeze on
+  fi
+
+  # SSH remoto: solo se toca si esta prendido. Si lo usas para desarrollo,
+  # no corras esto — dejalo en On a mano.
+  if sudo systemsetup -getremotelogin 2>/dev/null | grep -qi "On"; then
+    apply_sudo "SSH remoto apagado" sudo systemsetup -setremotelogin off
+  else
+    echo "[SKIP] SSH remoto ya apagado"
+  fi
+
+  # Bonjour multicast (CIS Benchmark Level 1) — opt-in explicito. Rompe
+  # descubrimiento de impresoras Bonjour, servidores DLNA y Home Assistant en
+  # la LAN. AirDrop/AirPlay no se ven afectados: usan AWDL, no mDNS multicast.
+  if [ "$BONJOUR_OFF" -eq 1 ]; then
+    if sudo defaults read /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements 2>/dev/null | grep -q 1; then
+      echo "[SKIP] Bonjour multicast ya desactivado"
+    else
+      apply_sudo "Bonjour multicast desactivado (--bonjour-off)" \
+        sudo defaults write /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements -bool YES
+      sudo killall mDNSResponder 2>/dev/null || true
+    fi
+  fi
+
+  # /Volumes visible en Finder: util para debuggear mounts, DMGs y volumenes
+  # de Docker.
+  if [ "$(stat -f '%Sf' /Volumes)" = "-" ]; then
+    echo "[SKIP] /Volumes ya visible"
+  else
+    apply_sudo "/Volumes visible en Finder" sudo chflags nohidden /Volumes
+  fi
+
+  if sudo defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo 2>/dev/null | grep -qx "HostName"; then
+    echo "[SKIP] Login Window muestra HostName"
+  else
+    apply_sudo "Login Window muestra HostName" \
+      sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+  fi
+
+  # Touch ID para sudo — mecanismo oficial sudo_local de Apple (Sonoma+),
+  # sobrevive updates de macOS. Idempotente: no pisa una config custom.
+  if [ -f /etc/pam.d/sudo_local ]; then
+    echo "[SKIP] Touch ID para sudo ya configurado (sudo_local)"
+  elif [ -f /etc/pam.d/sudo_local.template ]; then
+    sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template | sudo tee /etc/pam.d/sudo_local >/dev/null
+    echo "[SET] Touch ID para sudo activado (sudo_local)"
+  else
+    echo "[SKIP] Touch ID para sudo no disponible (requiere macOS 14+)"
+  fi
+
+  echo "--- Verificacion de seguridad (solo lectura, no se escribe nada) ---"
+  if fdesetup status 2>/dev/null | grep -q "FileVault is On"; then
+    echo "[OK] FileVault On"
+  else
+    echo "[WARN] FileVault: revisar con 'sudo fdesetup enable'"
+  fi
+  if /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -qi enabled; then
+    echo "[OK] Firewall enabled"
+  else
+    echo "[WARN] Firewall apagado: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on"
+  fi
+  if /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode 2>/dev/null | grep -qi "stealth mode is on"; then
+    echo "[OK] Firewall stealth mode on"
+  else
+    echo "[WARN] Stealth mode apagado"
+  fi
+  if csrutil status 2>/dev/null | grep -qi "enabled"; then
+    echo "[OK] SIP enabled"
+  else
+    echo "[WARN] SIP disabled — este script nunca lo toca, es decision tuya"
+  fi
+  if spctl --status 2>/dev/null | grep -qi "assessments enabled"; then
+    echo "[OK] Gatekeeper enabled"
+  else
+    echo "[WARN] Gatekeeper: revisar con 'spctl --status'"
+  fi
+  if sudo sysadminctl -secureTokenStatus "$(id -un)" 2>&1 | grep -qi "ENABLED"; then
+    echo "[OK] Secure Token enabled"
+  else
+    echo "[WARN] Secure Token: revisar con 'sysadminctl -secureTokenStatus'"
+  fi
+  if sudo -n true 2>/dev/null && sysadminctl -screenLock status 2>&1 | grep -qi "immediate"; then
+    echo "[OK] Bloqueo de pantalla inmediato"
+  else
+    echo "[WARN] Bloqueo de pantalla: revisar en Ajustes > Pantalla bloqueada"
+  fi
+  if sudo defaults read /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled 2>/dev/null | grep -q 1; then
+    echo "[OK] HiDPI para monitores 4K habilitado"
+  else
+    echo "[SKIP] HiDPI no habilitado (solo hace falta con monitor 4K externo)"
+  fi
+fi
+
+# ══════════════════════════════════════════════════════════════════
+# TIER 3 — exclusiones de indexado sobre el arbol de desarrollo
+# ══════════════════════════════════════════════════════════════════
+# La ganancia real y medible en una maquina de desarrollo: Sequoia tiene una
+# regresion documentada de indexado de Spotlight con CPU/IO altos, y el arbol
+# de desarrollo (node_modules, builds, DerivedData) es lo que peor se
+# comporta. `tmutil disablelocal` ya no existe desde High Sierra — esto es
+# el reemplazo real. La parte de Spotlight (.metadata_never_index) no
+# requiere sudo; la de Time Machine si — `tmutil addexclusion` sale con
+# "requires root privileges" sin el (verificado, exit 80), asi que se salta
+# con --no-sudo igual que el tier 2. No crea directorios: si la ruta no
+# existe, se saltea.
+echo "=== Tier 3: exclusiones de Spotlight (siempre) y Time Machine (requiere sudo) ==="
+DEV_EXCLUDE_PATHS=(
+  "$HOME/Developer"
+  "$HOME/Library/Developer/Xcode/DerivedData"
+  "$HOME/Library/Caches"
+  "$HOME/.cache"
+  "$HOME/go/pkg"
+  "$HOME/Library/Containers/com.docker.docker"
+)
+
+for p in "${DEV_EXCLUDE_PATHS[@]}"; do
+  if [ ! -e "$p" ]; then
+    echo "[SKIP] $p no existe"
+    continue
+  fi
+
+  if [ -f "$p/.metadata_never_index" ]; then
+    echo "[SKIP] Spotlight ya excluye $p"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] touch $p/.metadata_never_index"
+  else
+    if touch "$p/.metadata_never_index" 2>/dev/null; then
+      echo "[SET] Spotlight excluye $p"
+    else
+      record_failure "Spotlight excluye $p"
+    fi
+  fi
+
+  if [ "$NO_SUDO" -eq 1 ]; then
+    echo "[SKIP] Time Machine excluye $p (--no-sudo)"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    echo "[DRY] sudo tmutil addexclusion -p $p"
+  elif tmutil isexcluded "$p" 2>/dev/null | grep -q "\[Excluded\]"; then
+    echo "[SKIP] Time Machine ya excluye $p"
+  else
+    if sudo tmutil addexclusion -p "$p" >/dev/null 2>&1; then
+      echo "[SET] Time Machine excluye $p"
+    else
+      record_failure "Time Machine excluye $p"
+    fi
+  fi
+done
+
+# Snapshots locales huerfanos: solo se reportan, no se borra nada. El
+# reemplazo real de `tmutil disablelocal` (removido en High Sierra) es
+# `tmutil thinlocalsnapshots`, y borrar snapshots sin mirar antes cuales hay
+# es una operacion irreversible que este script no toma por vos.
+SNAPSHOT_COUNT="$(tmutil listlocalsnapshots / 2>/dev/null | grep -c com.apple.TimeMachine || true)"
+if [ "${SNAPSHOT_COUNT:-0}" -gt 0 ]; then
+  echo "[INFO] $SNAPSHOT_COUNT snapshot(s) local(es) en /. Revisar con:" \
+    "tmutil listlocalsnapshots / — liberar con:" \
+    "sudo tmutil thinlocalsnapshots / <bytes> 4"
+else
+  echo "[OK] Sin snapshots locales huerfanos en /"
+fi
 
 # ── Reiniciar servicios ────────────────────────────────────────────
-killall Dock 2>/dev/null && echo "[OK] Dock restarted"
-killall Finder 2>/dev/null && echo "[OK] Finder restarted"
-killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
-killall "Clock" "WorldClockWidget" 2>/dev/null || true
-killall cfprefsd 2>/dev/null && echo "[OK] cfprefsd restarted"
-killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
+# --dry-run no debe tocar la sesion real: sin esto un dry-run mataba Dock y
+# Finder igual, aunque ningun defaults write se hubiera ejecutado.
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] Reiniciar Dock, Finder, SystemUIServer, Clock, cfprefsd y NotificationCenter"
+else
+  killall Dock 2>/dev/null && echo "[OK] Dock restarted"
+  killall Finder 2>/dev/null && echo "[OK] Finder restarted"
+  killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
+  killall "Clock" "WorldClockWidget" 2>/dev/null || true
+  killall cfprefsd 2>/dev/null && echo "[OK] cfprefsd restarted"
+  killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"
+fi
+
+if [ "$DEFAULTS_FAILURES" -gt 0 ]; then
+  echo "=== $DEFAULTS_FAILURES defaults operation(s) failed ===" >&2
+  exit 1
+fi
 
 echo "=== Done ==="

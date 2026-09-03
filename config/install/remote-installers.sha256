@@ -1,0 +1,11 @@
+# SHA-256 pins for the HTTPS installer payloads used by install.sh.
+Homebrew|12479a24be3f5307eecac7cde670fad7118640f031229e964f544b1367b52a41|https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+Oh My Zsh|5b16896b831243ebd2f409ecd99c3d231385cc706fbc564625057929ebee5e6e|https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+CodeGraph|f4e90c6e0c1d2ac95a43fa6e82e4caf76fabdb18310afc72597314b58632e56c|https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh
+OpenCode|fc3c1b2123f49b6df545a7622e5127d21cd794b15134fc3b66e1ca49f7fb297e|https://opencode.ai/install
+Codex|ba92dd27e5c06f0d3bbc58bfa4b9cfb6599cd2742fbb1f92a2765e6c07dedb5a|https://chatgpt.com/codex/install.sh
+Cursor Agent|b1af27b9556c5f1c58d166742dbb33425ebd90a4bbd7e5453d66b920bf1f9f6b|https://cursor.com/install
+Antigravity CLI|ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640|https://antigravity.google/cli/install.sh
+Claude Code|3a68d3406cf674e17bed1733a4dcf37805e2e47d87417700007d7e1aa766a944|https://claude.ai/install.sh
+GitHub Copilot CLI|cd45508981a9baee5fb8f5e38495d315758cd7fea4a715b53a9f26c12544dc95|https://gh.io/copilot-install
+Kilo Code|a9f615d2dfd86555864cd4c04ebda6dd7e2f6f600a5abfc5d8baae666be07b07|https://kilo.ai/cli/install

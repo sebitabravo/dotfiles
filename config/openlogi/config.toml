@@ -1,0 +1,49 @@
+schema_version = 4
+
+[app_settings]
+launch_at_login = false
+check_for_updates = true
+auto_install_updates = true
+update_prompt_seen = true
+show_in_menu_bar = true
+capture_mouse_events = true
+auto_download_assets = true
+asset_source = "openlogi"
+thumbwheel_sensitivity = 14
+appearance = "dark"
+theme_dark = "OpenLogi Dark"
+ui_radius = 12
+
+[devices]
+
+# Clave real generada por OpenLogi al parear (transporte:vid:pid:serial).
+# No copies este identificador a mano: se crea solo al conectar tu mouse.
+[devices."direct:046d:b034:serial:REDACTED"]
+dpi = 3200
+invert_scroll = true
+scroll_resolution = "high"
+
+[devices."direct:046d:b034:serial:REDACTED".identity]
+display_name = "MX Master 3S"
+codename = "MX Master 3S"
+kind = "mouse"
+
+[devices."direct:046d:b034:serial:REDACTED".smartshift]
+mode = "ratchet"
+auto_disengage = 16
+tunable_torque = 0
+
+[devices."direct:046d:b034:serial:REDACTED".bindings]
+MiddleClick = "MiddleClick"
+Back = "BrowserBack"
+Forward = "BrowserForward"
+DpiToggle = "ToggleSmartShift"
+ThumbwheelScrollUp = "HorizontalScrollRight"
+ThumbwheelScrollDown = "HorizontalScrollLeft"
+
+[devices."direct:046d:b034:serial:REDACTED".bindings.GestureButton]
+Click = "LaunchpadShow"
+Up = "MissionControl"
+Down = "AppExpose"
+Left = "PreviousDesktop"
+Right = "NextDesktop"

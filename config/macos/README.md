@@ -1,84 +1,217 @@
 # macOS Defaults
 
-Optimizaciones para macOS Sequoia 15.x y Tahoe 26.x orientadas a developers. **226 defaults write**, 3 defaults delete, 50 secciones. Cero dependencias. Cero `sudo`.
+Optimizaciones de macOS orientadas a developers. Cero dependencias externas.
+
+Verificado en **Sequoia 15.7.9**. Tahoe 26.x no esta verificado: ahi Launchpad
+ya no existe (lo absorbio Spotlight) y las keys `springboard-*` pasan a ser
+no-op; el script lo detecta y avisa, pero no lo bloquea.
+
+El script esta reconciliado contra el estado real de la maquina: los valores
+reflejan como esta configurada hoy, no una propuesta teorica.
 
 ## Quick Start
 
 ```bash
-chmod +x defaults.sh && ./defaults.sh
+chmod +x defaults.sh && ./defaults.sh --dry-run   # revisar antes de aplicar
+./defaults.sh                                     # aplicar de verdad
+../../.github/verify.sh                           # auditar el resultado (desde config/macos/)
 ```
 
-Solo escribe a preferencias de usuario via `defaults write`. Si algo no te gusta, volves atras sin consecuencias. Ningun cambio rompe el ecosistema Apple (Handoff, Continuity, Find My, AirDrop, etc.).
+`defaults.sh` reporta cada item como `[SET]` (se aplico), `[SKIP]` (ya estaba
+asi), o `[FAIL]` (el write no tuvo efecto — no se miente con un `[OK]`
+incondicional). `verify.sh` no escribe nada: compara el estado real contra lo
+que el script promete y sale con `1` si hay drift.
 
-## Que hace
+### Flags
+
+| Flag | Que hace |
+|---|---|
+| `--dry-run` | Imprime cada comando sin ejecutarlo. No mata Dock/Finder ni pide sudo. |
+| `--no-sudo` | Salta el tier con sudo (DevToolsSecurity, Power Nap, auto-restart, SSH). |
+| `--bonjour-off` | Opt-in: desactiva multicast de Bonjour. Rompe descubrimiento de impresoras, DLNA y Home Assistant en la LAN — no es default por eso. |
+| `--help` | Ayuda corta. |
+
+Si algo no te gusta despues de aplicar, volves atras sin consecuencias:
+`defaults delete <dominio> <key>`. Ningun cambio rompe el ecosistema Apple
+(Handoff, Continuity, Find My, AirDrop, etc.).
+
+## Que hace — Tier 1 (usuario, sin sudo)
 
 | Area | Que se optimiza |
 |---|---|
 | **Animaciones** | Ventanas instantaneas, sin rebote elastico, sin anillo de foco animado |
 | **Teclado** | Key repeat rapido (2), delay corto (15), Tab navega todos los controles |
-| **Finder** | Extensiones visibles, path completo, barra de estado, carpetas primero al ordenar, spring-loading instantaneo, trash auto-clean >30 dias, sin warning al vaciar papelera, sin .DS_Store en network |
-| **Dock** | Auto-hide instantaneo (sin delay), sin animaciones, sin apps recientes, size 48px |
-| **Menu Bar** | Clock minimalista (HH:mm), battery percentage, icono Spotlight oculto, menu item icons hidden (Tahoe) |
-| **Desktop** | Iconos ocultos — escritorio limpio (accesible via Finder) |
-| **Safari / WebKit** | 30+ keys de hardening: sin autofill, sin tracking, pop-ups bloqueados, fraudulent website warning, extensiones auto-update, thumbnail cache off, developer menu, Web Inspector |
-| **Privacidad** | Siri analytics off, diagnostics off, advertising tracking off, apps anonymous usage off |
+| **Finder** | Extensiones visibles, barra de ruta y de estado, panel de vista previa, carpetas primero al ordenar, spring-loading instantaneo, trash auto-clean >30 dias, sin warning al vaciar papelera, sin iconos de discos en el escritorio, sin .DS_Store en network |
+| **Dock** | Auto-hide instantaneo (sin delay ni animacion), sin rebote al abrir apps, sin apps recientes, minimizar a slot propio, size 48px |
+| **Mission Control** | Escritorios en orden fijo (sin reorden por uso), sin cambio automatico de escritorio, ventanas agrupadas por app |
+| **Ventanas** | Doble clic en la barra de titulo = Fill, arrastrar con ctrl+cmd desde cualquier punto, Stage Manager off |
+| **Menu Bar** | Clock digital 24h, barra minima (solo reloj + Control Center), icono Spotlight oculto, auto-hide de la barra completa (ver nota abajo) |
+| **Desktop** | Iconos visibles en el Finder pero ocultos mientras trabajas (WindowManager) |
+| **Trackpad** | Tap to click, click derecho con dos dedos, arrastre con tres dedos, swipes de espacios con cuatro dedos |
+| **Region** | Metrico, Celsius, semana desde el lunes, fecha corta ISO (y-MM-dd) |
+| **Safari / WebKit** | ~30 keys: sin tracking ni search suggestions, pop-ups bloqueados, fraudulent website warning, extensiones auto-update, thumbnail cache off, Debug menu, Web Inspector. **AutoFill esta ACTIVO** (incluye contrasenas y tarjetas) — es funcionalidad principal de macOS, no se toca. Se salta entero si la terminal no tiene Full Disk Access (ver mas abajo). |
+| **Privacidad** | Siri analytics off, diagnostics off, apps anonymous usage off, IDFA desactivado |
 | **Security** | Screensaver password immediate (idle 5 min), Terminal Secure Keyboard Entry |
 | **Software Update** | Check diario, auto-descarga, auto-instalar updates criticos de seguridad y system data files |
 | **App Store** | Debug menu, auto-update apps + auto-restart |
-| **Chrome** | Backswipe desactivado (evita navegacion accidental en scroll horizontal) |
 | **Activity Monitor** | Todos los procesos visibles, refresh 2s, sort por CPU |
 | **Xcode** | Debug menu, file extensions, parallel build (max cores), numeric progress, no state restoration |
 | **Terminal** | UTF-8 only, Secure Keyboard Entry, no line marks |
-| **Accessibility** | Ctrl+Scroll = screen zoom con follow-focus |
-| **Tahoe 26.x** | Reduce Transparency (Liquid Glass GPU relief ~15-20% WindowServer CPU) |
+| **Accessibility** | Ctrl+Scroll = zoom de pantalla, navegacion completa por teclado (Tab llega a todos los controles) |
+| **Sequoia** | Reduce Transparency (Liquid Glass GPU relief). Se salta en Tahoe 26.x — ahi el compositor puede dar artefactos con esta key. |
 | **Mail** | Sin animaciones al responder/enviar, copy email sin nombre, texto plano por defecto, inline attachments off |
-| **Varios** | Quick Look text selection, Mission Control sin reorden, Launchpad, Trackpad, Sound, Calendar, Help Viewer, Notification Center, App Store, Spotlight suggestions off |
 
-## Minimalismo Extremo (Opcional)
+**Lo que NO se toca a proposito:** las animaciones de ventanas y apps quedan
+en su comportamiento stock — este script es para developers que necesitan ver
+las animaciones de las apps que construyen. AutoFill de Safari tampoco se
+toca: es la funcionalidad principal, no bloat.
 
-Si querés un sistema ultra-minimalista, ejecuta estos comandos adicionales. No estan en el script principal porque rompen comportamiento esperado de macOS o funcionalidad que la mayoria de los usuarios necesita.
+### Full Disk Access y el bloque Safari
+
+Safari esta sandboxed: su plist real vive en
+`~/Library/Containers/com.apple.Safari/...`, protegido por TCC. Sin Full Disk
+Access para tu terminal, `defaults write com.apple.Safari` no falla — cae en
+silencio a `~/Library/Preferences/com.apple.Safari.plist`, un archivo que
+Safari sandboxed nunca lee. El script detecta esto con una key canario antes
+de tocar las ~30 keys de Safari; si no hay FDA, saltea el bloque entero con
+un `[SKIP]` en vez de reportar 30 `[SET]` falsos.
+
+Para habilitarlo: **Ajustes > Privacidad y Seguridad > Acceso total al
+disco**, agregar tu terminal, reabrirla.
 
 ### Menu bar auto-hide
 
-La menu bar desaparece hasta que pasas el mouse arriba. Mas espacio vertical, pero desorienta al principio.
+La barra de menu se oculta hasta que pasas el mouse arriba. Mas espacio
+vertical, pero desorienta al principio, y si usas un gestor de iconos como
+Bartender revisa que no compita con el. Revertir:
+`defaults delete NSGlobalDomain _HIHideMenuBar`.
+
+### Opt-in deliberado (no estan en el tier 1 por defecto)
+
+Estos dos rompen comportamiento esperado de macOS o funcionalidad que la
+mayoria de los usuarios necesita, asi que quedan fuera del script:
 
 ```bash
-defaults write NSGlobalDomain _HIHideMenuBar -bool true
-killall SystemUIServer
-```
-
-### Key repeat sin menu de acentos
-
-Mantener tecla repite el caracter en vez de mostrar el menu de acentos. Util para developers, frustrante para usuarios que escriben en español.
-
-```bash
+# Key repeat sin menu de acentos: mantener tecla repite el caracter en vez de
+# mostrar el menu de acentos. Util para developers, frustrante escribiendo en
+# espanol (se pierde el menu de a, e, n).
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-```
 
-### Screenshot sin thumbnail flotante
-
-La captura se guarda directo a disco sin preview editable. Mas rapido, pero no podes editar ni compartir al instante.
-
-```bash
+# Screenshot sin thumbnail flotante: la captura se guarda directo a disco sin
+# preview editable. Mas rapido, pero no podes editar ni compartir al instante.
 defaults write com.apple.screencapture show-thumbnail -bool false
 ```
 
-### Sin warning al vaciar papelera
+## Que hace — Tier 2 (requiere sudo)
 
-No pide confirmacion al vaciar la papelera. Mas agil, pero un click accidental y perdes todo.
+Antes vivia como texto suelto en este README bajo "Recomendaciones con sudo"
+y nunca se ejecutaba. Ahora esta dentro de `defaults.sh`: pide tu password
+una vez (`sudo -v`) y aplica solo lo que tiene un revert claro. Se salta
+completo con `--no-sudo`.
+
+| Item | Aplica si... | Revertir |
+|---|---|---|
+| Developer mode | `DevToolsSecurity -status` dice disabled | `sudo DevToolsSecurity -disable` |
+| Power Nap off | esta en 1 (AC o bateria) | `sudo pmset -a powernap 1` |
+| Wake settings | siempre fija `womp 0` y `proximitywake 1` | `sudo pmset -a womp 1 proximitywake 0` |
+| Auto-restart en freeze/corte de luz | no esta configurado | `sudo pmset -a autorestart 0` + `sudo systemsetup -setrestartfreeze off` |
+| SSH remoto apagado | esta prendido | `sudo systemsetup -setremotelogin on` — dejalo prendido si lo usas para desarrollo |
+| Login Window muestra hostname | `AdminHostInfo` no es `HostName` | `sudo defaults delete /Library/Preferences/com.apple.loginwindow AdminHostInfo` |
+| Touch ID para sudo | `/etc/pam.d/sudo_local` no existe | `sudo rm /etc/pam.d/sudo_local` |
+| `/Volumes` visible en Finder | tiene el flag hidden | `sudo chflags hidden /Volumes` |
+
+Mecanismo oficial `sudo_local` de Apple (Sonoma+): sobrevive updates de
+macOS, a diferencia del viejo hack de `pam_tid.so` directo en
+`/etc/pam.d/sudo`. Compatibilidad con herramientas de desarrollo:
+
+| Herramienta | Compatible? | Nota |
+|---|---|---|
+| Terminal.app, VS Code, Warp | Si, nativo | Sin configuracion extra |
+| iTerm2 | Si, requiere toggle | Preferences > Advanced > "Allow sessions" > "No" |
+| tmux | Si, requiere `pam-reattach` | `brew install pam-reattach`, agregar `auth optional /opt/homebrew/lib/pam/pam_reattach.so` antes de `pam_tid.so` en `sudo_local` |
+| SSH / scripts / CI | Si, sin cambios | `pam_tid.so` usa `sufficient`: sin GUI cae a password |
+| Macs sin Touch ID | Si, sin cambios | Cae a password automaticamente |
+| Grabacion de pantalla activa | Si, sin cambios | Touch ID se desactiva por seguridad, cae a password |
+
+Ademas, el tier 2 **verifica y reporta sin escribir nada**: FileVault,
+firewall + stealth mode, SIP, Gatekeeper, Secure Token, bloqueo de pantalla,
+y HiDPI para monitores 4K (`sudo defaults write
+/Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool
+true`, solo hace falta con un monitor 4K externo). Ninguno de estos se
+modifica desde el script — son decisiones tuyas, el script solo confirma el
+estado.
+
+### Bonjour multicast — opt-in explicito (`--bonjour-off`)
+
+CIS Benchmark Level 1. Reduce ruido de red y superficie de ataque. No rompe
+AirDrop ni AirPlay (usan AWDL, distinto de mDNS multicast), pero **si rompe**
+descubrimiento de impresoras Bonjour, servidores DLNA y Home Assistant en tu
+LAN. Por eso no es default:
 
 ```bash
-defaults write com.apple.finder WarnOnEmptyTrash -bool false
+./defaults.sh --bonjour-off
 ```
 
----
+Revertir:
+```bash
+sudo defaults delete /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements
+sudo killall mDNSResponder
+```
+
+## Que hace — Tier 3 (exclusiones de indexado, sin sudo)
+
+La ganancia real y medible en una maquina de desarrollo. Sequoia tiene una
+regresion documentada de indexado de Spotlight (CPU e I/O de disco altos), y
+el arbol de desarrollo — `node_modules`, builds, `DerivedData` — es lo que
+peor se comporta. `sudo tmutil disablelocal`, la recomendacion clasica para
+liberar snapshots locales, **no existe desde High Sierra (10.13)**; esto es
+el reemplazo real.
+
+El script excluye de Spotlight (`.metadata_never_index`) y de Time Machine
+(`tmutil addexclusion -p`) las rutas que existan de:
+
+- `~/Developer`
+- `~/Library/Developer/Xcode/DerivedData`
+- `~/Library/Caches`
+- `~/.cache`
+- `~/go/pkg`
+- `~/Library/Containers/com.docker.docker`
+
+No crea directorios — si una ruta no existe, se saltea. También reporta
+cuantos snapshots locales huerfanos hay en `/` (sin borrar ninguno): el
+comando real para liberarlos es `sudo tmutil thinlocalsnapshots / <bytes> 4`,
+una operacion irreversible que este script no toma por vos.
+
+## Qué NO arregla este script
+
+Es la parte que importa mas que la lista de arriba: separar lo que un
+`defaults write` puede tocar de lo que no.
+
+- **`mediaanalysisd` y `photoanalysisd`** (analisis de fotos/video en
+  background, Visual Look Up, Live Text) no se pueden desactivar sin apagar
+  SIP y editar plists del sistema — no soportado, no reversible con
+  confianza. Hay reportes de consumo alto (>600% CPU) en Tahoe 26 combinado
+  con Xcode. La unica mitigacion soportada es reducir que se indexa (tier 3
+  de este script), no desactivar el daemon.
+- **`launchctl limit maxfiles` a nivel de sistema** esta bloqueado por SIP
+  desde macOS 13.5 — Apple lo confirmo como bug conocido sin fix. El camino
+  real para herramientas como Vite que abren muchos file descriptors es
+  `ulimit -n` por shell o `setrlimit` por proceso, no un `defaults write`
+  global.
+- **El techo termico y de memoria del hardware.** En un MacBook Air (sin
+  ventilador) o con 8-16 GB de RAM unificada, ningun `defaults write` mueve
+  throughput sostenido. Lo que compran estos scripts es latencia de interfaz
+  y menos carga de fondo, no mas rendimiento bruto bajo carga sostenida.
+- **Apps de terceros en el login.** Suelen pesar mas que cualquier key de
+  este script. Auditalas con `osascript -e 'tell application "System Events"
+  to get the name of every login item'` — el script no las toca.
 
 ## Revertir
 
-Para revertir un cambio especifico:
+Un cambio especifico:
 
 ```bash
-defaults delete <domain> <key>
+defaults delete <dominio> <key>
 ```
 
 Ejemplo — volver a mostrar iconos del desktop:
@@ -87,208 +220,9 @@ Ejemplo — volver a mostrar iconos del desktop:
 defaults delete com.apple.finder CreateDesktop && killall Finder
 ```
 
-Para revertir TODO a defaults de fabrica (precaución: borra TODAS tus preferencias de usuario):
+TODO a defaults de fabrica (precaucion: borra TODAS tus preferencias de
+usuario de esos dos dominios):
 
 ```bash
 defaults delete NSGlobalDomain && defaults delete com.apple.finder
 ```
-
----
-
-## Recomendaciones con sudo
-
-Estas optimizaciones requieren `sudo` — no estan en el script principal porque estan fuera del alcance sin password. Son seguras, no rompen el ecosistema Apple, y cada una tiene un camino claro de vuelta atras.
-
-### Firewall + Stealth Mode
-
-El firewall de macOS viene apagado por defecto. Prendelo junto con stealth mode (no responde pings, invisible en la red):
-
-```bash
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off  # permite conexiones salientes normales
-```
-
-**Revertir:** `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off`
-
-**Impacto ecosistema Apple:** Ninguno. Handoff, AirDrop, Continuity siguen funcionando (usan AWDL, no TCP/IP). Lo unico que hace es bloquear conexiones entrantes no solicitadas.
-
-### Desactivar servicios remotos
-
-SSH y Apple Events remotos suelen venir apagados, pero verifica:
-
-```bash
-sudo systemsetup -setremotelogin off       # SSH apagado
-sudo systemsetup -setremoteappleevents off # Apple Events remotos apagados
-```
-
-**Revertir:** `sudo systemsetup -setremotelogin on`
-
-**Impacto ecosistema Apple:** Ninguno. Apple Events remotos estan deprecados desde Mojave y vienen off por defecto. Si usas SSH para desarrollo, deja `remotelogin on`.
-
-### Wake on network y proximity wake
-
-Evita que tu Mac se despierte solo por paquetes de red o dispositivos cercanos:
-
-```bash
-sudo pmset -a womp 0           # wake on network access off
-sudo pmset -a proximitywake 0  # wake from nearby devices off
-```
-
-**Revertir:** `sudo pmset -a womp 1` / `sudo pmset -a proximitywake 1`
-
-**Impacto ecosistema Apple:** `womp 0` no afecta Find My (usa Find My network, no WoL). `proximitywake 0` desactiva que Watch/iPhone despierten tu Mac al acercarse — si usas Apple Watch para desbloquear, quiza queres dejarlo en 1.
-
-### FileVault (verificar)
-
-Probablemente ya esta activo. Verifica:
-
-```bash
-sudo fdesetup status
-```
-
-Si dice `FileVault is Off`:
-
-```bash
-sudo fdesetup enable
-```
-
-**Revertir:** `sudo fdesetup disable` (tarda horas en desencriptar)
-
-**Impacto ecosistema Apple:** Ninguno. FileVault es transparente con el Secure Enclave (T2/Apple Silicon). iCloud y Find My funcionan normalmente.
-
-### Gatekeeper y Secure Token (verificar)
-
-Gatekeeper bloquea apps no firmadas. Secure Token confirma que tu cuenta puede desbloquear FileVault. Son verificaciones de solo lectura, no cambian nada:
-
-```bash
-spctl --status                        # Gatekeeper: "assessments enabled"
-sudo sysadminctl -secureTokenStatus $(id -un)  # Secure Token: "ENABLED"
-```
-
-**Revertir:** No aplica. Son comandos de solo lectura.
-
-**Impacto ecosistema Apple:** Ninguno. Solo verifican el estado de seguridad actual.
-
-### Touch ID para sudo — metodo oficial Apple
-
-Permite autenticar `sudo` con huella digital en vez de password. Usa el mecanismo oficial `sudo_local` de Apple que **sobrevive updates de macOS** (Sonoma 14+, Sequoia, Tahoe). No es el viejo hack de `pam_tid.so` directo en `/etc/pam.d/sudo` que se reseteaba en cada update.
-
-```bash
-# Idempotente: no sobreescribe si ya existe (respeta configuracion custom)
-if [ -f /etc/pam.d/sudo_local.template ] && [ ! -f /etc/pam.d/sudo_local ]; then
-  sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template | sudo tee /etc/pam.d/sudo_local > /dev/null
-  echo "Touch ID para sudo activado (sudo_local)."
-else
-  echo "Touch ID para sudo ya configurado o no disponible (requiere macOS 14+)."
-fi
-```
-
-**Revertir:** `sudo rm /etc/pam.d/sudo_local`
-
-**Impacto ecosistema Apple:** Ninguno. Es soporte oficial de Apple documentado en la changelog enterprise de Sonoma.
-
-**Compatibilidad con herramientas de desarrollo:**
-
-| Herramienta | Compatible? | Nota |
-|---|---|---|
-| Terminal.app, VS Code, Warp | Si, nativo | Funcionan sin configuracion extra |
-| iTerm2 | Si, requiere toggle | Preferences > Advanced > "Allow sessions" > cambiar de "Yes" a "No" |
-| tmux | Si, requiere `pam-reattach` | `brew install pam-reattach`. Agregar `auth optional /opt/homebrew/lib/pam/pam_reattach.so` antes de `pam_tid.so` en `sudo_local` |
-| SSH / scripts / CI | Si, sin cambios | `pam_tid.so` usa flag `sufficient`: si no hay GUI, falla silenciosamente y cae a password |
-| DisplayLink docks | Si, requiere fix | `defaults write com.apple.security.authorization ignoreArd -bool TRUE` |
-| Macs sin Touch ID (iMac, Mini, Studio) | Si, sin cambios | `pam_tid.so` detecta que no hay sensor y cae a password automaticamente |
-| MacBook en clamshell (sin teclado externo Touch ID) | Si, delay minusculo | ~1-2s de timeout intentando el sensor, luego cae a password |
-| Grabacion de pantalla activa (OBS, Zoom, CleanShot) | Si, sin cambios | Touch ID se desactiva intencionalmente (seguridad) y cae a password |
-
-**Nota para tmux:** `pam_reattach` re-conecta la sesion tmux al GUI bootstrap namespace para que Touch ID funcione. Sin esto, Touch ID falla silenciosamente y sudo usa password. No es obligatorio — si no usas tmux, no necesitas `pam_reattach`.
-
-### No dormir mientras esta enchufado
-
-Evita que la Mac duerma durante builds largas o procesos de servidor mientras esta conectada al cargador:
-
-```bash
-sudo pmset -c sleep 0
-```
-
-**Revertir:** `sudo pmset -c sleep 1`
-
-**Impacto ecosistema Apple:** Ninguno. Solo aplica con corriente (`-c` = charger). En bateria se comporta normal.
-
-### Liberar espacio de snapshots locales de Time Machine
-
-Las snapshots locales en el SSD interno pueden consumir 20-60+ GB. Con artifacts de desarrollo (`node_modules`, builds) explotan de tamaño:
-
-```bash
-sudo tmutil disablelocal
-```
-
-**Revertir:** `sudo tmutil enablelocal`
-
-**Impacto ecosistema Apple:** No perdes los backups regulares de Time Machine cuando conectas el disco. Solo desactiva las snapshots locales que se crean cuando el disco de backup no esta.
-
-### Modos HiDPI para monitores 4K
-
-Desbloquea resoluciones escaladas (HiDPI) en monitores 4K externos. Sin esto, algunos monitores solo muestran texto minusculo (nativo) o borroso (pixel-doubled):
-
-```bash
-sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
-```
-
-**Revertir:** `sudo defaults delete /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled`
-
-**Impacto ecosistema Apple:** Ninguno. Solo habilita modos que el hardware ya soporta.
-
-### Login screen muestra IP y hostname
-
-Clickeando el reloj en la pantalla de login, ves IP, hostname y version de macOS. Util para SSH sin loguearte:
-
-```bash
-sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
-```
-
-**Revertir:** `sudo defaults delete /Library/Preferences/com.apple.loginwindow AdminHostInfo`
-
-**Impacto ecosistema Apple:** Ninguno. El acceso fisico a la pantalla de login ya es game-over de todas formas.
-
-### Auto-restart en freeze o perdida de energia
-
-La Mac se reinicia automaticamente si el sistema se congela o si hay un corte de luz y vuelve:
-
-```bash
-sudo systemsetup -setrestartfreeze on
-sudo pmset -a autorestart 1
-```
-
-**Revertir:** `sudo systemsetup -setrestartfreeze off` / `sudo pmset -a autorestart 0`
-
-**Impacto ecosistema Apple:** Ninguno.
-
-### Hacer visible /Volumes en Finder
-
-Util para debuggear mounts, discos externos, DMGs y Docker volumes:
-
-```bash
-sudo chflags nohidden /Volumes
-```
-
-**Revertir:** `sudo chflags hidden /Volumes`
-
-**Impacto ecosistema Apple:** Ninguno.
-
-### Desactivar Bonjour multicast advertisements
-
-CIS Benchmark Level 1. Reduce ruido de red y superficie de ataque. No rompe AirDrop ni AirPlay (usan AWDL, que es distinto de mDNS multicast):
-
-```bash
-sudo defaults write /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements -bool YES
-sudo killall mDNSResponder
-```
-
-**Revertir:**
-```bash
-sudo defaults delete /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements
-sudo killall mDNSResponder
-```
-
-**Advertencia:** Algunas apps de descubrimiento local (servidores DLNA, impresoras Bonjour, Home Assistant discovery) pueden dejar de detectar dispositivos. Si usas apps que dependen de Bonjour para encontrar cosas en tu red local, no lo actives.

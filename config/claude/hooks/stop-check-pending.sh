@@ -7,9 +7,12 @@
 # re-arma si aparecen stashes de auto-save, que si son urgentes.
 INPUT=$(cat 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+PROJECT_DIR="${CWD:-$PWD}"
+ROOT=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || exit 0)
 
-cd "$PWD" 2>/dev/null || exit 0
-git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+cd "$ROOT" 2>/dev/null || exit 0
+git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
 UNSTAGED=$(git diff --name-only 2>/dev/null | head -10)
 STAGED=$(git diff --cached --name-only 2>/dev/null | head -10)
@@ -24,7 +27,7 @@ fi
 : >"$MARKER"
 
 echo "" >&2
-echo "⚠️  PENDING CHANGES in $PWD:" >&2
+echo "⚠️  PENDING CHANGES in $ROOT:" >&2
 [ -n "$UNSTAGED" ] && echo "   🔴 Unstaged files: $(echo "$UNSTAGED" | wc -l | tr -d ' ')" >&2
 [ -n "$STAGED" ] && echo "   🟡 Staged files (not committed): $(echo "$STAGED" | wc -l | tr -d ' ')" >&2
 [ -n "$STASHES" ] && echo "   📦 Pending auto-save stashes: $(echo "$STASHES" | wc -l | tr -d ' ')" >&2

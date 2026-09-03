@@ -22,12 +22,26 @@ authorization.
 | Pack | Use when | Required sequence |
 | --- | --- | --- |
 | **two-pack** | Small technical/backend change with no user-facing behavior contract | Existing implementer -> `code-reviewer` -> implementer if corrections are needed |
-| **four-pack** | Moderate behavior change needing a specification and architectural review | `product-manager` -> existing implementer -> `code-reviewer` -> `backend-architect` or domain reviewer |
+| **four-pack** | Moderate behavior change needing a specification and architectural review | `product-manager` -> existing implementer -> `code-reviewer` -> `backend-architect` or domain reviewer -> back to `product-manager` |
 | **six-pack** | Major, risky, externally visible, or cross-cutting change | `product-manager` -> existing implementer -> `code-reviewer` -> architecture reviewer -> `qa-engineer` hardening -> `qa-engineer` final QA |
 
 Select the smallest pack that covers the risk. Do not use two-pack to avoid a
 necessary acceptance or QA gate. Do not use six-pack merely to create parallel
 activity. Explain the selection in the handoff ledger.
+
+**Two-pack and four-pack close the loop; only six-pack terminates.** Upstream
+the sequences are `coder -> cleaner -> coder` and
+`specifier -> coder -> refactorer -> architect -> specifier`. The return arrow
+is the point: a behavior-preserving cleanup still has to be re-checked against
+the approved specification, so the reviewer's output is an input, not an
+endpoint. Six-pack terminates at QA
+(`specifier -> coder -> cleaner -> architect -> hardener -> QA`) because QA is
+the one role that verifies independently instead of handing work onward.
+
+Upstream role names map to Claude agents as: specifier -> `product-manager`,
+coder -> the domain implementer, cleaner/refactorer -> `code-reviewer`,
+architect -> `backend-architect` or the domain reviewer, hardener and QA ->
+`qa-engineer` in hardening and final-QA modes.
 
 ## Non-negotiable handoff contract
 

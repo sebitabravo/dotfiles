@@ -7,7 +7,7 @@
 - **Certs**: `.pem`, `.key`, `.ppk`, `.p12`, `.pfx`, `.pvk`.
 - **Noise** (don't waste tokens): `node_modules/`, `.git/objects/`, `.DS_Store`, `Thumbs.db`.
 
-`permissions.deny` in `settings.json` blocks the `Read` tool on most of these, but it does NOT cover shelling out — `cat .env` bypasses the rule entirely. The deny list is a backstop, not the boundary. The boundary is this rule.
+`permissions.deny` in `settings.json` blocks the `Read` tool on most of these, and `validate-safe-ops.sh` denies the same targets through Bash, so `cat .env` is stopped on both paths. Neither one is the boundary. Both match patterns, and a rule that only exists as a pattern is one unlisted path, one new file name, or one `base64 -d` away from being silent. The boundary is this rule.
 
 ## Non-negotiable
 

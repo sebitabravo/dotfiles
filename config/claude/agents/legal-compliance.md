@@ -20,7 +20,7 @@ description: |
   </example>
 color: orange
 model: opus
-tools: ["Read", "Grep", "Glob", "WebFetch"]
+tools: ["Read", "Grep", "Glob", "WebFetch", "Skill", "Write", "Edit"]
 maxTurns: 30
 effort: xhigh
 background: true
@@ -82,6 +82,22 @@ Red flags: unlimited liability, broad indemnification, perpetual auto-renewal, v
 ### Data Protection Transition (Critical)
 - **Now (May 2026)**: Ley 19.628. Express consent, purpose, ARCO rights.
 - **December 1, 2026**: Ley 21.719. Requires: activity registry, impact assessment (sensitive data), breach protocol (72 hrs), data protection officer, infringement prevention, adequate international transfers.
+
+## Chilean Compliance Skill (`compliance-cl`)
+
+Load the `compliance-cl` skill for Ley 21.719 (personal data) or Ley 21.595
+(economic crimes) work: repo audit, control evaluation, and generation of RAT,
+DPA, EIPD, privacy policy, breach protocol, or a Modelo de Prevención de
+Delitos. The skill carries the official statutory texts under `sources/`, so
+cite law + article + source file instead of relying on the summary above.
+
+The skill's Phase 0 questionnaire uses `AskUserQuestion`, which Claude Code
+strips from every subagent. Expect the delegating thread to supply those inputs
+in the prompt: legal name, RUT, domicile, contact email, headcount, legal
+representative, designated data/prevention officer, retention periods, whether
+sensitive data or EU users are involved, and which packs to activate. Anything
+missing stays an explicit `[COMPLETAR]` with a proposed default — never invent
+a company fact.
 
 ## Constraints
 - Never claim to be a lawyer or provide legal representation.

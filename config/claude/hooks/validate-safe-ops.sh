@@ -58,7 +58,10 @@ esac
 resolve_vars() {
   local text="$1" assignments assignment var val safe_val padded
   assignments=$(printf '%s\n' "$text" | grep -oE '\b[A-Za-z_][A-Za-z0-9_]*=[^][:space:];&|]+' || true)
-  [ -z "$assignments" ] && { printf '%s' "$text"; return 0; }
+  [ -z "$assignments" ] && {
+    printf '%s' "$text"
+    return 0
+  }
   # Espacio final de centinela: '\b' (word boundary) no existe en BSD sed
   # (macOS) — el mismo problema que ya documenta SEGMENTS mas abajo con \n.
   # Se usa un grupo de captura sobre el caracter siguiente en vez de \b, y el
@@ -84,7 +87,7 @@ resolve_vars() {
     # aca, no se preservan.
     padded=$(printf '%s' "$padded" | sed -E "s/\"\\\$\\{${var}\\}\"/${safe_val}/g; s/\"\\\$${var}\"/${safe_val}/g; s/'\\\$\\{${var}\\}'/${safe_val}/g; s/'\\\$${var}'/${safe_val}/g")
     padded=$(printf '%s' "$padded" | sed -E "s/\\\$\\{${var}\\}/${safe_val}/g; s/\\\$${var}([^A-Za-z0-9_])/${safe_val}\\1/g")
-  done <<< "$assignments"
+  done <<<"$assignments"
   printf '%s' "${padded% }"
 }
 # Corre sobre $COMMAND crudo, no sobre texto ya pelado de comillas — ver el
@@ -93,6 +96,221 @@ resolve_vars() {
 # consumida y no quede nada que el pelador pueda destruir.
 COMMAND_VARS_RESOLVED=$(resolve_vars "$COMMAND")
 NO_QUOTES_FULL=$(echo "$COMMAND_VARS_RESOLVED" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+
+# NOTA: tokenizer intencionalmente distinto de quality-gate:split_shell_segments
+# y privacy-review:shlex. Este resolver salta wrappers (env, time, xargs) y
+# asignaciones para encontrar el binario real; los otros separan segmentos
+# shell o tokenizan argv de gh. No son duplicacion — dominios diferentes.
+# Resolve the executable after shell command prefixes. This is deliberately a
+# small, non-evaluating tokenizer: the hook must never execute user input. It
+# skips environment assignments and common wrappers while preserving the real
+# command and its arguments for binary-specific checks. Privilege wrappers
+# (sudo/doas/su) are intentionally NOT skipped, because the wrapper itself is
+# the dangerous operation and must be denied.
+AMBIGUOUS_PREFIX_MARKER='__SAFE_OPS_AMBIGUOUS_WRAPPER__'
+resolve_command_prefix() {
+  local segment="$1" token prefix
+  local -a words
+  local i=0 n
+  # read -a cannot preserve argv boundaries for quoted whitespace. For
+  # recognized wrappers, fail closed rather than guessing whether the next
+  # logical word is an option value or the real executable.
+  if printf '%s' "$segment" | grep -qE '(^|[[:space:]])([^[:space:]]*/)?(env|time|xargs)([[:space:]]|$)' &&
+    printf '%s' "$segment" | grep -qE "[\"'][^\"']*[[:space:]][^\"']*[\"']"; then
+    printf '%s' "$AMBIGUOUS_PREFIX_MARKER"
+    return 0
+  fi
+  read -r -a words <<<"$segment"
+  n=${#words[@]}
+
+  while [ "$i" -lt "$n" ]; do
+    token="${words[$i]}"
+    # read -a is intentionally not a shell evaluator; normalize only quotes
+    # wrapped around a prefix token so `env "sudo" ...` cannot hide it.
+    token="${token#\"}"
+    token="${token%\"}"
+    token="${token#\'}"
+    token="${token%\'}"
+    words[$i]="$token"
+    prefix="${token##*/}"
+    case "$prefix" in
+      [A-Za-z_][A-Za-z0-9_]*=*)
+        # read -a splits an escaped space into two words; consume the
+        # continuation so `FOO=a\ b sudo ...` still reaches sudo.
+        while [[ "${words[$i]}" == *\\ && "$((i + 1))" -lt "$n" ]]; do
+          i=$((i + 1))
+        done
+        # Quoted assignment values are split by read -a as well; consume all
+        # words through the closing quote before resolving the command.
+        while [ "$i" -lt "$n" ] && { [[ "${words[$i]}" == *\"* && "${words[$i]}" != *\" ]] || [[ "${words[$i]}" == *\'* && "${words[$i]}" != *\' ]]; }; do
+          i=$((i + 1))
+        done
+        i=$((i + 1))
+        ;;
+      env)
+        i=$((i + 1))
+        # env accepts flags and VAR=value pairs before the command.
+        while [ "$i" -lt "$n" ]; do
+          token="${words[$i]}"
+          token="${token#\"}"
+          token="${token%\"}"
+          token="${token#\'}"
+          token="${token%\'}"
+          words[$i]="$token"
+          case "$token" in
+            --)
+              i=$((i + 1))
+              break
+              ;;
+            -u | --unset) i=$((i + 2)) ;;
+            -i | -0 | --ignore-environment) i=$((i + 1)) ;;
+            [A-Za-z_][A-Za-z0-9_]*=*) i=$((i + 1)) ;;
+            -*) i=$((i + 1)) ;;
+            *) break ;;
+          esac
+        done
+        ;;
+      nohup)
+        i=$((i + 1))
+        [ "$i" -lt "$n" ] && [ "${words[$i]}" = "--" ] && i=$((i + 1))
+        ;;
+      command)
+        i=$((i + 1))
+        while [ "$i" -lt "$n" ] && [[ "${words[$i]}" == -* ]]; do
+          i=$((i + 1))
+        done
+        ;;
+      time)
+        i=$((i + 1))
+        # GNU/BSD time options precede the command; -o/--output consume a
+        # filename while flags such as -l are standalone.
+        while [ "$i" -lt "$n" ] && [[ "${words[$i]}" == -* ]]; do
+          if [ "${words[$i]}" = "-o" ] || [ "${words[$i]}" = "--output" ]; then
+            i=$((i + 2))
+          else
+            i=$((i + 1))
+          fi
+        done
+        ;;
+      nice)
+        i=$((i + 1))
+        if [ "$i" -lt "$n" ] && [ "${words[$i]}" = "-n" ]; then
+          i=$((i + 2))
+        elif [ "$i" -lt "$n" ] && [[ "${words[$i]}" =~ ^-[0-9]+$ ]]; then
+          i=$((i + 1))
+        fi
+        ;;
+      xargs)
+        i=$((i + 1))
+        # Skip xargs options, including options that consume one value.
+        while [ "$i" -lt "$n" ]; do
+          token="${words[$i]}"
+          case "$token" in
+            --)
+              i=$((i + 1))
+              break
+              ;;
+            -n | -P | -L | -I | -d | -E | -a | --max-args | --max-procs | --max-lines | --replace | --delimiter | --eof | --arg-file) i=$((i + 2)) ;;
+            -*) i=$((i + 1)) ;;
+            *) break ;;
+          esac
+        done
+        ;;
+      stdbuf)
+        i=$((i + 1))
+        while [ "$i" -lt "$n" ] && [[ "${words[$i]}" == -* ]]; do
+          token="${words[$i]}"
+          # stdbuf's -i/-o/-e options may be attached or separate.
+          if [[ "$token" == "-i" || "$token" == "-o" || "$token" == "-e" ]]; then
+            i=$((i + 2))
+          else
+            i=$((i + 1))
+          fi
+        done
+        ;;
+      timeout)
+        i=$((i + 1))
+        # Skip timeout flags and their values, then its duration.
+        while [ "$i" -lt "$n" ]; do
+          token="${words[$i]}"
+          case "$token" in
+            --)
+              i=$((i + 1))
+              break
+              ;;
+            -k | --kill-after | --signal) i=$((i + 2)) ;;
+            -*) i=$((i + 1)) ;;
+            *)
+              i=$((i + 1))
+              break
+              ;;
+          esac
+        done
+        ;;
+      sudo | doas | su)
+        # Elevation is itself a deny; leave this token as the binary.
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  printf '%s' "${words[*]:i}"
+}
+
+# Raw quoted arguments need a reader-aware check. Stripping all quoted text is
+# useful for avoiding prose false positives, but it must not erase a quoted
+# secret path from an actual cat/rg/head/... command. Nested -c payloads are
+# inspected recursively without eval.
+check_raw_segment() {
+  local segment="$1" normalized head binary nested
+  normalized=$(resolve_command_prefix "$segment")
+  if [ "$normalized" = "$AMBIGUOUS_PREFIX_MARKER" ]; then
+    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command."
+  fi
+  [ -z "$normalized" ] && return 0
+  head=$(printf '%s' "$normalized" | awk '{print $1}')
+  binary="${head##*/}"
+
+  case "$binary" in
+    cat | bat | head | tail | less | more | nl | od | xxd | strings | base64 | cp | mv | rsync | scp | open | source | . | rg | grep | ag | ack | awk | sed | sd)
+      # Versioned templates are intentionally readable.
+      if printf '%s ' "$segment" | grep -qE "$IS_TEMPLATE"; then
+        return 0
+      fi
+      if printf '%s ' "$segment" | grep -qE "[[:space:]][^[:space:]|;&]*${SECRET_NAME}([[:space:]]|[\"']|;|&|\\|)" ||
+        printf '%s ' "$segment" | grep -qE "${PROTECTED_HOME_PATH}|${PROTECTED_RELATIVE_PATH}"; then
+        deny "Reading secrets through the shell is blocked, including quoted paths. Use a redacted fixture or an environment variable."
+      fi
+      if [ "$binary" = awk ] && printf '%s' "$segment" | grep -qE 'system[[:space:]]*\('; then
+        deny "awk system() execution is blocked. It can execute arbitrary commands from a quoted program."
+      fi
+      ;;
+    sudo | doas | su | mkfs | mkfs.* | newfs | newfs_msdos)
+      deny "Dangerous command execution through a quoted or nested payload is blocked."
+      ;;
+    bash | sh | zsh | dash | fish | python | python3 | perl | ruby | node | nodejs)
+      if printf '%s' "$segment" | grep -qE '(os\.system|os\.popen|subprocess\.(run|call|Popen)|child_process\.)'; then
+        deny "Arbitrary command execution from a quoted interpreter payload is blocked."
+      fi
+      if printf '%s' "$normalized" | grep -qE '(^|[[:space:]])(-c|--command)(=|[[:space:]])'; then
+        nested=$(printf '%s' "$normalized" | sed -E 's/^[^[:space:]]+[[:space:]]+(-c|--command)(=|[[:space:]])//')
+        nested="${nested#\"}"
+        nested="${nested%\"}"
+        nested="${nested#\'}"
+        nested="${nested%\'}"
+        [ -n "$nested" ] && analyze_canonical_command "$nested"
+      fi
+      ;;
+  esac
+}
+
+# A pending ask is emitted only after every deny rule has inspected the full
+# command. This prevents an early, routine ask (for example git clean) from
+# hiding a catastrophic deny in a later compound-command segment.
+ASK_REASON=""
 
 # DOS NIVELES, a proposito.
 #
@@ -110,15 +328,17 @@ deny() {
 }
 
 ask() {
-  # En modo autonomo el prompt no aporta: el usuario ya declaro que no quiere
-  # que le pregunten por esto. Queda el aviso en stderr, que el agente si lee.
-  if [ "$AUTONOMOUS" = true ]; then
-    echo "[validate-safe-ops] ($PERMISSION_MODE) $1" >&2
-    exit 0
+  # Do not terminate here: a later segment may contain a deny. Keep the first
+  # ask reason and emit it at the end, after all deny rules have run.
+  if [ -z "$ASK_REASON" ]; then
+    ASK_REASON="$1"
+    # En modo autonomo el prompt no aporta: el usuario ya declaro que no quiere
+    # que le pregunten por esto. Queda el aviso en stderr, que el agente si lee.
+    if [ "$AUTONOMOUS" = true ]; then
+      echo "[validate-safe-ops] ($PERMISSION_MODE) $1" >&2
+    fi
   fi
-  jq -nc --arg reason "$1" \
-    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
-  exit 0
+  return 0
 }
 
 # === UNIVERSAL — comando completo (patrones RCE y destruccion multi-linea) ===
@@ -150,6 +370,24 @@ fi
 HAYSTACK="$NO_QUOTES_FULL "
 SECRET_NAME='(\.env(\.[a-zA-Z0-9_-]+)?|credentials\.json|id_rsa|id_ed25519|id_ecdsa|[^[:space:]]*\.(pem|key|ppk|p12|pfx|pvk))'
 SECRET_ARG="[[:space:]][^[:space:]|;&]*${SECRET_NAME}([[:space:]]|;|&|\\|)"
+# Explicit settings.deny paths need a second, raw-command check. The generic
+# reader rule intentionally strips quoted strings to avoid documentation false
+# positives, but that also erased `cat "$HOME/.aws/credentials"`. These paths
+# are never safe to inspect through Bash, whether addressed by tilde, HOME, or
+# a relative secrets directory. The payloads are only strings; no path is
+# opened here.
+# Include the literal resolved home path as well as shell aliases. Escape the
+# path for ERE without invoking a shell or resolving any user-provided text.
+HOME_REGEX=${HOME//\\/\\\\}
+HOME_REGEX=${HOME_REGEX//./\\.}
+HOME_REGEX=${HOME_REGEX//\//\\/}
+PROTECTED_HOME_PATH="(~|\\\$HOME|\\\$\\{HOME\\}|${HOME_REGEX})/(\\.aws/credentials|\\.config/gh/hosts\\.yml|\\.netrc|\\.npmrc|\\.docker/config\\.json|\\.kube/config|\\.gnupg)(/|[[:space:]]|[\"';|&]|$)"
+PROTECTED_RELATIVE_PATH="((\\./|\\.\\./)*secrets/[^[:space:]\"';|&]+)"
+PROTECTED_READER="(^|[;&|])[[:space:]]*(cat|rg|head|tail|grep|awk)[[:space:]]+[^;&|]*"
+if printf '%s' "$COMMAND_VARS_RESOLVED" | grep -qE \
+  "${PROTECTED_READER}(${PROTECTED_HOME_PATH}|${PROTECTED_RELATIVE_PATH})"; then
+  deny "Bash reading a protected credential path is blocked, including tilde, HOME, and relative secrets/** aliases. Use a redacted fixture or an explicitly named non-secret variable."
+fi
 # Plantillas versionadas: '.env.example' se commitea a proposito y no contiene
 # nada. Bloquearlo solo entrena a esquivar el hook.
 IS_TEMPLATE='\.(example|sample|template|dist|defaults?)([[:space:]]|;|&|\|)'
@@ -314,6 +552,8 @@ RM_RECURSIVE='\brm\s+(-[a-zA-Z]*\s+)*-?[a-zA-Z]*r[a-zA-Z]*f|\brm\s+(-[a-zA-Z]*\s
 if echo "$NO_QUOTES_FULL" | grep -qE "$RM_RECURSIVE"; then
   # Solo el objetivo decide el nivel. Borrar la raiz o el home no se negocia;
   # borrar un build o un directorio temporal es trabajo normal.
+  # shellcheck disable=SC2016
+  # The regex intentionally matches literal $HOME text.
   if echo "$NO_QUOTES_FULL" | grep -qE '\brm\s+(-[a-zA-Z]+\s+)+(/|/\*|~|~/|~/\*|\$HOME|\$HOME/|\$HOME/\*)(\s|$|;|&)'; then
     deny "rm -rf over the root or the home directory is blocked. It is irreversible and there is no legitimate reason to run it from an agent session."
   fi
@@ -347,15 +587,20 @@ fi
 SEGMENTS=$(printf '%s' "$NO_QUOTES_FULL" | awk '{gsub(/&&|\|\||\||;/, "\n"); print}')
 
 check_segment() {
-  local segment="$1"
-  local head binary
+  local segment="$1" normalized head binary
+  normalized=$(resolve_command_prefix "$segment")
+  if [ "$normalized" = "$AMBIGUOUS_PREFIX_MARKER" ]; then
+    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command."
+  fi
+  [ -z "$normalized" ] && return 0
+  segment="$normalized"
   head=$(printf '%s' "$segment" | awk '{print $1}')
   [ -z "$head" ] && return 0
   binary="${head##*/}"
 
   case "$binary" in
-    sudo | doas)
-      deny "sudo blocked. Run without elevated privileges."
+    sudo | doas | su)
+      deny "Privilege escalation through sudo/doas/su is blocked. Run without elevated privileges."
       ;;
     git)
       # --force($|[^-]) = --force al final o seguido de espacio (no --force-with-lease)
@@ -431,9 +676,50 @@ check_segment() {
   esac
 }
 
+# Canonical analyzer: preserve quoted arguments and command names, split only
+# shell operators outside quotes, and run raw plus binary-specific checks. The
+# same function is used for top-level input and nested -c payloads.
+analyze_canonical_command() {
+  local command="$1" raw_segments raw_segment
+  if printf '%s' "$command" | grep -qE "(curl.*\\|[[:space:]]*|wget.*-O[[:space:]]*-[^|]*\\|[[:space:]]*)[\"']?(bash|sh|zsh)[\"']?"; then
+    deny "Piping a remote script to a shell is blocked. Download it, review it, and run it separately."
+  fi
+  raw_segments=$(printf '%s' "$command" | awk '
+    {
+      out = ""; single = 0; double = 0; escaped = 0
+      for (i = 1; i <= length($0); i++) {
+        ch = substr($0, i, 1)
+        if (escaped) { out = out ch; escaped = 0; continue }
+        if (ch == "\\\\" && !single) { out = out ch; escaped = 1; continue }
+        if (ch == "\"" && !single) { double = !double; out = out ch; continue }
+        if (ch == "\047" && !double) { single = !single; out = out ch; continue }
+        if (!single && !double && (ch == ";" || ch == "|" || ch == "&")) {
+          if (length(out)) print out
+          out = ""
+          continue
+        }
+        out = out ch
+      }
+      if (length(out)) print out
+    }
+  ')
+  while IFS= read -r raw_segment; do
+    check_raw_segment "$raw_segment"
+    check_segment "$raw_segment"
+  done <<<"$raw_segments"
+}
+
+analyze_canonical_command "$COMMAND_VARS_RESOLVED"
+
 while IFS= read -r segment; do
   check_segment "$segment"
-done <<< "$SEGMENTS"
+done <<<"$SEGMENTS"
+
+# Emit a deferred ask only after every deny rule has inspected every segment.
+if [ -n "$ASK_REASON" ] && [ "$AUTONOMOUS" != true ]; then
+  jq -nc --arg reason "$ASK_REASON" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
+fi
 
 # Sin hallazgos: no opinamos. El flujo de permisos de settings.json decide.
 exit 0

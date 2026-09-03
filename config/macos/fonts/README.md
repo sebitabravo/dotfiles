@@ -1,51 +1,37 @@
 # Fonts
 
 Nerd Fonts para la terminal y el editor de codigo.
-Se instalan MANUALMENTE (no via brew) porque no son herramientas de desarrollo.
-Descargar, descomprimir, seleccionar todos los `.ttf` y abrir con FontBook.
+`./install.sh` las instala automaticamente en macOS; no se usan casks de Homebrew.
 
 ## Fuentes incluidas
 
 | Font | Original | Descargar |
 |---|---|---|---|
-| **Cascadia Code** | Microsoft | https://github.com/microsoft/cascadia-code/releases/latest |
-| **FiraCode Nerd Font** | Nerd Fonts | https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip |
-| **JetBrains Mono** | JetBrains | https://github.com/JetBrains/JetBrainsMono/releases |
-| **Meslo LG** | Andre Berg | https://github.com/andreberg/Meslo-Font |
+| **Cascadia Code PL** | Microsoft | <https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip> |
+| **FiraCode Nerd Font** | Nerd Fonts | <https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip> |
+| **JetBrains Mono** | JetBrains | <https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip> |
+| **Meslo LG** | Andre Berg | <https://codeload.github.com/andreberg/Meslo-Font/zip/09a431d546d211130352c28eb0466e5d7d5aeaf0> |
+| **IosevkaTerm NF** | Nerd Fonts | <https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/IosevkaTerm.zip> |
 
 ## Instalacion
 
+El instalador descarga solo los archivos HTTPS versionados de la tabla, valida
+cada SHA-256, los extrae en un directorio temporal y copia los `.ttf` nuevos a
+`~/Library/Fonts`. Font Book los detecta desde ese destino sin automatizar la
+interfaz grafica.
+
 ```bash
-# Opcion 1: Descargar e instalar manualmente
-# 1. Ir al link de descarga
-# 2. Descomprimir el ZIP
-# 3. Seleccionar todos los .ttf
-# 4. Clic derecho -> Abrir con FontBook
-# 5. FontBook -> Instalar fuente
-
-# Opcion 2: Script rapido (curl + unzip + FontBook)
-
-# Cascadia Code — Microsoft
-curl -LO "https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip"
-unzip -q "CascadiaCode-2407.24.zip" -d "CascadiaCode/"
-open "CascadiaCode"/*.ttf
-echo "Instala Cascadia Code en FontBook"
-
-# JetBrains Mono — JetBrains
-curl -LO "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip"
-unzip -q "JetBrainsMono-2.304.zip" -d "JetBrainsMono/"
-open "JetBrainsMono"/*.ttf
-echo "Instala JetBrains Mono en FontBook"
-
-# FiraCode — Nerd Fonts
-curl -LO "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
-unzip -q "FiraCode.zip" -d "FiraCode/"
-open "FiraCode"/*.ttf
-echo "Instala FiraCode en FontBook"
-
-# Meslo LG — Andre Berg (repo ZIP, fonts en dist/)
-curl -LO "https://github.com/andreberg/Meslo-Font/archive/master.zip"
-unzip -q "master.zip" -d "Meslo-Font/"
-open "Meslo-Font/Meslo-Font-master/dist/"*.ttf
-echo "Instala Meslo LG en FontBook"
+./install.sh
 ```
+
+Para inspeccionar el plan sin descargar, extraer ni escribir fuentes:
+
+```bash
+./install.sh --dry-run
+```
+
+La instalacion es idempotente: una fuente ya presente con los mismos bytes se
+omite. Si existe un archivo con el mismo nombre pero distinto contenido, el
+instalador aborta en vez de reemplazar una fuente del usuario. Tambien aborta
+ante fallas de descarga, checksum, extraccion o si un archivo no contiene
+ningun `.ttf`; el staging temporal se elimina al salir.

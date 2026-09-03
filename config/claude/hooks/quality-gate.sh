@@ -36,21 +36,155 @@ COMMAND=$(echo "$input" | jq -r '.tool_input.command // ""')
 # El patron anterior ('git commit ' literal) exigia el espacio final y no veia
 # 'git -C /ruta commit -m x', asi que el gate se saltaba entero.
 #
-# Se matchea sobre el comando SIN strings quoted, igual que validate-safe-ops.
-# Sin eso, cualquier comando que mencione 'git commit' adentro de un string lo
-# disparaba: `echo "git commit"`, un heredoc de documentacion, o un printf que
-# arma el input de este mismo hook para testearlo. El resultado era un bloqueo
-# de commit sobre un comando que no commitea nada.
-# El mensaje real de un commit tambien queda fuera, que es lo que se busca:
-# `git commit -m "fix: git commit docs"` colapsa a `git commit -m ` y sigue
-# matcheando por el binario, no por el texto del mensaje.
-NO_QUOTES=$(echo "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+# Se matchea sobre el segmento que contiene el commit, no sobre el comando
+# completo. Sin esta frontera, `git commit -m wip && git -C ~/scratch status`
+# resolvia el ultimo `-C` (el del status) y podia evaluar el repo equivocado.
+# NOTA: tokenizer intencionalmente distinto de validate-safe-ops:resolve_command_prefix
+# y privacy-review:shlex. Este splitter separa segmentos por operadores shell
+# respetando comillas y sustituciones; los otros resuelven prefijos de binario
+# o argv de gh. No son duplicacion — cada uno parsea un dominio diferente.
+# Igual que validate-safe-ops, separamos por operadores antes de revisar cada
+# segmento; solo los operadores FUERA de comillas son separadores. Un splitter
+# ciego rompe valores validos como `git -c user.name='A&B' commit` y puede hacer
+# que el gate rechace o evalue un segmento distinto del que ejecuta Bash.
+# Un comando compuesto con mas de un commit se rechaza: validar solo uno
+# dejaria que el otro escapara al gate.
+split_shell_segments() {
+  local text="$1" normalize_nested="${2:-false}" segment="" quote="" escaped=false ch next
+  local substitution_depth=0 backtick_depth=0
+  local i=0 length=${#1}
 
-echo "$NO_QUOTES" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]]+[^[:space:]-][^[:space:]]*)?)*[[:space:]]+commit\b' || exit 0
+  while [ "$i" -lt "$length" ]; do
+    ch="${text:i:1}"
 
-# Skip merge commits. --amend NO se exceptua: era un bypass de una sola flag
-# para cualquier commit que el gate acabara de bloquear.
-echo "$COMMAND" | grep -qE '(--merge|-m\s+"merge)' && exit 0
+    if [ "$escaped" = true ]; then
+      segment+="$ch"
+      escaped=false
+      i=$((i + 1))
+      continue
+    fi
+
+    if [ "$ch" = "\\" ] && [ "$quote" != "'" ]; then
+      segment+="$ch"
+      escaped=true
+      i=$((i + 1))
+      continue
+    fi
+
+    if [ "$ch" = '$' ] && [ "${text:i+1:1}" = '(' ] && [ "$quote" != "'" ] && [ "$backtick_depth" -eq 0 ] && [ "$substitution_depth" -eq 0 ]; then
+      segment+='$('
+      substitution_depth=1
+      i=$((i + 2))
+      continue
+    fi
+
+    # Operators inside command substitutions are part of the substitution,
+    # not separators for the outer command. Track nested `$()` without ever
+    # evaluating its contents; this keeps `git -c user.name=$(printf A &&
+    # printf B) commit` as one commit-bearing segment.
+    if [ "$substitution_depth" -gt 0 ]; then
+      if [ "$normalize_nested" = true ] && { [ "$ch" = ' ' ] || [ "$ch" = $'\t' ] || [ "$ch" = $'\n' ]; }; then
+        segment+='_'
+      else
+        segment+="$ch"
+      fi
+      if [ "$ch" = '$' ] && [ "${text:i+1:1}" = '(' ]; then
+        segment+='('
+        substitution_depth=$((substitution_depth + 1))
+        i=$((i + 1))
+      elif [ "$ch" = ')' ]; then
+        substitution_depth=$((substitution_depth - 1))
+      fi
+      i=$((i + 1))
+      continue
+    fi
+
+    # Backtick substitutions have no portable nesting syntax of their own,
+    # but their body still must be opaque to the outer operator splitter.
+    # Escaped backticks are handled by the backslash branch above.
+    if [ "$backtick_depth" -gt 0 ]; then
+      if [ "$normalize_nested" = true ] && { [ "$ch" = ' ' ] || [ "$ch" = $'\t' ] || [ "$ch" = $'\n' ]; }; then
+        segment+='_'
+      else
+        segment+="$ch"
+      fi
+      [ "$ch" = '`' ] && backtick_depth=0
+      i=$((i + 1))
+      continue
+    fi
+
+    case "$quote" in
+      "'")
+        segment+="$ch"
+        [ "$ch" = "'" ] && quote=""
+        ;;
+      '"')
+        segment+="$ch"
+        [ "$ch" = '"' ] && quote=""
+        ;;
+      '')
+        case "$ch" in
+          "'" | '"')
+            quote="$ch"
+            segment+="$ch"
+            ;;
+          '`')
+            backtick_depth=1
+            segment+="$ch"
+            ;;
+          ';' | '&' | '|')
+            printf '%s\n' "$segment"
+            segment=""
+            next="${text:i+1:1}"
+            if [ "$ch" = '&' ] || [ "$ch" = '|' ]; then
+              [ "$next" = "$ch" ] && i=$((i + 1))
+            fi
+            ;;
+          *)
+            segment+="$ch"
+            ;;
+        esac
+        ;;
+    esac
+    i=$((i + 1))
+  done
+
+  if [ -n "$quote" ] || [ "$escaped" = true ] || [ "$substitution_depth" -gt 0 ] || [ "$backtick_depth" -gt 0 ]; then
+    return 1
+  fi
+  printf '%s\n' "$segment"
+}
+
+if ! COMMAND_SEGMENTS=$(split_shell_segments "$COMMAND"); then
+  echo '[quality-gate] COMMIT BLOCKED: unable to parse command safely (unterminated quote or escape); run one simple commit command.' >&2
+  exit 2
+fi
+COMMIT_SEGMENT=""
+COMMIT_SEGMENT_MATCH=""
+COMMIT_COUNT=0
+while IFS= read -r candidate; do
+  # Collapse whitespace inside nested substitutions only for recognition. This
+  # keeps the existing commit matcher token-oriented without treating spaces
+  # from `$(...)` or backticks as separators in the outer command.
+  candidate_for_match=$(split_shell_segments "$candidate" true)
+  candidate_no_quotes=$(printf '%s' "$candidate_for_match" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
+  if printf '%s' "$candidate_no_quotes" | grep -qE '\bgit\b([[:space:]]+-{1,2}[^[:space:]]+([[:space:]]+[^[:space:]-][^[:space:]]*)?)*[[:space:]]+commit\b'; then
+    COMMIT_COUNT=$((COMMIT_COUNT + 1))
+    if [ "$COMMIT_COUNT" -eq 1 ]; then
+      COMMIT_SEGMENT="$candidate"
+      COMMIT_SEGMENT_MATCH="$candidate_for_match"
+    fi
+  fi
+done <<<"$COMMAND_SEGMENTS"
+[ -n "$COMMIT_SEGMENT" ] || exit 0
+[ "$COMMIT_COUNT" -eq 1 ] || {
+  echo "[quality-gate] COMMIT BLOCKED: command contains $COMMIT_COUNT git commit segments; run one commit per command so every commit is gated." >&2
+  exit 2
+}
+
+# --amend NO se exceptua: seria un bypass de una sola flag para cualquier commit
+# que el gate acabara de bloquear. La excepcion de merge se resuelve mas abajo,
+# donde ya se sabe a que repo apunta el comando.
 
 # Detect project root and test runner.
 #
@@ -75,7 +209,10 @@ esac
 
 # El sed de BSD (macOS) no entiende \b, asi que el limite de palabra se escribe
 # a mano. Sin eso el patron no matcheaba nunca y `git -C` caia al cwd.
-GIT_C_PATH=$(echo "$COMMAND" | sed -nE "s/.*(^|[^[:alnum:]_])git[[:space:]]+-C[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\3\4\5/p")
+# Use the normalized outer segment for target extraction. Nested `$()`/backtick
+# bodies have their whitespace collapsed, so an inner `git -C` cannot redirect
+# this commit's target repository.
+GIT_C_PATH=$(echo "$COMMIT_SEGMENT_MATCH" | sed -nE "s/.*(^|[^[:alnum:]_])git[[:space:]]+-C[[:space:]]+('([^']*)'|\"([^\"]*)\"|([^[:space:]&;|]+)).*/\3\4\5/p")
 [ -n "$GIT_C_PATH" ] && case "$GIT_C_PATH" in
   /*) TARGET_DIR="$GIT_C_PATH" ;;
   ~*) TARGET_DIR="${GIT_C_PATH/#\~/$HOME}" ;;
@@ -84,6 +221,20 @@ esac
 
 ROOT=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || echo "$TARGET_DIR")
 cd "$ROOT" 2>/dev/null || exit 0
+
+# Merge commit en curso: git mantiene MERGE_HEAD entre el merge y el commit que
+# lo cierra. Es la unica señal confiable, y hay que leerla del repo — por eso
+# esta aca y no junto al resto del parseo del comando.
+#
+# Antes se miraba el texto: `grep -qE '(--merge|-m\s+"merge)'`. Fallaba en los
+# dos sentidos. `git commit` no tiene flag `--merge`, y un merge real se cierra
+# con `git commit` sin `-m`, asi que el caso a eximir nunca matcheaba; mientras
+# tanto cualquier `git commit -m "merge ..."` saltaba el gate entero, que es el
+# bypass de una palabra que el comentario de arriba dice no querer.
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+  echo "[quality-gate] merge in progress (MERGE_HEAD): the merge commit does not go through the gate." >&2
+  exit 0
+fi
 
 # Kill switch por repo. Mismo patron que RDD y por la misma razon: un guardarrail
 # que nadie puede desactivar termina esquivado por caminos peores (--no-verify,
@@ -95,15 +246,15 @@ RELAXED=false
 
 # El modo de permisos NO relaja este gate, a proposito.
 #
-# Antes si lo hacia, cuando bypassPermissions era algo que se elegia a mano para
-# una sesion puntual. Ahora `defaultMode` es bypassPermissions de forma
-# permanente, asi que degradar por modo dejaba el gauntlet inerte para siempre.
+# Antes si lo hacia, cuando un modo permisivo era algo que se elegia a mano para
+# una sesion puntual. Con un `defaultMode` fijo, degradar por modo dejaria el
+# gauntlet inerte de forma permanente en vez de puntual.
 #
-# La distincion que importa: bypass elimina PROMPTS DE PERMISO — preguntas sobre
-# si tenes derecho a hacer algo. Un gate de calidad no pregunta eso; dice que el
-# codigo todavia no esta listo. Son cosas distintas y no deberian compartir
-# interruptor. Los `ask` de validate-safe-ops si degradan en bypass, porque esos
-# si son prompts.
+# La distincion que importa: un modo de permisos gobierna PROMPTS — preguntas
+# sobre si tenes derecho a hacer algo. Un gate de calidad no pregunta eso; dice
+# que el codigo todavia no esta listo. Son cosas distintas y no deberian
+# compartir interruptor. Los `ask` de validate-safe-ops si dependen del modo,
+# porque esos si son prompts.
 #
 # Para relajar este gate esta `.claude-relaxed`, que es una decision explicita
 # por repo y no un efecto lateral del modo de permisos.
@@ -195,7 +346,6 @@ if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
   [ -n "$RDD_MSG" ] && block "$RDD_MSG"
 fi
 
-
 # Detect test runner and lint.
 #
 # Primero se prueba en la raiz del repo (comportamiento historico, intacto
@@ -209,14 +359,13 @@ fi
 # correr la suite de un paquete que el commit ni toco.
 # QUIEN DECIDE COMO SE CORREN LOS TESTS: lib/test-runner.sh, no este archivo.
 #
-# Habia dos implementaciones de la misma deteccion y se desincronizaron. La lib
-# declara el target `test:` de un Makefile como maxima precedencia — si el repo
-# escribio ahi que significa "correr los tests", adivinarlo de nuevo es
-# reimplementar peor algo que ya esta escrito — y esta funcion no lo conocia.
-# Resultado: un repo cuyas suites se lanzan por make quedaba como "sin runner" y
-# el gate bloqueaba sin haber corrido nada. Bloquear ciego no es ser estricto.
+# La lib centraliza la precedencia: primero respeta un runner explicito del repo
+# (por ejemplo `test.sh` en un dotfiles), luego Make/Just y finalmente los
+# manifiestos detectables por convencion. Esta funcion no debe duplicar esa
+# decision ni imponer una herramienta de build que el proyecto no necesita.
 QG_LIB="$(dirname "${BASH_SOURCE[0]}")/lib/test-runner.sh"
 # shellcheck source=lib/test-runner.sh
+# shellcheck disable=SC1091
 [ -f "$QG_LIB" ] && . "$QG_LIB"
 
 detect_project_at() {
@@ -224,21 +373,31 @@ detect_project_at() {
   # directorio $1 (relativo a ROOT, "." para la raiz). No cambia el cwd del
   # script: los comandos generados llevan su propio "cd" cuando dir != ".".
   local dir="$1" prefix=""
-  [ "$dir" != "." ] && prefix="cd \"$dir\" && "
+  [ "$dir" != "." ] && prefix="cd $(shell_quote "$dir") && "
 
   HAS_TESTS=false
   TEST_CMD=""
   LINT_CMD=""
   COVERAGE_CMD=""
   COVERAGE_KIND=""
+  COVERAGE_EXTRA=false
 
   # La lib manda para TEST_CMD. Los bloques por manifiesto de mas abajo siguen
   # corriendo, pero ya solo para COVERAGE_CMD y LINT_CMD, que la lib no cubre.
+  #
+  # DECLARED bloquea el reemplazo por COVERAGE_CMD. Sin esto, un repo con
+  # `test.sh` propio y un `package.json` con vitest terminaba corriendo
+  # `npm test -- --coverage` en vez del runner que el repo escribio: el gate
+  # decia respetar la decision del proyecto y ejecutaba otra cosa. Se pierde la
+  # medicion de cobertura, y eso se reporta como NO MEDIDO mas abajo — que es la
+  # respuesta honesta, no correr un comando que el repo no eligio.
+  local declared=false
   if declare -f detect_test_cmd >/dev/null 2>&1; then
     local lib_root="$dir"
     [ "$dir" = "." ] && lib_root="$PWD"
     if detect_test_cmd "$lib_root" && [ -n "$TEST_CMD" ]; then
       HAS_TESTS=true
+      [ "${TEST_CMD_SOURCE:-}" = declared ] && declared=true
     else
       TEST_CMD=""
     fi
@@ -291,6 +450,14 @@ detect_project_at() {
       LINT_CMD="${prefix}golangci-lint run"
     fi
   fi
+
+  # Un runner declarado NO se reemplaza por la variante con flag de cobertura,
+  # pero tampoco cancela la medicion: se corren los dos. Un solo punto de
+  # decision y despues de los bloques por manifiesto, porque cada uno arma su
+  # COVERAGE_CMD sin saber de los otros y repetir la condicion es como se
+  # desincronizan.
+  COVERAGE_EXTRA=false
+  [ "$declared" = true ] && [ -n "$COVERAGE_CMD" ] && COVERAGE_EXTRA=true
 }
 
 STAGED_FILES_FOR_DETECT=$(git diff --cached --name-only 2>/dev/null)
@@ -351,8 +518,11 @@ if [ -n "$STAGED_FILES_FOR_DETECT" ]; then
   ALL_NON_CODE=true
   while IFS= read -r f; do
     [ -z "$f" ] && continue
-    is_docs_or_config "$f" || { ALL_NON_CODE=false; break; }
-  done <<< "$STAGED_FILES_FOR_DETECT"
+    is_docs_or_config "$f" || {
+      ALL_NON_CODE=false
+      break
+    }
+  done <<<"$STAGED_FILES_FOR_DETECT"
   if [ "$ALL_NON_CODE" = true ]; then
     echo "[quality-gate] Commit with no code (docs/config/assets) — no test gate." >&2
     exit 0
@@ -369,9 +539,42 @@ if [ "$HAS_TESTS" = false ] && [ -z "$LINT_CMD" ]; then
     if [ -f "$d/package.json" ] || [ -f "$d/pyproject.toml" ] || [ -f "$d/setup.cfg" ] || [ -f "$d/pytest.ini" ] || [ -f "$d/go.mod" ]; then
       MONO_DIRS+=("$d")
     fi
-  done <<< "$STAGED_DIRS_FOR_DETECT"
+  done <<<"$STAGED_DIRS_FOR_DETECT"
   [ "${#MONO_DIRS[@]}" -gt 0 ] && PROJECT_DIRS=("${MONO_DIRS[@]}")
 fi
+
+# run_with_timeout (lib/test-runner.sh) bounds every eval'd command below:
+# a stock macOS host has neither timeout nor gtimeout, and Claude Code's
+# own docs confirm a timed-out command hook is fail-open (does not block
+# the tool call) -- without an internal bound, a hanging lint/test/coverage
+# command was relying entirely on the outer harness timeout to ever stop
+# it, which meant the commit could go through unchecked instead of blocked.
+QG_LINT_TIMEOUT_SECONDS="${QG_LINT_TIMEOUT_SECONDS:-20}"
+QG_TEST_TIMEOUT_SECONDS="${QG_TEST_TIMEOUT_SECONDS:-90}"
+QG_COVERAGE_TIMEOUT_SECONDS="${QG_COVERAGE_TIMEOUT_SECONDS:-30}"
+
+# These three per-stage ceilings (140s) already sit under settings.json's
+# 150s outer PreToolUse timeout for ONE project. A monorepo commit can walk
+# several PROJECT_DIRS in the same run, and each used to get its own full
+# 140s -- two projects could already run past the outer timeout, handing
+# control back to the exact fail-open harness behavior run_with_timeout
+# exists to avoid. QG_TOTAL_TIMEOUT_SECONDS is a budget shared across every
+# PROJECT_DIR in this run: each stage gets min(its own ceiling, whatever is
+# left of the shared budget), and $SECONDS (seconds since this script
+# started) is what measures how much has been spent so far.
+QG_TOTAL_TIMEOUT_SECONDS="${QG_TOTAL_TIMEOUT_SECONDS:-140}"
+
+budget_remaining() {
+  local left=$((QG_TOTAL_TIMEOUT_SECONDS - SECONDS))
+  [ "$left" -lt 0 ] && left=0
+  printf '%s' "$left"
+}
+
+cap_to_budget() {
+  local ceiling="$1" left
+  left=$(budget_remaining)
+  if [ "$left" -lt "$ceiling" ]; then printf '%s' "$left"; else printf '%s' "$ceiling"; fi
+}
 
 for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   detect_project_at "$PROJECT_DIR"
@@ -396,20 +599,73 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
 
   # 1. Lint (if available)
   if [ -n "$LINT_CMD" ]; then
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before lint could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    LINT_BOUND=$(cap_to_budget "$QG_LINT_TIMEOUT_SECONDS")
     # eval y no $LINT_CMD a secas: sin eval, el "cd dir &&" de los proyectos de
     # subdirectorio llega como argumentos literales en vez de ejecutarse.
-    LINT_OUTPUT=$(eval "$LINT_CMD" 2>&1) || block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
+    LINT_OUTPUT=$(run_with_timeout "$LINT_BOUND" "$LINT_CMD")
+    LINT_RC=$?
+    if [ "$LINT_RC" = 124 ]; then
+      block "[$LABEL] lint did not finish in ${LINT_BOUND}s. It could NOT be verified. Run: $LINT_CMD" "$LINT_OUTPUT"
+    elif [ "$LINT_RC" != 0 ]; then
+      block "[$LABEL] lint failed. Run: $LINT_CMD" "$LINT_OUTPUT"
+    fi
   fi
 
   # 2. Tests + coverage, UNA sola corrida.
   # Antes corria TEST_CMD y despues COVERAGE_CMD, que re-ejecuta la misma suite
-  # entera: dos corridas completas en cada intento de commit, con timeout de 120s.
+  # entera: dos corridas completas en cada intento de commit.
   # COVERAGE_CMD es TEST_CMD con un flag, asi que si existe reemplaza a TEST_CMD
   # y de la misma salida se saca el porcentaje.
+  #
+  # Excepcion: si el repo declaro su runner (test.sh, target de make/just) ese
+  # es el que dictamina si los tests pasan — no se cambia por una variante
+  # nuestra. La cobertura se mide igual, en una segunda corrida, porque dejar de
+  # medirla para respetar al runner seria pagar el respeto con una metrica menos.
   RUN_CMD="${COVERAGE_CMD:-$TEST_CMD}"
+  [ "${COVERAGE_EXTRA:-false}" = true ] && RUN_CMD="$TEST_CMD"
   TEST_OUTPUT=""
   if [ -n "$RUN_CMD" ]; then
-    TEST_OUTPUT=$(eval "$RUN_CMD" 2>&1) || block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before tests could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    TEST_BOUND=$(cap_to_budget "$QG_TEST_TIMEOUT_SECONDS")
+    TEST_OUTPUT=$(run_with_timeout "$TEST_BOUND" "$RUN_CMD")
+    TEST_RC=$?
+    if [ "$TEST_RC" = 124 ]; then
+      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
+    elif [ "$TEST_RC" != 0 ]; then
+      block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
+    fi
+  fi
+
+  # La segunda corrida es solo para leer los porcentajes. Si falla (o se
+  # cuelga) no vuelve a dictaminar sobre los tests (de eso ya se encargo el
+  # runner declarado), pero tampoco se calla: sin salida no hay metrica, y eso
+  # se reporta como NO MEDIDO.
+  if [ "${COVERAGE_EXTRA:-false}" = true ]; then
+    if [ "$(budget_remaining)" -eq 0 ]; then
+      block "[$LABEL] the shared ${QG_TOTAL_TIMEOUT_SECONDS}s quality-gate budget ran out before coverage could run (a monorepo commit walks several PROJECT_DIRS sharing one budget, so their sum never outlives the outer hook timeout). Increase QG_TOTAL_TIMEOUT_SECONDS or check fewer projects per commit."
+    fi
+    COVERAGE_BOUND=$(cap_to_budget "$QG_COVERAGE_TIMEOUT_SECONDS")
+    COV_RUN_OUTPUT=$(run_with_timeout "$COVERAGE_BOUND" "$COVERAGE_CMD")
+    COV_RC=$?
+    # Un fallo comun del comando de cobertura no dictamina sobre los tests (ya
+    # lo hizo el runner declarado): se degrada a NO MEDIDO. Un timeout es
+    # distinto -- significa que el proceso siguio vivo mas alla del bound
+    # interno, exactamente el escenario fail-open que run_with_timeout existe
+    # para cerrar en lint/test. Tragarlo aqui con el mismo `|| true` reabria
+    # esa brecha solo para la cobertura.
+    if [ "$COV_RC" = 124 ]; then
+      block "[$LABEL] coverage did not finish in ${COVERAGE_BOUND}s. It could NOT be verified. Run: $COVERAGE_CMD" "$COV_RUN_OUTPUT"
+    fi
+    if [ -n "$COV_RUN_OUTPUT" ]; then
+      TEST_OUTPUT="$COV_RUN_OUTPUT"
+    else
+      echo "[quality-gate] [$LABEL] coverage command produced no output: $COVERAGE_CMD" >&2
+    fi
   fi
 
   # 3. Coverage — bloqueante, por metrica.
@@ -423,7 +679,9 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # gate que finge medir es peor que no tener gate, porque compra confianza falsa.
   if [ -n "$COVERAGE_CMD" ]; then
     COVERAGE_OUTPUT="$TEST_OUTPUT"
-    COV_LINE=""; COV_BRANCH=""; COV_FUNC=""
+    COV_LINE=""
+    COV_BRANCH=""
+    COV_FUNC=""
 
     case "${COVERAGE_KIND:-}" in
       istanbul)

@@ -10,12 +10,12 @@ description: >-
   understand the styling patterns in a frontend repo — even if they just say "what
   does this app look like?" or "pull out the design from this code."
 allowed-tools:
+  - "ToolSearch"
   - "Bash"
   - "Read"
   - "Write"
   - "WebFetch"
 ---
-
 # Extract Design System from Frontend Code
 
 Analyze frontend source code to extract a comprehensive design system document

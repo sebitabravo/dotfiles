@@ -40,6 +40,35 @@ native runner.
 8. For critical behavior, run acceptance mutation after the normal suite is
    green. Improve scenarios until important example mutations are killed.
 
+## Portable stage contract
+
+When a project adopts the portable
+[Acceptance Pipeline Specification](https://github.com/unclebob/Acceptance-Pipeline-Specification),
+the stages are these. Reproduced so the signatures are never guessed — if what
+the repository has does not match, the repository wins.
+
+```text
+normal:    feature -> parser -> JSON IR -> [IR-DRY checker] -> generator -> entry points -> project runner
+mutation:  feature -> parser -> base JSON IR -> generator -> reusable entry points -> mutator -> runner adapter -> report
+```
+
+| Stage | Command | Who owns it |
+| --- | --- | --- |
+| Parse | `bb gherkin-parser <feature-file> <json-output>` | portable |
+| DRY report | `bb gherkin-ir-dry-checker [--include-exact] <json-ir> <report-output>` | portable |
+| Mutate | `bb gherkin-mutator [options]` | portable |
+| Generate | `acceptance-entrypoint-generator <json-ir> <generated-test-output>` | project |
+| Run | project runner adapter, runtime and step handlers | project |
+
+The Babashka tasks have Go binary fallbacks under the same names without the
+`bb` prefix. Conventional generated paths: `features/`, `build/acceptance/`,
+`build/acceptance-mutation/`, `acceptance/generated/`. Generated output is a
+build artifact — regenerate it, never hand-edit it.
+
+The portable half is only the parser, the DRY checker and the mutator. The
+generator, runtime, step handlers and runner adapter are project-specific by
+design: that is why inventing them is out of scope rather than merely risky.
+
 ## Command policy
 
 Prefer, in order:
@@ -84,11 +113,18 @@ Every acceptance result must state:
 Use the smallest workflow that owns the needed quality gates; do not launch a
 swarm by default:
 
-- **Small technical change**: coder -> cleaner; unit tests and local cleanup.
-- **Moderate business feature**: specifier -> coder -> refactorer -> architect;
-  accepted Gherkin, TDD, refactoring, CRAP/DRY and mutation review.
+- **Small technical change**: coder -> cleaner -> coder; unit tests and local
+  cleanup.
+- **Moderate business feature**: specifier -> coder -> refactorer -> architect
+  -> specifier; accepted Gherkin, TDD, refactoring, CRAP/DRY and mutation
+  review.
 - **Major or high-risk feature**: specifier -> coder -> cleaner -> architect ->
-  hardender -> QA; separate acceptance, architecture, mutation and final QA.
+  hardener -> QA; separate acceptance, architecture, mutation and final QA.
+
+The first two flows close the loop on purpose. Cleanup returns to the coder and
+architectural review returns to the specifier, because a behavior-preserving
+refactor still has to be re-checked against the specification that was
+approved. Only the six-pack terminates, and it terminates at QA.
 
 This is a responsibility map for Claude's delegation and verification. It does
 not require copying SwarmForge into every project.

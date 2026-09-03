@@ -58,7 +58,7 @@ done
 
 DIR="${DIR:-$DEFAULT_DIR}"
 mkdir -p "$(dirname "$DIR")"
-if command -v realpath >/dev/null 2>&1; then
+if realpath -m . >/dev/null 2>&1; then  # BSD/macOS realpath has no -m
   DIR="$(realpath -m "$DIR")"
 else
   DIR="$(cd "$(dirname "$DIR")" && pwd)/$(basename "$DIR")"
@@ -78,6 +78,21 @@ if [[ ! -d "$DIR/.git" ]]; then
   fi
 else
   echo "Using existing checkout: $DIR"
+  HEAD_SHA="$(git -C "$DIR" rev-parse HEAD 2>/dev/null || true)"
+  if [[ "$HEAD_SHA" != "$REF" ]]; then
+    echo "existing checkout not at pinned ref $REF (HEAD: ${HEAD_SHA:-missing}); re-pinning"
+    git -C "$DIR" fetch --depth 1 origin "$REF" || {
+      echo "error: could not fetch pinned ref $REF" >&2
+      exit 1
+    }
+    git -C "$DIR" checkout --detach "$REF"
+    git -C "$DIR" sparse-checkout set --no-cone '/src/'
+    HEAD_SHA="$(git -C "$DIR" rev-parse HEAD)"
+    if [[ "$HEAD_SHA" != "$REF" ]]; then
+      echo "error: expected pinned ref $REF, got $HEAD_SHA" >&2
+      exit 1
+    fi
+  fi
 fi
 
 if [[ ! -x "$DIR/.venv/bin/python" ]]; then
