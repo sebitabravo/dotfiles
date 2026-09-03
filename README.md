@@ -43,7 +43,7 @@ por último despliega los dotfiles. `--dry-run` es el único flag: no descarga n
 ejecuta instaladores externos: imprime cada comando planificado. Las descargas
 se hacen desde los URLs oficiales indicados por sus proveedores y cada payload
 debe coincidir con el SHA-256 aprobado en
-`config/install/remote-installers.sha256`; si falta el manifiesto o cambia el
+`.github/install/remote-installers.sha256`; si falta el manifiesto o cambia el
 payload, la instalación aborta antes de ejecutar el instalador. Esto protege
 los bytes concretos aprobados, aunque los endpoints upstream puedan seguir
 apuntando a versiones mutables: cuando un proveedor publique un payload nuevo,

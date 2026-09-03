@@ -202,8 +202,7 @@ fi
 
 if [[ -o interactive ]] &&
    [[ -t 0 ]] &&
-   [[ -z "$VSCODE_INJECTION" ]] &&
-   [[ -z "$JETBRAINS_IDE" ]]; then
+   [[ -z "$VSCODE_INJECTION" ]]; then
   fastfetch
 fi
 

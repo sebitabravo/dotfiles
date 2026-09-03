@@ -31,7 +31,7 @@ case "$#:${1:-}" in
 esac
 STAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_ROOT="$HOME/.dotfiles-backups/$STAMP"
-REMOTE_INSTALLER_MANIFEST="$DOTFILES/config/install/remote-installers.sha256"
+REMOTE_INSTALLER_MANIFEST="$DOTFILES/.github/install/remote-installers.sha256"
 P10K_URL='https://github.com/romkatv/powerlevel10k.git'
 P10K_COMMIT='3308262dfbd743b6e1d3956a2b5572f7a049d692'
 FONT_DESTINATION="$HOME/Library/Fonts"
@@ -91,6 +91,9 @@ REMOTE_INSTALLER_LABELS=(
   'Claude Code'
   'GitHub Copilot CLI'
   'Kilo Code'
+  'Pi'
+  'Spicetify'
+  'Spicetify Marketplace'
 )
 REMOTE_INSTALLER_URLS=(
   'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
@@ -103,6 +106,9 @@ REMOTE_INSTALLER_URLS=(
   'https://claude.ai/install.sh'
   'https://gh.io/copilot-install'
   'https://kilo.ai/cli/install'
+  'https://pi.dev/install.sh'
+  'https://raw.githubusercontent.com/spicetify/cli/main/install.sh'
+  'https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.sh'
 )
 # Set only while a verified remote installer is present. The trap removes this
 # exact mktemp path and never recursively removes a caller-controlled directory.
@@ -190,7 +196,8 @@ tool_exists() {
     "$HOME/.npm-global/bin/$command_name" \
     "$HOME/.local/share/pnpm/$command_name" \
     "$HOME/.opencode/bin/$command_name" \
-    "$HOME/.kilo/bin/$command_name"; do
+    "$HOME/.kilo/bin/$command_name" \
+    "$HOME/.spicetify/$command_name"; do
     [ -x "$candidate" ] && return 0
   done
   return 1
@@ -226,6 +233,16 @@ prepare_homebrew_path() {
     return 0
   done
   return 0
+}
+
+prepare_spicetify_path() {
+  case ":$PATH:" in
+    *":$HOME/.spicetify:"*) ;;
+    *)
+      PATH="$HOME/.spicetify:$PATH"
+      export PATH
+      ;;
+  esac
 }
 
 expected_remote_installer_index() {
@@ -607,6 +624,23 @@ install_bootstrap_tools() {
   install_remote_tool 'Claude Code' claude bash
   install_remote_tool 'GitHub Copilot CLI' copilot bash
   install_remote_tool 'Kilo Code' kilo bash --no-modify-path
+  install_remote_tool 'Pi' pi sh
+
+  # El instalador de Spicetify pregunta interactivamente (lee de /dev/tty) si
+  # instalar Marketplace y, de aceptar, ejecuta su propio curl|sh sin pin de
+  # checksum. Este script instala Marketplace aparte con su propio SHA-256
+  # verificado, así que ante esa pregunta corresponde responder "n".
+  if [ "$DRY_RUN" -eq 0 ]; then
+    printf '%s\n' '  NOTE   si Spicetify pregunta por Marketplace, responde "n" (se instala aparte, verificado)'
+  fi
+  install_remote_tool 'Spicetify' spicetify sh
+  prepare_spicetify_path
+
+  if [ -d "$HOME/.config/spicetify/CustomApps/marketplace" ]; then
+    printf '%s\n' '  SKIP   Spicetify Marketplace (ya existe ~/.config/spicetify/CustomApps/marketplace)'
+  else
+    run_remote_installer 'Spicetify Marketplace' sh
+  fi
 }
 
 # Claude's user-scope MCP registry is separate from the managed manifest copied
@@ -750,7 +784,7 @@ CLAUDE_FILES=(
 )
 
 REQUIRED_FILES=(
-  config/install/remote-installers.sha256
+  .github/install/remote-installers.sha256
   .zshrc
   .zshenv
   .zprofile
@@ -943,8 +977,11 @@ install_macos_prerequisites
 printf '\n'
 install_bootstrap_tools
 printf '\n'
+# Fonts es no-bloqueante: si falla la red/SHA, el deploy sigue y se puede reintentar
 echo "fonts"
-install_configured_fonts
+if ! install_configured_fonts; then
+  printf '  WARN   fuentes no se pudieron instalar; el despliegue continua (reintenta ./install.sh cuando tengas red)\n' >&2
+fi
 printf '\n'
 
 echo "shell"
