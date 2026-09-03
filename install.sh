@@ -29,7 +29,8 @@ case "$#:${1:-}" in
     exit 2
     ;;
 esac
-STAMP="$(date +%Y%m%d%H%M%S)"
+STAMP="$(date +%Y%m%d%H%M%S)-$$"
+# Pruning (retención manual): find ~/.dotfiles-backups -type d -mtime +30 -print | xargs rm -rf  (o programar via cron/launchd)
 BACKUP_ROOT="$HOME/.dotfiles-backups/$STAMP"
 REMOTE_INSTALLER_MANIFEST="$DOTFILES/.github/install/remote-installers.sha256"
 P10K_URL='https://github.com/romkatv/powerlevel10k.git'

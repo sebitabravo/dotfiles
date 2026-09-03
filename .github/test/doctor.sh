@@ -382,6 +382,17 @@ check_engram
 run_parity 'Claude harness parity' check-runtime-parity.sh
 run_parity 'Claude provider parity' check-provider-runtime-parity.sh
 
+# Brewfile drift — liviano, no bloqueante (brew bundle check sin instalar)
+if [ -f "$REPO_ROOT/Brewfile" ] && command -v brew >/dev/null 2>&1; then
+  if brew bundle check --file="$REPO_ROOT/Brewfile" --verbose >/dev/null 2>&1; then
+    pass 'Brewfile drift' 'bundle satisfied'
+  else
+    printf 'WARN  Brewfile drift — run: brew bundle --file=Brewfile\n'
+  fi
+else
+  info 'Brewfile drift' 'skipped (no Brewfile or brew missing)'
+fi
+
 if [ "$FAILURES" -eq 0 ]; then
   printf '\nDOCTOR PASS: todas las comprobaciones read-only pasaron.\n'
   exit 0

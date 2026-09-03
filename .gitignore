@@ -20,6 +20,11 @@
 # No versionar información sensible
 .env
 .env.local
+.env.*
+*.key
+*.pem
+*.age
+credentials.json
 secrets/
 
 # Archivos específicos de usuario que no deben compartirse
