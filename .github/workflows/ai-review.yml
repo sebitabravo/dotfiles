@@ -106,10 +106,20 @@ jobs:
         run: |
           set -euo pipefail
           api="https://api.github.com/repos/anomalyco/opencode/releases/tags/v${OPENCODE_VERSION}"
-          release_json=""
-          release_json=$(curl --fail --silent --show-error --location --header "Authorization: Bearer ${GH_TOKEN}" --header "X-GitHub-Api-Version: 2022-11-28" "$api")
+          release_response=$(curl --silent --show-error --location --write-out $'\nHTTP_STATUS:%{http_code}' --header "Authorization: Bearer ${GH_TOKEN}" --header "X-GitHub-Api-Version: 2022-11-28" "$api")
+          release_http_status="${release_response##*HTTP_STATUS:}"
+          release_json="${release_response%$'\n'"HTTP_STATUS:$release_http_status"}"
+          if [[ "$release_http_status" != "200" ]]; then
+            echo "OpenCode release lookup failed: HTTP $release_http_status" >&2
+            echo "$release_json" >&2
+            exit 1
+          fi
           asset_url=$(python3 -c 'import json,sys; d=json.load(sys.stdin); a=[x for x in d.get("assets",[]) if x.get("name")==sys.argv[1]]; assert len(a)==1 and a[0].get("browser_download_url","").startswith("https://github.com/anomalyco/opencode/releases/download/v"+sys.argv[2]+"/"); print(a[0]["browser_download_url"])' "$OPENCODE_ASSET" "$OPENCODE_VERSION" <<<"$release_json")
-          curl --fail --silent --show-error --location "$asset_url" -o "$RUNNER_TEMP/$OPENCODE_ASSET"
+          asset_response_status=$(curl --silent --show-error --location --write-out '%{http_code}' --output "$RUNNER_TEMP/$OPENCODE_ASSET" "$asset_url")
+          if [[ "$asset_response_status" != "200" ]]; then
+            echo "OpenCode asset download failed: HTTP $asset_response_status" >&2
+            exit 1
+          fi
           echo "$OPENCODE_SHA256  $RUNNER_TEMP/$OPENCODE_ASSET" | sha256sum --check --status
           mkdir -p "$RUNNER_TEMP/opencode"
           tar -xzf "$RUNNER_TEMP/$OPENCODE_ASSET" -C "$RUNNER_TEMP/opencode"
