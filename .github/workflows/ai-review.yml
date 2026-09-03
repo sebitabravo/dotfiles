@@ -84,7 +84,7 @@ jobs:
     needs: prepare
     if: needs.prepare.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -122,6 +122,7 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "1"
           OPENCODE_DISABLE_CLAUDE_CODE: "1"
           OPENCODE_DISABLE_MODELS_FETCH: "1"
+          AI_REVIEW_TMPDIR: ${{ runner.temp }}/ai-review-work
         run: |
           set -euo pipefail
           export HOME="$RUNNER_TEMP/isolated-home"
@@ -132,19 +133,11 @@ jobs:
           OPENCODE_CONFIG_CONTENT=""
           OPENCODE_CONFIG_CONTENT="$(python3 -c 'import json; c=json.load(open(".github/code-review/opencode.json")); c["agent"]["review"]["prompt"]=open(".github/code-review/AGENTS.md", encoding="utf-8").read(); print(json.dumps(c, ensure_ascii=False))')"
           export OPENCODE_CONFIG_CONTENT
-          mkdir -p "$RUNNER_TEMP/empty-cwd"
-          if python3 -c 'import json; import sys; sys.exit(0 if json.load(open("review-input/review-manifest.json"))["state"] == "NOT_APPLICABLE" else 1)'; then
-            python3 .github/scripts/ai-review-report.py --not-applicable --manifest review-input/review-manifest.json --output "$RUNNER_TEMP/validated-report.json"
-          else
-            set +e
-            (cd "$RUNNER_TEMP/empty-cwd" && timeout 600 "$RUNNER_TEMP/opencode/opencode" run --format json --variant high --agent review < "$GITHUB_WORKSPACE/review-input/review-prompt.txt") > "$RUNNER_TEMP/review-output.jsonl"
-            engine=$?
-            set -e
-            if [[ "$engine" -ne 0 ]]; then echo "OpenCode failed: $engine" >&2; exit 1; fi
-            output_bytes=$(wc -c < "$RUNNER_TEMP/review-output.jsonl")
-            (( output_bytes <= 600000 )) || { echo "OpenCode output exceeds bounded limit" >&2; exit 1; }
-            python3 .github/scripts/ai-review-report.py --input "$RUNNER_TEMP/review-output.jsonl" --manifest review-input/review-manifest.json --output "$RUNNER_TEMP/validated-report.json"
-          fi
+          .github/scripts/ai-review-run.sh \
+            "$RUNNER_TEMP/opencode/opencode" \
+            review-input/review-prompt.txt \
+            review-input/review-manifest.json \
+            "$RUNNER_TEMP/validated-report.json"
       - name: Upload validated report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
