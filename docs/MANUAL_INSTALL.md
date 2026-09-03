@@ -18,6 +18,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Tailscale** - VPN fácil de usar
 - [ ] **PPTControl Desktop** - Control remoto para PowerPoint
 - [ ] **Dark Reader** - Modo oscuro para sitios web
+- [ ] **CrystalFetch** - Descarga de archivos ISO
 
 ### Utilities
 
@@ -49,7 +50,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner>
 - [ ] **Bartender** - <https://www.macbartender.com>
 - [ ] **CodexBar** - <https://codexbar.app>
-- [ ] **Flow** - <https://wisprflow.ai>
+- [ ] **Handy** - <https://handy.computer>
 
 ### Terminal & Development
 
@@ -63,16 +64,18 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Laravel Herd** - <https://herd.laravel.com>
 - [ ] **Cyberduck** - <https://cyberduck.io/download>
 - [ ] **VMware Fusion** - <https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion>
-- [ ] **Ollama** - <https://ollama.com/download/mac>
+- [ ] **Arduino IDE** - <https://www.arduino.cc/en/software>
+- [ ] **Unity Hub** - <https://unity.com/download>
 
 ### IA & Coding Agents
 
 - [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect>
+- [ ] **Ollama** - <https://ollama.com/download/mac>
 
 ### Browsers
 
 - [ ] **Google Chrome** - <https://www.google.com/chrome>
-- [ ] **Zen** - <https://zen-browser.app/download>
+- [ ] **Firefox** - <https://www.mozilla.org/en-US/firefox/new>
 
 ### Productividad
 
@@ -87,38 +90,14 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
 - [ ] **Audacity** - <https://www.audacityteam.org/download/mac>
-- [ ] **Meld Studio** - <https://meldstudio.co/download>
-
-## 🔤 Fuentes requeridas por la configuración
-
-`./install.sh` descarga y valida las fuentes versionadas automáticamente en
-macOS. Si hacés una instalación manual, las configuraciones activas requieren:
-
-- [ ] **FiraCode Nerd Font Mono** — Ghostty y la terminal integrada de VS Code:
-  <https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip>
-- [ ] **Cascadia Code PL** — fuente principal del editor de VS Code:
-  <https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip>
-
-Instalalas en `~/Library/Fonts` y verificá que macOS las vea:
-
-```bash
-find "$HOME/Library/Fonts" -type f \( -iname 'FiraCode*.ttf' -o -iname 'CascadiaCode*.ttf' \) -print
-system_profiler SPFontsDataType | grep -E 'FiraCode|Cascadia Code'
-```
-
-IosevkaTerm NF, JetBrains Mono y Meslo LG están disponibles en el bootstrap como
-familias adicionales, pero no son requisitos demostrados por las
-configuraciones activas actuales.
+- [ ] **OBS Studio** - <https://obsproject.com/download>
+- [ ] **Blender** - <https://www.blender.org/download>
 
 ---
 
 ## ⚙️ Configuraciones Post-Instalación
 
 ### Node.js (con Laravel Herd)
-
-El runtime de este repositorio usa el Node predeterminado de Laravel Herd; no
-instala ni requiere `nvm` como administrador separado. Verificá el runtime antes
-de continuar:
 
 ```bash
 node --version
@@ -133,10 +112,6 @@ npm install --global --ignore-scripts vercel@59.5.0
 vercel login
 npm install --global --ignore-scripts @playwright/cli@0.1.18
 ```
-
-Los CLI globales quedan fijados a las versiones revisadas el 2026-08-25. Si
-querés actualizarlos, revisá cada versión y compatibilidad de forma deliberada
-en vez de reemplazar estos pins por `@latest`.
 
 ### Python (con pyenv)
 

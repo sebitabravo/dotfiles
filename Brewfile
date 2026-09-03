@@ -50,6 +50,8 @@ brew "rust"
 brew "herdr"
 brew "displayplacer"
 brew "tcping"
+brew "shfmt"
+brew "git-filter-repo"
 
 brew "ffuf"
 brew "nuclei"

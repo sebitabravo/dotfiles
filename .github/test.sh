@@ -204,7 +204,7 @@ EOF
 # tiene que faltar para forzar el path real de descarga y ejercitar el
 # checksum fail-closed. CodeGraph es el primer remote tool que install.sh
 # intenta tras Homebrew/Oh My Zsh (que se saltan por fixture aparte).
-for command_name in gentle-ai opencode codex agent agy claude copilot kilo; do
+for command_name in gentle-ai opencode codex agent agy claude copilot kilo pi spicetify; do
   cat >"$HASH_MISMATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -285,7 +285,7 @@ EOF
 # codegraph queda fuera del loop de stubs por el mismo motivo que en el bloque
 # de hash mismatch: es el primer remote tool real tras Homebrew/Oh My Zsh, y
 # el shasum de arriba esta fijado a su checksum real para simular un match.
-for command_name in gentle-ai opencode codex agent agy claude copilot kilo; do
+for command_name in gentle-ai opencode codex agent agy claude copilot kilo pi spicetify; do
   cat >"$MATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -401,7 +401,7 @@ VSCODE_HOME="$TEST_HOME/Library/Application Support/Code/User"
 MCP_JQ_BIN="$(command -v jq || true)"
 [ -x "$MCP_JQ_BIN" ] || fail 'jq is required for the isolated MCP fixture'
 mkdir -p "$BOOTSTRAP_BIN" "$TEST_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot kilo; do
+for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot kilo pi spicetify; do
   cat >"$BOOTSTRAP_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -530,6 +530,7 @@ chmod +x "$TEST_HOME/brew"
 mkdir -p -- \
   "$TEST_HOME/.config/ghostty" \
   "$TEST_HOME/.config/herdr" \
+  "$TEST_HOME/.config/spicetify/CustomApps/marketplace" \
   "$TEST_HOME/.claude" \
   "$TEST_HOME/.claude/hooks" \
   "$TEST_HOME/.claude/skills/pptx/node_modules" \
@@ -577,6 +578,7 @@ MCP_ROLLBACK_LOG="$TMP_HOME/mcp-rollback.log"
 MCP_ROLLBACK_TMPDIR="$TMP_HOME/mcp-rollback-tmp"
 MCP_ROLLBACK_BEFORE="$MCP_ROLLBACK_TMPDIR/claude-before.json"
 mkdir -p "$MCP_ROLLBACK_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+mkdir -p "$MCP_ROLLBACK_HOME/.config/spicetify/CustomApps/marketplace"
 mkdir -p "$MCP_ROLLBACK_TMPDIR"
 printf '%s\n' '#!/usr/bin/env bash' >"$MCP_ROLLBACK_HOME/brew"
 chmod +x "$MCP_ROLLBACK_HOME/brew"
