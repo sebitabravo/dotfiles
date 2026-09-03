@@ -13,7 +13,7 @@ concurrency:
 env:
   OPENCODE_VERSION: 1.18.23
   OPENCODE_ASSET: opencode-linux-x64.tar.gz
-  OPENCODE_SHA256: bbcd235256720445552f345a32e86a1a7fb1f5d28487828bd1ff0d58648601ad
+  OPENCODE_SHA256: ab7015cd8113e011a461f30a0c2b77d8299a144ff688cb62e93e8802835d7288
 
 jobs:
   prepare:
@@ -104,30 +104,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
           api="https://api.github.com/repos/anomalyco/opencode/releases/tags/v${OPENCODE_VERSION}"
-          release_http_status=$(curl --silent --show-error --location --write-out '%{http_code}' --output "$RUNNER_TEMP/release.json" --header "Authorization: Bearer ${GH_TOKEN}" --header "X-GitHub-Api-Version: 2022-11-28" "$api" 2>"$RUNNER_TEMP/release-curl.stderr")
-          curl_exit=$?
-          if [[ "$curl_exit" -ne 0 || "$release_http_status" != "200" ]]; then
-            echo "OpenCode release lookup failed: curl_exit=$curl_exit http_status=$release_http_status" >&2
-            cat "$RUNNER_TEMP/release-curl.stderr" >&2 2>/dev/null || true
-            cat "$RUNNER_TEMP/release.json" >&2 2>/dev/null || true
-            sleep 2
-            exit 1
-          fi
-          set -e
-          asset_url=$(python3 -c 'import json,sys; d=json.load(sys.stdin); a=[x for x in d.get("assets",[]) if x.get("name")==sys.argv[1]]; assert len(a)==1 and a[0].get("browser_download_url","").startswith("https://github.com/anomalyco/opencode/releases/download/v"+sys.argv[2]+"/"); print(a[0]["browser_download_url"])' "$OPENCODE_ASSET" "$OPENCODE_VERSION" < "$RUNNER_TEMP/release.json")
-          set +e
-          asset_response_status=$(curl --silent --show-error --location --write-out '%{http_code}' --output "$RUNNER_TEMP/$OPENCODE_ASSET" "$asset_url" 2>"$RUNNER_TEMP/asset-curl.stderr")
-          curl_exit=$?
-          if [[ "$curl_exit" -ne 0 || "$asset_response_status" != "200" ]]; then
-            echo "OpenCode asset download failed: curl_exit=$curl_exit http_status=$asset_response_status" >&2
-            cat "$RUNNER_TEMP/asset-curl.stderr" >&2 2>/dev/null || true
-            sleep 2
-            exit 1
-          fi
-          set -e
-          echo "$OPENCODE_SHA256  $RUNNER_TEMP/$OPENCODE_ASSET" | sha256sum --check --status
+          release_json=$(curl --fail --silent --show-error --location --header "Authorization: Bearer ${GH_TOKEN}" --header "X-GitHub-Api-Version: 2022-11-28" "$api")
+          asset_url=$(python3 -c 'import json,sys; d=json.load(sys.stdin); a=[x for x in d.get("assets",[]) if x.get("name")==sys.argv[1]]; assert len(a)==1 and a[0].get("browser_download_url","").startswith("https://github.com/anomalyco/opencode/releases/download/v"+sys.argv[2]+"/"); print(a[0]["browser_download_url"])' "$OPENCODE_ASSET" "$OPENCODE_VERSION" <<<"$release_json")
+          curl --fail --silent --show-error --location "$asset_url" -o "$RUNNER_TEMP/$OPENCODE_ASSET"
+          echo "$OPENCODE_SHA256  $RUNNER_TEMP/$OPENCODE_ASSET" | sha256sum --check
           mkdir -p "$RUNNER_TEMP/opencode"
           tar -xzf "$RUNNER_TEMP/$OPENCODE_ASSET" -C "$RUNNER_TEMP/opencode"
           test -x "$RUNNER_TEMP/opencode/opencode"
