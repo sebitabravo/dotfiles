@@ -148,20 +148,30 @@ pyenv() {
   pyenv "$@"
 }
 
-# Zoxide
-eval "$(zoxide init zsh)"
+# Profiling (opt-in): descomenta `zmodload zsh/zprof` arriba y `zprof` al final para medir startup
+# Recursos: zoxide/fzf/atuin son los 3 evals pesados; ya estan guardados con command -v
+# y brew shellenv se deduplica via path_promote/setup_user_path (no doble eval).
+
+# Zoxide — guarded (~5ms)
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
+fi
 
 # fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
 # fd as backend: faster, gitignore-aware. Ctrl-R queda para Atuin (mas abajo).
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
-source <(fzf --zsh) 2>/dev/null
+if command -v fzf >/dev/null 2>&1; then
+  source <(fzf --zsh) 2>/dev/null
+fi
 
 # Atuin — historial de shell buscable (Ctrl-R). Se inicializa despues de fzf
 # a proposito: los dos bindean Ctrl-R y el ultimo init gana. fzf conserva
 # Ctrl-T/Alt-C sin cambios.
-eval "$(atuin init zsh)"
+if command -v atuin >/dev/null 2>&1; then
+  eval "$(atuin init zsh)"
+fi
 
 # Alias Tunnel pinggy
 tunnel() { ssh -p 443 -R0:localhost:${1:-3000} a.pinggy.io; }

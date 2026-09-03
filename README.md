@@ -50,8 +50,8 @@ apuntando a versiones mutables: cuando un proveedor publique un payload nuevo,
 hay que revisar y actualizar el manifiesto de forma deliberada.
 
 El instalador respalda archivos raíz reemplazados como
-`<archivo>.backup.<timestamp>` y toma snapshots de los directorios que cambiarán
-en `~/.dotfiles-backups/<timestamp>/`. No modifica `~/.gitconfig.local`,
+`<archivo>.backup.<timestamp>` (timestamp con PID para evitar colisión en el mismo segundo) y toma snapshots de los directorios que cambiarán
+en `~/.dotfiles-backups/<timestamp>/`. Retención manual: `find ~/.dotfiles-backups -type d -mtime +30 -print | xargs rm -rf` (o programar via cron/launchd). No modifica `~/.gitconfig.local`,
 credenciales ni tokens. Como excepción explícita al límite de directorios
 administrados, registra los MCP versionados en el registro de usuario de Claude,
 `~/.claude.json`: conserva las claves y entradas no administradas, y antes de la

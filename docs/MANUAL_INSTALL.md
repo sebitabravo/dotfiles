@@ -97,6 +97,9 @@ Estas apps se instalan desde la App Store de macOS:
 
 ## ⚙️ Configuraciones Post-Instalación
 
+> **Nota:** Versiones fijas de referencia — verificar con `Brewfile` y `pyenv` antes de instalar. Sincronización manual requerida.
+> <!-- SYNC: Brewfile / pyenv / MANUAL_INSTALL.md — mantener versiones alineadas manualmente -->
+
 ### Node.js (con Laravel Herd)
 
 ```bash
