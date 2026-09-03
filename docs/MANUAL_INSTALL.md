@@ -111,10 +111,10 @@ pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
-npm install --global --ignore-scripts @fission-ai/openspec@1.10.0
-npm install --global --ignore-scripts vercel@59.5.0
+npm install --global --ignore-scripts @fission-ai/openspec@latest
+npm install --global --ignore-scripts vercel@latest
 vercel login
-npm install --global --ignore-scripts @playwright/cli@0.1.18
+npm install --global --ignore-scripts @playwright/cli@latest
 ```
 
 ### Python (con pyenv)
@@ -151,6 +151,19 @@ gentle-ai install \
   --preset full-gentleman \
   --persona gentleman \
   --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
+```
+
+### Gentle-AI Pi
+
+```bash
+pi install npm:gentle-pi@latest
+pi install npm:pi-subagents-j0k3r
+pi install npm:pi-intercom
+pi install npm:gentle-engram
+pi install npm:pi-web-access
+pi install npm:pi-lens
+pi install npm:@juicesharp/rpiv-todo
+pi install npm:@juicesharp/rpiv-ask-user-question
 ```
 
 ---
