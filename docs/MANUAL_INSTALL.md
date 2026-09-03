@@ -38,7 +38,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
 - [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
-- [ ] **Wave Link** - <https://www.elgato.com/lm/es/s/downloads>
 - [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
 - [ ] **Drive** - <https://workspace.google.com/products/drive>
 - [ ] **Dropbox** - <https://www.dropbox.com/install>
@@ -82,6 +81,8 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Raycast** - <https://www.raycast.com>
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
+- [ ] **Discord** - <https://discord.com/download>
+- [ ] **Teams** - <https://www.microsoft.com/en-us/microsoft-teams/download-app>
 
 ### Media & Content
 
@@ -110,10 +111,10 @@ pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
-npm install --global --ignore-scripts @fission-ai/openspec@1.10.0
-npm install --global --ignore-scripts vercel@59.5.0
+npm install --global --ignore-scripts @fission-ai/openspec@latest
+npm install --global --ignore-scripts vercel@latest
 vercel login
-npm install --global --ignore-scripts @playwright/cli@0.1.18
+npm install --global --ignore-scripts @playwright/cli@latest
 ```
 
 ### Python (con pyenv)
@@ -150,6 +151,19 @@ gentle-ai install \
   --preset full-gentleman \
   --persona gentleman \
   --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
+```
+
+### Gentle-AI Pi
+
+```bash
+pi install npm:gentle-pi@latest
+pi install npm:pi-subagents-j0k3r
+pi install npm:pi-intercom
+pi install npm:gentle-engram
+pi install npm:pi-web-access
+pi install npm:pi-lens
+pi install npm:@juicesharp/rpiv-todo
+pi install npm:@juicesharp/rpiv-ask-user-question
 ```
 
 ---
