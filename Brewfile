@@ -49,6 +49,7 @@ brew "atuin", restart_service: true
 brew "rust"
 brew "herdr"
 brew "displayplacer"
+brew "tcping"
 
 brew "ffuf"
 brew "nuclei"
@@ -62,3 +63,5 @@ brew "gitleaks"
 # ============================================================================
 
 cask "dotnet-sdk"
+cask "flutter"
+cask "libreoffice"
