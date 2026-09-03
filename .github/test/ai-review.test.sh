@@ -200,7 +200,7 @@ if UPSTREAM_STATUS=failure bash "$GATE" "$TMP/valid.json" >/dev/null 2>&1; then 
 # Static policy assertions guard the high-risk workflow properties.
 workflow="$ROOT/workflows/ai-review.yml"
 opencode_sha256="$(grep -oE 'OPENCODE_SHA256: [0-9a-f]+' "$workflow" | awk '{print $2}')"
-grep -q 'pull_request_target:' "$workflow" && grep -q 'name: review-gate' "$workflow" && grep -q 'OPENCODE_DISABLE_PROJECT_CONFIG' "$workflow" && grep -q 'OPENCODE_DISABLE_EXTERNAL_SKILLS' "$workflow" && grep -q 'OPENCODE_SHA256:' "$workflow" && [ "${#opencode_sha256}" -eq 64 ] && ok "workflow has stable isolated base-owned gate" || bad "workflow isolation assertions"
+grep -q 'pull_request:' "$workflow" && grep -q 'name: review-gate' "$workflow" && grep -q 'OPENCODE_DISABLE_PROJECT_CONFIG' "$workflow" && grep -q 'OPENCODE_DISABLE_EXTERNAL_SKILLS' "$workflow" && grep -q 'OPENCODE_SHA256:' "$workflow" && [ "${#opencode_sha256}" -eq 64 ] && ok "workflow has stable isolated base-owned gate" || bad "workflow isolation assertions"
 grep -q 'merge-base' "$workflow" && grep -q -- '--variant high' "$workflow" && grep -q 'checks: write' "$workflow" && grep -q 'github.run_attempt' "$workflow" && grep -q 'ZHIPU_API_KEY:' "$workflow" && ok "workflow binds merge base, variant, attempt and head check" || bad "workflow binding assertions"
 grep -q 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' "$ROOT/workflows/test.yml" && ok "test workflow action is SHA pinned" || bad "test checkout not pinned"
 grep -q 'workflow_dispatch has no immutable PR/push range' "$ROOT/workflows/lint.yml" && ok "workflow_dispatch cannot green an empty diff" || bad "workflow_dispatch range guard"
