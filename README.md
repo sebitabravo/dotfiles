@@ -7,8 +7,9 @@ de shell, Git, Ghostty, Fastfetch, VS Code y Claude Code; no crea symlinks hacia
 
 1. `./install.sh` ejecuta el bootstrap completo: instala o verifica Apple
    Command Line Tools y [Homebrew](https://brew.sh/) en `/opt/homebrew`, luego
-   instala las herramientas de shell/agentes y despliega los dotfiles. Revisalo
-   primero sin cambios:
+   instala las dependencias del `Brewfile` (`brew bundle --file=Brewfile`,
+   incluye `jq`), instala las herramientas de shell/agentes y despliega los
+   dotfiles. Revisalo primero sin cambios:
 
    ```bash
    ./install.sh --dry-run
@@ -17,7 +18,8 @@ de shell, Git, Ghostty, Fastfetch, VS Code y Claude Code; no crea symlinks hacia
 
    Si macOS abre el instalador de Command Line Tools, completá la aprobación
    gráfica y volvé a ejecutar `./install.sh`.
-2. Instalá las dependencias del `Brewfile`:
+2. Las dependencias del `Brewfile` ya las instala `./install.sh` de forma
+   automática. Solo si querés reinstalarlas manual después:
 
    ```bash
    brew bundle --file=Brewfile
@@ -37,9 +39,11 @@ cd dotfiles
 ```
 
 `./install.sh` ejecuta siempre el bootstrap completo: primero verifica o instala
-los prerrequisitos de macOS (Command Line Tools y Homebrew), después ejecuta
+los prerrequisitos de macOS (Command Line Tools y Homebrew), después instala
+las dependencias del `Brewfile` (`brew bundle --file=Brewfile`, incluye `jq`),
+después ejecuta
 Oh My Zsh, Powerlevel10k, Herdr, CodeGraph y las CLIs de agentes solicitadas, y
-por último despliega los dotfiles. `--dry-run` es el único flag: no descarga ni
+por último despliega los dotfiles y registra los MCP administrados. `--dry-run` es el único flag: no descarga ni
 ejecuta instaladores externos: imprime cada comando planificado. Las descargas
 se hacen desde los URLs oficiales indicados por sus proveedores y cada payload
 debe coincidir con el SHA-256 aprobado en
@@ -84,11 +88,13 @@ git config --file ~/.gitconfig.local user.email "tu@email"
 
 ## Qué queda manual
 
-- Paquetes y aplicaciones del `Brewfile`, apps, extensiones de VS Code y
-  autenticación de CLIs. El bootstrap instala las fuentes versionadas que usa la
+- Apps de [`docs/MANUAL_INSTALL.md`](docs/MANUAL_INSTALL.md), extensiones de VS Code y
+  autenticación de CLIs. El `Brewfile` ya lo instala el bootstrap de forma
+  automática; el bootstrap instala las fuentes versionadas que usa la
   configuración; si las instalás por separado, seguí la sección de fuentes de
   [`docs/MANUAL_INSTALL.md`](docs/MANUAL_INSTALL.md). El bootstrap no autentica ninguna CLI ni configura
-  integraciones de Herdr; sólo instala/verifica prerrequisitos y ejecuta los
+  integraciones de Herdr; sólo instala/verifica prerrequisitos, dependencias del
+  Brewfile y ejecuta los
   instaladores de shell/agentes.
 - `config/macos/defaults.sh`: cambia preferencias reales y reinicia servicios;
   revisalo primero con `./defaults.sh --dry-run --no-sudo` (desde `config/macos/`)

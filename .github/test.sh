@@ -751,7 +751,7 @@ printf '%s\n' '== Claude provider wrapper =='
 WRAPPER_HOME="$TMP_HOME/wrapper-home"
 WRAPPER_BIN="$TMP_HOME/wrapper-bin"
 mkdir -p "$WRAPPER_HOME/.claude" "$WRAPPER_BIN"
-for overlay in deepseek glm openrouter ollama; do
+for overlay in deepseek openrouter ollama; do
   printf '{}\n' >"$WRAPPER_HOME/.claude/$overlay.settings.json"
 done
 cat >"$WRAPPER_BIN/claude" <<'EOF'
@@ -762,7 +762,12 @@ EOF
 chmod +x "$WRAPPER_BIN/claude"
 
 WRAPPER_FUNCTION="$TMP_HOME/claude-wrapper.zsh"
-sed -n '/^claude() {/,/^}/p' "$ROOT/.zshrc" >"$WRAPPER_FUNCTION"
+# El wrapper vive como receta documentada en config/claude/README.md entre los
+# marcadores claude-wrapper:start/end; se extrae el bloque cercado ```zsh.
+sed -n '/<!-- claude-wrapper:start -->/,/<!-- claude-wrapper:end -->/p' "$ROOT/config/claude/README.md" |
+  sed '/^```/d; /claude-wrapper:/d' >"$WRAPPER_FUNCTION"
+[ -s "$WRAPPER_FUNCTION" ] || fail 'claude-wrapper block missing/empty in config/claude/README.md'
+zsh -n "$WRAPPER_FUNCTION" || fail 'claude-wrapper block has zsh syntax errors'
 
 wrapper_output=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" ANTHROPIC_BASE_URL='https://stale.invalid' \
   zsh -f -c 'source "$1"; claude --deepseek -p hola' zsh "$WRAPPER_FUNCTION")
@@ -771,7 +776,7 @@ printf '%s' "$wrapper_output" | grep -qxF "args=<--settings><$WRAPPER_HOME/.clau
 
 set +e
 wrapper_error=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" \
-  zsh -f -c 'source "$1"; claude --deepseek --glm -p hola' zsh "$WRAPPER_FUNCTION" 2>&1)
+  zsh -f -c 'source "$1"; claude --deepseek --openrouter -p hola' zsh "$WRAPPER_FUNCTION" 2>&1)
 wrapper_rc=$?
 set -e
 [ "$wrapper_rc" -eq 2 ] || fail "multiple providers returned $wrapper_rc instead of 2"
@@ -821,16 +826,17 @@ for pattern in \
   'Bash(git fetch:*)' 'Bash(git add:*)' 'Bash(git pull:*)' \
   'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
   'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' \
-  'Bash(uvx:*)' 'Bash(uv:*)' 'Bash(cargo:*)' 'Bash(rustc:*)' \
-  'Bash(go:*)' 'Bash(make:*)' \
-  'Bash(code:*)' 'Bash(nvim:*)' 'Bash(touch:*)' 'Bash(source:*)' \
+  'Bash(uv:*)' 'Bash(rustc:*)' \
+  'Bash(code:*)' 'Bash(touch:*)' \
   'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)' \
   'WebFetch' 'mcp__codegraph__*' 'mcp__context7__*' 'mcp__playwright__*'; do
   jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
     fail "missing intentional permissive allow rule: $pattern"
 done
 for pattern in \
-  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)'; do
+  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)' \
+  'Bash(source:*)' 'Bash(uvx:*)' 'Bash(nvim:*)' \
+  'Bash(make:*)' 'Bash(go:*)' 'Bash(cargo:*)'; do
   if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
     fail "code-execution/token-leak risk remains auto-allowed: $pattern"
   fi
