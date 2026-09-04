@@ -644,6 +644,42 @@ install_bootstrap_tools() {
   fi
 }
 
+# El Brewfile provee las CLI que el resto del bootstrap asume (jq para el
+# registro MCP, ripgrep/fd/fzf para los hooks, etc.). Corre justo despues de
+# garantizar Homebrew y antes de cualquier paso que requiera esas herramientas.
+install_brewfile_dependencies() {
+  printf '%s\n' 'dependencias Brewfile'
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '  DRY  brew bundle --file=%s  # dependencias Brewfile (jq, ripgrep, fd, fzf, ...)\n' "$DOTFILES/Brewfile"
+    return 0
+  fi
+
+  [ -f "$DOTFILES/Brewfile" ] || {
+    printf '  FALTA  Brewfile (instalacion abortada): %s\n' "$DOTFILES/Brewfile" >&2
+    return 1
+  }
+
+  prepare_homebrew_path
+  if ! brew_exists; then
+    printf '%s\n' '  ERROR  no se encontro Homebrew para instalar dependencias del Brewfile' >&2
+    return 1
+  fi
+  require_command brew 'dependencias Brewfile' || return 1
+
+  brew bundle --file="$DOTFILES/Brewfile"
+
+  # Fail-fast antes de mutar ~/. : el registro MCP final exige jq. Si el
+  # bundle no lo dejó disponible, abortar acá con mensaje claro en vez de
+  # desplegar todo y fallar al final sin registrar MCP.
+  local jq_bin
+  jq_bin="${DOTFILES_JQ_BIN:-$(command -v jq 2>/dev/null || true)}"
+  [ -n "$jq_bin" ] && [ -x "$jq_bin" ] || {
+    printf '  ERROR  jq es requerido para registrar MCP administrados; no quedo instalado tras brew bundle --file=%s\n' "$DOTFILES/Brewfile" >&2
+    return 1
+  }
+}
+
 # Claude's user-scope MCP registry is separate from the managed manifest copied
 # to ~/.claude/mcp-servers.json. The versioned manifest is the source of truth;
 # the CLI is the only writer so unrelated user-owned entries stay untouched.
@@ -774,7 +810,6 @@ CLAUDE_FILES=(
   config/claude/skill-registry.md
   config/claude/settings.json
   config/claude/deepseek.settings.json
-  config/claude/glm.settings.json
   config/claude/ollama.settings.json
   config/claude/openrouter.settings.json
   # settings.json consolidates UserPromptSubmit into this dispatcher. Keep
@@ -786,6 +821,7 @@ CLAUDE_FILES=(
 
 REQUIRED_FILES=(
   .github/install/remote-installers.sha256
+  Brewfile
   .zshrc
   .zshenv
   .zprofile
@@ -975,6 +1011,8 @@ validate_remote_installer_manifest
 # validate_sources ya comprobó cada archivo y directorio que se copiará antes de
 # llegar a prerrequisitos, descargas o cualquier cambio en el HOME.
 install_macos_prerequisites
+printf '\n'
+install_brewfile_dependencies
 printf '\n'
 install_bootstrap_tools
 printf '\n'
