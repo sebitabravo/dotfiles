@@ -89,7 +89,6 @@ for file in \
   skill-registry.md \
   settings.json \
   deepseek.settings.json \
-  glm.settings.json \
   ollama.settings.json \
   openrouter.settings.json; do
   cp -p "$CLAUDE_DIR/$file" "$HOME/.claude/$file"
@@ -139,20 +138,16 @@ helper de autenticación:
 | Proveedor | Overlay | Endpoint | Fable / Opus | Sonnet | Haiku / background |
 | --- | --- | --- | --- | --- | --- |
 | DeepSeek | `deepseek.settings.json` | `api.deepseek.com/anthropic` | `deepseek-v4-pro[1m]` | `deepseek-v4-flash[1m]` | `deepseek-v4-flash` |
-| GLM / Z.AI | `glm.settings.json` | `api.z.ai/api/anthropic` | `glm-5.3[1m]` | `glm-5.2[1m]` | `glm-4.7` |
 | Ollama Cloud (API directa) | `ollama.settings.json` | `ollama.com` | `minimax-m3:cloud` | `gemma4:31b-cloud` | `gpt-oss:120b-cloud` |
 | OpenRouter | `openrouter.settings.json` | `openrouter.ai/api` | `openai/gpt-5.6-luna-pro[1m]` (Fable) / `qwen/qwen3.8-flash[1m]` (Opus) | `z-ai/glm-5.3-flash[1m]` | `openrouter/free` |
 
 Los modelos de la tabla son **las elecciones de esta configuración**, no
 defaults universales. La disponibilidad, los precios y los límites de cada
-proveedor pueden cambiar. En particular, la guía vigente de Coding Plan de
-Z.AI recomienda `glm-5.3[1m]` para el endpoint directo; un ID de GLM
-disponible en OpenRouter no se puede trasladar automáticamente al endpoint
-directo de Z.AI. OpenRouter además declara
+proveedor pueden cambiar. OpenRouter además declara
 `ANTHROPIC_DEFAULT_FABLE_MODEL` para la cuarta clase de modelos de Claude Code;
 este overlay la ordena por calidad ascendente sobre el mismo Sonnet base
-(`z-ai/glm-5.3-flash[1m]`): Opus usa `qwen/qwen3.8-flash[1m]` y Fable `openai/gpt-5.6-luna-pro[1m]`, excluyendo deliberadamente los vendors que
-ya tienen overlay propio en esta tabla (DeepSeek, GLM).
+(`z-ai/glm-5.3-flash[1m]`): Opus usa `qwen/qwen3.8-flash[1m]` y Fable `openai/gpt-5.6-luna-pro[1m]`, excluyendo deliberadamente al vendor que
+ya tiene overlay propio en esta tabla (DeepSeek).
 No hay rotación automática de modelo por tier en Claude Code —
 `ANTHROPIC_DEFAULT_OPUS_MODEL` admite un solo string en el schema oficial—,
 así que para alternar puntualmente a otro modelo dentro de un tier se usa
@@ -181,17 +176,8 @@ iniciado y autenticado.
 
 ### Activación
 
-Si también copiaste el wrapper de `.zshrc`, podés usar los comandos cortos:
-
-```bash
-claude --deepseek
-claude --glm
-claude --ollama
-claude --openrouter
-```
-
-El wrapper de `.zshrc` **no está dentro de `config/claude/`**. Si copiás sólo
-esta carpeta, usá directamente el overlay que necesités:
+Sin nada extra, `claude` a secas usa Anthropic y cada overlay se activa por
+sesión con `--settings`:
 
 ```bash
 claude --settings ~/.claude/deepseek.settings.json
@@ -200,6 +186,131 @@ claude --settings ~/.claude/openrouter.settings.json
 
 El resto de los overlays se activa de la misma forma cambiando el nombre del
 archivo.
+
+### Atajos opcionales en el shell (receta)
+
+Si preferís banderas cortas (`claude --deepseek`), pegá este bloque en tu
+`.zshrc`. Es opcional y no forma parte de la instalación por defecto:
+`claude` sin bandera sigue llamando al binario real con
+`command claude "$@"`.
+
+<!-- claude-wrapper:start -->
+```zsh
+# claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
+# claude a secas queda igual que siempre (Anthropic).
+# Ejecuta claude con el overlay de un provider alternativo. provider_env y
+# args llegan por scoping dinamico de zsh (locals del caller claude()).
+_claude_run_provider() {
+  local file="$1" label="$2" settings claude_bin
+  settings="$HOME/.claude/$file"
+  claude_bin="${commands[claude]:-}"
+  if [[ ! -r "$settings" ]]; then
+    print -u2 "claude: no se encontro el settings de $label: $settings"
+    return 1
+  fi
+  if [[ -z "$claude_bin" ]]; then
+    print -u2 "claude: binario de Claude Code no encontrado"
+    return 1
+  fi
+  # Aislar el overlay: las variables exportadas por otro provider no deben
+  # ganar sobre el settings seleccionado.
+  env "${provider_env[@]}" \
+    "$claude_bin" \
+    --settings "$settings" \
+    "${args[@]}"
+}
+
+claude() {
+  local -a args=()
+  local -a provider_env=(
+    -u ANTHROPIC_API_KEY
+    -u ANTHROPIC_AUTH_TOKEN
+    -u ANTHROPIC_BASE_URL
+    -u ANTHROPIC_MODEL
+    -u ANTHROPIC_DEFAULT_OPUS_MODEL
+    -u ANTHROPIC_DEFAULT_SONNET_MODEL
+    -u ANTHROPIC_DEFAULT_HAIKU_MODEL
+    -u ANTHROPIC_DEFAULT_FABLE_MODEL
+    -u CLAUDE_CODE_SUBAGENT_MODEL
+    -u CLAUDE_CODE_AUTO_COMPACT_WINDOW
+    -u CLAUDE_CODE_MAX_CONTEXT_TOKENS
+    -u CLAUDE_CODE_EFFORT_LEVEL
+    -u CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY
+    -u CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS
+    -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    -u ENABLE_TOOL_SEARCH
+    -u API_TIMEOUT_MS
+  )
+  local provider='' a
+  local provider_count=0
+  for a in "$@"; do
+    case "$a" in
+      --deepseek)   provider=deepseek;   provider_count=$((provider_count + 1)) ;;
+      --openrouter) provider=openrouter; provider_count=$((provider_count + 1)) ;;
+      --ollama)     provider=ollama;     provider_count=$((provider_count + 1)) ;;
+      *)            args+=("$a") ;;
+    esac
+  done
+  if (( provider_count > 1 )); then
+    print -u2 'claude: selecciona un solo provider por invocacion'
+    return 2
+  fi
+  case "$provider" in
+    deepseek)   _claude_run_provider deepseek.settings.json DeepSeek ;;
+    openrouter) _claude_run_provider openrouter.settings.json OpenRouter ;;
+    ollama)     _claude_run_provider ollama.settings.json Ollama ;;
+    *)          command claude "$@" ;;
+  esac
+}
+```
+<!-- claude-wrapper:end -->
+
+Este bloque está cubierto por `.github/test.sh`, que lo extrae de este README
+y verifica el aislamiento de variables, el ruteo de un overlay y el rechazo
+de banderas ambiguas: la receta documentada es la receta probada.
+
+Para sumar otro proveedor, alcanzan dos líneas siguiendo el mismo
+patrón, porque `_claude_run_provider` ya resuelve settings, binario y
+aislamiento:
+
+```zsh
+--glm) provider=glm; provider_count=$((provider_count + 1)) ;;
+glm)   _claude_run_provider glm.settings.json GLM ;;
+```
+
+### Proveedores retirados (recetas)
+
+Estos overlays existieron en este repositorio y se purgaron en
+`56a0b68` (kimi, minimax, qwen) salvo GLM, que sigue en `HEAD`. Cada uno se
+reactiva igual: restaurar su overlay y su helper desde el historial, crear
+su archivo de clave (`0600`) y sumar sus dos líneas al bloque de arriba. Los
+modelos son los vigentes al momento del purge; verificar antes de usar.
+
+| Proveedor | Flag | Overlay y helper (restaurar del historial) | Clave |
+| --- | --- | --- | --- |
+| GLM (Z.AI) | `--glm` | `git show HEAD:config/claude/glm.settings.json` | `~/.config/claude/glm.key` |
+| Kimi / Moonshot | `--kimi` | `git show b0563fa^:config/claude/kimi.settings.json`, `git show b0563fa^:config/claude/scripts/kimi-api-key.sh` | `~/.config/claude/kimi.key` (`KIMI_API_KEY_FILE`) |
+| MiniMax | `--minimax` | `git show b0563fa^:config/claude/minimax.settings.json`, `git show b0563fa^:config/claude/scripts/minimax-api-key.sh` | `~/.config/claude/minimax.key` (`MINIMAX_API_KEY_FILE`) |
+| QwenCloud Token Plan | `--qwen` | `git show b0563fa^:config/claude/qwen.settings.json`, `git show b0563fa^:config/claude/scripts/qwen-api-key.sh` | `~/.config/claude/qwen.key` (`QWEN_API_KEY_FILE`) |
+
+Ejemplo con Kimi (los demás son análogos cambiando el nombre):
+
+```bash
+git show b0563fa^:config/claude/kimi.settings.json > ~/.claude/kimi.settings.json
+git show b0563fa^:config/claude/scripts/kimi-api-key.sh > ~/.claude/scripts/kimi-api-key.sh
+chmod +x ~/.claude/scripts/kimi-api-key.sh
+```
+
+```zsh
+--kimi) provider=kimi; provider_count=$((provider_count + 1)) ;;
+kimi)   _claude_run_provider kimi.settings.json Kimi ;;
+```
+
+Endpoints y modelos al momento del purge: Kimi `api.moonshot.ai/anthropic`
+(`kimi-k3[1m]` / `kimi-k2.6` / `kimi-k2.5`), MiniMax `api.minimax.io/anthropic`
+(`MiniMax-M3[1m]` / `MiniMax-M3`), QwenCloud
+`token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic`
+(`qwen3.8-max[1m]` / `qwen3.7-max[1m]` / `qwen3.6-flash`).
 
 ### Preflight de integraciones del proyecto
 
@@ -292,7 +403,7 @@ one-shot y el skill orquestador; no borra ni sincroniza `~/.claude`. Un `MISSING
 `--strict` significa que la fuente está preparada pero la sesión efectiva aún
 no está protegida.
 
-La auditoría de providers es independiente: compara semánticamente los cuatro
+La auditoría de providers es independiente: compara semánticamente los tres
 overlays JSON. Ignora formato/orden de claves y considera equivalentes el alias
 `opus` y el `ANTHROPIC_DEFAULT_OPUS_MODEL` declarado en ese mismo overlay; no
 ignora otros overrides. Tampoco prueba autenticación, endpoint vivo ni
@@ -350,7 +461,6 @@ HTTP buscan estos archivos locales, todos con permisos `0600`:
 | Proveedor | Archivo |
 | --- | --- |
 | DeepSeek | `~/.config/claude/deepseek.key` |
-| GLM / Z.AI | `~/.config/claude/glm.key` |
 | OpenRouter | `~/.config/claude/openrouter.key` |
 
 Ejemplo para crear una clave sin dejarla en el historial del shell:
@@ -373,14 +483,14 @@ ubicación distinta exportando la variable correspondiente, por ejemplo:
 export DEEPSEEK_API_KEY_FILE="$HOME/.config/claude/deepseek.key"
 ```
 
-Los nombres de las variables disponibles son `DEEPSEEK_API_KEY_FILE`,
-`GLM_API_KEY_FILE` y `OPENROUTER_API_KEY_FILE`.
+Los nombres de las variables disponibles son `DEEPSEEK_API_KEY_FILE` y
+`OPENROUTER_API_KEY_FILE`.
 
 Claude Code ejecuta cada `apiKeyHelper` sólo en la CLI de terminal y envía su
 salida como `X-Api-Key` y `Authorization: Bearer`. Eso permite mantener las
 claves fuera del JSON y cubrir providers que esperan uno u otro encabezado;
-el wrapper además limpia las variables exportadas de otro provider antes de
-cargar el overlay elegido.
+el wrapper opcional de la receta además limpia las variables exportadas de
+otro provider antes de cargar el overlay elegido.
 
 Si falta una clave, Claude Code normal sigue funcionando; sólo falla el
 proveedor cuyo helper no puede leer su archivo.

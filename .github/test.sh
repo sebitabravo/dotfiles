@@ -751,7 +751,7 @@ printf '%s\n' '== Claude provider wrapper =='
 WRAPPER_HOME="$TMP_HOME/wrapper-home"
 WRAPPER_BIN="$TMP_HOME/wrapper-bin"
 mkdir -p "$WRAPPER_HOME/.claude" "$WRAPPER_BIN"
-for overlay in deepseek glm openrouter ollama; do
+for overlay in deepseek openrouter ollama; do
   printf '{}\n' >"$WRAPPER_HOME/.claude/$overlay.settings.json"
 done
 cat >"$WRAPPER_BIN/claude" <<'EOF'
@@ -762,7 +762,10 @@ EOF
 chmod +x "$WRAPPER_BIN/claude"
 
 WRAPPER_FUNCTION="$TMP_HOME/claude-wrapper.zsh"
-sed -n '/^claude() {/,/^}/p' "$ROOT/.zshrc" >"$WRAPPER_FUNCTION"
+# El wrapper vive como receta documentada en config/claude/README.md entre los
+# marcadores claude-wrapper:start/end; se extrae el bloque cercado ```zsh.
+sed -n '/<!-- claude-wrapper:start -->/,/<!-- claude-wrapper:end -->/p' "$ROOT/config/claude/README.md" |
+  sed '/^```/d; /claude-wrapper:/d' >"$WRAPPER_FUNCTION"
 
 wrapper_output=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" ANTHROPIC_BASE_URL='https://stale.invalid' \
   zsh -f -c 'source "$1"; claude --deepseek -p hola' zsh "$WRAPPER_FUNCTION")
@@ -771,7 +774,7 @@ printf '%s' "$wrapper_output" | grep -qxF "args=<--settings><$WRAPPER_HOME/.clau
 
 set +e
 wrapper_error=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" \
-  zsh -f -c 'source "$1"; claude --deepseek --glm -p hola' zsh "$WRAPPER_FUNCTION" 2>&1)
+  zsh -f -c 'source "$1"; claude --deepseek --openrouter -p hola' zsh "$WRAPPER_FUNCTION" 2>&1)
 wrapper_rc=$?
 set -e
 [ "$wrapper_rc" -eq 2 ] || fail "multiple providers returned $wrapper_rc instead of 2"
