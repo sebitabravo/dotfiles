@@ -821,16 +821,17 @@ for pattern in \
   'Bash(git fetch:*)' 'Bash(git add:*)' 'Bash(git pull:*)' \
   'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
   'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' \
-  'Bash(uvx:*)' 'Bash(uv:*)' 'Bash(cargo:*)' 'Bash(rustc:*)' \
-  'Bash(go:*)' 'Bash(make:*)' \
-  'Bash(code:*)' 'Bash(nvim:*)' 'Bash(touch:*)' 'Bash(source:*)' \
+  'Bash(uv:*)' 'Bash(rustc:*)' \
+  'Bash(code:*)' 'Bash(touch:*)' \
   'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)' \
   'WebFetch' 'mcp__codegraph__*' 'mcp__context7__*' 'mcp__playwright__*'; do
   jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
     fail "missing intentional permissive allow rule: $pattern"
 done
 for pattern in \
-  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)'; do
+  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)' \
+  'Bash(source:*)' 'Bash(uvx:*)' 'Bash(nvim:*)' \
+  'Bash(make:*)' 'Bash(go:*)' 'Bash(cargo:*)'; do
   if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
     fail "code-execution/token-leak risk remains auto-allowed: $pattern"
   fi
