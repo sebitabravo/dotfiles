@@ -766,6 +766,8 @@ WRAPPER_FUNCTION="$TMP_HOME/claude-wrapper.zsh"
 # marcadores claude-wrapper:start/end; se extrae el bloque cercado ```zsh.
 sed -n '/<!-- claude-wrapper:start -->/,/<!-- claude-wrapper:end -->/p' "$ROOT/config/claude/README.md" |
   sed '/^```/d; /claude-wrapper:/d' >"$WRAPPER_FUNCTION"
+[ -s "$WRAPPER_FUNCTION" ] || fail 'claude-wrapper block missing/empty in config/claude/README.md'
+zsh -n "$WRAPPER_FUNCTION" || fail 'claude-wrapper block has zsh syntax errors'
 
 wrapper_output=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" ANTHROPIC_BASE_URL='https://stale.invalid' \
   zsh -f -c 'source "$1"; claude --deepseek -p hola' zsh "$WRAPPER_FUNCTION")
