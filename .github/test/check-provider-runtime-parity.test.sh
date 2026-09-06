@@ -10,14 +10,14 @@ trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$RUNTIME"
 
 initial_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json)
-printf '%s' "$initial_json" | jq -e '.parity == false and .failures == 4' >/dev/null
+printf '%s' "$initial_json" | jq -e '.parity == false and .failures == 3' >/dev/null
 
 if CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --strict >/dev/null 2>&1; then
   echo 'FAIL: --strict debe fallar con overlays ausentes' >&2
   exit 1
 fi
 
-for overlay in deepseek.settings.json glm.settings.json ollama.settings.json openrouter.settings.json; do
+for overlay in deepseek.settings.json ollama.settings.json openrouter.settings.json; do
   cp "$ROOT/config/claude/$overlay" "$RUNTIME/$overlay"
 done
 

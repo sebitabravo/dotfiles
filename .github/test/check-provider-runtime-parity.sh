@@ -58,7 +58,6 @@ command -v jq >/dev/null 2>&1 || {
 
 OVERLAYS=(
   deepseek.settings.json
-  glm.settings.json
   ollama.settings.json
   openrouter.settings.json
 )

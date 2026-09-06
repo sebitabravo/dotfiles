@@ -47,7 +47,6 @@ done
 
 for overlay in \
   deepseek.settings.json \
-  glm.settings.json \
   ollama.settings.json \
   openrouter.settings.json; do
   cp -p "$ROOT/config/claude/$overlay" "$RUNTIME/$overlay"

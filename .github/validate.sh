@@ -107,7 +107,6 @@ jq empty "$CLAUDE_DIR/skills-lock.json"
 printf '== provider overlays\n'
 for overlay in \
   deepseek.settings.json \
-  glm.settings.json \
   ollama.settings.json \
   openrouter.settings.json; do
   # Upper bound is a sanity check against typos (an extra digit), not a
