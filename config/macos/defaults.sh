@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # macOS — defaults write optimizations
-# Verificado en Sequoia 15.7.9. Tahoe 26.x NO verificado: ahi Launchpad ya no
-# existe (lo absorbio Spotlight), asi que las keys springboard-* son no-op.
+# Verificado en Sequoia 15.7.9 y en Tahoe 26.6.2 (arm64). Corre en las dos: lo
+# que cambio entre versiones esta detras de guards por version, no removido.
+# Las keys springboard-* de Launchpad se escriben solo hasta Sequoia (Tahoe lo
+# saco del sistema) y Reduce Transparency se salta solo en 26.0-26.2, la
+# ventana donde Apple la tuvo rota.
 # El inventario ejecutable se puede revisar sin escrituras con --dry-run.
 #
 # Apply: chmod +x defaults.sh && ./defaults.sh
@@ -41,11 +44,24 @@ done
 # ── Preflight ──────────────────────────────────────────────────────
 MACOS_VERSION="$(sw_vers -productVersion)"
 MACOS_MAJOR="${MACOS_VERSION%%.*}"
+# El minor hace falta porque hay keys cuyo comportamiento cambio dentro de la
+# misma major: Reduce Transparency estuvo roto en 26.1/26.2 y se arreglo en
+# 26.3. Un release sin minor ("26") se trata como 26.0.
+if [ "$MACOS_VERSION" = "$MACOS_MAJOR" ]; then
+  MACOS_MINOR=0
+else
+  MACOS_MINOR="${MACOS_VERSION#*.}"
+  MACOS_MINOR="${MACOS_MINOR%%.*}"
+fi
 ARCH="$(uname -m)"
 echo "=== macOS $MACOS_VERSION ($ARCH) ==="
 if [ "$MACOS_MAJOR" -ge 26 ]; then
-  echo "[!!] Tahoe 26.x no esta verificado: Launchpad lo absorbio Spotlight," \
-    "las keys springboard-* son no-op ahi. Segui con cuidado."
+  echo "[--] Tahoe 26.x: Launchpad ya no existe (lo absorbio Spotlight), asi" \
+    "que las keys springboard-* se saltan en esta version."
+fi
+if [ "$MACOS_MAJOR" -eq 26 ] && [ "$MACOS_MINOR" -lt 3 ]; then
+  echo "[!!] 26.0-26.2 tienen Reduce Transparency roto: se salta en esta" \
+    "version. Actualizar a 26.3 o superior lo habilita."
 fi
 if [ "$ARCH" != "arm64" ]; then
   echo "[!!] Script verificado solo en Apple Silicon (arm64)."
@@ -142,15 +158,22 @@ apply_default "Sin cambio automatico de escritorio al activar una app" com.apple
 # especifica cuando tenes varias apps con multiples ventanas abiertas.
 apply_default "Mission Control agrupa ventanas por app" com.apple.dock expose-group-by-app -bool true
 
-# ── Launchpad (removed in Tahoe 26.x — no-op there) ────────────────
-apply_default "Launchpad show speed" com.apple.dock springboard-show-duration -float 0.1
+# ── Launchpad (existe hasta Sequoia; removido en Tahoe 26) ─────────
+# Apple saco Launchpad del sistema en Tahoe y sus archivos ya no estan, asi
+# que ahi estas keys solo dejarian entradas muertas en com.apple.dock. En
+# Sequoia y anteriores siguen siendo la velocidad real de Launchpad.
+if [ "$MACOS_MAJOR" -lt 26 ]; then
+  apply_default "Launchpad show speed" com.apple.dock springboard-show-duration -float 0.1
 
-apply_default "Launchpad hide speed" com.apple.dock springboard-hide-duration -float 0.1
+  apply_default "Launchpad hide speed" com.apple.dock springboard-hide-duration -float 0.1
 
-apply_default "Launchpad page scroll instant" com.apple.dock springboard-page-duration -float 0
+  apply_default "Launchpad page scroll instant" com.apple.dock springboard-page-duration -float 0
+else
+  echo "[SKIP] Launchpad springboard-* (removido en Tahoe 26.x)"
+fi
 
 # ── Dock ───────────────────────────────────────────────────────────
-apply_default "Dock tile size = 48px" com.apple.dock tilesize -int 36
+apply_default "Dock tile size = 36px" com.apple.dock tilesize -int 36
 
 apply_default "Dock minimize effect = scale" com.apple.dock mineffect -string "scale"
 
@@ -272,8 +295,11 @@ else
   record_failure "Centro de notificaciones desde el borde derecho"
 fi
 
-# Paridad con Hyprland: scroll natural desactivado. Se deja separado de los
-# ajustes especificos del trackpad para conservar ambos dispositivos.
+# PREFERENCIA PERSONAL. Paridad con Hyprland: scroll natural desactivado. Se
+# deja separado de los ajustes especificos del trackpad para conservar ambos
+# dispositivos. Apple usa scroll natural desde Lion (2011), asi que quien copie
+# esta config y venga de macOS va a notar la inversion al instante.
+# Revertir: defaults delete NSGlobalDomain com.apple.swipescrolldirection
 apply_default "Scroll natural desactivado" NSGlobalDomain com.apple.swipescrolldirection -bool false
 
 # ── Keyboard ───────────────────────────────────────────────────────
@@ -311,12 +337,29 @@ fi
 # ── WindowManager (Sequoia 15.x) ───────────────────────────────────
 apply_default "WindowManager tiling no margins" com.apple.WindowManager EnableTiledWindowMargins -bool false
 
+# Politica de tiling: que no dispare solo, pero que siga estando. Arrastrar una
+# ventana cerca de un borde para moverla la termina acomodando sin que la
+# pidas, y con dos monitores externos ese gesto ocurre cada vez que se pasa una
+# ventana de una pantalla a la otra. Se apagan los dos disparos por arrastre y
+# se deja el acelerador de Option: asi el tiling pasa solo cuando se pide.
+# Se escribe el acelerador explicito aunque hoy sea el default de Apple, porque
+# estos toggles se reportan volviendo solos despues de updates de macOS.
+apply_default "Tiling por arrastre al borde apagado" com.apple.WindowManager EnableTilingByEdgeDrag -bool false
+
+apply_default "Tiling por arrastre a la barra de menu apagado" com.apple.WindowManager EnableTopTilingByEdgeDrag -bool false
+
+apply_default "Tiling con Option mantenido activo" com.apple.WindowManager EnableTilingOptionAccelerator -bool true
+
 apply_default "Stage Manager desactivado" com.apple.WindowManager GloballyEnabled -bool false
 
 # El clic en el fondo NO manda las ventanas atras para mostrar el escritorio:
 # con Stage Manager apagado ese gesto solo estorba.
 apply_default "Clic en el fondo no revela el escritorio" com.apple.WindowManager EnableStandardClickToShowDesktop -bool false
 
+# PREFERENCIA PERSONAL. Los iconos siguen en el Finder, solo se ocultan del
+# escritorio mientras trabajas. Quien guarde archivos en el escritorio y copie
+# esta config los va a extrañar hasta que lea esta linea.
+# Revertir: defaults delete com.apple.WindowManager HideDesktop
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Iconos del escritorio ocultos mientras trabajas"
 elif (
@@ -329,6 +372,12 @@ else
 fi
 
 apply_default "Ventanas agrupadas por aplicacion" com.apple.WindowManager AppWindowGroupingBehavior -int 1
+
+# Los widgets de escritorio NO se ocultan desde aca, aunque Tahoe los active
+# solo despues del upgrade. Son una funcion que un usuario de macOS conoce y
+# espera encontrar, y el script no puede distinguir entre "Tahoe me lo prendio
+# sin preguntar" y "lo uso todos los dias". Ante la duda gana la expectativa
+# del usuario: se gestionan en Ajustes > Escritorio y Dock > Mostrar widgets.
 
 # ── Finder ─────────────────────────────────────────────────────────
 apply_default "Finder animations disabled" com.apple.finder DisableAllAnimations -bool true
@@ -411,6 +460,14 @@ apply_default "Agrupar por tipo" com.apple.finder FXPreferredGroupBy -string "Ki
 # ── Escritorio: sin iconos de volumenes ────────────────────────────
 # Los discos siguen montados y accesibles desde la sidebar; solo se saca el
 # icono del escritorio.
+# PREFERENCIA PERSONAL, y la mas fuerte de todas: escritorio limpio de
+# volumenes. Ojo con lo que implica, porque los defaults de Apple no son
+# uniformes — el disco interno ya viene oculto de fabrica, pero externos,
+# CD/DVD y servidores vienen visibles. Con estas tres keys puestas, **un
+# pendrive se monta pero no aparece en el escritorio**: hay que buscarlo en la
+# sidebar del Finder. Es deliberado, no un bug.
+# Revertir: defaults delete com.apple.finder ShowExternalHardDrivesOnDesktop
+#           defaults delete com.apple.finder ShowRemovableMediaOnDesktop
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Escritorio sin iconos de discos ni medios extraibles"
 elif (
@@ -581,12 +638,31 @@ apply_default "Capturas en PNG" com.apple.screencapture type -string "png"
 # Nombre corto: "Screenshot.png" en vez de "Screenshot 2026-08-15 at 04.01.36".
 apply_default "Capturas sin fecha en el nombre" com.apple.screencapture include-date -bool false
 
+# El thumbnail flotante pierde capturas en Tahoe: si se interactua con el y la
+# accion se cancela a medias (Compartir > AirDrop > cancelar), la captura no se
+# guarda en ningun lado. Sin thumbnail, el archivo va directo al Escritorio.
+apply_default "Sin thumbnail flotante en capturas" com.apple.screencapture show-thumbnail -bool false
+
 # La ubicacion queda en el Escritorio (default de macOS) a proposito.
 # Si algun dia la queres mover, `location` por defaults es poco fiable desde
 # Monterey: hacelo por Screenshot.app > Opciones > Guardar en.
 
 # ── Window Restoration ─────────────────────────────────────────────
-# Window restoration: stock macOS (windows reopen on app relaunch)
+# Window restoration por app: stock macOS (las ventanas reabren al relanzar).
+#
+# Estas dos keys son drift-control del checkbox "Reabrir ventanas al volver a
+# iniciar sesion", NO un fix de rendimiento. Honestidad sobre lo que son:
+# vienen de un hack de Lion (2011) y desde 10.7.4 el checkbox persiste solo,
+# asi que escribirlas puede dejar el checkbox tildado pero inerte. Se ponen
+# para que el estado quede declarado en el repo y no dependa de que alguien se
+# acuerde de destildarlo, no porque Apple documente esto como mitigacion de
+# los memory leaks de Tahoe — Apple documenta el checkbox (HT102318) solo como
+# la forma de evitar el reopen. Que menos estado al login implique menos RAM e
+# IO al arrancar es plausible, no esta medido.
+# En esta maquina ambas ya leen 0, asi que esto codifica el estado existente.
+apply_default "Login no reabre ventanas de la sesion anterior" com.apple.loginwindow TALLogoutSavesState -bool false
+
+apply_default "Login no relanza las apps de la sesion anterior" com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false
 
 # ── Preview ────────────────────────────────────────────────────────
 apply_default "Preview no window restoration" com.apple.Preview NSQuitAlwaysKeepsWindow -bool false
@@ -671,12 +747,24 @@ fi
 # Prevent "Enable Siri?" prompts after updates
 apply_default "Siri declined permanently" com.apple.Siri UserHasDeclinedEnable -bool true
 
-# Dictado ACTIVO en esta maquina. Implica que el audio puede salir a los
-# servidores de Apple salvo que uses dictado en el dispositivo.
-# Para revertir: -bool false
-apply_default "Dictation enabled" com.apple.assistant.support "Dictation Enabled" -bool true
+# Dictado APAGADO. Con dictado por servidor el audio sale a los servidores de
+# Apple; solo el dictado en el dispositivo procesa on-device sin enviar voz.
+# Apagarlo cierra esa fuga de voz real. Reversible: -bool true (o activarlo en
+# Ajustes > Teclado > Dictado).
+# Para revertir: -bool true
+apply_default "Dictation disabled" com.apple.assistant.support "Dictation Enabled" -bool false
 
 apply_default "Search queries data sharing off" com.apple.assistant.support "Search Queries Data Sharing Status" -int 2
+
+# Help Apple Improve Search (Ajustes > Spotlight, al fondo): no tiene key
+# publica estable. La key de arriba es el best-effort scripteable y ya lee 2
+# en esta maquina. El switch de GUI se verifica a mano (checklist en README).
+# Solo lectura: jamas se inventa una key para forzarlo.
+if [ "$(defaults read com.apple.assistant.support "Search Queries Data Sharing Status" 2>/dev/null || true)" = "2" ]; then
+  echo "[OK] Improve Search best-effort (Search Queries Data Sharing Status = 2)"
+else
+  echo "[WARN] Improve Search: apagar en Ajustes > Spotlight > Help Apple Improve Search"
+fi
 
 apply_default "Siri data sharing opt-out" com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
 
@@ -709,6 +797,14 @@ apply_default "Core donations tracking off" com.apple.UsageTracking CoreDonation
 apply_default "UDC automation off" com.apple.UsageTracking UDCAutomationEnabled -bool false
 
 apply_default "App Store diagnostic data off" com.apple.appstore SendDiagnosticData -bool false
+
+# Location > System Services > Suggestions & Search: SIN key publica estable.
+# locationd se gobierna desde GUI y no se inventa ninguna key para forzarlo
+# (las que circulan por foros tocan plists del sistema sin revert confiable).
+# Verify-only + checklist en README. No lee nada porque no hay nada legible
+# que refleje ese switch.
+echo "[WARN] Location Suggestions & Search: sin key publica — apagar en" \
+  "Ajustes > Privacidad y Seguridad > Localizacion > Servicios del sistema"
 
 # ── Apps: anonymous usage ──────────────────────────────────────────
 apply_default "Maps anonymous usage off" com.apple.Maps UserSelectedAnonymousUsageOptIn -bool false
@@ -753,6 +849,9 @@ if [ "$SAFARI_FDA_OK" -eq 0 ]; then
   echo "       Ajustes > Privacidad y Seguridad > Acceso total al disco >" \
     "agregar tu terminal y reabrirla. Sin esto los writes van a un plist" \
     "que Safari no lee."
+  echo "       Sin FDA, el triple-OFF de Buscar se hace igual en GUI:" \
+    "Safari > Ajustes > Buscar (sugerencias del motor, sugerencias de" \
+    "Safari, precargar Top Hit). Ver checklist en README."
 else
 
   # Desactivado en esta maquina. Safari 17+ unifico esto en "Funciones para
@@ -852,8 +951,22 @@ else
 fi # SAFARI_FDA_OK
 
 # ── Apple Intelligence ─────────────────────────────────────────────
-# Feature ID 545129924 (Sequoia 15.x)
-apply_default "Apple Intelligence opt-out" com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool false
+# NO se toca. Esta maquina vive dentro del ecosistema Apple y ahi Apple
+# Intelligence es una funcion que se usa, no bloat. El master vive en Ajustes >
+# Apple Intelligence y Siri y no tiene key publica igual: lo que habia aca era
+# un opt-out por feature (ID 545129924) que ni siquiera gobernaba el master, y
+# un aviso que repetia en cada corrida un consejo que no se puede seguir.
+# Ademas el ID cambia entre updates (comunidad: macos-defaults.com), asi que
+# fijarlo es fragil por diseno. Solo se lee el estado para dejarlo declarado.
+_AI_MASTER="$(defaults read com.apple.CloudSubscriptionFeatures.optIn auto_opt_in 2>/dev/null || true)"
+if [ "$_AI_MASTER" = "1" ]; then
+  echo "[--] Apple Intelligence master ON (auto_opt_in=1, en uso en esta maquina)"
+elif [ "$_AI_MASTER" = "0" ]; then
+  echo "[--] Apple Intelligence master OFF (auto_opt_in=0)"
+else
+  echo "[--] Apple Intelligence master sin estado legible (revisar en Ajustes > Apple Intelligence y Siri)"
+fi
+unset _AI_MASTER
 
 # ── Xcode & Simulator ──────────────────────────────────────────────
 apply_default "Xcode DVT debug menu" com.apple.dt.Xcode ShowDVTDebugMenu -bool YES
@@ -874,6 +987,23 @@ apply_default "Simulator show touches" com.apple.iphonesimulator ShowSingleTouch
 
 # Parallel build: usa todos los cores disponibles (no limitar a 1-2)
 apply_default "Xcode parallel build (max cores)" com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks -int 0
+
+# Duracion del build junto a "Succeeded" en la toolbar. El default de Apple es
+# NO. En un fanless que thermal-throttlea, ver cuanto tardo cada build es la
+# forma barata de notar que la maquina empezo a bajar de frecuencia.
+apply_default "Xcode muestra duracion del build" com.apple.dt.Xcode ShowBuildOperationDuration -bool true
+
+# Press-and-hold POR APP, nunca global. Mantener una tecla en VS Code repite el
+# caracter en vez de abrir el menu de acentos, que es lo que hace usable el
+# modo Vim (hold j/k). La version global de esta key esta prohibida en este
+# repo: en un teclado en español mata el menu de acentos en TODAS las apps, y
+# por eso se removio en su momento. Acotarla por bundle-id es lo que la vuelve
+# segura — se escriben las tildes normal en cualquier otro lado.
+if [ -d "/Applications/Visual Studio Code.app" ]; then
+  apply_default "VS Code: hold repite tecla (Vim)" com.microsoft.VSCode ApplePressAndHoldEnabled -bool false
+else
+  echo "[SKIP] VS Code no instalado (press-and-hold por app)"
+fi
 
 # ── Terminal ───────────────────────────────────────────────────────
 apply_default "Terminal hide line marks" com.apple.Terminal ShowLineMarks -int 0
@@ -960,7 +1090,7 @@ fi
 # DateFormat unificado (reemplaza keys individuales en Sequoia+).
 # OJO: en esta maquina esta key no persiste — macOS la borra y deja el formato
 # derivado de Show24Hour + la region. Se mantiene por si en otra version pega.
-apply_default "Clock: digital, 24h, minimal" com.apple.menuextra.clock DateFormat -string "HH:mm"
+apply_default "Clock: formato HH:mm (DateFormat)" com.apple.menuextra.clock DateFormat -string "HH:mm"
 
 # ── App Store ──────────────────────────────────────────────────────
 if [ "$DRY_RUN" -eq 1 ]; then
@@ -1021,11 +1151,15 @@ else
   record_failure "${HOME}/Library visible"
 fi
 
-# Reduce Transparency: alivia ~15-20% de CPU de WindowServer en Sequoia (donde
-# esta verificado). En Tahoe (26.x) el compositor Liquid Glass no esta hecho
-# para esta key y puede producir artefactos visuales — se salta ahi.
-if [ "$MACOS_MAJOR" -ge 26 ]; then
-  echo "[SKIP] Reduce Transparency (Tahoe 26.x: Liquid Glass, puede dar artefactos)"
+# Reduce Transparency: alivio de CPU de WindowServer observado en Sequoia, sin
+# medicion propia en este repo — no se cita un porcentaje que nadie midio. En
+# Tahoe la key quedo rota en 26.1 y 26.2 (dejaba sidebars, headers y titlebars
+# translucidos, con texto superpuesto) y se arreglo en 26.3. Solo esa ventana
+# se salta; de 26.3 en adelante vuelve a ser el alivio de siempre con Liquid
+# Glass. Notar que activarla deshabilita el selector Clear/Tinted de Ajustes >
+# Apariencia: son mutuamente excluyentes.
+if [ "$MACOS_MAJOR" -eq 26 ] && [ "$MACOS_MINOR" -lt 3 ]; then
+  echo "[SKIP] Reduce Transparency (roto en 26.0-26.2, arreglado en 26.3)"
 else
   apply_default "Reduce Transparency (alivio de WindowServer)" com.apple.universalaccess reduceTransparency -bool true
 fi
@@ -1066,9 +1200,9 @@ else
   record_failure "Barra de menu minima (reloj + Control Center)"
 fi
 
-# La barra de menu se oculta hasta que pasas el mouse arriba. Promovido desde
-# "Minimalismo Extremo": mas espacio vertical, pero desorienta al principio y
-# si usas Bartender u otro gestor de iconos, revisa que no compita con el.
+# PREFERENCIA PERSONAL. La barra de menu se oculta hasta que pasas el mouse
+# arriba: mas espacio vertical. Ningun Mac sale de fabrica asi, y si usas
+# Bartender u otro gestor de iconos revisa que no compita con el.
 # Revertir: defaults delete NSGlobalDomain _HIHideMenuBar
 apply_default "Menu bar auto-hide" NSGlobalDomain _HIHideMenuBar -bool true
 
@@ -1077,15 +1211,46 @@ apply_default "Menu bar auto-hide" NSGlobalDomain _HIHideMenuBar -bool true
 # ══════════════════════════════════════════════════════════════════
 # Vivia como texto suelto en el README bajo "Recomendaciones con sudo" y
 # nunca se ejecutaba. Cada item verifica el estado real antes de escribir;
-# lo que ya esta bien en esta instalacion se reporta y no se toca. Nada de
-# esto es SIP, Gatekeeper ni el firewall — esos se verifican mas abajo, no
-# se modifican nunca desde este script.
+# lo que ya esta bien en esta instalacion se reporta y no se toca. El firewall
+# si se enciende desde aca cuando esta apagado; SIP, Gatekeeper y FileVault no
+# se tocan nunca — solo se verifican mas abajo, por los limites tecnicos que
+# ese bloque documenta. Orden: un solo `sudo -v` al inicio calienta el
+# timestamp y el drop-in timestamp_timeout=0 se instala ULTIMO, para que los
+# sudo intermedios no re-pidan password.
 if [ "$NO_SUDO" -eq 1 ]; then
   echo "=== Tier sudo saltado (--no-sudo) ==="
 elif [ "$DRY_RUN" -eq 1 ]; then
   echo "=== Tier sudo (dry-run, no pide password) ==="
+  echo "[DRY] sudo -v (una sola vez, al inicio del tier)"
+  echo "[DRY] sudo DevToolsSecurity -enable (si developer mode no esta habilitado)"
+  echo "[DRY] sudo pmset -a powernap 0 (si Power Nap sigue activo)"
+  echo "[DRY] sudo pmset -b lowpowermode 1 + -c lowpowermode 0 (segun estado)"
+  echo "[DRY] sudo pmset -c womp 1 (si AC no lo tiene ya en 1)"
+  echo "[DRY] sudo pmset -b womp 0 (si bateria no lo tiene ya en 0)"
+  echo "[DRY] sudo pmset -a proximitywake 1"
+  echo "[DRY] sudo pmset -a autorestart 1 + systemsetup -setrestartfreeze on (si no esta configurado)"
+  echo "[DRY] sudo systemsetup -setremotelogin off (si SSH esta prendido)"
+  echo "[DRY] sudo systemsetup -setnetworktimeserver time.apple.com + -setusingnetworktime on (si NTP no apunta ahi)"
+  echo "[DRY] sudo defaults write ...loginwindow LoginwindowText (si no hay banner)"
+  echo "[DRY] sudo defaults write ...mDNSResponder NoMulticastAdvertisements (solo con --bonjour-off)"
+  echo "[DRY] sudo chflags nohidden /Volumes (si esta oculto)"
+  echo "[DRY] sudo defaults write ...loginwindow AdminHostInfo HostName (si no es HostName)"
+  echo "[DRY] Touch ID para sudo via /etc/pam.d/sudo_local (si hay template y no hay config)"
+  echo "[DRY] sudo socketfilterfw --setglobalstate on + --setstealthmode on (si estan apagados)"
+  echo "[DRY] sudo socketfilterfw --add /usr/libexec/rapportd + --unblockapp (si falta en --listapps)"
+  echo "[DRY] sudo socketfilterfw --add /usr/libexec/sharingd + --unblockapp (si falta en --listapps)"
+  echo "[DRY] sudo install -m 0440 drop-in timestamp_timeout=0 en /etc/sudoers.d (ULTIMO del tier: si no hay timeout, validado con visudo -c)"
 else
-  echo "=== Tier sudo: puede pedir tu password ==="
+  # Un solo prompt al inicio del tier: `sudo -v` calienta el timestamp y
+  # todos los sudo siguientes lo reutilizan. El drop-in timestamp_timeout=0
+  # se instala ULTIMO en este tier a proposito: una vez instalado, cada sudo
+  # posterior (incluido el `tmutil` del Tier 3 en la primera corrida) vuelve
+  # a pedir password por diseño (CIS 5.4). Si la corrida supera los ~5 min
+  # del timestamp default, puede re-pedirlo una vez — aceptable.
+  # Sin keep-alive de fondo: el tier corre en segundos (~1-2 min con todo
+  # por aplicar), muy por debajo del timeout, y un loop con trap sumaria
+  # modos de fallo (huerfanos con set -e) sin beneficio real.
+  echo "=== Tier sudo: se pedira tu password una vez ==="
   sudo -v
 
   apply_sudo() {
@@ -1108,18 +1273,78 @@ else
 
   # Power Nap: despierta la Mac dormida para mail/iCloud/Time Machine —
   # bateria y snapshots de Time Machine de fondo sin que la pidas.
+  #
+  # Con powernap 0 la Mac dormida no despierta a sincronizar iCloud/Mail ni a
+  # correr Time Machine. En una maquina con iPhone al lado y sin destino de
+  # Time Machine configurado, eso no cuesta nada concreto.
+  #
+  # Lo que NO cuesta, aclarado porque es facil confundirlo: **ubicar la Mac en
+  # Buscar sigue funcionando dormida**. Find My usa un mecanismo aparte
+  # (Search Party) que emite beacons Bluetooth cifrados que recogen otros
+  # equipos Apple cercanos, y no depende de powernap ni de womp. El limite ahi
+  # es el estado de energia: una Mac apagada del todo no se encuentra, porque
+  # Apple Silicon no tiene el beacon en apagado que si tiene un AirTag.
+  # Revertir: sudo pmset -a powernap 1
   if pmset -g custom | grep -Eq "powernap[[:space:]]+1"; then
     apply_sudo "Power Nap off (AC + bateria)" sudo pmset -a powernap 0
   else
     echo "[SKIP] Power Nap ya desactivado"
   fi
 
-  # Wake for network access off + wake by proximity on, exactamente como la
-  # politica elegida para esta Mac. `proximitywake` solo tiene efecto en
-  # hardware compatible; pmset puede aceptar el write aunque el equipo no lo
-  # exponga en `pmset -g cap`.
-  apply_sudo "Wake settings (womp 0, proximitywake 1)" \
-    sudo pmset -a womp 0 proximitywake 1
+  # Low Power Mode solo en bateria. En AC se fuerza apagado a proposito: en un
+  # fanless capea CPU y GPU, y no tiene sentido pagar builds mas lentos cuando
+  # hay enchufe. Con bateria el intercambio si conviene. Se usa `-b` y `-c` en
+  # vez de `-a` justamente para que los dos lados queden distintos.
+  if pmset -g custom | awk '/Battery Power/,/AC Power/' | grep -Eq "lowpowermode[[:space:]]+1"; then
+    echo "[SKIP] Low Power Mode ya activo en bateria"
+  else
+    apply_sudo "Low Power Mode en bateria" sudo pmset -b lowpowermode 1
+  fi
+  if pmset -g custom | awk '/AC Power/,0' | grep -Eq "lowpowermode[[:space:]]+0"; then
+    echo "[SKIP] Low Power Mode ya apagado en AC"
+  else
+    apply_sudo "Low Power Mode apagado en AC" sudo pmset -c lowpowermode 0
+  fi
+
+  # Wake for network access separado por fuente, mismo criterio que
+  # lowpowermode: el costo de apagarlo solo vale la pena donde despertar
+  # cuesta algo.
+  #
+  # COSTO CONCRETO de womp 0, distinto del de powernap: se pierden el bloqueo y
+  # el borrado remotos mientras la Mac duerme. macOS lo dice con todas las
+  # letras — "You won't be able to locate, lock, or erase this Mac while it's
+  # asleep because Wake for network access is turned off". Ubicarla igual
+  # funciona por el beacon Bluetooth, pero ese beacon solo reporta posicion: no
+  # puede recibir una orden. Para bloquear o borrar hace falta que el equipo
+  # despierte por red.
+  #
+  # En AC no hay bateria que preservar, asi que la capacidad se deja prendida.
+  # En bateria si conviene apagarla: una maquina desatendida en una mochila no
+  # deberia despertar por cada paquete unicast.
+  #
+  # `pmset -g cap` imprime solo la fuente ACTIVA: con bateria muestra la
+  # seccion "Capabilities for Battery Power:" (verificado en este M3 Air
+  # descargando: incluye womp) y con cargador muestra la de AC. womp existe
+  # en ambas, y `pmset -b womp 0` persiste (visible en `pmset -g custom`) y
+  # es funcional: es lo que apaga el wake por red cuando no hay enchufe.
+  # Revertir por fuente: sudo pmset -c womp 0 (AC) / sudo pmset -b womp 1 (bateria)
+  if pmset -g custom | awk '/AC Power/,0' | grep -Eq "womp[[:space:]]+1"; then
+    echo "[SKIP] Wake for network ya activo en AC"
+  else
+    apply_sudo "Wake for network activo en AC (lock/erase remoto)" sudo pmset -c womp 1
+  fi
+  if pmset -g custom | awk '/Battery Power/,/AC Power/' | grep -Eq "womp[[:space:]]+0"; then
+    echo "[SKIP] Wake for network ya apagado en bateria"
+  else
+    apply_sudo "Wake for network apagado en bateria" sudo pmset -b womp 0
+  fi
+
+  # proximitywake se aplica con `-a` y sin guard a proposito: no aparece ni en
+  # `pmset -g custom` ni en `pmset -g cap`, asi que no hay estado que leer para
+  # decidir un [SKIP], y despertar al acercar un dispositivo Apple no depende
+  # de la fuente de poder. Solo tiene efecto en hardware compatible; pmset
+  # acepta el write igual.
+  apply_sudo "Wake por proximidad de dispositivo Apple" sudo pmset -a proximitywake 1
 
   # Auto-restart tras freeze o corte de luz. Verificado con el cargador
   # puesto: `pmset -g cap` no lista "autorestart" entre las capacidades de
@@ -1140,6 +1365,29 @@ else
     apply_sudo "SSH remoto apagado" sudo systemsetup -setremotelogin off
   else
     echo "[SKIP] SSH remoto ya apagado"
+  fi
+
+  # NTP contra time.apple.com (CIS: hora confiable sostiene Kerberos, TLS y
+  # firmas de backup). systemsetup tira warnings de deprecado en 13+ pero
+  # sigue aplicando. Revertir: sudo systemsetup -setusingnetworktime off
+  if sudo systemsetup -getusingnetworktime 2>/dev/null | grep -qi "On" &&
+    sudo systemsetup -getnetworktimeserver 2>/dev/null | grep -q "time.apple.com"; then
+    echo "[SKIP] NTP ya en time.apple.com"
+  else
+    apply_sudo "NTP en time.apple.com" sudo systemsetup -setnetworktimeserver time.apple.com
+    apply_sudo "Hora de red activada" sudo systemsetup -setusingnetworktime on
+  fi
+
+  # Banner de login (CIS 5.8 / Apple HT203580: LoginwindowText es key
+  # documentada del payload com.apple.loginwindow). Aviso de uso autorizado,
+  # nada mas: no es PolicyBanner con aceptacion obligatoria. Con FileVault el
+  # banner aparece despues del unlock, no en el login preboot.
+  # Revertir: sudo defaults delete /Library/Preferences/com.apple.loginwindow LoginwindowText
+  if sudo defaults read /Library/Preferences/com.apple.loginwindow LoginwindowText 2>/dev/null | grep -q .; then
+    echo "[SKIP] Banner de login ya configurado"
+  else
+    apply_sudo "Banner de login (uso autorizado)" \
+      sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "Uso autorizado unicamente. La actividad en este equipo puede ser monitoreada."
   fi
 
   # Bonjour multicast (CIS Benchmark Level 1) — opt-in explicito. Rompe
@@ -1181,47 +1429,265 @@ else
     echo "[SKIP] Touch ID para sudo no disponible (requiere macOS 14+)"
   fi
 
-  echo "--- Verificacion de seguridad (solo lectura, no se escribe nada) ---"
-  if fdesetup status 2>/dev/null | grep -q "FileVault is On"; then
-    echo "[OK] FileVault On"
+  # ── Firewall: se enciende, no solo se avisa ──────────────────────
+  # Encender el firewall es aditivo y reversible, asi que el script lo hace en
+  # vez de limitarse a reportarlo. Stealth mode no responde ping ni ICMP: si
+  # algun dia depuras la red de esta maquina desde afuera, apagalo con
+  # `sudo socketfilterfw --setstealthmode off`.
+  FIREWALL_CLI=/usr/libexec/ApplicationFirewall/socketfilterfw
+  if "$FIREWALL_CLI" --getglobalstate 2>/dev/null | grep -qi enabled; then
+    echo "[SKIP] Firewall ya encendido"
   else
-    echo "[WARN] FileVault: revisar con 'sudo fdesetup enable'"
+    apply_sudo "Firewall encendido" sudo "$FIREWALL_CLI" --setglobalstate on
   fi
-  if /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -qi enabled; then
-    echo "[OK] Firewall enabled"
+  if "$FIREWALL_CLI" --getstealthmode 2>/dev/null | grep -qi "stealth mode is on"; then
+    echo "[SKIP] Stealth mode ya encendido"
   else
-    echo "[WARN] Firewall apagado: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on"
+    apply_sudo "Firewall stealth mode" sudo "$FIREWALL_CLI" --setstealthmode on
   fi
-  if /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode 2>/dev/null | grep -qi "stealth mode is on"; then
-    echo "[OK] Firewall stealth mode on"
-  else
-    echo "[WARN] Stealth mode apagado"
-  fi
-  if csrutil status 2>/dev/null | grep -qi "enabled"; then
-    echo "[OK] SIP enabled"
-  else
-    echo "[WARN] SIP disabled — este script nunca lo toca, es decision tuya"
-  fi
-  if spctl --status 2>/dev/null | grep -qi "assessments enabled"; then
-    echo "[OK] Gatekeeper enabled"
-  else
-    echo "[WARN] Gatekeeper: revisar con 'spctl --status'"
-  fi
+
+  # ── Firewall: excepciones para discovery de continuidad ──────────
+  # Con firewall + stealth on, rapportd (discovery de AirDrop/Handoff) y
+  # sharingd (AirDrop/compartir) pueden quedar bloqueados. Se registran con
+  # --add y se les permite entrante con --unblockapp: preserva AirDrop/Handoff
+  # discovery con firewall on. Idempotente: si ya estan en --listapps, [SKIP].
+  # Revertir: sudo "$FIREWALL_CLI" --remove /usr/libexec/rapportd (idem sharingd)
+  for _fw_app in /usr/libexec/rapportd /usr/libexec/sharingd; do
+    if "$FIREWALL_CLI" --listapps 2>/dev/null | grep -q "$_fw_app"; then
+      echo "[SKIP] Firewall ya permite $_fw_app"
+    else
+      apply_sudo "Firewall permite $_fw_app" sudo "$FIREWALL_CLI" --add "$_fw_app"
+      apply_sudo "Firewall desbloquea $_fw_app" sudo "$FIREWALL_CLI" --unblockapp "$_fw_app"
+    fi
+  done
+  unset _fw_app
+
   if sudo sysadminctl -secureTokenStatus "$(id -un)" 2>&1 | grep -qi "ENABLED"; then
     echo "[OK] Secure Token enabled"
   else
     echo "[WARN] Secure Token: revisar con 'sysadminctl -secureTokenStatus'"
-  fi
-  if sudo -n true 2>/dev/null && sysadminctl -screenLock status 2>&1 | grep -qi "immediate"; then
-    echo "[OK] Bloqueo de pantalla inmediato"
-  else
-    echo "[WARN] Bloqueo de pantalla: revisar en Ajustes > Pantalla bloqueada"
   fi
   if sudo defaults read /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled 2>/dev/null | grep -q 1; then
     echo "[OK] HiDPI para monitores 4K habilitado"
   else
     echo "[SKIP] HiDPI no habilitado (solo hace falta con monitor 4K externo)"
   fi
+
+  # Sudo sin grace period (CIS 5.4 + MITRE T1548.003: el timestamp de sudo
+  # permite ejecutar sin password dentro de la ventana). Drop-in en
+  # /etc/sudoers.d sin extension (macOS ignora los archivos con punto),
+  # 0440 root:wheel, validado con visudo -c ANTES de instalar: si la
+  # validacion falla no se instala nada. tty_tickets ya es default desde
+  # Sierra, no hay nada que fijar.
+  # Va ULTIMO en el tier a proposito: instalarlo antes mataba el timestamp
+  # que `sudo -v` calento al inicio y cada sudo siguiente de la misma
+  # corrida volvia a pedir password (~4 prompts en una corrida real). Aca
+  # todos los sudo anteriores ya reutilizaron el cache. OJO: a partir de
+  # este punto cada sudo posterior (Tier 3 `tmutil` en la primera corrida,
+  # futuras corridas) pide password por diseño; en corridas siguientes el
+  # guard hace [SKIP] y no se nota.
+  # Revertir: sudo rm /etc/sudoers.d/10_cis_timestamp_timeout
+  if sudo grep -Rhq "timestamp_timeout" /etc/sudoers /etc/sudoers.d/ 2>/dev/null; then
+    echo "[SKIP] Sudo timeout ya configurado"
+  elif [ ! -d /etc/sudoers.d ]; then
+    echo "[WARN] Sudo timeout: no existe /etc/sudoers.d, no se toca sudoers (ver CIS 5.4)"
+  else
+    _sudoers_tmp="$(mktemp /tmp/sudoers_drop.XXXXXX)"
+    printf '%s\n' "Defaults timestamp_timeout=0" >"$_sudoers_tmp"
+    if sudo visudo -cf "$_sudoers_tmp" >/dev/null 2>&1; then
+      if sudo install -o root -g wheel -m 0440 "$_sudoers_tmp" /etc/sudoers.d/10_cis_timestamp_timeout; then
+        echo "[SET] Sudo timeout=0 (cada sudo pide password)"
+      else
+        record_failure "Sudo timeout=0 (no se pudo instalar el drop-in)"
+      fi
+    else
+      record_failure "Sudo timeout=0 (visudo rechazo el drop-in, no se instalo nada)"
+    fi
+    rm -f "$_sudoers_tmp"
+    unset _sudoers_tmp
+  fi
+fi
+
+# ══════════════════════════════════════════════════════════════════
+# Verificacion de seguridad — corre SIEMPRE, tambien con --no-sudo
+# ══════════════════════════════════════════════════════════════════
+# Antes vivia dentro del tier 2, asi que `--no-sudo` terminaba sin reportar una
+# sola linea de seguridad. Ninguna de estas lecturas necesita privilegios
+# (verificado ejecutandolas sin sudo), asi que gatearlas dejaba ciego justo al
+# modo pensado para correr sin ellos.
+#
+# Lo que queda como aviso y no como accion es porque no se puede automatizar,
+# no por prudencia:
+#   FileVault   `fdesetup enable` genera una llave de recuperacion. Una corrida
+#               no interactiva la descarta, y sin esa llave un olvido de
+#               password deja el disco irrecuperable. Se activa a mano.
+#   SIP         `csrutil enable` responde "This tool needs to be executed from
+#               Recovery OS". Imposible desde el sistema corriendo.
+#   Gatekeeper  `spctl --master-enable` dejo de existir en Sequoia ("This
+#               operation is no longer supported"). Solo se re-arma desde
+#               Ajustes > Privacidad y seguridad.
+#   Bloqueo     `sysadminctl -screenLock` exige `-password <password>` en
+#               claro. No se le pasa la password a un script.
+echo "=== Verificacion de seguridad (solo lectura) ==="
+if fdesetup status 2>/dev/null | grep -q "FileVault is On"; then
+  echo "[OK] FileVault On"
+else
+  echo "[WARN] FileVault apagado: activalo en Ajustes > Privacidad y seguridad" \
+    "y guarda la llave de recuperacion"
+fi
+if /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -qi enabled; then
+  echo "[OK] Firewall enabled"
+else
+  echo "[WARN] Firewall apagado: corre el script sin --no-sudo para encenderlo"
+fi
+if /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode 2>/dev/null | grep -qi "stealth mode is on"; then
+  echo "[OK] Firewall stealth mode on"
+else
+  echo "[WARN] Stealth mode apagado: corre el script sin --no-sudo para encenderlo"
+fi
+if csrutil status 2>/dev/null | grep -qi "enabled"; then
+  echo "[OK] SIP enabled"
+else
+  echo "[WARN] SIP disabled — solo se reactiva desde Recovery OS"
+fi
+if spctl --status 2>/dev/null | grep -qi "assessments enabled"; then
+  echo "[OK] Gatekeeper enabled"
+else
+  echo "[WARN] Gatekeeper apagado — desde Sequoia solo se re-arma en Ajustes"
+fi
+if sysadminctl -screenLock status 2>&1 | grep -qi "immediate"; then
+  echo "[OK] Bloqueo de pantalla inmediato"
+else
+  echo "[WARN] Bloqueo de pantalla: revisar en Ajustes > Pantalla bloqueada"
+fi
+# Sharing + guest + auto-login: todo legible sin sudo. Screen Sharing, Remote
+# Management y Remote Apple Events jamas se habilitaron si sus plists ni
+# existen; si existen se revisan en GUI. El estado on/off de File Sharing en
+# si requiere sudo (ya se cubre SSH en Tier 2), aca solo se listan los share
+# points SMB como dato. Checklist completa en README.
+if [ "$(defaults read /Library/Preferences/com.apple.loginwindow GuestEnabled 2>/dev/null || echo 0)" = "0" ]; then
+  echo "[OK] Cuenta de invitado desactivada"
+else
+  echo "[WARN] Cuenta de invitado activa: desactivar en Ajustes > Usuarios y grupos"
+fi
+if defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser >/dev/null 2>&1; then
+  echo "[WARN] Auto-login activo ($(defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser 2>/dev/null)): desactivar en Ajustes > Usuarios y grupos"
+else
+  echo "[OK] Sin auto-login"
+fi
+for _share_plist in com.apple.screensharing com.apple.RemoteManagement com.apple.AppleEvents; do
+  if [ -e "/Library/Preferences/${_share_plist}.plist" ]; then
+    echo "[--] ${_share_plist}: plist presente, revisar servicio en Ajustes > General > Compartir"
+  fi
+done
+unset _share_plist
+if [ ! -e /Library/Preferences/com.apple.screensharing.plist ] &&
+  [ ! -e /Library/Preferences/com.apple.RemoteManagement.plist ] &&
+  [ ! -e /Library/Preferences/com.apple.AppleEvents.plist ]; then
+  echo "[OK] Screen Sharing / Remote Management / Remote Apple Events sin rastros de habilitacion"
+fi
+if cupsctl 2>/dev/null | grep -q "_share_printers=0"; then
+  echo "[OK] Printer sharing apagado"
+else
+  echo "[WARN] Printer sharing: revisar en Ajustes > General > Compartir"
+fi
+_SMB_SHARES="$(sharing -l 2>/dev/null | grep -c "shared:" || true)"
+if [ -n "$_SMB_SHARES" ] && [ "$_SMB_SHARES" -gt 0 ]; then
+  echo "[--] ${_SMB_SHARES} share point(s) SMB (ej: carpeta Publica por defecto). File Sharing on/off en Ajustes > General > Compartir"
+fi
+unset _SMB_SHARES
+# Backup. Va aca y no en un tier opcional porque en la practica es el control
+# que mas importa: FileVault sin backup no protege los datos, los vuelve
+# irrecuperables si el SSD muere o se pierde la password. El script no puede
+# configurarlo (necesita un disco o destino de red real), asi que avisa.
+# El patron va anclado a inicio de linea: `Name` cubre destinos USB y `URL` los
+# de red (AFP/SMB). Sin anclar, cualquier mensaje de error que mencione esas
+# palabras daria un falso [OK] y el aviso desapareceria justo cuando importa.
+if tmutil destinationinfo 2>/dev/null | grep -qiE "^[[:space:]]*(Name|URL)[[:space:]]*:"; then
+  echo "[OK] Time Machine con destino configurado"
+  # Frescura del ultimo backup: el path termina en YYYY-MM-DD-HHMMSS.
+  _TM_LATEST="$(tmutil latestbackup 2>/dev/null | tail -n 1)"
+  _TM_DATE="$(printf '%s' "${_TM_LATEST##*/}" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}' || true)"
+  if [ -z "$_TM_DATE" ]; then
+    echo "[WARN] Time Machine con destino pero sin backup completado (correr un backup a mano)"
+  else
+    _TM_EPOCH="$(date -j -f "%Y-%m-%d-%H%M%S" "$_TM_DATE" "+%s" 2>/dev/null || true)"
+    if [ -n "$_TM_EPOCH" ] && [ "$((($(date +%s) - _TM_EPOCH) / 86400))" -gt 7 ]; then
+      echo "[WARN] Ultimo backup Time Machine hace mas de 7 dias ($_TM_DATE)"
+    elif [ -n "$_TM_EPOCH" ]; then
+      echo "[OK] Ultimo backup Time Machine: $_TM_DATE"
+    else
+      echo "[--] Ultimo backup Time Machine: $_TM_LATEST (fecha no parseable)"
+    fi
+    unset _TM_EPOCH
+  fi
+  unset _TM_LATEST _TM_DATE
+  # Cifrado del destino: tmutil no siempre expone el campo segun el tipo de
+  # destino, asi que lo desconocido se reporta y no se inventa. Jamas
+  # setdestination desde aca: apunta a hardware real.
+  _TM_ENC="$(tmutil destinationinfo 2>/dev/null | grep -i "encrypt" || true)"
+  if [ -z "$_TM_ENC" ]; then
+    echo "[--] TM cifrado: tmutil no lo expone para este destino, revisar en Ajustes > General > Time Machine"
+  elif printf '%s' "$_TM_ENC" | grep -qi "yes"; then
+    echo "[OK] Destino Time Machine cifrado"
+  else
+    echo "[WARN] Destino Time Machine sin cifrar ($_TM_ENC)"
+  fi
+  unset _TM_ENC
+else
+  echo "[WARN] Sin backup configurado. Con FileVault activo, un SSD muerto o" \
+    "una password olvidada = datos perdidos. Ajustes > General > Time Machine."
+fi
+
+# Espacio libre. Se lee de `diskutil apfs list` y no de `df`: df reporta contra
+# el snapshot sellado del sistema y da un numero que no es el que el kernel le
+# entrega a una app. El umbral de 20% es heuristica de comunidad para dejar
+# aire a swap, snapshots de APFS e indexado — Apple no publica un minimo.
+# La linea trae dos grupos entre parentesis, "(160.3 GB)" y "(32.4% free)".
+# Se extrae el que tiene el signo de porcentaje, no una posicion fija. Se usa
+# grep -oE y no awk con match(s,r,arr): esa forma de match es de gawk y macOS
+# trae BSD awk, donde falla.
+FREE_PCT="$(diskutil apfs list 2>/dev/null |
+  grep -m1 "Capacity Not Allocated" |
+  grep -oE '[0-9]+\.?[0-9]*% free' |
+  grep -oE '^[0-9]+')"
+if [ -z "$FREE_PCT" ]; then
+  echo "[--] Espacio libre: no se pudo leer de diskutil"
+elif [ "$FREE_PCT" -lt 20 ]; then
+  echo "[WARN] Solo ${FREE_PCT}% libre. Bajo 20% Tahoe pelea por swap," \
+    "snapshots e indexado. Liberar espacio o 'tmutil thinlocalsnapshots'."
+else
+  echo "[OK] Espacio libre ${FREE_PCT}%"
+fi
+
+# Servicios escuchando en todas las interfaces. Esto es lo que decide si el
+# firewall importa en esta maquina o no: con cero listeners el exposure es
+# teorico, con listeners reales el firewall y el stealth mode hacen trabajo.
+# Se mide en vez de asumirse. ControlCenter en 5000/7000 = AirPlay Receiver,
+# que es la superficie de AirBorne (17 CVEs, CVE-2025-24252 es RCE zero-click
+# en la misma red) y ademas se come el puerto 5000 que usa medio mundo para
+# desarrollo. Es solo lectura: apagarlo es decision del usuario.
+# `+c 0` desactiva el truncado de nombres a 9 caracteres, que convertia
+# ControlCenter en "ControlCe". Se invoca lsof UNA vez y se reusa: con dos
+# llamadas, el resumen y el test de AirPlay pueden discrepar si un proceso
+# aparece o muere entre medio. La cantidad nunca se fija en el codigo, varia
+# con lo que este corriendo.
+LISTEN_RAW="$(lsof +c 0 -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk '$9 ~ /^\*:/')"
+# lsof escapa los espacios del nombre como \x20 ("Stream\x20Deck"). Se
+# desescapan y la lista va separada por comas, porque con nombres que tienen
+# espacios una lista separada por espacios es ambigua.
+LISTENERS="$(printf '%s\n' "$LISTEN_RAW" | awk 'NF {print $1}' | sort -u |
+  sed 's/\\x20/ /g' | paste -sd ',' - | sed 's/,/, /g')"
+if [ -z "$LISTENERS" ]; then
+  echo "[OK] Sin servicios escuchando en todas las interfaces"
+else
+  echo "[--] Escuchando en todas las interfaces: ${LISTENERS}"
+  # No se avisa por AirPlay Receiver (ControlCenter en 5000/7000): es parte del
+  # ecosistema y aca se usa. Vale saber que existio AirBorne (17 CVEs, con
+  # CVE-2025-24252 como RCE zero-click en la misma red), parchado desde 15.4 —
+  # por eso el firewall con stealth mode importa en esta maquina y no es
+  # decorativo. Si alguna vez choca el puerto 5000 con un server local, la
+  # causa es esta y se apaga en Ajustes > General > AirDrop y Handoff.
 fi
 
 # ══════════════════════════════════════════════════════════════════
@@ -1296,11 +1762,15 @@ fi
 # --dry-run no debe tocar la sesion real: sin esto un dry-run mataba Dock y
 # Finder igual, aunque ningun defaults write se hubiera ejecutado.
 if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Reiniciar Dock, Finder, SystemUIServer, Clock, cfprefsd y NotificationCenter"
+  echo "[DRY] Reiniciar Dock, Finder, SystemUIServer, WindowManager, Clock, cfprefsd y NotificationCenter"
 else
   killall Dock 2>/dev/null && echo "[OK] Dock restarted"
   killall Finder 2>/dev/null && echo "[OK] Finder restarted"
   killall SystemUIServer 2>/dev/null && echo "[OK] SystemUIServer restarted"
+  # Las keys de com.apple.WindowManager (tiling, Stage Manager, widgets) no
+  # toman efecto hasta que su daemon reinicia. Es un proceso distinto de
+  # WindowServer: matarlo relanza el daemon, no cierra la sesion.
+  killall WindowManager 2>/dev/null && echo "[OK] WindowManager restarted"
   killall "Clock" "WorldClockWidget" 2>/dev/null || true
   killall cfprefsd 2>/dev/null && echo "[OK] cfprefsd restarted"
   killall NotificationCenter 2>/dev/null && echo "[OK] NotificationCenter restarted"

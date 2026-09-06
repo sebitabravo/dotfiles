@@ -90,24 +90,30 @@ else
   ok "Power Nap desactivado"
 fi
 
-if pmset -g custom 2>/dev/null | grep -Eq "womp[[:space:]]+0"; then
-  ok "Wake for network access desactivado (womp=0)"
+if pmset -g custom 2>/dev/null | awk '/Battery Power/,/AC Power/' | grep -Eq "womp[[:space:]]+0"; then
+  ok "Wake for network access desactivado en bateria (womp=0)"
 else
-  warn "Wake for network access activo: sudo pmset -a womp 0 proximitywake 1"
+  warn "Wake for network access activo en bateria: sudo pmset -b womp 0"
+fi
+
+if pmset -g custom 2>/dev/null | awk '/AC Power/,0' | grep -Eq "womp[[:space:]]+1"; then
+  ok "Wake for network access activado en AC (womp=1, lock/erase remoto)"
+else
+  warn "Wake for network access apagado en AC: sudo pmset -c womp 1"
 fi
 
 if pmset -g cap 2>/dev/null | grep -qi proximitywake; then
   if pmset -g custom 2>/dev/null | grep -Eq "proximitywake[[:space:]]+1"; then
     ok "Wake by proximity activado"
   else
-    warn "Wake by proximity desactivado: sudo pmset -a womp 0 proximitywake 1"
+    warn "Wake by proximity desactivado: sudo pmset -a proximitywake 1"
   fi
 else
   skip "Wake by proximity no expuesto por este hardware (pmset -g cap)"
 fi
 
 # autorestart es de los settings que pmset -g solo muestra en "Currently in
-# use" cuando la maquina esta en AC (documentado, igual que womp). Verificado
+# use" cuando la maquina esta en AC. Verificado
 # con el cargador puesto en este M3 Air: `pmset -g cap` no lista "autorestart"
 # entre las capacidades soportadas por este hardware (a diferencia de un iMac,
 # donde si aparece) — el mismo comportamiento no-op que askForPassword en
