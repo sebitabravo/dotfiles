@@ -216,16 +216,16 @@ defaults write com.apple.screencapture show-thumbnail -bool false
 ## Que hace — Tier 2 (requiere sudo)
 
 Antes vivia como texto suelto en este README bajo "Recomendaciones con sudo"
-y nunca se ejecutaba. Ahora esta dentro de `defaults.sh`: pide tu password
-una vez al inicio (`sudo -v`, timestamp cacheado) y aplica solo lo que tiene
-un revert claro. Se salta completo con `--no-sudo`.
+y nunca se ejecutaba. Ahora esta dentro de `defaults.sh`: todo el tier corre
+en **una sola sesion root** (`sudo bash` con heredoc) y tu password se pide
+**una sola vez** al inicio del tier. Se salta completo con `--no-sudo`.
 
-Orden a proposito: el drop-in `timestamp_timeout=0` se instala **ultimo**
-en el tier, para que los sudo intermedios reutilicen el timestamp y no
-re-pidan password. Una vez instalado, **cada sudo posterior pide password
-por diseño** (incluido el `tmutil` del Tier 3 en la primera corrida). Si la
-corrida supera los ~5 min del timestamp default de sudo, puede re-pedirlo
-una vez — aceptable.
+Por que una sola sesion: con `timestamp_timeout=0` instalado, **cada `sudo`
+suelto re-pide password por diseño** (CIS 5.4) — N invocaciones sueltas son N
+prompts aunque el timestamp este caliente, y calentar con `sudo -v` ya no
+ayuda. Una sola invocacion de `sudo` es un solo prompt. Ojo: esto vale dentro
+del script; **ad-hoc sudo fuera del script sigue pidiendo password cada vez
+mientras el drop-in exista, por diseño**.
 
 | Item | Aplica si... | Revertir |
 |---|---|---|
@@ -236,8 +236,8 @@ una vez — aceptable.
 | Auto-restart en freeze/corte de luz | no esta configurado | `sudo pmset -a autorestart 0` + `sudo systemsetup -setrestartfreeze off` |
 | SSH remoto apagado | esta prendido | `sudo systemsetup -setremotelogin on` — dejalo prendido si lo usas para desarrollo |
 | NTP en time.apple.com | hora de red apagada o contra otro servidor | `sudo systemsetup -setusingnetworktime off` (o `-setnetworktimeserver` con otro) |
-| Banner de login | `LoginwindowText` ausente | `sudo defaults delete /Library/Preferences/com.apple.loginwindow LoginwindowText` |
-| Sudo sin grace period (se instala ultimo en el tier) | `timestamp_timeout` ya fijado en sudoers | `sudo rm /etc/sudoers.d/10_cis_timestamp_timeout` (cada sudo vuelve a pedir password mientras exista) |
+| Banner de login (plantilla equipo extraviado, personalizar con `LOGIN_BANNER="..."` o editar el default; usar email secundario, nunca el Apple ID) | `LoginwindowText` ausente | `sudo defaults delete /Library/Preferences/com.apple.loginwindow LoginwindowText` |
+| Sudo sin grace period (dentro de la sesion root unica) | `timestamp_timeout` ya fijado en sudoers | `sudo rm /etc/sudoers.d/10_cis_timestamp_timeout` (cada sudo vuelve a pedir password mientras exista) |
 | Login Window muestra hostname | `AdminHostInfo` no es `HostName` | `sudo defaults delete /Library/Preferences/com.apple.loginwindow AdminHostInfo` |
 | Touch ID para sudo | `/etc/pam.d/sudo_local` no existe | `sudo rm /etc/pam.d/sudo_local` |
 | `/Volumes` visible en Finder | tiene el flag hidden | `sudo chflags hidden /Volumes` |
@@ -423,7 +423,11 @@ El script excluye de Spotlight (`.metadata_never_index`) y de Time Machine
 - `~/go/pkg`
 - `~/Library/Containers/com.docker.docker`
 
-No crea directorios — si una ruta no existe, se saltea. También reporta
+No crea directorios — si una ruta no existe, se saltea. El guard
+`tmutil isexcluded` es sin sudo y no pide nada; con `timestamp_timeout=0`
+instalado, cada exclusion de Time Machine que falte pide tu password una vez
+(`tmutil addexclusion` requiere root). Si todo ya esta excluido, el tier no
+pide password. También reporta
 cuantos snapshots locales huerfanos hay en `/` (sin borrar ninguno): el
 comando real para liberarlos es `sudo tmutil thinlocalsnapshots / <bytes> 4`,
 una operacion irreversible que este script no toma por vos.

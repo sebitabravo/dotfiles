@@ -1214,14 +1214,18 @@ apply_default "Menu bar auto-hide" NSGlobalDomain _HIHideMenuBar -bool true
 # lo que ya esta bien en esta instalacion se reporta y no se toca. El firewall
 # si se enciende desde aca cuando esta apagado; SIP, Gatekeeper y FileVault no
 # se tocan nunca — solo se verifican mas abajo, por los limites tecnicos que
-# ese bloque documenta. Orden: un solo `sudo -v` al inicio calienta el
-# timestamp y el drop-in timestamp_timeout=0 se instala ULTIMO, para que los
-# sudo intermedios no re-pidan password.
+# ese bloque documenta. Todo el tier corre dentro de UNA sola sesion root
+# (`sudo bash` con heredoc citado): con timestamp_timeout=0 instalado cada
+# `sudo` suelto re-pide password por diseño (CIS 5.4), asi que N invocaciones
+# sueltas son N prompts aunque el timestamp este caliente y `sudo -v` ya no
+# ayuda. Una sola invocacion de `sudo` es un solo prompt. Ad-hoc sudo fuera
+# del script sigue pidiendo password cada vez mientras el drop-in exista, por
+# diseño.
 if [ "$NO_SUDO" -eq 1 ]; then
   echo "=== Tier sudo saltado (--no-sudo) ==="
 elif [ "$DRY_RUN" -eq 1 ]; then
   echo "=== Tier sudo (dry-run, no pide password) ==="
-  echo "[DRY] sudo -v (una sola vez, al inicio del tier)"
+  echo "[DRY] sudo bash (tier completo en una sesion root)"
   echo "[DRY] sudo DevToolsSecurity -enable (si developer mode no esta habilitado)"
   echo "[DRY] sudo pmset -a powernap 0 (si Power Nap sigue activo)"
   echo "[DRY] sudo pmset -b lowpowermode 1 + -c lowpowermode 0 (segun estado)"
@@ -1239,36 +1243,66 @@ elif [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] sudo socketfilterfw --setglobalstate on + --setstealthmode on (si estan apagados)"
   echo "[DRY] sudo socketfilterfw --add /usr/libexec/rapportd + --unblockapp (si falta en --listapps)"
   echo "[DRY] sudo socketfilterfw --add /usr/libexec/sharingd + --unblockapp (si falta en --listapps)"
-  echo "[DRY] sudo install -m 0440 drop-in timestamp_timeout=0 en /etc/sudoers.d (ULTIMO del tier: si no hay timeout, validado con visudo -c)"
+  echo "[DRY] sudo install -m 0440 drop-in timestamp_timeout=0 en /etc/sudoers.d (dentro de la sesion root: si no hay timeout, validado con visudo -c)"
 else
-  # Un solo prompt al inicio del tier: `sudo -v` calienta el timestamp y
-  # todos los sudo siguientes lo reutilizan. El drop-in timestamp_timeout=0
-  # se instala ULTIMO en este tier a proposito: una vez instalado, cada sudo
-  # posterior (incluido el `tmutil` del Tier 3 en la primera corrida) vuelve
-  # a pedir password por diseño (CIS 5.4). Si la corrida supera los ~5 min
-  # del timestamp default, puede re-pedirlo una vez — aceptable.
-  # Sin keep-alive de fondo: el tier corre en segundos (~1-2 min con todo
-  # por aplicar), muy por debajo del timeout, y un loop con trap sumaria
+  # Una sola sesion root para todo el tier: UN solo prompt al inicio. Sin
+  # keep-alive de fondo: el tier corre en segundos (~1-2 min con todo por
+  # aplicar), muy por debajo de cualquier timeout, y un loop con trap sumaria
   # modos de fallo (huerfanos con set -e) sin beneficio real.
-  echo "=== Tier sudo: se pedira tu password una vez ==="
-  sudo -v
-
-  apply_sudo() {
-    local label="$1"
-    shift
-    if "$@" >/dev/null 2>&1; then
-      echo "[SET] $label"
-    else
-      record_failure "$label"
-    fi
-  }
+  # La sesion root NO usa `set -e` a proposito: cada item captura su propio
+  # fallo (tier_apply/tier_fail) y el tier sigue; al final la sesion sale con
+  # la cantidad de fallos como exit code y el padre lo suma a
+  # DEFAULTS_FAILURES. Variables del usuario entran por un archivo env
+  # temporal pasado como $1 (LOGIN_BANNER, BONJOUR_OFF, TIER_USER,
+  # FIREWALL_CLI): `sudo VAR=x cmd` NO es fiable — sudoers con env_reset
+  # (default macOS) puede descartarlas en silencio y el tier moriria en la
+  # guarda. Los argv en cambio siempre llegan. El heredoc va citado
+  # ('TIER_EOF') asi que nada se expande en la shell del usuario.
+  echo "=== Tier sudo: una sola sesion root (tu password se pide una vez) ==="
+  # El default del banner se resuelve aca, en la shell del usuario, antes de
+  # pasarlo por argv: respeta LOGIN_BANNER exportado igual que antes.
+  : "${LOGIN_BANNER:=Si encuentra este Mac, por favor escriba a tu-email@ejemplo.com. Se ofrece recompensa. Find My activado.}"
+  FIREWALL_CLI=/usr/libexec/ApplicationFirewall/socketfilterfw
+  _TIER_ENV=$(mktemp)
+  {
+    printf 'LOGIN_BANNER=%q\n' "$LOGIN_BANNER"
+    printf 'BONJOUR_OFF=%q\n' "$BONJOUR_OFF"
+    printf 'TIER_USER=%q\n' "$(id -un)"
+    printf 'FIREWALL_CLI=%q\n' "$FIREWALL_CLI"
+  } > "$_TIER_ENV"
+  # set +e: el exit code de la sesion root se procesa a mano abajo; con
+  # set -e activo un tier con fallos abortaria el script en vez de sumar.
+  set +e
+  sudo bash -s "$_TIER_ENV" <<'TIER_EOF'
+set -u
+# Guarda de env: si alguna variable no llego a la sesion root, fallar con
+# mensaje claro en vez de operar con valores vacios.
+source "$1"
+: "${LOGIN_BANNER:?LOGIN_BANNER no llego a la sesion root}"
+: "${BONJOUR_OFF:?BONJOUR_OFF no llego a la sesion root}"
+: "${TIER_USER:?TIER_USER no llego a la sesion root}"
+: "${FIREWALL_CLI:?FIREWALL_CLI no llego a la sesion root}"
+TIER_FAILURES=0
+tier_fail() {
+  TIER_FAILURES=$((TIER_FAILURES + 1))
+  echo "[FAIL] $1"
+}
+tier_apply() {
+  local label="$1"
+  shift
+  if "$@" >/dev/null 2>&1; then
+    echo "[SET] $label"
+  else
+    tier_fail "$label"
+  fi
+}
 
   # Developer mode: sin esto Xcode y los debuggers piden auth cada vez que
   # se adjuntan a un proceso. La lectura de status no pide sudo.
   if DevToolsSecurity -status 2>/dev/null | grep -qi "enabled"; then
     echo "[SKIP] Developer mode ya habilitado"
   else
-    apply_sudo "Developer mode (DevToolsSecurity)" sudo DevToolsSecurity -enable
+    tier_apply "Developer mode (DevToolsSecurity)" DevToolsSecurity -enable
   fi
 
   # Power Nap: despierta la Mac dormida para mail/iCloud/Time Machine —
@@ -1286,7 +1320,7 @@ else
   # Apple Silicon no tiene el beacon en apagado que si tiene un AirTag.
   # Revertir: sudo pmset -a powernap 1
   if pmset -g custom | grep -Eq "powernap[[:space:]]+1"; then
-    apply_sudo "Power Nap off (AC + bateria)" sudo pmset -a powernap 0
+    tier_apply "Power Nap off (AC + bateria)" pmset -a powernap 0
   else
     echo "[SKIP] Power Nap ya desactivado"
   fi
@@ -1298,12 +1332,12 @@ else
   if pmset -g custom | awk '/Battery Power/,/AC Power/' | grep -Eq "lowpowermode[[:space:]]+1"; then
     echo "[SKIP] Low Power Mode ya activo en bateria"
   else
-    apply_sudo "Low Power Mode en bateria" sudo pmset -b lowpowermode 1
+    tier_apply "Low Power Mode en bateria" pmset -b lowpowermode 1
   fi
   if pmset -g custom | awk '/AC Power/,0' | grep -Eq "lowpowermode[[:space:]]+0"; then
     echo "[SKIP] Low Power Mode ya apagado en AC"
   else
-    apply_sudo "Low Power Mode apagado en AC" sudo pmset -c lowpowermode 0
+    tier_apply "Low Power Mode apagado en AC" pmset -c lowpowermode 0
   fi
 
   # Wake for network access separado por fuente, mismo criterio que
@@ -1331,12 +1365,12 @@ else
   if pmset -g custom | awk '/AC Power/,0' | grep -Eq "womp[[:space:]]+1"; then
     echo "[SKIP] Wake for network ya activo en AC"
   else
-    apply_sudo "Wake for network activo en AC (lock/erase remoto)" sudo pmset -c womp 1
+    tier_apply "Wake for network activo en AC (lock/erase remoto)" pmset -c womp 1
   fi
   if pmset -g custom | awk '/Battery Power/,/AC Power/' | grep -Eq "womp[[:space:]]+0"; then
     echo "[SKIP] Wake for network ya apagado en bateria"
   else
-    apply_sudo "Wake for network apagado en bateria" sudo pmset -b womp 0
+    tier_apply "Wake for network apagado en bateria" pmset -b womp 0
   fi
 
   # proximitywake se aplica con `-a` y sin guard a proposito: no aparece ni en
@@ -1344,7 +1378,7 @@ else
   # decidir un [SKIP], y despertar al acercar un dispositivo Apple no depende
   # de la fuente de poder. Solo tiene efecto en hardware compatible; pmset
   # acepta el write igual.
-  apply_sudo "Wake por proximidad de dispositivo Apple" sudo pmset -a proximitywake 1
+  tier_apply "Wake por proximidad de dispositivo Apple" pmset -a proximitywake 1
 
   # Auto-restart tras freeze o corte de luz. Verificado con el cargador
   # puesto: `pmset -g cap` no lista "autorestart" entre las capacidades de
@@ -1355,14 +1389,14 @@ else
   if pmset -g | grep -Eq "^ autorestart[[:space:]]+1$"; then
     echo "[SKIP] Auto-restart ya configurado"
   else
-    apply_sudo "Auto-restart en freeze/corte de luz (pmset)" sudo pmset -a autorestart 1
-    apply_sudo "Auto-restart en freeze (systemsetup)" sudo systemsetup -setrestartfreeze on
+    tier_apply "Auto-restart en freeze/corte de luz (pmset)" pmset -a autorestart 1
+    tier_apply "Auto-restart en freeze (systemsetup)" systemsetup -setrestartfreeze on
   fi
 
   # SSH remoto: solo se toca si esta prendido. Si lo usas para desarrollo,
   # no corras esto — dejalo en On a mano.
-  if sudo systemsetup -getremotelogin 2>/dev/null | grep -qi "On"; then
-    apply_sudo "SSH remoto apagado" sudo systemsetup -setremotelogin off
+  if systemsetup -getremotelogin 2>/dev/null | grep -qi "On"; then
+    tier_apply "SSH remoto apagado" systemsetup -setremotelogin off
   else
     echo "[SKIP] SSH remoto ya apagado"
   fi
@@ -1370,36 +1404,40 @@ else
   # NTP contra time.apple.com (CIS: hora confiable sostiene Kerberos, TLS y
   # firmas de backup). systemsetup tira warnings de deprecado en 13+ pero
   # sigue aplicando. Revertir: sudo systemsetup -setusingnetworktime off
-  if sudo systemsetup -getusingnetworktime 2>/dev/null | grep -qi "On" &&
-    sudo systemsetup -getnetworktimeserver 2>/dev/null | grep -q "time.apple.com"; then
+  if systemsetup -getusingnetworktime 2>/dev/null | grep -qi "On" &&
+    systemsetup -getnetworktimeserver 2>/dev/null | grep -q "time.apple.com"; then
     echo "[SKIP] NTP ya en time.apple.com"
   else
-    apply_sudo "NTP en time.apple.com" sudo systemsetup -setnetworktimeserver time.apple.com
-    apply_sudo "Hora de red activada" sudo systemsetup -setusingnetworktime on
+    tier_apply "NTP en time.apple.com" systemsetup -setnetworktimeserver time.apple.com
+    tier_apply "Hora de red activada" systemsetup -setusingnetworktime on
   fi
 
   # Banner de login (CIS 5.8 / Apple HT203580: LoginwindowText es key
-  # documentada del payload com.apple.loginwindow). Aviso de uso autorizado,
-  # nada mas: no es PolicyBanner con aceptacion obligatoria. Con FileVault el
-  # banner aparece despues del unlock, no en el login preboot.
+  # documentada del payload com.apple.loginwindow). Plantilla generica de
+  # equipo extraviado: sirve igual para uso personal y para quien reutilice
+  # este script. Personalizar con un email SECUNDARIO (nunca el Apple ID ni
+  # el numero principal: el banner queda visible 24/7 en la pantalla de
+  # bloqueo). O exportar LOGIN_BANNER antes de correr el script para usar
+  # texto propio. No es PolicyBanner con aceptacion obligatoria. Con
+  # FileVault el banner aparece despues del unlock, no en el login preboot.
   # Revertir: sudo defaults delete /Library/Preferences/com.apple.loginwindow LoginwindowText
-  if sudo defaults read /Library/Preferences/com.apple.loginwindow LoginwindowText 2>/dev/null | grep -q .; then
+  if defaults read /Library/Preferences/com.apple.loginwindow LoginwindowText 2>/dev/null | grep -q .; then
     echo "[SKIP] Banner de login ya configurado"
   else
-    apply_sudo "Banner de login (uso autorizado)" \
-      sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "Uso autorizado unicamente. La actividad en este equipo puede ser monitoreada."
+    tier_apply "Banner de login (equipo extraviado)" \
+      defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "$LOGIN_BANNER"
   fi
 
   # Bonjour multicast (CIS Benchmark Level 1) — opt-in explicito. Rompe
   # descubrimiento de impresoras Bonjour, servidores DLNA y Home Assistant en
   # la LAN. AirDrop/AirPlay no se ven afectados: usan AWDL, no mDNS multicast.
   if [ "$BONJOUR_OFF" -eq 1 ]; then
-    if sudo defaults read /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements 2>/dev/null | grep -q 1; then
+    if defaults read /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements 2>/dev/null | grep -q 1; then
       echo "[SKIP] Bonjour multicast ya desactivado"
     else
-      apply_sudo "Bonjour multicast desactivado (--bonjour-off)" \
-        sudo defaults write /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements -bool YES
-      sudo killall mDNSResponder 2>/dev/null || true
+      tier_apply "Bonjour multicast desactivado (--bonjour-off)" \
+        defaults write /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements -bool YES
+      killall mDNSResponder 2>/dev/null || true
     fi
   fi
 
@@ -1408,14 +1446,14 @@ else
   if [ "$(stat -f '%Sf' /Volumes)" = "-" ]; then
     echo "[SKIP] /Volumes ya visible"
   else
-    apply_sudo "/Volumes visible en Finder" sudo chflags nohidden /Volumes
+    tier_apply "/Volumes visible en Finder" chflags nohidden /Volumes
   fi
 
-  if sudo defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo 2>/dev/null | grep -qx "HostName"; then
+  if defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo 2>/dev/null | grep -qx "HostName"; then
     echo "[SKIP] Login Window muestra HostName"
   else
-    apply_sudo "Login Window muestra HostName" \
-      sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+    tier_apply "Login Window muestra HostName" \
+      defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
   fi
 
   # Touch ID para sudo — mecanismo oficial sudo_local de Apple (Sonoma+),
@@ -1423,8 +1461,11 @@ else
   if [ -f /etc/pam.d/sudo_local ]; then
     echo "[SKIP] Touch ID para sudo ya configurado (sudo_local)"
   elif [ -f /etc/pam.d/sudo_local.template ]; then
-    sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template | sudo tee /etc/pam.d/sudo_local >/dev/null
-    echo "[SET] Touch ID para sudo activado (sudo_local)"
+    if sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template | tee /etc/pam.d/sudo_local >/dev/null; then
+      echo "[SET] Touch ID para sudo activado (sudo_local)"
+    else
+      tier_fail "Touch ID para sudo (no se pudo escribir sudo_local)"
+    fi
   else
     echo "[SKIP] Touch ID para sudo no disponible (requiere macOS 14+)"
   fi
@@ -1434,16 +1475,16 @@ else
   # vez de limitarse a reportarlo. Stealth mode no responde ping ni ICMP: si
   # algun dia depuras la red de esta maquina desde afuera, apagalo con
   # `sudo socketfilterfw --setstealthmode off`.
-  FIREWALL_CLI=/usr/libexec/ApplicationFirewall/socketfilterfw
+  # FIREWALL_CLI llega por env desde la shell del usuario (ver guarda arriba).
   if "$FIREWALL_CLI" --getglobalstate 2>/dev/null | grep -qi enabled; then
     echo "[SKIP] Firewall ya encendido"
   else
-    apply_sudo "Firewall encendido" sudo "$FIREWALL_CLI" --setglobalstate on
+    tier_apply "Firewall encendido" "$FIREWALL_CLI" --setglobalstate on
   fi
   if "$FIREWALL_CLI" --getstealthmode 2>/dev/null | grep -qi "stealth mode is on"; then
     echo "[SKIP] Stealth mode ya encendido"
   else
-    apply_sudo "Firewall stealth mode" sudo "$FIREWALL_CLI" --setstealthmode on
+    tier_apply "Firewall stealth mode" "$FIREWALL_CLI" --setstealthmode on
   fi
 
   # ── Firewall: excepciones para discovery de continuidad ──────────
@@ -1456,18 +1497,20 @@ else
     if "$FIREWALL_CLI" --listapps 2>/dev/null | grep -q "$_fw_app"; then
       echo "[SKIP] Firewall ya permite $_fw_app"
     else
-      apply_sudo "Firewall permite $_fw_app" sudo "$FIREWALL_CLI" --add "$_fw_app"
-      apply_sudo "Firewall desbloquea $_fw_app" sudo "$FIREWALL_CLI" --unblockapp "$_fw_app"
+      tier_apply "Firewall permite $_fw_app" "$FIREWALL_CLI" --add "$_fw_app"
+      tier_apply "Firewall desbloquea $_fw_app" "$FIREWALL_CLI" --unblockapp "$_fw_app"
     fi
   done
   unset _fw_app
 
-  if sudo sysadminctl -secureTokenStatus "$(id -un)" 2>&1 | grep -qi "ENABLED"; then
+  # `id -un` NO sirve aca: dentro de la sesion root devuelve root. El
+  # usuario invocante entra por env como TIER_USER (ver guarda arriba).
+  if sysadminctl -secureTokenStatus "$TIER_USER" 2>&1 | grep -qi "ENABLED"; then
     echo "[OK] Secure Token enabled"
   else
     echo "[WARN] Secure Token: revisar con 'sysadminctl -secureTokenStatus'"
   fi
-  if sudo defaults read /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled 2>/dev/null | grep -q 1; then
+  if defaults read /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled 2>/dev/null | grep -q 1; then
     echo "[OK] HiDPI para monitores 4K habilitado"
   else
     echo "[SKIP] HiDPI no habilitado (solo hace falta con monitor 4K externo)"
@@ -1479,33 +1522,48 @@ else
   # 0440 root:wheel, validado con visudo -c ANTES de instalar: si la
   # validacion falla no se instala nada. tty_tickets ya es default desde
   # Sierra, no hay nada que fijar.
-  # Va ULTIMO en el tier a proposito: instalarlo antes mataba el timestamp
-  # que `sudo -v` calento al inicio y cada sudo siguiente de la misma
-  # corrida volvia a pedir password (~4 prompts en una corrida real). Aca
-  # todos los sudo anteriores ya reutilizaron el cache. OJO: a partir de
-  # este punto cada sudo posterior (Tier 3 `tmutil` en la primera corrida,
-  # futuras corridas) pide password por diseño; en corridas siguientes el
-  # guard hace [SKIP] y no se nota.
+  # El orden dentro del tier ya no importa: todo corre en la misma sesion
+  # root, asi que instalarlo aca no invalida nada de esta corrida. OJO: a
+  # partir de la proxima corrida cada sudo suelto —fuera del script, o el
+  # `tmutil` del Tier 3 si falta alguna exclusion— pide password por diseño;
+  # en corridas siguientes los guards hacen [SKIP] y no se nota.
   # Revertir: sudo rm /etc/sudoers.d/10_cis_timestamp_timeout
-  if sudo grep -Rhq "timestamp_timeout" /etc/sudoers /etc/sudoers.d/ 2>/dev/null; then
+  if grep -Rhq "timestamp_timeout" /etc/sudoers /etc/sudoers.d/ 2>/dev/null; then
     echo "[SKIP] Sudo timeout ya configurado"
   elif [ ! -d /etc/sudoers.d ]; then
     echo "[WARN] Sudo timeout: no existe /etc/sudoers.d, no se toca sudoers (ver CIS 5.4)"
   else
     _sudoers_tmp="$(mktemp /tmp/sudoers_drop.XXXXXX)"
     printf '%s\n' "Defaults timestamp_timeout=0" >"$_sudoers_tmp"
-    if sudo visudo -cf "$_sudoers_tmp" >/dev/null 2>&1; then
-      if sudo install -o root -g wheel -m 0440 "$_sudoers_tmp" /etc/sudoers.d/10_cis_timestamp_timeout; then
+    if visudo -cf "$_sudoers_tmp" >/dev/null 2>&1; then
+      if install -o root -g wheel -m 0440 "$_sudoers_tmp" /etc/sudoers.d/10_cis_timestamp_timeout; then
         echo "[SET] Sudo timeout=0 (cada sudo pide password)"
       else
-        record_failure "Sudo timeout=0 (no se pudo instalar el drop-in)"
+        tier_fail "Sudo timeout=0 (no se pudo instalar el drop-in)"
       fi
     else
-      record_failure "Sudo timeout=0 (visudo rechazo el drop-in, no se instalo nada)"
+      tier_fail "Sudo timeout=0 (visudo rechazo el drop-in, no se instalo nada)"
     fi
     rm -f "$_sudoers_tmp"
     unset _sudoers_tmp
   fi
+# La sesion root sale con la cantidad de fallos: el padre la suma a
+# DEFAULTS_FAILURES (ver abajo). Sin esto los [FAIL] se imprimirian pero el
+# script terminaria en exit 0.
+exit "$TIER_FAILURES"
+TIER_EOF
+  _tier_rc=$?
+  set -e
+  rm -f "$_TIER_ENV"
+  unset _TIER_ENV
+  # rc > 100 no puede ser un conteo de fallos (el tier tiene ~25 items):
+  # es una muerte anormal (señal, sudo cancelado) y se reporta como tal.
+  if [ "$_tier_rc" -gt 100 ]; then
+    record_failure "Tier sudo (sesion root termino con rc=$_tier_rc)"
+  else
+    DEFAULTS_FAILURES=$((DEFAULTS_FAILURES + _tier_rc))
+  fi
+  unset _tier_rc FIREWALL_CLI
 fi
 
 # ══════════════════════════════════════════════════════════════════
@@ -1701,7 +1759,9 @@ fi
 # requiere sudo; la de Time Machine si — `tmutil addexclusion` sale con
 # "requires root privileges" sin el (verificado, exit 80), asi que se salta
 # con --no-sudo igual que el tier 2. No crea directorios: si la ruta no
-# existe, se saltea.
+# existe, se saltea. Con timestamp_timeout=0 instalado, cada exclusion que
+# falte pide password una vez (el guard `isexcluded` es sin sudo y no pide
+# nada); si todo ya esta excluido este tier no pide password.
 echo "=== Tier 3: exclusiones de Spotlight (siempre) y Time Machine (requiere sudo) ==="
 DEV_EXCLUDE_PATHS=(
   "$HOME/Developer"
