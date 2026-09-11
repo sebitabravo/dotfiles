@@ -120,7 +120,7 @@
 5. [Gate 5: e.g. Constitution Check — no unjustified violations]
 
 ### Branch Strategy
-- [Branch convention — e.g. `feature/{{name}}`, `fix/{{name}}`]
+- [Branch convention — e.g. `feat/{{name}}`, `fix/{{name}}`]
 
 ### Commit Convention
 - [Format — e.g. Conventional Commits, no AI footprint]
