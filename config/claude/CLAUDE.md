@@ -18,20 +18,15 @@ When a task matches a row below, load that skill via the `Skill` tool — do not
 | Task involves | Skill |
 |---|---|
 | Installing a package, auditing dependencies, lockfile review, supply chain advisory | `npm-security` |
-| Setting coverage thresholds, reading a complexity report, configuring a quality gate | `quality-metrics` |
-| Writing `.feature` files, Given-When-Then, step definitions | `bdd-gherkin` |
 | Acceptance pipelines, generated entry points, acceptance mutation, Gherkin IR | `acceptance-pipeline` |
 | SwarmForge-style role workflow, TDD/acceptance/CRAP/DRY/mutation/QA handoffs | `swarmforge-workflow` |
 | Measuring test quality, running mutants, killing surviving mutants | `mutation-testing` |
 | Actionable one-shot, durable roadmap, acceptance receipt, verify-diagnose-apply loop | `automatic-task-orchestrator` |
 | Spec-Driven Development, OpenSpec projects, proposals, requirements, design, tasks, apply, verify | `sdd-workflow` |
-| Designing a module, SOLID review, inheritance vs composition | `architecture-patterns` |
 | Laravel + Inertia + React forms, persistent layouts, shared data, partial reloads | `laravel-inertia-react` |
 | GSAP plugins — ScrollSmoother, SplitText, Flip, Draggable, CustomEase, registration | `gsap-plugins` |
-| Creating a branch, writing a conventional commit, opening a PR | `branch-pr` |
 | PRs over 400 changed lines, stacked PRs, review slices | `chained-pr` |
 | Planning commits as reviewable work units | `work-unit-commits` |
-| Writing guides, READMEs, RFCs, onboarding, or review-facing docs | `cognitive-doc-design` |
 | Writing GitHub, issue, Slack, or collaboration comments | `comment-writer` |
 | Creating, drafting, or triaging GitHub issues | `issue-creation` |
 | Triage of repeated issues, backlogs, or root-cause clusters | `systemic-issue-triage` |

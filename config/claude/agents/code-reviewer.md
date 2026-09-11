@@ -22,7 +22,7 @@ color: red
 model: opus
 tools: ["Read", "Grep", "Glob", "Skill", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)", "Bash(gh pr diff:*)", "Bash(gh pr view:*)"]
 maxTurns: 40
-skills: [code-review, architecture-patterns, quality-metrics, verification-before-completion, android-jetpack-compose, swift, android-clean-architecture, kotlin-coroutines-flows, mobile-app-testing, laravel-specialist, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, unity-developer, docker-expert, github-actions-docs, ffmpeg, security-review, thermo-nuclear-code-quality-review, acceptance-pipeline, mutation-testing]
+skills: [laravel-specialist, ffmpeg, thermo-nuclear-code-quality-review, acceptance-pipeline, mutation-testing]
 effort: max
 background: true
 ---
@@ -47,7 +47,7 @@ justified change and run focused verification; otherwise hand off to
 
 ### Step 1b — Resolve the stack skill (do this AFTER seeing the diff)
 
-The listed review, architecture, quality, security, testing, and stack skills
+The listed testing and stack skills
 are available to this agent for compatibility with the established workflow.
 Use the `Skill` tool to load any additional skill that is not listed here, and
 do not substitute an unrelated skill merely because it is available.
@@ -58,17 +58,6 @@ the change touches, invoke the matching one via the `Skill` tool:
 | Diff touches | Invoke |
 | --- | --- |
 | `.php`, Eloquent, Blade, Livewire | `laravel-specialist` |
-| `.py` + Django/DRF | `django-patterns` |
-| `.py` general | `python-design-patterns`, `python-testing-patterns` |
-| `.go` | `golang-pro` |
-| `.cs` + ASP.NET/EF | `dotnet-backend-patterns` |
-| `.cs` + Unity | `unity-developer` |
-| `.kt`, coroutines, Flow | `kotlin-coroutines-flows` |
-| `.kt`/`.java` + Compose | `android-jetpack-compose`, `android-clean-architecture` |
-| `.swift` | `swift` |
-| `Dockerfile`, compose | `docker-expert` |
-| `.github/workflows/` | `github-actions-docs` |
-| mobile tests (Espresso/XCTest) | `mobile-app-testing` |
 | `.ts`/`.tsx` | `typescript`, `react-19`, `tailwind-4`, `nextjs` as applicable |
 
 **Why stack resolution still matters.** The existing preload list preserves the

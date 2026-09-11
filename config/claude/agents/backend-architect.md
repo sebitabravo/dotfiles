@@ -23,7 +23,7 @@ model: sonnet
 tools: ["Read", "Grep", "Glob", "Write", "Edit", "Skill", "Bash(git:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(bun:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(python:*)", "Bash(docker:*)", "Bash(gh:*)", "Bash(curl:*)", "WebFetch"]
 context: fork
 maxTurns: 50
-skills: [api-design, database-migrations, android-clean-architecture, kotlin-coroutines-flows, laravel-specialist, laravel-inertia-react, python-design-patterns, python-testing-patterns, golang-pro, dotnet-backend-patterns, django-patterns, docker-expert, bdd-gherkin, deployment-patterns, architecture-patterns, quality-metrics, npm-security]
+skills: [laravel-specialist, laravel-inertia-react, npm-security]
 effort: max
 ---
 
@@ -43,10 +43,7 @@ Once the stack and the requested design are known, focus on the matching
 specialists and invoke any additional skill through the `Skill` tool:
 
 - Laravel/Inertia: `laravel-specialist`, `laravel-inertia-react`
-- Django/FastAPI/Python: `django-patterns`, `python-design-patterns`, `python-testing-patterns`
-- Go/.NET/mobile: the matching language and platform skill(s)
-- Docker/deployment: `docker-expert`, `deployment-patterns`
-- BDD, supply chain, or quality work: `bdd-gherkin`, `npm-security`, or `quality-metrics`
+- Supply chain work: `npm-security`
 
 Do not invent a stack or force an unrelated manual into the design. Existing
 skills remain declared for compatibility, and unlisted skills remain available

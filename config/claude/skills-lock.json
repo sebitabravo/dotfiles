@@ -9,13 +9,6 @@
       },
       "notes": "Se instala por proyecto y corre en CI, nunca en cada commit. El flujo soportado en este host es JavaScript/TypeScript mediante npm o bun."
     },
-    "e2e-testing": {
-      "source": "local",
-      "deps": {
-        "node": ["@playwright/test"]
-      },
-      "notes": "Instalar por proyecto con npm y ejecutar el navegador desde el entorno del proyecto."
-    },
     "remove-ai-marks": {
       "source": "local",
       "python_version": "3.10",
