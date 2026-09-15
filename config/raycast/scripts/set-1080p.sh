@@ -11,7 +11,7 @@
 
 # Monitor IDs (from `displayplacer list`)
 MAIN="2E42F9AB-6187-497A-9D75-4646E97966C3" # 24" 1920x1080@60, main display at origin (0,0)
-MSI="A7D2E202-010B-4530-9455-F164350EDA38" # 27" right of MAIN, same height so top-aligned at (1920,0)
+MSI="A7D2E202-010B-4530-9455-F164350EDA38"  # 27" right of MAIN, same height so top-aligned at (1920,0)
 
 # Dual layout: MAIN 1920x1080@60 at (0,0) + MSI 1920x1080@60 at (1920,0).
 # Both screens go in one atomic displayplacer call so the untouched display
