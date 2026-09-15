@@ -39,7 +39,7 @@ for relative in \
   hooks/handoff-session-start.py \
   hooks/compact-resume.py \
   hooks/lib/test-runner.sh \
-  scripts/rdd.sh \
+  scripts/openrouter-api-key.sh \
   skills/handoff/SKILL.md \
   settings.json; do
   mkdir -p "$RUNTIME/$(dirname "$relative")"

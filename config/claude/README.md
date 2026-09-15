@@ -17,8 +17,7 @@ claves son opcionales: Claude Code normal funciona sin ellos.
 | `rules/` | Reglas de estilo, seguridad, testing y operaciones. |
 | `hooks/` | Validaciones y automatizaciones de ciclo de vida. |
 | `templates/` | Plantilla de `CLAUDE.md` para proyectos. |
-| `output-styles/` | Estilos de respuesta. |
-| `scripts/` | Helpers de runtime: RDD y autenticación de proveedores. |
+| `scripts/` | Helpers de autenticación de proveedores alternativos. |
 | `agent-tools/` | Manifest de herramientas Python/Node/Rust sin runtimes duplicados. |
 | `statusline.sh` | Statusline personalizada. |
 | `mcp-servers.json` | Servidores MCP declarados por esta configuración. |
@@ -34,6 +33,78 @@ commit, y los validadores dentro de una skill implementan capacidades de esa
 skill. Las auditorías del repositorio, smoke tests, paridad, dependencias y el
 doctor viven fuera de esta carpeta, en `.github/test/`, y no se instalan en
 `~/.claude`.
+
+## Convivencia con gentle-ai
+
+`~/.claude` lo pueden escribir dos instaladores: este repo y
+[gentle-ai](https://github.com/Gentleman-Programming/gentle-ai). Conviven, pero
+sólo en un orden.
+
+**gentle-ai fusiona.** Escribe en `CLAUDE.md` dentro de bloques
+`<!-- gentle-ai:... -->` y hace deep merge sobre `settings.json` (además no
+afloja un `deny` existente). Respeta todo lo que este repo ya puso.
+
+**Este repo reemplaza.** Copia `CLAUDE.md` y `settings.json` enteros. Por eso
+`install.sh` corre primero y llama a `gentle-ai sync --agent claude-code` al
+final: así los bloques y las claves de gentle-ai se reaplican sobre la base
+versionada. Invertir el orden borra la capa de gentle-ai sin avisar.
+
+### Lo que este repo le cedió a gentle-ai
+
+Donde las dos configuraciones hacían lo mismo, gana gentle-ai, porque lo
+mantiene upstream y su versión es más completa:
+
+- **Receipt Driven Development.** `scripts/rdd.sh` y el bloque RDD de
+  `quality-gate.sh` se borraron. Ese script admitía en su propio encabezado que
+  era una versión reducida — sin contratos versionados, sin lineages, sin CAS —
+  escrita cuando gentle-ai no configuraba Claude Code. `gentle-ai review` trae
+  el sistema completo y un Stop hook que avisa cuando hay un candidato sin
+  revisar. Dos mecanismos de recibos peleando por el mismo commit sólo producen
+  bloqueos que nadie sabe destrabar.
+- **Conducta genérica del agente.** La brevedad por defecto, una pregunta por
+  turno, el veto a los menús de opciones, la anti-adulación, Conventional
+  Commits y la preferencia por `bat`/`rg`/`fd`/`sd`/`eza` salieron de
+  `CLAUDE.md`: vienen en el bloque de persona.
+- **`skill-creator`.** gentle-ai la instala y la actualiza.
+- **Subagentes y slash commands.** `agents/` y `commands/` son suyos.
+
+Lo que este repo conserva es lo que gentle-ai no toca: los hooks de seguridad
+(`validate-safe-ops.sh`, `secret-detect.sh`, `privacy-review.sh`,
+`protect-tests.sh`), el gate de commit, `rules/`, los permisos, las skills de
+dominio (Chile, Laravel, INACAP, formatos de archivo), los overlays de
+proveedores, la statusline y el manifiesto MCP.
+
+### Reparto de directorios
+
+| Ruta | Dueño | Cómo la trata `install.sh` |
+| --- | --- | --- |
+| `hooks/`, `rules/`, `templates/`, `scripts/`, `agent-tools/` | este repo | `rsync --delete` completo |
+| `skills/` | compartido | sincronización aditiva entrada por entrada |
+| `agents/`, `commands/`, `mcp/`, `output-styles/` | gentle-ai | no se tocan |
+| `CLAUDE.md`, `settings.json` | este repo, con capa de gentle-ai encima | copia + `gentle-ai sync` |
+
+La sincronización aditiva es la parte no obvia: cada carpeta que este repo
+versiona se copia con `--delete` dentro de su propia entrada, y lo que el repo
+no conoce queda intacto. Sin eso, un `./install.sh` borraría las 26 skills de
+gentle-ai, y la pérdida recién se notaría cuando una skill no aparece. La
+regresión está cubierta en `.github/test.sh` (sección `independent copies`).
+
+### Tono e idioma
+
+El tono lo define enteramente `gentle-ai`: su componente `persona` fija
+`outputStyle` y este repo ya no versiona ningún estilo propio. `settings.json`
+no declara `outputStyle` justamente para no pelear por esa clave.
+
+El estilo Gentleman responde en el idioma del usuario, así que el español se
+mantiene — con voseo rioplatense, no chileno. `CLAUDE.md` conserva el ancla de
+idioma (responder en español, artefactos técnicos en inglés, comentarios de
+código en español) porque un output style se puede cambiar y una corrida
+headless con subagentes ya derivó a otro idioma una vez.
+
+Por eso `CLAUDE.md` tampoco repite la brevedad por defecto, la regla de una
+pregunta por turno, el veto a los menús de opciones ni la anti-adulación: todo
+eso viene en el bloque de persona. Duplicarlo se paga en tokens en cada turno y
+no agrega nada.
 
 ### Confianza de runners
 
@@ -68,7 +139,7 @@ CLAUDE_DIR="$PWD/config/claude"
 mkdir -p "$HOME/.claude"
 
 # Sólo borra contenido dentro de estas carpetas gestionadas.
-for dir in skills hooks rules templates scripts output-styles agent-tools; do
+for dir in hooks rules templates scripts agent-tools; do
   rsync -a --delete \
     --exclude='__pycache__' \
     --exclude='.DS_Store' \
@@ -76,6 +147,14 @@ for dir in skills hooks rules templates scripts output-styles agent-tools; do
     --exclude='*.test.sh' \
     --exclude='*.backup.*' \
     "$CLAUDE_DIR/$dir/" "$HOME/.claude/$dir/"
+done
+
+# skills/ se comparte con gentle-ai: --delete por entrada, nunca sobre el
+# directorio completo, para no borrar las suyas.
+for skill in "$CLAUDE_DIR"/skills/*/; do
+  rsync -a --delete \
+    --exclude='__pycache__' --exclude='.DS_Store' --exclude='node_modules' \
+    "$skill" "$HOME/.claude/skills/$(basename "$skill")/"
 done
 
 for file in \

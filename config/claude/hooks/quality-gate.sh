@@ -294,34 +294,17 @@ block() {
   exit 2
 }
 
-RDD="$HOME/.claude/scripts/rdd.sh"
-
-# RDD — Receipt Driven Development. Estrictamente opt-in: se enciende con
-# `rdd on` en el repo que lo necesita. El auto-encendido por zona de riesgo se
-# quito porque armaba un gate de recibos sin que nadie lo pidiera, y el costo
-# de un falso positivo (un commit bloqueado que el usuario no sabe destrabar)
-# resulto mayor que el del olvido que intentaba cubrir.
-# Si el repo lo tiene encendido, un commit necesita un recibo atado al hash de
-# los bytes staged. La opinion del agente ("esto funciona") no autoriza nada;
-# el recibo si, porque deja de valer solo apenas el contenido cambia.
-# Apagado (default): no bloquea nada, ni siquiera avisa.
-if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
-  bash "$RDD" verify
-  RDD_RC=$?
-  RDD_MSG=""
-  case $RDD_RC in
-    1) RDD_MSG="RDD is on and there is no receipt.
-[quality-gate]   1) rdd freeze          freezes the staged bytes
-[quality-gate]   2) review those bytes
-[quality-gate]   3) rdd receipt '<test cmd>'
-[quality-gate] Turn it off with 'rdd off' if this repo does not need it." ;;
-    2) RDD_MSG="the receipt is for OTHER bytes. The code changed after the review.
-[quality-gate] Freeze again and review once more. 'rdd status' shows the detail." ;;
-  esac
-  # Via block() y no exit 2 directo, para que el kill switch y el modo autonomo
-  # lo degraden igual que al resto del gate.
-  [ -n "$RDD_MSG" ] && block "$RDD_MSG"
-fi
+# Receipt Driven Development ya NO vive aca.
+#
+# Este gate tenia su propia implementacion minima (scripts/rdd.sh), escrita
+# cuando gentle-ai no configuraba Claude Code. Su propio encabezado admitia que
+# era una version reducida: sin contratos versionados, sin lineages, sin CAS.
+# Ahora que gentle-ai gestiona este agente, `gentle-ai review` provee el sistema
+# completo — cuatro lentes, refuter, validator y un Stop hook que avisa cuando
+# hay un candidato sin revisar — y mantener dos mecanismos de recibos compitiendo
+# por el mismo commit solo produce bloqueos que nadie sabe destrabar.
+#
+# Este gate se queda con lo suyo: tests, lint y deteccion de basura en el diff.
 
 # Detect test runner and lint.
 #

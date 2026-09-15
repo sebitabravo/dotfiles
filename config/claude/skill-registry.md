@@ -5,9 +5,17 @@ solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las lista en
 contexto), así que este archivo NO se carga en ninguna sesión: sirve para hojear
 el catálogo desde el repo.
 
-- **Total skills:** 21
+- **Total skills de este repo:** 20
 - **Fuente:** `skills/` en este repo → `~/.claude/skills/`
 - **Invocación:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
+
+`~/.claude/skills/` puede contener más de las que salen acá: `gentle-ai` instala
+las suyas (SDD, review, branch-pr, skill-creator, skill-improver,
+skill-registry, work-unit-commits, comment-writer, issue-creation,
+systemic-issue-triage, judgment-day, chained-pr, go-testing y
+rdd-defect-workflow) en el mismo directorio. Este repo no las versiona ni las
+borra: `install.sh` sincroniza `skills/` entrada por entrada justamente para no
+pisarlas. Si necesitas una de esas, se administra con `gentle-ai`, no acá.
 
 > Si agregas o sacas una skill, actualiza esta tabla o borra el archivo. Un índice
 > desactualizado miente peor que no tener índice.
@@ -57,5 +65,4 @@ el catálogo desde el repo.
 | Skill | Para qué |
 |---|---|
 | `handoff` | Escribe `HANDOFF.md` para cortar limpio entre sesiones o antes de `/clear`. |
-| `skill-creator` | Crear una skill nueva siguiendo la spec de Agent Skills. |
 | `prompt-engineering` | Diseñar y optimizar prompts, elegir tier de modelo, armar evals. |

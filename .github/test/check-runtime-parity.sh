@@ -115,7 +115,7 @@ check_file hooks/check-auto-save-stash.sh
 check_file hooks/handoff-session-start.py
 check_file hooks/compact-resume.py
 check_file hooks/lib/test-runner.sh
-check_file scripts/rdd.sh
+check_file scripts/openrouter-api-key.sh
 check_content_file skills/handoff/SKILL.md
 
 hook_projection() {
@@ -135,8 +135,13 @@ hook_projection() {
     ]' "$1"
 }
 
+# La proyección de la fuente debe estar CONTENIDA en la del runtime, no ser
+# igual a ella. ~/.claude lo comparte otro instalador (gentle-ai registra su
+# propio hook de Stop), y una entrada ajena en un evento gestionado no es drift
+# de este repo: es la otra capa haciendo su trabajo. Lo que sí es drift es que
+# falte, cambie de comando, de timeout o de condición algo que la fuente declara.
 check_hook_projection() {
-  local source_projection runtime_projection
+  local source_projection runtime_projection missing
   if [ ! -f "$RUNTIME_SETTINGS" ]; then
     record settings hooks MISSING "falta runtime settings.json"
     return
@@ -145,10 +150,16 @@ check_hook_projection() {
   runtime_projection=$(hook_projection "$RUNTIME_SETTINGS" 2>/dev/null || true)
   if [ -z "$source_projection" ] || [ -z "$runtime_projection" ]; then
     record settings hooks ERROR "no se pudo calcular la proyección gestionada de hooks"
-  elif [ "$source_projection" = "$runtime_projection" ]; then
-    record settings hooks MATCH "UserPromptSubmit/Stop coinciden en grupo, orden y campos"
+    return
+  fi
+  missing=$(jq -n --argjson source "$source_projection" --argjson runtime "$runtime_projection" \
+    '[$source[] | select(. as $entry | ($runtime | index($entry)) == null)] | length' 2>/dev/null || printf '%s\n' '-1')
+  if [ "$missing" = "0" ]; then
+    record settings hooks MATCH "los hooks declarados por la fuente están en el runtime"
+  elif [ "$missing" = "-1" ]; then
+    record settings hooks ERROR "no se pudo comparar la proyección gestionada de hooks"
   else
-    record settings hooks DRIFT "la proyección gestionada de UserPromptSubmit/Stop difiere (incluye agrupamiento y orden)"
+    record settings hooks DRIFT "$missing hook(s) declarados por la fuente faltan o difieren en el runtime"
   fi
 }
 

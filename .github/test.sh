@@ -616,7 +616,19 @@ chmod 600 "$TEST_HOME/.claude.json"
 
 # Symlinks managed by an earlier installer version must migrate to copies.
 ln -s -- "$ROOT/.zshrc" "$TEST_HOME/.zshrc"
-ln -s -- "$ROOT/config/claude/skills" "$TEST_HOME/.claude/skills"
+ln -s -- "$ROOT/config/claude/hooks" "$TEST_HOME/.claude/hooks"
+
+# ~/.claude/skills, ~/.claude/output-styles y ~/.claude/agents los escribe otro
+# instalador (gentle-ai). Lo que este repo no versiona ahi debe sobrevivir a
+# ./install.sh; lo que si versiona sigue sujeto a --delete dentro de su entrada.
+mkdir -p "$TEST_HOME/.claude/skills/gentle-sdd-apply" \
+  "$TEST_HOME/.claude/skills/handoff" \
+  "$TEST_HOME/.claude/output-styles" \
+  "$TEST_HOME/.claude/agents"
+printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
+printf '%s\n' 'stale own-skill file' >"$TEST_HOME/.claude/skills/handoff/stale.md"
+printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Gentleman.md"
+printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/sdd-verify.md"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
@@ -728,14 +740,22 @@ assert_directory "$TEST_HOME/.git-hooks"
 assert_file "$TEST_HOME/.git-hooks/pre-push"
 
 # Claude configuration
+assert_directory "$TEST_HOME/.claude/hooks"
+assert_not_symlink "$TEST_HOME/.claude/hooks"
 assert_directory "$TEST_HOME/.claude/skills"
-assert_not_symlink "$TEST_HOME/.claude/skills"
 assert_file "$TEST_HOME/.claude/skills/handoff/SKILL.md"
+
+# Coexistencia con gentle-ai: sus entradas sobreviven, las de este repo siguen
+# bajo --delete, y ~/.claude/agents no se toca porque este repo ya no lo usa.
+assert_file "$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
+assert_file "$TEST_HOME/.claude/output-styles/Gentleman.md"
+assert_file "$TEST_HOME/.claude/agents/sdd-verify.md"
+assert_not_exists "$TEST_HOME/.claude/skills/handoff/stale.md"
 assert_file "$TEST_HOME/.claude/CLAUDE.md"
 assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
-assert_file "$TEST_HOME/.claude/scripts/rdd.sh"
+assert_file "$TEST_HOME/.claude/scripts/openrouter-api-key.sh"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
 for script in "${TEST_ONLY_CLAUDE_SCRIPTS[@]}"; do
   assert_not_exists "$TEST_HOME/.claude/scripts/$script"

@@ -8,11 +8,15 @@ copia desplegada.
 releyéndolos. Las skills se cargan solas según su `description`; no hay tabla de
 routing que mantener acá. Un `CLAUDE.md` de proyecto tiene prioridad sobre este.
 
+Los bloques `<!-- gentle-ai:... -->` de este archivo los escribe `gentle-ai` y
+se regeneran en cada `gentle-ai sync`. No los edites a mano: cambia lo de
+afuera, que es lo que este repo versiona.
+
 ## Idioma
 
-**Responde al usuario en español.** El registro y el voseo chileno viven en
-`output-styles/sebita.md`. El idioma se ancla acá porque un output style se
-puede cambiar, y una corrida headless con subagentes derivó a otro idioma.
+**Responde al usuario en español.** El registro y el tono los define el output
+style de `gentle-ai`. El idioma se ancla acá igual, porque un output style se
+puede cambiar y una corrida headless con subagentes derivó a otro idioma.
 
 - Prompts a subagentes y artefactos técnicos (identificadores, commits, nombres
   de archivo, documentación): **inglés**.
@@ -20,24 +24,16 @@ puede cambiar, y una corrida headless con subagentes derivó a otro idioma.
 
 ## Contrato de respuesta
 
-- Por defecto, corto. Empieza con la respuesta mínima útil y expande solo si el
-  usuario lo pide o la tarea lo necesita de verdad.
-- **Una pregunta por turno.** Hazla y para.
-- Nada de menús de opciones ni comparaciones lado a lado, salvo que haya una
-  bifurcación real cuyos trade-offs cambien la decisión.
+La brevedad por defecto, la regla de una pregunta por turno, el veto a los menús
+de opciones y la anti-adulación vienen en el bloque de persona de `gentle-ai`.
+Lo que sigue es lo que ese bloque no cubre:
+
 - Empieza por el resultado o por el bloqueo. Después de implementar, cierra con
   los archivos que tocaste y el comando exacto que los verificó. Después de una
   revisión, primero los hallazgos, cada uno con severidad y `path:línea`.
 - Una línea de por qué cuando la decisión no es obvia. Si el fundamento necesita
   un párrafo, la decisión necesitaba una pregunta antes.
 - Cierra con el siguiente paso concreto si existe. Si no hay nada pendiente, para.
-
-## Anti-adulación
-
-- No le des la razón al usuario sin verificar. Si afirma algo técnico, anda a
-  leer el código o la documentación y opina después.
-- Si está equivocado, explica por qué con evidencia concreta (archivo, línea,
-  salida de comando). No lo suavices hasta que deje de ser una corrección.
 - Si te equivocaste, dilo con la prueba de que te equivocaste. Sin preámbulo y
   sin volver sobre el tema después.
 
@@ -90,9 +86,11 @@ pasados por chat se degradan en cada salto.
 
 ## Git
 
-Conventional Commits. Sin rastro de IA en mensajes ni `--no-verify`: si un hook
-bloquea, arréglalo. Trabaja en rama, revisa `git log origin/main..HEAD --oneline`
-antes de pushear. `npm install` requiere confirmación explícita; prefiere `npm ci`.
+Nunca `--no-verify`: si un hook bloquea, arréglalo. Trabaja en rama, revisa
+`git log origin/main..HEAD --oneline` antes de pushear. `npm install` requiere
+confirmación explícita; prefiere `npm ci`. (Conventional Commits y el veto al
+rastro de IA vienen en el bloque de persona de `gentle-ai`; el formato completo
+está en `rules/common/git-workflow.md`.)
 
 ## Cierre de sesión
 

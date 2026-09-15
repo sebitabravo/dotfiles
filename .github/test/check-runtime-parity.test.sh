@@ -21,7 +21,7 @@ if CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --strict >/dev/null 2>&1; then
   fail '--strict debe fallar con runtime incompleto'
 fi
 
-for relative in hooks/secret-detect.sh hooks/user-prompt-dispatcher.sh hooks/validate-safe-ops.sh hooks/quality-gate.sh hooks/protect-tests.sh hooks/protect-codegraph-tracking.sh hooks/privacy-review.sh hooks/detect-debug.sh hooks/handoff-stop.sh hooks/check-auto-save-stash.sh hooks/handoff-session-start.py hooks/compact-resume.py hooks/lib/test-runner.sh scripts/rdd.sh skills/handoff/SKILL.md settings.json; do
+for relative in hooks/secret-detect.sh hooks/user-prompt-dispatcher.sh hooks/validate-safe-ops.sh hooks/quality-gate.sh hooks/protect-tests.sh hooks/protect-codegraph-tracking.sh hooks/privacy-review.sh hooks/detect-debug.sh hooks/handoff-stop.sh hooks/check-auto-save-stash.sh hooks/handoff-session-start.py hooks/compact-resume.py hooks/lib/test-runner.sh scripts/openrouter-api-key.sh skills/handoff/SKILL.md settings.json; do
   mkdir -p "$RUNTIME/$(dirname "$relative")"
   cp "$ROOT/config/claude/$relative" "$RUNTIME/$relative"
 done
@@ -36,12 +36,22 @@ runtime_only_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json --strict)
 printf '%s' "$runtime_only_json" | jq -e '.parity == true and .failures == 0' >/dev/null ||
   fail 'runtime-only de otro evento no debe romper parity gestionada'
 
-jq '.hooks.Stop = [.hooks.Stop[1], .hooks.Stop[0]] + .hooks.Stop[2:]' \
+# Convivencia: gentle-ai registra su propio hook dentro de un evento gestionado.
+# Una entrada ajena no es drift de este repo — lo suyo sigue estando.
+jq '.hooks.Stop += [{hooks: [{type: "command", command: "gentle-ai review stop-hook"}]}]' \
   "$RUNTIME/settings.json" >"$RUNTIME/settings.json.tmp"
 mv -- "$RUNTIME/settings.json.tmp" "$RUNTIME/settings.json"
-order_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json)
-printf '%s' "$order_json" | jq -e '[.results[] | select(.path == "hooks" and .status == "DRIFT" and (.detail | contains("agrupamiento y orden")))] | length == 1' >/dev/null ||
-  fail 'el drift de orden/agrupamiento debe invalidar la proyección completa'
+foreign_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json --strict)
+printf '%s' "$foreign_json" | jq -e '.parity == true and .failures == 0' >/dev/null ||
+  fail 'un hook de otro instalador en un evento gestionado no debe reportar drift'
+cp "$ROOT/config/claude/settings.json" "$RUNTIME/settings.json"
+
+# Lo que sí es drift: que falte en el runtime un hook que la fuente declara.
+jq '.hooks.Stop = []' "$RUNTIME/settings.json" >"$RUNTIME/settings.json.tmp"
+mv -- "$RUNTIME/settings.json.tmp" "$RUNTIME/settings.json"
+missing_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json)
+printf '%s' "$missing_json" | jq -e '[.results[] | select(.path == "hooks" and .status == "DRIFT")] | length == 1' >/dev/null ||
+  fail 'un hook declarado por la fuente que falta en el runtime debe reportar DRIFT'
 cp "$ROOT/config/claude/settings.json" "$RUNTIME/settings.json"
 
 jq --arg duplicate "$HOME/.claude/hooks/user-prompt-dispatcher.sh" \
