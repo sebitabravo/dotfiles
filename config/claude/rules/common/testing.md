@@ -25,7 +25,7 @@ are complementary, not interchangeable:
 Normal tests are the everyday gate. Acceptance mutation and conventional
 mutation testing are expensive quality audits. If a required layer cannot run,
 report the exact unavailable stage and do not present the result as complete.
-Invoke `acceptance-pipeline`, `mutation-testing`, and `quality-metrics` for the
+Invoke `acceptance-pipeline` and `mutation-testing` for the
 full procedures.
 
 ## When a test goes red: diagnosis order
@@ -98,13 +98,11 @@ Three questions. Any "no" means you are not finished:
 - **Function coverage >= 90%**. Every public function must have at least one test.
 - 100% coverage is NOT the goal. Coverage measures execution, not quality. Invoke the `mutation-testing` skill.
 - Exclude from coverage: tests, mocks, fixtures, config, migrations, generated code.
-- Invoke the `quality-metrics` skill for full thresholds and tools by language.
 
 ## BDD / Gherkin
 
 - Complex features with business logic require tests in Gherkin format (`.feature`).
 - Do NOT apply to internal utilities, trivial CRUD, or purely technical refactors.
-- Invoke the `bdd-gherkin` skill for full rules and the workflow.
 
 ## Mutation Testing
 

@@ -90,24 +90,30 @@ else
   ok "Power Nap desactivado"
 fi
 
-if pmset -g custom 2>/dev/null | grep -Eq "womp[[:space:]]+0"; then
-  ok "Wake for network access desactivado (womp=0)"
+if pmset -g custom 2>/dev/null | awk '/Battery Power/,/AC Power/' | grep -Eq "womp[[:space:]]+0"; then
+  ok "Wake for network access desactivado en bateria (womp=0)"
 else
-  warn "Wake for network access activo: sudo pmset -a womp 0 proximitywake 1"
+  warn "Wake for network access activo en bateria: sudo pmset -b womp 0"
+fi
+
+if pmset -g custom 2>/dev/null | awk '/AC Power/,0' | grep -Eq "womp[[:space:]]+1"; then
+  ok "Wake for network access activado en AC (womp=1, lock/erase remoto)"
+else
+  warn "Wake for network access apagado en AC: sudo pmset -c womp 1"
 fi
 
 if pmset -g cap 2>/dev/null | grep -qi proximitywake; then
   if pmset -g custom 2>/dev/null | grep -Eq "proximitywake[[:space:]]+1"; then
     ok "Wake by proximity activado"
   else
-    warn "Wake by proximity desactivado: sudo pmset -a womp 0 proximitywake 1"
+    warn "Wake by proximity desactivado: sudo pmset -a proximitywake 1"
   fi
 else
   skip "Wake by proximity no expuesto por este hardware (pmset -g cap)"
 fi
 
 # autorestart es de los settings que pmset -g solo muestra en "Currently in
-# use" cuando la maquina esta en AC (documentado, igual que womp). Verificado
+# use" cuando la maquina esta en AC. Verificado
 # con el cargador puesto en este M3 Air: `pmset -g cap` no lista "autorestart"
 # entre las capacidades soportadas por este hardware (a diferencia de un iMac,
 # donde si aparece) — el mismo comportamiento no-op que askForPassword en
@@ -115,13 +121,23 @@ fi
 # verificable. No se reporta como drift: pedirte "corre este comando" cuando
 # la evidencia dice que no cambia nada seria mentir.
 if pmset -g cap 2>/dev/null | grep -qi autorestart; then
-  if pmset -g 2>/dev/null | grep -Eq "^ autorestart[[:space:]]+1$"; then
+  if pmset -g 2>/dev/null | grep -Eq "^[[:space:]]*autorestart[[:space:]]+1$"; then
     ok "Auto-restart en freeze/corte de luz configurado"
   else
     warn "Auto-restart sin configurar: sudo pmset -a autorestart 1"
   fi
 else
   skip "Auto-restart: pmset -g cap no lo lista como capacidad de este hardware (probable no-op, como askForPassword)"
+fi
+
+# Pistas de password (CIS Tahoe 2.11.5). Va antes del bloque sudo a proposito:
+# /Library/Preferences/com.apple.loginwindow.plist es 0644 root:wheel, asi que
+# la lectura no necesita privilegios y el drift se detecta igual en una corrida
+# sin sudo. Key ausente = pistas activas, que es el default de Apple.
+if [ "$(defaults read /Library/Preferences/com.apple.loginwindow RetriesUntilHint 2>/dev/null || echo unset)" = "0" ]; then
+  ok "Pistas de password desactivadas (CIS 2.11.5)"
+else
+  warn "Pistas de password activas: sudo defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0"
 fi
 
 echo "--- Verificaciones que piden sudo (se salta si no se puede) ---"

@@ -6,9 +6,34 @@ on:
   pull_request:
     branches: [main]
 
+# El job solo hace checkout y corre scripts locales: no llama a la API ni
+# escribe nada en el repo, asi que el GITHUB_TOKEN no necesita mas que lectura.
+permissions:
+  contents: read
+
+# Con la matriz, cada push encola el doble de jobs. Sin esto, dos pushes
+# seguidos a la misma rama dejan corriendo runs que ya nadie va a mirar.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  install-and-macos-checks:
-    runs-on: macos-latest
+  # La matriz reporta sus checks como '<job> (macos-15)' y '<job>
+  # (macos-latest)', nunca con el nombre pelado. La proteccion de main exige
+  # el contexto 'install-and-macos-checks', asi que la matriz corre con otro
+  # nombre y este gate publica el nombre que la proteccion espera. Sin el
+  # gate, el contexto requerido queda en "Expected" para siempre y ningun PR
+  # se puede mergear.
+  macos-matrix:
+    # defaults.sh promete correr en Sequoia y en Tahoe, con ramas distintas por
+    # version (springboard-* y Reduce Transparency). Un solo runner no prueba
+    # esa promesa: la matriz cubre las dos majors soportadas. macos-latest
+    # sigue al release mas nuevo (Tahoe) hasta que exista el runner macos-26.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-latest]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -27,3 +52,15 @@ jobs:
 
       - name: shellcheck config/macos
         run: shellcheck config/macos/defaults.sh .github/verify.sh
+
+  install-and-macos-checks:
+    needs: [macos-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: fail unless the whole matrix passed
+        run: |
+          if [ "${{ needs.macos-matrix.result }}" != "success" ]; then
+            echo "macos-matrix result: ${{ needs.macos-matrix.result }}"
+            exit 1
+          fi

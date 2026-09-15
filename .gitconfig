@@ -66,9 +66,9 @@
 	autoupdate = true
 
 # Identidad (nombre/email/signingkey) en ~/.gitconfig.local, fuera del repo.
-# Crearlo al instalar en una maquina nueva — ver docs/MANUAL_INSTALL.md.
+# Crearlo al instalar en una maquina nueva — ver README.md.
 # VA AL FINAL A PROPOSITO: git aplica en orden de lectura y gana el ultimo, asi
 # que desde aca ~/.gitconfig.local puede sobrescribir cualquier clave de arriba,
-# no solo agregar identidad.
+# no solo agregar identidad. No agregues secciones despues de este bloque.
 [include]
 	path = ~/.gitconfig.local

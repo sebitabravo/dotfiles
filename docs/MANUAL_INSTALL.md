@@ -68,7 +68,6 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### IA & Coding Agents
 
-- [ ] **Claude** - <https://claude.ai/api/desktop/darwin/universal/dmg/latest/redirect>
 - [ ] **Ollama** - <https://ollama.com/download/mac>
 
 ### Browsers
@@ -98,12 +97,11 @@ Estas apps se instalan desde la App Store de macOS:
 
 ## ⚙️ Configuraciones Post-Instalación
 
-> **Nota:** Versiones fijas de referencia — verificar con `Brewfile` y `pyenv` antes de instalar. Sincronización manual requerida.
-> <!-- SYNC: Brewfile / pyenv / MANUAL_INSTALL.md — mantener versiones alineadas manualmente -->
-
 ### Node.js (con Laravel Herd)
 
 ```bash
+nvm install 22
+nvm install 24
 node --version
 npm --version
 corepack enable pnpm
@@ -113,34 +111,20 @@ npm config set allow-git none
 npm config set min-release-age 3
 npm install --global --ignore-scripts @fission-ai/openspec@latest
 npm install --global --ignore-scripts vercel@latest
-vercel login
 npm install --global --ignore-scripts @playwright/cli@latest
 ```
 
 ### Python (con pyenv)
 
 ```bash
-pyenv install 3.14.7
-pyenv install 3.11.1
-pyenv global 3.14.7
+pyenv install 3.11.16
+pyenv global 3.11.16
 ```
 
 ### instalar Sail
 
 ```bash
 php artisan sail:install
-```
-
-### Configuración de Herdr
-
-```bash
-herdr integration install codex
-herdr integration install claude
-herdr integration install opencode
-herdr integration install cursor
-herdr integration install antigravity
-herdr integration install copilot
-herdr integration install kilo
 ```
 
 ### Gentle-AI
@@ -153,17 +137,11 @@ gentle-ai install \
   --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
 ```
 
-### Gentle-AI Pi
+### Settings Apps
 
 ```bash
-pi install npm:gentle-pi@latest
-pi install npm:pi-subagents-j0k3r
-pi install npm:pi-intercom
-pi install npm:gentle-engram
-pi install npm:pi-web-access
-pi install npm:pi-lens
-pi install npm:@juicesharp/rpiv-todo
-pi install npm:@juicesharp/rpiv-ask-user-question
+vercel login
+gh auth login
 ```
 
 ---

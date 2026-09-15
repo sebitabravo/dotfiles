@@ -274,21 +274,21 @@ patrón, porque `_claude_run_provider` ya resuelve settings, binario y
 aislamiento:
 
 ```zsh
---glm) provider=glm; provider_count=$((provider_count + 1)) ;;
-glm)   _claude_run_provider glm.settings.json GLM ;;
+--acme) provider=acme; provider_count=$((provider_count + 1)) ;;
+acme)   _claude_run_provider acme.settings.json ACME ;;
 ```
 
 ### Proveedores retirados (recetas)
 
-Estos overlays existieron en este repositorio y se purgaron en
-`56a0b68` (kimi, minimax, qwen) salvo GLM, que sigue en `HEAD`. Cada uno se
-reactiva igual: restaurar su overlay y su helper desde el historial, crear
-su archivo de clave (`0600`) y sumar sus dos líneas al bloque de arriba. Los
-modelos son los vigentes al momento del purge; verificar antes de usar.
+Estos overlays existieron en este repositorio y se purgaron: kimi, minimax y
+qwen en `56a0b68`, GLM después. Cada uno se reactiva igual: restaurar su
+overlay y su helper desde el historial, crear su archivo de clave (`0600`) y
+sumar sus dos líneas al bloque de arriba. Los modelos son los vigentes al
+momento del purge; verificar antes de usar.
 
 | Proveedor | Flag | Overlay y helper (restaurar del historial) | Clave |
 | --- | --- | --- | --- |
-| GLM (Z.AI) | `--glm` | `git show HEAD:config/claude/glm.settings.json` | `~/.config/claude/glm.key` |
+| GLM (Z.AI) | `--glm` | `git show 93d15cf:config/claude/glm.settings.json`, `git show 93d15cf:config/claude/scripts/glm-api-key.sh` | `~/.config/claude/glm.key` |
 | Kimi / Moonshot | `--kimi` | `git show b0563fa^:config/claude/kimi.settings.json`, `git show b0563fa^:config/claude/scripts/kimi-api-key.sh` | `~/.config/claude/kimi.key` (`KIMI_API_KEY_FILE`) |
 | MiniMax | `--minimax` | `git show b0563fa^:config/claude/minimax.settings.json`, `git show b0563fa^:config/claude/scripts/minimax-api-key.sh` | `~/.config/claude/minimax.key` (`MINIMAX_API_KEY_FILE`) |
 | QwenCloud Token Plan | `--qwen` | `git show b0563fa^:config/claude/qwen.settings.json`, `git show b0563fa^:config/claude/scripts/qwen-api-key.sh` | `~/.config/claude/qwen.key` (`QWEN_API_KEY_FILE`) |

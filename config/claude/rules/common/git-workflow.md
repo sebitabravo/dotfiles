@@ -24,7 +24,7 @@ Rules:
 
 ## Branches
 
-- `feature/<slug>` — new features
+- `feat/<slug>` — new features
 - `fix/<slug>` — bug fixes
 - `refactor/<slug>` — refactors without functional change
 - `chore/<slug>` — maintenance

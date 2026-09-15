@@ -5,7 +5,7 @@ skills solo (lee el frontmatter de cada `~/.claude/skills/*/SKILL.md` y las list
 en contexto), asi que este archivo NO se carga en ninguna sesion y no hace falta
 para que funcionen: sirve para hojear el catalogo desde el repo.
 
-- **Total skills:** 79
+- **Total skills:** 54
 - **Fuente:** `skills/` en este repo -> `~/.claude/skills/`
 - **Invocacion:** por el `name` del frontmatter, que siempre coincide con el nombre del directorio.
 
@@ -18,17 +18,8 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 
 | Skill | Trigger |
 |---|---|
-| `api-design` | Design RESTful APIs with proper status codes, pagination, error responses, versioning, and HATEOAS. |
-| `architecture-patterns` | SOLID principles applied, composition over inheritance, layered separation (controller/service/repository). |
-| `code-review` | Systematic code review for correctness, security, performance, and maintainability. |
-| `security-review` | Complete a security review of pending changes. |
 | `fuzzing-primer` | Fuzzing fundamentals, harness design, crash triage, and safe mutation strategy. |
 | `npm-security` | NPM supply chain hardening — 17 practices covering postinstall blocking, git dependency bans, version cooldown. |
-| `database-migrations` | Safe database migration patterns: zero-downtime, backward-compatible, rollback-ready. |
-| `deployment-patterns` | CI/CD pipelines, Docker optimization, health checks, rollback strategies, and deployment automation. |
-| `docker-expert` | Docker patterns including multi-stage builds, compose orchestration, image optimization, networking, volumes. |
-| `github-actions-docs` | GitHub Actions patterns for CI/CD pipelines, reusable workflows, matrix builds, caching, secrets management. |
-| `e2e-testing` | E2E testing with Playwright. |
 | `acceptance-pipeline` | Gherkin-to-runner acceptance pipeline, generated entry points, and acceptance mutation. |
 | `go-testing` | Focused Go unit, integration, Bubbletea, teatest, and golden-file testing patterns. |
 
@@ -36,13 +27,8 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 
 | Skill | Trigger |
 |---|---|
-| `python-design-patterns` | Python design patterns, SOLID principles, composition over inheritance, dependency injection, and idiomatic Python. |
-| `python-testing-patterns` | Python testing patterns with pytest, fixtures, mocking, parametrize, TDD workflow, and test organization best. |
 | `laravel-specialist` | Laravel 11+ patterns including Eloquent ORM, Sanctum auth, API resources, queues with Horizon, event broadcasting. |
 | `laravel-inertia-react` | Laravel + Inertia.js + React integration patterns. |
-| `django-patterns` | Django and DRF patterns including ORM optimization, viewsets, serializers, caching, signals, middleware. |
-| `golang-pro` | Go concurrency patterns, goroutines, channels, gRPC service definitions, microservices architecture. |
-| `dotnet-backend-patterns` | C#/.NET backend patterns including ASP.NET Core minimal APIs, EF Core, Dapper, xUnit testing, middleware. |
 
 ## Frontend & Animation
 
@@ -62,17 +48,6 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `gsap-performance` | Official GSAP skill for performance — prefer transforms, avoid layout thrashing, will-change, batching. |
 | `gsap-utils` | Official GSAP skill for gsap.utils — clamp, mapRange, normalize, interpolate, random, snap, toArray, wrap, pipe. |
 
-## Mobile & Game
-
-| Skill | Trigger |
-|---|---|
-| `android-jetpack-compose` | Android development with Jetpack Compose including state management, navigation, Material 3, side effects. |
-| `android-clean-architecture` | Android Clean Architecture with MVVM, use cases, repository pattern, dependency injection with Hilt, and layered. |
-| `swift` | iOS/macOS development with Swift, SwiftUI, SwiftData, async/await, Actors, and modern Apple platform patterns. |
-| `kotlin-coroutines-flows` | Kotlin coroutines and Flow patterns including structured concurrency, channels, shared flows, state flows. |
-| `mobile-app-testing` | Mobile app testing strategies covering unit tests, integration tests, UI tests, snapshot tests, and CI pipelines. |
-| `unity-developer` | Unity 6 LTS development with URP/HDRP, C# scripting patterns, performance optimization, addressables. |
-
 ## Design (Stitch)
 
 | Skill | Trigger |
@@ -90,6 +65,7 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | Skill | Trigger |
 |---|---|
 | `ffmpeg` | FFmpeg commands for video/audio conversion, compression, trimming, merging, filters, subtitle handling, and batch. |
+| `diagram-design` | Create branded architecture, flowchart, sequence, ER, Gantt, UML, and 40+ more diagram types as standalone HTML/SVG/PNG; redraw .drawio or Mermaid sources. |
 | `imagemagick` | ImageMagick (magick) for image conversion, resizing, compression, cropping, rotating, watermarking, format. |
 | `pandoc` | Pandoc universal document converter between Markdown, DOCX, PDF, HTML, EPUB, LaTeX, and PPTX, with templates. |
 | `pptx` | Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. |
@@ -102,9 +78,6 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | Skill | Trigger |
 |---|---|
 | `automatic-task-orchestrator` | Automatic one-shot planning, ordered execution, verification, acceptance, and root-cause iteration. |
-| `branch-pr` | > Branch creation, PR workflow, and conventional commits. |
-| `systematic-debugging` | Use for bugs, test failures, unexpected behavior, and performance incidents. |
-| `verification-before-completion` | Use before claiming "done", "fixed", "passing", or before commit/PR. Requires fresh verification evidence. |
 | `swarmforge-workflow` | Claude-native two-pack, four-pack, and six-pack role handoffs for TDD, acceptance, CRAP/DRY, mutation, and QA. |
 | `sdd-workflow` | Spec-Driven Development para features complejas con OpenSpec: artifacts, apply, verify y archive, más contratos de tareas y receipts. |
 | `handoff` | Crea un archivo HANDOFF.md con el estado actual del proyecto para un traspaso limpio entre sesiones. |
@@ -114,7 +87,6 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 | `prompt-engineering` | > Designing and optimizing prompts for LLMs — chain-of-thought, few-shot, XML structuring, model-tier calibration. |
 | `chained-pr` | Split oversized changes into chained or stacked PR review slices. |
 | `work-unit-commits` | Plan commits as reviewable work units and keep tests/docs with the behavior they verify. |
-| `cognitive-doc-design` | Design guides, READMEs, RFCs, onboarding, and review docs for low cognitive load. |
 | `comment-writer` | Write concise, warm, direct GitHub, issue, review, and collaboration comments. |
 | `issue-creation` | Create and triage GitHub issues from repository evidence and discovered policy. |
 | `systemic-issue-triage` | Group repeated issues by root-cause cluster instead of patching symptoms one by one. |
@@ -138,7 +110,5 @@ para que funcionen: sirve para hojear el catalogo desde el repo.
 
 | Skill | Trigger |
 |---|---|
-| `bdd-gherkin` | Behavior-Driven Development with Gherkin. |
 | `mutation-testing` | Mutation testing to measure test quality. |
-| `quality-metrics` | Code quality thresholds and measurement tools — coverage (line/branch/function), cyclomatic complexity, Halstead. |
 | `thermo-nuclear-code-quality-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. |

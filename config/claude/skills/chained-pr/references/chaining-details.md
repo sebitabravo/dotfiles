@@ -26,7 +26,7 @@ main
 
 Steps:
 
-1. Create the feature/tracker branch from `main`.
+1. Create the `feat/tracker` branch from `main`.
 2. Open the tracker PR to `main`; mark it draft/no-merge.
 3. Create PR #1 from a child branch and target it to the tracker branch.
 4. Create each later child branch from the previous PR branch and target it to that parent branch.

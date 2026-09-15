@@ -78,3 +78,6 @@ config/claude/scripts/test-swarmforge-workflow.sh
 .claude-relaxed
 .atl
 Makefile
+
+# Receipts de convergencia — artefactos de sesion, no versionados
+RECEIPT_*

@@ -79,6 +79,7 @@ SUITES=(
   .github/test/compare-task-roadmaps.test.sh
   .github/test/doctor.test.sh
   .github/test/defaults-failure-propagation.test.sh
+  .github/test/macos-version-guards.test.sh
   .github/test/convergence-start.test.sh
   .github/test/check-runtime-parity.test.sh
   .github/test/check-provider-runtime-parity.test.sh
@@ -107,7 +108,6 @@ jq empty "$CLAUDE_DIR/skills-lock.json"
 printf '== provider overlays\n'
 for overlay in \
   deepseek.settings.json \
-  glm.settings.json \
   ollama.settings.json \
   openrouter.settings.json; do
   # Upper bound is a sanity check against typos (an extra digit), not a
