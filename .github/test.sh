@@ -144,6 +144,74 @@ TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TOOL_DRY_HOME" \
 grep -qF 'SKIP   Homebrew (ya existe brew)' "$TMP_HOME/tool-system-existing.log" || fail 'existing Homebrew was not skipped'
 grep -qF 'SKIP   Apple Command Line Tools (ya existe)' "$TMP_HOME/tool-system-existing.log" || fail 'existing Apple tools were not skipped'
 
+printf '%s\n' '== install.sh plans Xcode license acceptance when git cannot run =='
+LICENSE_DRY_HOME="$TMP_HOME/license-dry-home"
+LICENSE_DRY_BIN="$TMP_HOME/license-dry-bin"
+LICENSE_DRY_LOG="$TMP_HOME/license-dry-commands.log"
+mkdir -p "$LICENSE_DRY_HOME" "$LICENSE_DRY_BIN"
+cat >"$LICENSE_DRY_BIN/uname" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' Darwin
+EOF
+cat >"$LICENSE_DRY_BIN/xcode-select" <<'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = '--print-path' ]; then
+  printf '%s\n' '/Library/Developer/CommandLineTools'
+  exit 0
+fi
+printf '%s\n' "$0 $*" >>"$LICENSE_DRY_LOG"
+exit 99
+EOF
+cat >"$LICENSE_DRY_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$0 $*" >>"$LICENSE_DRY_LOG"
+printf '%s\n' 'git requires the Xcode license to be accepted' >&2
+exit 69
+EOF
+chmod +x "$LICENSE_DRY_BIN/uname" "$LICENSE_DRY_BIN/xcode-select" "$LICENSE_DRY_BIN/git"
+: >"$LICENSE_DRY_LOG"
+LICENSE_DRY_LOG="$LICENSE_DRY_LOG" HOME="$LICENSE_DRY_HOME" \
+  DOTFILES_HOMEBREW_BREW_CANDIDATES="$LICENSE_DRY_HOME/no-brew" \
+  PATH="$LICENSE_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" --dry-run >"$TMP_HOME/license-dry.log"
+[ ! -s "$LICENSE_DRY_LOG" ] || fail 'license dry-run invoked a mutating command'
+grep -qF 'DRY  sudo xcodebuild -license accept' "$TMP_HOME/license-dry.log" || fail 'missing Xcode license acceptance plan'
+
+printf '%s\n' '== install.sh stops before Homebrew when the Xcode license cannot be satisfied =='
+LICENSE_HOME="$TMP_HOME/license-home"
+LICENSE_BIN="$TMP_HOME/license-bin"
+LICENSE_SUDO_LOG="$TMP_HOME/license-sudo.log"
+mkdir -p "$LICENSE_HOME" "$LICENSE_BIN"
+cat >"$LICENSE_BIN/uname" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' Darwin
+EOF
+cat >"$LICENSE_BIN/xcode-select" <<'EOF'
+#!/usr/bin/env bash
+[ "${1:-}" = '--print-path' ] && exit 0
+exit 99
+EOF
+cat >"$LICENSE_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+exit 69
+EOF
+cat >"$LICENSE_BIN/sudo" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$LICENSE_SUDO_LOG"
+exit 0
+EOF
+chmod +x "$LICENSE_BIN/uname" "$LICENSE_BIN/xcode-select" "$LICENSE_BIN/git" "$LICENSE_BIN/sudo"
+: >"$LICENSE_SUDO_LOG"
+if LICENSE_SUDO_LOG="$LICENSE_SUDO_LOG" HOME="$LICENSE_HOME" \
+  DOTFILES_HOMEBREW_BREW_CANDIDATES="$LICENSE_HOME/no-brew" \
+  PATH="$LICENSE_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$INSTALL" >"$TMP_HOME/license-install.log" 2>&1; then
+  fail 'unsatisfied Xcode license unexpectedly continued'
+fi
+grep -qF 'xcodebuild -license accept' "$LICENSE_SUDO_LOG" || fail 'unsatisfied Xcode license never requested sudo acceptance'
+grep -qF 'git sigue sin correr tras aceptar la licencia' "$TMP_HOME/license-install.log" || fail 'unsatisfied Xcode license was not reported'
+grep -qF 'dependencias Brewfile' "$TMP_HOME/license-install.log" && fail 'unsatisfied Xcode license reached Homebrew'
+
 printf '%s\n' '== install.sh skips known user-local CLI locations =='
 mkdir -p "$TOOL_DRY_HOME/.opencode/bin" "$TOOL_DRY_HOME/.kilo/bin"
 for command_name in opencode kilo; do
@@ -455,6 +523,15 @@ cat >"$BOOTSTRAP_BIN/xcode-select" <<'EOF'
 exit 99
 EOF
 chmod +x "$BOOTSTRAP_BIN/xcode-select"
+# Git sano: el bootstrap aislado modela un Mac con la licencia de Xcode ya
+# aceptada (el caso pendiente tiene sus propias secciones). Sin este stub,
+# git caeria al stub de TOOL_DRY_BIN que falla siempre y el probe de licencia
+# frenaria un bootstrap que debe llegar hasta los MCP.
+cat >"$BOOTSTRAP_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$BOOTSTRAP_BIN/git"
 # Font archives are the only downloads allowed by the isolated bootstrap
 # fixture. Build a valid local archive for each pinned font URL and reject all
 # other URLs so an unexpected remote installer download still fails closed.
