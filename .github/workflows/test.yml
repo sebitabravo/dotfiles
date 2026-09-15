@@ -21,12 +21,13 @@ jobs:
   install-and-macos-checks:
     # defaults.sh promete correr en Sequoia y en Tahoe, con ramas distintas por
     # version (springboard-* y Reduce Transparency). Un solo runner no prueba
-    # esa promesa: la matriz cubre las dos majors soportadas.
+    # esa promesa: la matriz cubre las dos majors soportadas. macos-latest
+    # sigue al release mas nuevo (Tahoe) hasta que exista el runner macos-26.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-26]
+        os: [macos-15, macos-latest]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
