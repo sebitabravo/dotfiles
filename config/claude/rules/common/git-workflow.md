@@ -22,6 +22,17 @@ Rules:
 - Subject ≤ 50 chars. Body only when "why" isn't obvious.
 - One commit per logical change. No "WIP" commits on shared branches.
 
+## Antes de commitear
+
+Tres preguntas. Cualquier "no" significa que no terminaste:
+
+1. ¿Podés explicar cada línea del diff?
+2. ¿Te harías cargo de un incidente en producción que se rastree hasta ahí?
+3. ¿Cada cambio lo pide la tarea que te dieron?
+
+Después barré el diff por lo que ninguna de las tres agarra: secrets, debug
+statements, TODOs colgando, y archivos generados que se stagearon sin querer.
+
 ## Branches
 
 - `feat/<slug>` — new features

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test-runner.sh — detecta COMO corre sus tests este repo.
 #
-# POR QUE EXISTE: quality-gate.sh y gauntlet-stop.sh tenian cada uno su propia
-# deteccion, con la misma limitacion — asumian que el manifiesto vive en la raiz
+# POR QUE EXISTE: la deteccion vivia duplicada dentro de cada hook que corria
+# tests, con la misma limitacion — asumian que el manifiesto vive en la raiz
 # del repo git y que el runner esta en el PATH. En un monorepo real eso falla en
 # silencio y el hook reporta verde sin haber corrido nada, que es peor que no
 # tener hook.
@@ -112,7 +112,7 @@ repository_trust_block() {
 }
 
 # TEST_CMD y TEST_CMD_SOURCE los consume quien sourcea este archivo
-# (gauntlet-stop.sh, quality-gate.sh), no se usan aca adentro. shellcheck no
+# (quality-gate.sh), no se usan aca adentro. shellcheck no
 # cruza archivos y los reporta como variables muertas.
 # shellcheck disable=SC2034
 
@@ -371,7 +371,7 @@ _detect_managed() {
 # block the tool call). A gate with no real internal bound on a slow-or-
 # hanging suite is a gate that silently stops gating.
 #
-# Consumed by gauntlet-stop.sh and quality-gate.sh, both of which run a
+# Consumed by quality-gate.sh, which runs a
 # repo's own test command and both hit exactly this gap independently.
 #
 # Sets stdout to the command's combined stdout+stderr and returns 124 on

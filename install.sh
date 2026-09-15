@@ -834,11 +834,10 @@ CLAUDE_FILES=(
   config/claude/deepseek.settings.json
   config/claude/ollama.settings.json
   config/claude/openrouter.settings.json
-  # settings.json consolidates UserPromptSubmit into this dispatcher. Keep
-  # both the dispatcher and its bounded GitHub helper in the preflight so a
-  # clean clone cannot deploy a settings file that references missing code.
+  # settings.json consolidates UserPromptSubmit into this dispatcher. Keep it
+  # in the preflight so a clean clone cannot deploy a settings file that
+  # references missing code.
   config/claude/hooks/user-prompt-dispatcher.sh
-  config/claude/hooks/lib/github-request.sh
 )
 
 REQUIRED_FILES=(
@@ -864,7 +863,6 @@ REQUIRED_DIRS=(
   config/fastfetch
   config/atuin/themes
   config/raycast/scripts
-  config/claude/agents
   config/claude/skills
   config/claude/hooks
   config/claude/rules
@@ -1076,9 +1074,15 @@ copy config/vscode/keybindings.json "$VSCODE/keybindings.json"
 copy config/vscode/mcp.json "$VSCODE/mcp.json"
 
 echo "claude"
-for d in agents skills hooks rules templates scripts output-styles agent-tools; do
+for d in skills hooks rules templates scripts output-styles agent-tools; do
   copy_dir "config/claude/$d" "$HOME/.claude/$d"
 done
+# Esta config dejo de versionar subagentes propios: los built-in (Explore, Plan,
+# general-purpose) cubren la delegacion. Un ~/.claude/agents/ heredado de una
+# instalacion anterior se sigue cargando en cada sesion, asi que se aparta.
+if [ -d "$HOME/.claude/agents" ]; then
+  backup "$HOME/.claude/agents"
+fi
 # Claude Code y los overlays de proveedores leen estos archivos desde runtime.
 # Se copian (no se enlazan) porque Claude Code puede reescribir settings.json y
 # las credenciales se resuelven por helper externo, nunca desde estos archivos.

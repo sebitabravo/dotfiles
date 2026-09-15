@@ -45,8 +45,7 @@ command -v jq >/dev/null 2>&1 || {
 SOURCE_SETTINGS="$SOURCE_ROOT/settings.json"
 RUNTIME_SETTINGS="$RUNTIME_ROOT/settings.json"
 EXPECTED_PROMPT_DISPATCHER="$HOME/.claude/hooks/user-prompt-dispatcher.sh"
-EXPECTED_AUTOMATIC_STOP="$HOME/.claude/hooks/automatic-workflow-stop.sh"
-EXPECTED_STOP="$HOME/.claude/hooks/convergence-stop.sh"
+EXPECTED_STOP="$HOME/.claude/hooks/handoff-stop.sh"
 
 RESULTS='[]'
 FAILURES=0
@@ -103,20 +102,21 @@ check_content_file() {
   fi
 }
 
-check_file hooks/activate-convergence-on-apply.sh
-check_file hooks/automatic-workflow.sh
-check_file hooks/automatic-workflow-stop.sh
-check_file hooks/gauntlet-stop.sh
 check_file hooks/secret-detect.sh
 check_file hooks/user-prompt-dispatcher.sh
-check_file hooks/convergence-stop.sh
-check_file hooks/lib/test-runner.sh
-check_file hooks/lib/automatic-workflow-state.sh
-check_file hooks/task-contract.sh
+check_file hooks/validate-safe-ops.sh
+check_file hooks/quality-gate.sh
+check_file hooks/protect-tests.sh
+check_file hooks/protect-codegraph-tracking.sh
+check_file hooks/privacy-review.sh
+check_file hooks/detect-debug.sh
+check_file hooks/handoff-stop.sh
+check_file hooks/check-auto-save-stash.sh
+check_file hooks/handoff-session-start.py
 check_file hooks/compact-resume.py
-check_file scripts/convergence-start.sh
-check_content_file scripts/validate-task-roadmap.py
-check_content_file skills/automatic-task-orchestrator/SKILL.md
+check_file hooks/lib/test-runner.sh
+check_file scripts/rdd.sh
+check_content_file skills/handoff/SKILL.md
 
 hook_projection() {
   jq -cS '
@@ -188,7 +188,6 @@ elif [ -f "$RUNTIME_SETTINGS" ] && ! jq empty "$RUNTIME_SETTINGS" >/dev/null 2>&
 else
   check_hook_projection
   check_hook_command UserPromptSubmit "$EXPECTED_PROMPT_DISPATCHER"
-  check_hook_command Stop "$EXPECTED_AUTOMATIC_STOP"
   check_hook_command Stop "$EXPECTED_STOP"
 fi
 

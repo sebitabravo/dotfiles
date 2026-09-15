@@ -26,20 +26,21 @@ mkdir -p \
 # config/claude/scripts. The doctor discovers either location, while these
 # fixtures exercise the same source/runtime contract.
 for relative in \
-  hooks/activate-convergence-on-apply.sh \
-  hooks/automatic-workflow.sh \
-  hooks/automatic-workflow-stop.sh \
-  hooks/gauntlet-stop.sh \
   hooks/secret-detect.sh \
   hooks/user-prompt-dispatcher.sh \
-  hooks/convergence-stop.sh \
+  hooks/validate-safe-ops.sh \
+  hooks/quality-gate.sh \
+  hooks/protect-tests.sh \
+  hooks/protect-codegraph-tracking.sh \
+  hooks/privacy-review.sh \
+  hooks/detect-debug.sh \
+  hooks/handoff-stop.sh \
+  hooks/check-auto-save-stash.sh \
+  hooks/handoff-session-start.py \
   hooks/compact-resume.py \
   hooks/lib/test-runner.sh \
-  hooks/lib/automatic-workflow-state.sh \
-  hooks/task-contract.sh \
-  scripts/convergence-start.sh \
-  scripts/validate-task-roadmap.py \
-  skills/automatic-task-orchestrator/SKILL.md \
+  scripts/rdd.sh \
+  skills/handoff/SKILL.md \
   settings.json; do
   mkdir -p "$RUNTIME/$(dirname "$relative")"
   cp -p "$ROOT/config/claude/$relative" "$RUNTIME/$relative"

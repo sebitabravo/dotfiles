@@ -296,34 +296,11 @@ block() {
 
 RDD="$HOME/.claude/scripts/rdd.sh"
 
-# Auto-encendido de RDD por zona de riesgo.
-#
-# POR QUE: RDD funcionaba, pero encenderlo dependia de que el usuario se
-# acordara de correr `rdd on` en el repo correcto. Un guardarrail que hay que
-# recordar activar no se activa nunca — el resto del flujo (freeze/receipt) ya
-# no depende de la memoria de nadie porque el bloqueo del gate lo fuerza.
-#
-# Se mira el PATH, no el contenido: es predecible y explicable. Un falso
-# positivo cuesta dos comandos que igual corre el agente; un falso negativo
-# deja pasar sin recibo justo el commit que mas lo necesitaba.
-if [ -x "$RDD" ] && [ ! -f "$ROOT/.claude-rdd/enabled" ] && [ "$RELAXED" = false ]; then
-  RISKY=$(git diff --cached --name-only 2>/dev/null |
-    grep -iE '(auth|login|session|token|jwt|oauth|passwd|password|credential)|(pay|billing|checkout|stripe|invoice|refund|charge)|(migration|migrate|schema|seed)|(crypt|secret|signing|sanitiz)' |
-    grep -vE '\.(md|txt|rst|adoc|lock|svg|png|jpe?g)$' || true)
-
-  if [ -n "$RISKY" ]; then
-    bash "$RDD" on >/dev/null 2>&1 || true
-    {
-      echo "[quality-gate] RDD TURNED ON AUTOMATICALLY in this repo."
-      echo "[quality-gate] The diff touches a risk zone:"
-      printf '%s\n' "$RISKY" | sed 's/^/[quality-gate]   - /'
-      echo "[quality-gate] From now on this repo requires a receipt to commit."
-      echo "[quality-gate] Turn it off with 'rdd off' if this was a false positive."
-    } >&2
-  fi
-fi
-
-# RDD — Receipt Driven Development.
+# RDD — Receipt Driven Development. Estrictamente opt-in: se enciende con
+# `rdd on` en el repo que lo necesita. El auto-encendido por zona de riesgo se
+# quito porque armaba un gate de recibos sin que nadie lo pidiera, y el costo
+# de un falso positivo (un commit bloqueado que el usuario no sabe destrabar)
+# resulto mayor que el del olvido que intentaba cubrir.
 # Si el repo lo tiene encendido, un commit necesita un recibo atado al hash de
 # los bytes staged. La opinion del agente ("esto funciona") no autoriza nada;
 # el recibo si, porque deja de valer solo apenas el contenido cambia.

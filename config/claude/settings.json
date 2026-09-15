@@ -12,7 +12,6 @@
     "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "5",
     "CLAUDE_CODE_ENABLE_AWAY_SUMMARY": "1",
     "CLAUDE_CODE_MAX_RETRIES": "2",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "CLAUDE_CODE_HIDE_CWD": "1",
     "CLAUDE_CODE_SCROLL_SPEED": "3",
@@ -274,7 +273,7 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/user-prompt-dispatcher.sh",
-            "timeout": 60
+            "timeout": 30
           }
         ]
       }
@@ -293,11 +292,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/compact-resume.py"
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/project-integrations-check.sh",
-            "timeout": 30
           }
         ]
       }
@@ -325,44 +319,9 @@
         ]
       }
     ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[PostToolUseFailure] Tool call fallo — revisar si requiere cambio de estrategia' >&2",
-            "async": true
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/qa-checklist.sh"
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/automatic-workflow-stop.sh",
-            "timeout": 180
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/gauntlet-stop.sh",
-            "timeout": 100
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/convergence-stop.sh",
-            "timeout": 180
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/stop-check-pending.sh"
-          },
           {
             "type": "command",
             "command": "~/.claude/hooks/handoff-stop.sh"
@@ -376,28 +335,6 @@
           {
             "type": "command",
             "command": "if command -v engram >/dev/null 2>&1; then engram save \"Session checkpoint\" \"Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ) in $PWD\" --type discovery --project session-checkpoints 2>/dev/null || true; fi"
-          }
-        ]
-      }
-    ],
-    "TaskCreated": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/task-contract.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/task-contract.sh",
-            "timeout": 5
           }
         ]
       }

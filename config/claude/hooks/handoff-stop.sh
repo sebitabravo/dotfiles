@@ -3,9 +3,9 @@
 #
 # Stop dispara UNA VEZ POR TURNO, no al cerrar la sesion. Sin marcador, este
 # aviso salia en cada respuesta, y un recordatorio que aparece siempre se vuelve
-# invisible (mismo motivo por el que qa-checklist.sh solo habla si encuentra
-# algo). Ademas solo tiene sentido en sesiones ya largas, asi que se usa el
-# tamano del transcript como proxy.
+# invisible: un hook de Stop solo debe hablar si encuentra algo. Ademas solo
+# tiene sentido en sesiones ya largas, asi que se usa el tamano del transcript
+# como proxy.
 INPUT=$(cat 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' 2>/dev/null | tr -cd 'a-zA-Z0-9-')
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // ""' 2>/dev/null || echo "")

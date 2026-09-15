@@ -57,9 +57,7 @@ TEST_ONLY_CLAUDE_SCRIPTS=(
   check-provider-runtime-parity.sh
   check-runtime-parity.sh
   check-skill-deps.sh
-  compare-task-roadmaps.sh
   doctor.sh
-  smoke-automatic-workflow.sh
   smoke-claude-hook-engine.sh
   validate.sh
 )
@@ -618,7 +616,7 @@ chmod 600 "$TEST_HOME/.claude.json"
 
 # Symlinks managed by an earlier installer version must migrate to copies.
 ln -s -- "$ROOT/.zshrc" "$TEST_HOME/.zshrc"
-ln -s -- "$ROOT/config/claude/agents" "$TEST_HOME/.claude/agents"
+ln -s -- "$ROOT/config/claude/skills" "$TEST_HOME/.claude/skills"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
@@ -730,14 +728,14 @@ assert_directory "$TEST_HOME/.git-hooks"
 assert_file "$TEST_HOME/.git-hooks/pre-push"
 
 # Claude configuration
-assert_directory "$TEST_HOME/.claude/agents"
-assert_not_symlink "$TEST_HOME/.claude/agents"
-assert_file "$TEST_HOME/.claude/agents/backend-architect.md"
+assert_directory "$TEST_HOME/.claude/skills"
+assert_not_symlink "$TEST_HOME/.claude/skills"
+assert_file "$TEST_HOME/.claude/skills/handoff/SKILL.md"
 assert_file "$TEST_HOME/.claude/CLAUDE.md"
 assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
-assert_file "$TEST_HOME/.claude/scripts/validate-task-roadmap.py"
+assert_file "$TEST_HOME/.claude/scripts/rdd.sh"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
 for script in "${TEST_ONLY_CLAUDE_SCRIPTS[@]}"; do
   assert_not_exists "$TEST_HOME/.claude/scripts/$script"
@@ -860,12 +858,6 @@ set -e
 printf '%s' "$wrapper_error" | grep -qxF 'claude: selecciona un solo provider por invocacion'
 
 printf '%s\n' 'PASS: Claude wrapper isolates provider env, routes one overlay, and rejects ambiguous provider flags'
-
-printf '%s\n' '== AGENTS.md/CLAUDE.md scope-detection hook =='
-bash "$ROOT/.github/test/project-integrations-check.test.sh"
-
-printf '%s\n' '== gauntlet-stop.sh timeout and coverage regressions =='
-bash "$ROOT/.github/test/gauntlet-stop.test.sh"
 
 printf '%s\n' '== quality-gate.sh timeout regressions =='
 bash "$ROOT/.github/test/quality-gate.test.sh"

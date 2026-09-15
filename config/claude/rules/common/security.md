@@ -1,64 +1,62 @@
-# Security
+# Seguridad
 
-## Restricted zones (never read, print, or exfiltrate)
+## Zonas restringidas (nunca leer, imprimir ni exfiltrar)
 
-- **Secrets**: `.env` and any `.env.*`, `secrets/`, `credentials.json`.
-- **Keys**: SSH private keys (`id_rsa`, `id_ed25519`, ...).
-- **Certs**: `.pem`, `.key`, `.ppk`, `.p12`, `.pfx`, `.pvk`.
-- **Noise** (don't waste tokens): `node_modules/`, `.git/objects/`, `.DS_Store`, `Thumbs.db`.
+- **Secrets**: `.env` y cualquier `.env.*`, `secrets/`, `credentials.json`.
+- **Llaves**: claves SSH privadas (`id_rsa`, `id_ed25519`, ...).
+- **Certificados**: `.pem`, `.key`, `.ppk`, `.p12`, `.pfx`, `.pvk`.
+- **Ruido** (no gastes tokens): `node_modules/`, `.git/objects/`, `.DS_Store`.
 
-`permissions.deny` in `settings.json` blocks the `Read` tool on most of these, and `validate-safe-ops.sh` denies the same targets through Bash, so `cat .env` is stopped on both paths. Neither one is the boundary. Both match patterns, and a rule that only exists as a pattern is one unlisted path, one new file name, or one `base64 -d` away from being silent. The boundary is this rule.
+`permissions.deny` en `settings.json` bloquea `Read` sobre casi todo esto, y
+`validate-safe-ops.sh` niega los mismos objetivos por Bash, así que `cat .env` se
+detiene por ambos caminos. **Ninguno de los dos es el límite.** Los dos hacen
+match por patrón, y una regla que solo existe como patrón está a una ruta no
+listada, un nombre nuevo o un `base64 -d` de volverse silenciosa. El límite es
+esta regla.
 
-## Non-negotiable
+## Al generar código
 
-- **Never commit secrets**. API keys, tokens, passwords = `.env` or vault.
-- **ALWAYS validate user input**. Backend-side, even if frontend validates.
-- **Sanitize output**. XSS prevention. Escape before rendering.
-- **Prepared statements for SQL**. Never concatenate queries with user input.
-- **HTTPS in production**. HTTP only for local development.
+- Nunca generes tokens, contraseñas ni secrets de ejemplo — ni siquiera
+  `test_sk_123`. Usa variables de entorno o placeholders obvios: `$API_KEY`,
+  `<your-api-key>`.
+- Nunca uses criptografía obsoleta: MD5, SHA1, DES, RC4.
+- Nunca uses `eval()`, `exec()`, `Function()` ni `system()` con strings dinámicos.
+- Input de usuario validado en el backend aunque el frontend ya valide. Output
+  escapado antes de renderizar. SQL con prepared statements, nunca concatenando.
 
-## Severity levels
+## Severidad
 
-| Level | Condition | Action |
-| --- | --- | --- |
-| **Critical** | Secret exposed in code/commit | Rotate immediately, purge git history |
-| **High** | SQL injection, XSS, auth bypass | Fix before deploy |
-| **Medium** | Vulnerable dependency, missing rate limiting | Fix this iteration |
+| Nivel | Condición | Acción |
+|---|---|---|
+| **Crítico** | Secret expuesto en código o commit | Rotar ya, purgar historia de git |
+| **Alto** | SQL injection, XSS, bypass de auth | Arreglar antes de desplegar |
+| **Medio** | Dependencia vulnerable, falta rate limiting | Arreglar en esta iteración |
 
-## When generating code
+## Dependencias y cadena de suministro
 
-- Never generate tokens, passwords, or example secrets (not even "test_sk_123").
-- Use environment variables or obvious placeholders: `$API_KEY`, `<your-api-key>`.
-- Never use obsolete cryptographic algorithms: MD5, SHA1, DES, RC4.
-- Never use `eval()`, `exec()`, `Function()`, `system()` with dynamic strings.
+- Antes de instalar, verifica que el paquete sea legítimo (typo-squatting).
+- Cooldown de 3 días antes de adoptar una versión recién publicada.
+- Auditoría antes de instalar algo nuevo: `npq --dry-run`. Para auditar el árbol
+  existente usa el script del proyecto, o `npm audit` / `bun audit` /
+  `cargo audit` / `pip-audit`.
+- **Preferencia de package manager: `bun` > `pnpm` > `npm`.** Bun y pnpm 10+
+  bloquean lifecycle scripts por defecto y soportan cooldown por antigüedad de
+  publicación; por eso van primero.
+- **El lockfile de un proyecto existente gana sobre esa preferencia y no es tuyo
+  para cambiarlo.** `bun.lock` significa bun, `pnpm-lock.yaml` pnpm,
+  `package-lock.json` npm, `uv.lock` uv. Cambiar re-resuelve el árbol de
+  dependencias completo, lo que es en sí mismo un evento de cadena de suministro.
+  Los repos de clientes o del trabajo clavados a npm se quedan en npm.
+- `npm install` / `npm i` requiere confirmación explícita. Prefiere `npm ci`.
+- `npm install -g` está BLOQUEADO. Usa `npx`, `pnpm dlx`, `bunx` o `npm exec` local.
+- Cuando un proyecto obliga a npm, el endurecimiento de `~/.npmrc` es lo que
+  reemplaza lo que bun y pnpm dan gratis: `ignore-scripts=true`,
+  `allow-git=none`, `min-release-age=3`. Nunca los sobreescribas por proyecto.
+- Guía completa de endurecimiento: skill `npm-security`.
 
-## Dependencies & supply chain
+## Sesgo de autonomía
 
-- Before installing: verify the package is legitimate (typo-squatting).
-- Keep dependencies updated. Use the audit script declared by the project; for
-  JavaScript projects prefer `npm audit` or `bun audit` or `cargo audit` or `pip-audit`.
-- Minimum necessary amount. Fewer dependencies = smaller attack surface.
-- **Package manager preference: `bun` > `pnpm` > `npm`.** Both bun and pnpm 10+
-  block lifecycle scripts by default and support a publish-age cooldown, which is
-  why they come first.
-- **An existing project's lockfile overrides that preference and is not yours to
-  change.** `bun.lock` means bun, `pnpm-lock.yaml` means pnpm, `package-lock.json`
-  means npm, `uv.lock` means uv. Switching re-resolves the entire dependency tree,
-  which is itself a supply-chain event. Client and employer repos pinned to npm
-  stay on npm.
-- `npm install` / `npm i` requires explicit confirmation. Prefer `npm ci`.
-- `npm install -g` is BLOCKED. Use `npx`, `pnpm dlx`, `bunx`, or a project-local
-  `npm exec`.
-- When a project forces npm, the hardening in `~/.npmrc` is what replaces what
-  bun/pnpm give for free: `ignore-scripts=true`, `allow-git=none`,
-  `min-release-age=3`. Never override those per-project. npm 12+ blocks install
-  scripts by default; until this host runs 12+, that `.npmrc` is the equivalent.
-- 3-day cooldown before adopting a newly published version.
-- Audit before installing a new package: `npq --dry-run`.
-- Full 17-practice hardening guide: invoke the `npm-security` skill.
-
-## Autonomy bias
-
-- **Routine safe actions** (reading, searching, focused verification, small requested edits): proceed and report the result.
-- **Destructive, irreversible, or remote actions**: STOP and confirm. Full protocol with blast radius, rollback plan, and backup verification in `rules/common/destructive-operations.md`.
-- When in doubt, prefer safe local verification first and ask before anything irreversible.
+Acciones seguras y rutinarias (leer, buscar, verificar, ediciones chicas que te
+pidieron): avanza y reporta el resultado. Acciones destructivas, irreversibles o
+remotas: para y confirma — el protocolo completo está en
+`rules/common/destructive-operations.md`.

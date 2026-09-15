@@ -170,8 +170,8 @@ missing dependency and continue with the strongest available tests; do not call
 the mutation gate green.
 
 Acceptance mutation is separate: it mutates Gherkin example values in an
-acceptance IR and checks that the acceptance test fails. Use
-`acceptance-pipeline` for that workflow.
+acceptance IR and checks that the acceptance test fails. This config does not
+ship a skill for that pipeline; run the project's own acceptance tooling.
 
 ## Anti-patterns
 

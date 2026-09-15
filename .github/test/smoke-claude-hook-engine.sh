@@ -9,7 +9,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
-SYNC="$REPO_ROOT/config/claude/scripts/sync-convergence-runtime.sh"
+SOURCE_ROOT="$REPO_ROOT/config/claude"
 PARITY="$SCRIPT_DIR/check-runtime-parity.sh"
 
 command -v claude >/dev/null 2>&1 || {
@@ -32,7 +32,15 @@ mkdir -p "$HOME_DIR" "$PROJECT"
 git -C "$PROJECT" init -q
 PROJECT_REAL=$(cd -- "$PROJECT" && pwd -P)
 
-HOME="$HOME_DIR" CLAUDE_RUNTIME_DIR="$RUNTIME" bash "$SYNC" --apply >"$TMP/sync.log"
+# Puebla el runtime aislado directamente desde la fuente versionada. Antes esto
+# lo hacia sync-convergence-runtime.sh; ese script desaparecio junto con el
+# motor de convergencia y la copia explicita deja ver que entra al runtime.
+mkdir -p "$RUNTIME/hooks/lib" "$RUNTIME/scripts" "$RUNTIME/skills"
+cp -Rp -- "$SOURCE_ROOT/hooks/." "$RUNTIME/hooks/"
+cp -Rp -- "$SOURCE_ROOT/scripts/." "$RUNTIME/scripts/"
+cp -Rp -- "$SOURCE_ROOT/skills/." "$RUNTIME/skills/"
+cp -p -- "$SOURCE_ROOT/settings.json" "$RUNTIME/settings.json"
+
 HOME="$HOME_DIR" CLAUDE_RUNTIME_DIR="$RUNTIME" bash "$PARITY" --strict >"$TMP/parity.log"
 
 cat >"$RUNTIME/hooks/session-start-probe.sh" <<'EOF'
