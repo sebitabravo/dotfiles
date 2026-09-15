@@ -121,13 +121,23 @@ fi
 # verificable. No se reporta como drift: pedirte "corre este comando" cuando
 # la evidencia dice que no cambia nada seria mentir.
 if pmset -g cap 2>/dev/null | grep -qi autorestart; then
-  if pmset -g 2>/dev/null | grep -Eq "^ autorestart[[:space:]]+1$"; then
+  if pmset -g 2>/dev/null | grep -Eq "^[[:space:]]*autorestart[[:space:]]+1$"; then
     ok "Auto-restart en freeze/corte de luz configurado"
   else
     warn "Auto-restart sin configurar: sudo pmset -a autorestart 1"
   fi
 else
   skip "Auto-restart: pmset -g cap no lo lista como capacidad de este hardware (probable no-op, como askForPassword)"
+fi
+
+# Pistas de password (CIS Tahoe 2.11.5). Va antes del bloque sudo a proposito:
+# /Library/Preferences/com.apple.loginwindow.plist es 0644 root:wheel, asi que
+# la lectura no necesita privilegios y el drift se detecta igual en una corrida
+# sin sudo. Key ausente = pistas activas, que es el default de Apple.
+if [ "$(defaults read /Library/Preferences/com.apple.loginwindow RetriesUntilHint 2>/dev/null || echo unset)" = "0" ]; then
+  ok "Pistas de password desactivadas (CIS 2.11.5)"
+else
+  warn "Pistas de password activas: sudo defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0"
 fi
 
 echo "--- Verificaciones que piden sudo (se salta si no se puede) ---"

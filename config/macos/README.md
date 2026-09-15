@@ -2,12 +2,13 @@
 
 Optimizaciones de macOS orientadas a developers. Cero dependencias externas.
 
-Verificado en **Sequoia 15.7.9** y en **Tahoe 26.6.2** (arm64). El script corre
-en las dos: lo que cambio entre versiones esta detras de un guard por version,
-ninguna optimizacion se removio. Las keys `springboard-*` de Launchpad se
-escriben solo hasta Sequoia, porque Tahoe saco Launchpad del sistema, y Reduce
-Transparency se salta unicamente en 26.0-26.2, la ventana donde Apple la tuvo
-rota antes de arreglarla en 26.3.
+Verificado en **Sequoia 15.7.9**, **Tahoe 26.6.2** y **Golden Gate 27.0**
+(arm64). El script corre en las tres: lo que cambio entre versiones esta detras
+de un guard por version, ninguna optimizacion se removio. Las keys
+`springboard-*` de Launchpad se escriben solo hasta Sequoia, porque Tahoe saco
+Launchpad del sistema y 27 no lo trajo de vuelta, y Reduce Transparency se
+salta hasta 26.2, la ventana donde Apple la tuvo rota antes de arreglarla en
+26.3.
 
 El script esta reconciliado contra el estado real de la maquina: los valores
 reflejan como esta configurada hoy, no una propuesta teorica.
@@ -20,10 +21,99 @@ chmod +x defaults.sh && ./defaults.sh --dry-run   # revisar antes de aplicar
 ../../.github/verify.sh                           # auditar el resultado (desde config/macos/)
 ```
 
-`defaults.sh` reporta cada item como `[SET]` (se aplico), `[SKIP]` (ya estaba
-asi), o `[FAIL]` (el write no tuvo efecto — no se miente con un `[OK]`
-incondicional). `verify.sh` no escribe nada: compara el estado real contra lo
-que el script promete y sale con `1` si hay drift.
+Que significa cada marca, con precision — esto decia antes que `[SKIP]` era
+"ya estaba asi", y no es cierto para la mayoria de los items:
+
+| Marca | Que significa de verdad |
+|---|---|
+| `[SET]` | El `defaults write` devolvio exito. **No** implica que el valor haya cambiado: en una maquina ya configurada casi todo sale `[SET]` igual, porque escribir el mismo valor tambien es exito. |
+| `[SKIP]` | Un guard decidio no ejecutar: guard por version de macOS, guard de estado del Tier 2, ruta inexistente en el Tier 3, o key ya ausente en un `defaults delete`. |
+| `[FAIL]` | El write no tuvo efecto (ej: dominio protegido por TCC sin Full Disk Access). Suma al exit code. |
+| `[WARN]` | Verificacion de solo lectura que encontro algo que revisar a mano. |
+| `[--]` | Informativo: estado declarado, sin accion posible o sin accion deseada. |
+
+Para saber si hay **drift** no sirve mirar los `[SET]`: para eso esta
+`verify.sh`, que no escribe nada, compara el estado real contra lo que el
+script promete y sale con `1` si algo no coincide.
+
+### Despues de formatear: el orden importa
+
+Tres bloques del script son **dependientes del orden** y en una Mac recien
+formateada se saltan solos, en silencio, sin que nada falle. Correrlo una sola
+vez apenas termina el formateo deja esas partes sin aplicar:
+
+| Bloque | Por que se salta en una Mac nueva | Que necesita antes |
+|---|---|---|
+| Safari (~30 keys) | La terminal no tiene Full Disk Access, y el canario lo detecta | Ajustes > Privacidad y Seguridad > Acceso total al disco, agregar la terminal y reabrirla |
+| Tier 3 (Spotlight + Time Machine) | `~/Developer`, `~/.cache` y `~/go/pkg` todavia no existen | Clonar los repos y correr los toolchains al menos una vez |
+| VS Code press-and-hold | `/Applications/Visual Studio Code.app` no existe | Instalar VS Code (lo trae el `Brewfile`) |
+
+Orden recomendado tras un formateo:
+
+```bash
+# 1. Bootstrap del repo (NO aplica defaults.sh, es deliberado)
+./install.sh
+
+# 2. Dar Full Disk Access a la terminal y reabrirla, si no el bloque
+#    Safari se saltea entero
+
+# 3. Primera pasada: todo menos lo que depende de directorios que aun no estan
+cd config/macos && ./defaults.sh
+
+# 4. Clonar repos, correr los toolchains, dejar que ~/Developer y ~/.cache
+#    existan de verdad
+
+# 5. Segunda pasada: ahora si aplica el Tier 3
+./defaults.sh
+
+# 6. Auditar
+../../.github/verify.sh
+```
+
+El paso 5 no es opcional: sin el, las exclusiones de Spotlight y Time Machine
+—que son la unica ganancia de rendimiento medible del script— nunca se
+aplican. El script avisa al final del Tier 3 cuando quedaron rutas pendientes.
+
+Lo que **ningun** script arregla despues de un formateo, y hay que hacer a
+mano: activar FileVault (genera la llave de recuperacion, no se automatiza),
+configurar un destino de Time Machine, poner el receptor de AirPlay en
+"Usuario actual", y la checklist de GUI del final de este documento.
+
+### Despues de un upgrade de major: que se cae y que no
+
+Un upgrade de major **no** reescribe los plists de usuario en masa. Medido
+sobre el salto de Tahoe 26.6.2 a Golden Gate 27.0 en esta maquina, de 10 keys
+muestreadas del script sobrevivieron 9: animaciones de Dock y Finder,
+`mru-spaces`, `reduceTransparency`, `AppleShowAllExtensions`, el thumbnail de
+capturas y las animaciones de Mail quedaron todas como estaban.
+
+La que se cae es **el identificador de publicidad**:
+
+```
+com.apple.AdLib allowIdentifierForAdvertising = 1   # el script lo pone en 0
+com.apple.AdLib auto_opt_in                   = 1
+com.apple.AdLib opted_in_buddy                = 1
+```
+
+`opted_in_buddy` es la pista: "Buddy" es el asistente de configuracion que
+corre despues de instalar una major. Ese flujo te vuelve a inscribir en
+anuncios personalizados y pisa la preferencia, sin preguntar de nuevo de forma
+visible. No es un bug del script: es el instalador de macOS ganandole al
+ultimo write.
+
+Por eso, despues de cada upgrade de major:
+
+```bash
+./defaults.sh              # reaplica todo, idempotente
+../../.github/verify.sh    # confirma que no quedo drift
+```
+
+Tambien conviene mirar el disco: macOS 27 **reconstruye el indice de Spotlight
+entero** tras el upgrade, y durante las primeras 24-48 horas Spotlight, Photos
+y la descarga de modelos de Apple Intelligence compiten por CPU, disco y
+bateria. Es trabajo de una vez, no una regresion — pero es justo cuando las
+exclusiones del Tier 3 pagan mas, asi que vale correr el script antes de
+empezar a compilar.
 
 ### Flags
 
@@ -61,7 +151,7 @@ Si algo no te gusta despues de aplicar, volves atras sin consecuencias:
 | **Xcode** | Debug menu, file extensions, parallel build (max cores), numeric progress, no state restoration, duracion del build visible (`ShowBuildOperationDuration`, util para notar thermal throttling en un fanless) |
 | **Terminal** | UTF-8 only, Secure Keyboard Entry, no line marks |
 | **Accessibility** | Ctrl+Scroll = zoom de pantalla, navegacion completa por teclado (Tab llega a todos los controles) |
-| **Transparencia** | Reduce Transparency (alivio de GPU en WindowServer). Se salta solo en Tahoe 26.0-26.2, donde la key estaba rota; desde 26.3 se aplica. Activarla deshabilita el selector Clear/Tinted de Ajustes > Apariencia: son mutuamente excluyentes. |
+| **Transparencia** | Reduce Transparency (alivio de GPU en WindowServer). Se salta hasta Tahoe 26.2, donde la key estaba rota (26.1 y 26.2 estan documentados; 26.0 entra por precaucion); desde 26.3 se aplica. Activarla deshabilita el selector Clear/Tinted de Ajustes > Apariencia: son mutuamente excluyentes. El fix de 26.3 es **parcial** — ver abajo. |
 | **Tahoe 26** | Thumbnail flotante de capturas desactivado (en Tahoe pierde la captura si se cancela una accion sobre el). |
 | **Mail** | Sin animaciones al responder/enviar, copy email sin nombre, texto plano por defecto, inline attachments off |
 
@@ -158,6 +248,89 @@ en su comportamiento stock — este script es para developers que necesitan ver
 las animaciones de las apps que construyen. AutoFill de Safari tampoco se
 toca: es la funcionalidad principal, no bloat.
 
+### macOS 27 Golden Gate: que cambia y que no se agrego
+
+27.0 salio el 14 de septiembre de 2026. Lo que importa para este script:
+
+- **Reduce Transparency sigue viva.** No se deprecio ni se renombro: verificado
+  leyendo `com.apple.universalaccess` en una 27.0 real, la key esta y vale `1`.
+  El guard de la ventana rota es `MACOS_MAJOR -eq 26`, no `-ge 26`, asi que en
+  27 la key se vuelve a escribir. Hay un test que mata ese mutante justo.
+- **El slider de Liquid Glass no la reemplaza.** 27 agrega en Ajustes >
+  Apariencia un slider continuo de opacidad, que sustituye al par Clear/Tinted
+  de Tahoe. Solo tinta menus, Control Center, Notification Center, Spotlight,
+  toolbars y sidebars; no toca la barra de menus, el Dock ni los iconos del
+  Finder. Reduce Transparency aplana mas que el extremo del slider, asi que
+  siguen siendo cosas distintas y la de Accesibilidad es la que sirve aca.
+- **No se le agrego ninguna key nueva al script.** Ese slider no tiene key
+  publica documentada — no aparece en `defaults read -g` ni en
+  `com.apple.universalaccess` hasta que lo movas a mano — y las unicas keys
+  nuevas que circulan (`NSSplitViewItemSidebarDefaultsToFloatingAppearance`,
+  `NSConvolutionOverride1`) salen de hilos de foro sobre las betas, son
+  cosmeticas y no tienen fuente estable. Este script no escribe keys que no
+  puede verificar.
+- **Lo que si conviene mirar**: 27 mueve comportamiento a feature flags bajo
+  `/Library/Preferences/FeatureFlags/Domain/`. Es un dominio de sistema que
+  Apple usa para prender y apagar features entre builds; escribir ahi a ciegas
+  es exactamente el tipo de cosa que este script no hace.
+
+#### Contraste contra mSCP release_27.0
+
+El macOS Security Compliance Project (NIST, `usnistgov/macos_security`) es la
+fuente autoritativa de hardening y ya publico `release_27.0`, que ademas trae
+el CIS Benchmark y el DISA STIG prerelease para macOS 27. Dejo de usar ramas
+por version: todo vive en `main`.
+
+Sus reglas nuevas para 27 son, segun su propio CHANGELOG:
+`os_bluetooth_modification_disable`, `os_chat_disable`,
+`os_call_recording_disable`, `system_settings_siri_AI_disable`,
+`os_apple_intelligence_pcc_disable`, `os_visual_intelligence_disable`,
+`os_natural_language_editing_disable`, `os_allow_enterprise_trust_disabled`,
+`os_install_configuration_profile_disable`,
+`os_erase_contents_and_settings_disable` y tres `*_familycontrols`.
+
+**Ninguna se puede aplicar con `defaults write`.** Se verifico leyendo los
+YAML: son DDM (declarative device management) o perfiles `.mobileconfig` y
+necesitan inscripcion MDM. `system_settings_siri_ai_disable`, por ejemplo,
+declara dominio `com.apple.ironwood.support` con la key `allowSiri3489`, y su
+verificacion literal es "abrir Ajustes > General > Gestion de dispositivos y
+revisar las Device Declarations". En un laptop personal sin MDM eso no existe.
+
+Conclusion: para esta maquina, macOS 27 **no aporta ninguna key nueva
+aplicable**. Lo que si se puede decidir a mano es si queres Apple Intelligence
+encendido — Ajustes > Apple Intelligence y Siri — porque en 27 descarga
+modelos y corre analisis en background. En esta maquina Siri ya esta apagado
+(`com.apple.assistant.support "Assistant Enabled" = 0`).
+
+Sobre CIS: el benchmark de Tahoe paso a **v1.1.0**, pero fue una pasada de
+mantenimiento sin agregar ni quitar controles (0 fixlets nuevos, 0 borrados, 4
+actualizados sobre 105). Los numeros que cita este README siguen validos.
+
+### Reduce Transparency: el fix de 26.3 no esta completo
+
+Apple arreglo en 26.3 lo que rompio en 26.1 y 26.2, y ni lo documento en las
+release notes. Pero el arreglo es parcial: los sidebars y las toolbars vuelven
+a ser opacos, y aun asi **la toolbar y sus botones siguen mal definidos salvo
+que tambien se active Increase Contrast** (`com.apple.universalaccess
+increaseContrast`). Siri tambien se sigue viendo mal con Reduce Transparency
+encendido.
+
+Este script **no** escribe `increaseContrast`: es un cambio visual fuerte
+(bordes marcados en toda la interfaz) y es preferencia, no seguridad. Queda
+declarado aca para que la decision sea informada — si vas a usar Reduce
+Transparency en Tahoe, esa es la otra mitad:
+
+```bash
+defaults write com.apple.universalaccess increaseContrast -bool true
+```
+
+Al reves tambien vale: si lo que te importa es el diseño de Liquid Glass,
+Reduce Transparency es justo lo que te lo saca, y sacarla es una linea:
+
+```bash
+defaults delete com.apple.universalaccess reduceTransparency
+```
+
 ### Full Disk Access y el bloque Safari
 
 Safari esta sandboxed: su plist real vive en
@@ -239,6 +412,7 @@ mientras el drop-in exista, por diseño**.
 | Banner de login (plantilla equipo extraviado, personalizar con `LOGIN_BANNER="..."` o editar el default; usar email secundario, nunca el Apple ID) | `LoginwindowText` ausente | `sudo defaults delete /Library/Preferences/com.apple.loginwindow LoginwindowText` |
 | Sudo sin grace period (dentro de la sesion root unica) | `timestamp_timeout` ya fijado en sudoers | `sudo rm /etc/sudoers.d/10_cis_timestamp_timeout` (cada sudo vuelve a pedir password mientras exista) |
 | Login Window muestra hostname | `AdminHostInfo` no es `HostName` | `sudo defaults delete /Library/Preferences/com.apple.loginwindow AdminHostInfo` |
+| Pistas de password apagadas (CIS 2.11.5) | `RetriesUntilHint` no es `0` | `sudo defaults delete /Library/Preferences/com.apple.loginwindow RetriesUntilHint` |
 | Touch ID para sudo | `/etc/pam.d/sudo_local` no existe | `sudo rm /etc/pam.d/sudo_local` |
 | `/Volumes` visible en Finder | tiene el flag hidden | `sudo chflags hidden /Volumes` |
 | Firewall encendido | esta apagado | `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off` |
@@ -335,10 +509,30 @@ El chequeo de listeners existe para que la pregunta "¿importa el firewall en
 esta maquina?" se **mida** en vez de asumirse. Con cero procesos escuchando en
 todas las interfaces el exposure es teorico; con listeners reales el firewall y
 el stealth mode hacen trabajo. Ademas detecta AirPlay Receiver (ControlCenter
-en 5000/7000): es la superficie de AirBorne — 17 CVEs, con CVE-2025-24252 como
-RCE zero-click en la misma red — y encima ocupa el puerto 5000, que choca con
-medio servidor de desarrollo. Es solo lectura: apagarlo se decide en Ajustes >
-General > AirDrop y Handoff.
+en 5000/7000): es la superficie de AirBorne — 23 fallas reportadas por Oligo
+Security, de las cuales el RCE zero-click en la misma red sale de encadenar
+CVE-2025-24252 (use-after-free) con CVE-2025-24206 (bypass del click de
+aceptacion) — y encima ocupa el puerto 5000, que choca con medio servidor de
+desarrollo.
+
+El detalle que decide la mitigacion: Oligo documenta que esa cadena **solo
+funciona con el receptor en "Cualquier persona en la misma red" o "Todos"**.
+Con **"Usuario actual"** no aplica, y AirPlay desde el propio iPhone sigue
+andando. Por eso el script recomienda ese modo en vez de apagar el receptor.
+
+Lo que **no** hace ese modo es dejarte a salvo de todo: Oligo dice textual que
+cambiar a "Current User" *"does not prevent all of the issues"* — queda al
+menos un camino one-click (CVE-2025-24137, parchado en Sequoia 15.3) que
+aplica igual. "Usuario actual" cierra el vector grave, no la familia entera;
+la defensa real ahi es estar parchado, no el dropdown.
+
+El script lee el modo de `AirplayReceiverAdvertising` (`1` = Usuario actual,
+`2` = Cualquiera en la misma red, `3` = Todos, dominio por-host
+`com.apple.controlcenter`). Esa key no esta documentada por Apple ni cubierta
+por CIS — sale de hilos de Jamf Nation — asi que se **lee** para reportar el
+modo y no se escribe: una key no soportada puede cambiar de nombre o de
+semantica en cualquier update y dejarte creyendo que aplicaste algo. Se cambia
+a mano en Ajustes > General > AirDrop y Handoff > Receptor de AirPlay.
 
 Se verifica tambien que **exista un destino de Time Machine**. Va en este
 bloque a proposito: en las guias de hardening el backup queda arriba de
@@ -349,6 +543,69 @@ real), asi que avisa. Si hay destino, tambien informa frescura (avisa sobre 7
 dias sin backup completo) y cifrado cuando tmutil expone el campo; si no lo
 expone dice que no lo sabe en vez de inventar. Configurar el destino jamas se
 automatiza (`tmutil setdestination` apunta a hardware real).
+
+### La capa que FileVault, SIP y el firewall no cubren
+
+Dos chequeos de solo lectura tapan un hueco que el resto de la config no ve.
+Ninguno remedia nada: reportan.
+
+**Directorios world-writable en `/Library`** (CIS Tahoe L2 5.1.7). Un `0777`
+sin sticky bit deja que cualquier proceso escriba o reemplace archivos ahi. El
+vector no es remoto, es **escalada local**: codigo que ya corre como vos —un
+`postinstall` de npm, una app troyanizada— deja un archivo que despues consume
+un proceso privilegiado. En una maquina que instala paquetes a diario ese es el
+camino realista, y FileVault, SIP y el firewall operan en otra capa.
+
+Los culpables tipicos son instaladores de terceros, no macOS. El caso que
+motivo el chequeo:
+
+```
+drwxrwxrwx root:wheel  .../Logi/LogiPluginService/LibraryPackagesToInstall
+```
+
+Root es el dueño, el nombre dice "paquetes para instalar", y cualquiera escribe
+adentro. Se reporta y no se remedia a proposito: bajarle los permisos a un
+directorio de un vendor puede romper su software. Se endurece a mano con
+`sudo chmod o-w <dir>` despues de mirar quien es el dueño.
+
+**`csrutil authenticated-root`** (Sealed System Volume). El volumen de sistema
+esta sellado criptograficamente: cada archivo hashea hacia un hash raiz que el
+arranque verifica, y eso es lo que vuelve inviable el rootkit clasico que
+reemplaza binarios del sistema. Va junto a SIP y Gatekeeper porque son la misma
+familia; sin esta linea el sello era el unico de los tres que nadie miraba.
+Solo se apaga a proposito desde Recovery, asi que es un tripwire barato, no una
+defensa nueva.
+
+**Por que `DisableFDEAutoLogin` no esta.** CIS lo pide, y se evaluo. Usa la
+**misma contraseña** que FileVault, asi que quien pudo desbloquear el disco ya
+puede loguearse: lo unico que cubre es la ventana entre desbloquear y llegar al
+escritorio. El control esta escrito para maquinas compartidas de empresa; en un
+laptop de un solo usuario con Touch ID y bloqueo inmediato de pantalla compra
+muy poco a cambio de un prompt extra en cada arranque en frio. Queda anotado
+para no volver a discutirlo desde cero.
+
+### Contraste contra CIS Apple macOS 26 Tahoe
+
+El benchmark oficial existe (L1 son ~90 controles) y esta config cubre buena
+parte, pero tres huecos se cerraron recien y uno se descarto a proposito:
+
+| Control CIS | Estado aca |
+|---|---|
+| 2.11.5 Show Password Hints | Se aplica en el Tier 2 (`RetriesUntilHint = 0`) |
+| 2.3.3.7 Internet Sharing | Auditado en el bloque de solo lectura |
+| 2.3.3.10 Bluetooth Sharing | Auditado en el bloque de solo lectura |
+| 2.3.1.2 AirPlay Receiver | Se audita, no se apaga: se usa. Mitigacion = modo "Usuario actual" |
+| 2.6.8 Admin password para ajustes del sistema | **Descartado**, ver abajo |
+| 2.5.1.x Writing Tools / resumenes de Apple Intelligence | Sin key de usuario: solo payload MDM (`allowWritingTools`) |
+
+**Por que 2.6.8 queda afuera.** El control pide poner `shared = false` en
+`system.preferences` via `security authorizationdb`. Modificar authorizationdb
+rompe `sysadminctl` y `dsconfigad` cuando corren no interactivos — fallan con
+`errAuthorizationInteractionNotAllowed`, lo que ironicamente rompe otras
+remediaciones CIS que dependen de `sysadminctl` bajo sudo (issue #574 de
+`usnistgov/macos_security`). Ademas hay reportes de que el valor no persiste
+desde Big Sur: la GUI sigue mostrando la casilla destildada. Un control que no
+se puede verificar y que rompe automatizacion no entra a este script.
 
 Tambien se auditan **sharing, invitado y auto-login**, todo legible sin sudo:
 Screen Sharing, Remote Management y Remote Apple Events por ausencia de sus
@@ -406,12 +663,20 @@ Ver `brew autoupdate --help` para mas flags. Revertir: `brew autoupdate stop`
 
 ## Que hace — Tier 3 (exclusiones de indexado, sin sudo)
 
-La ganancia real y medible en una maquina de desarrollo. Sequoia tiene una
-regresion documentada de indexado de Spotlight (CPU e I/O de disco altos), y
-el arbol de desarrollo — `node_modules`, builds, `DerivedData` — es lo que
-peor se comporta. `sudo tmutil disablelocal`, la recomendacion clasica para
-liberar snapshots locales, **no existe desde High Sierra (10.13)**; esto es
-el reemplazo real.
+La ganancia real en una maquina de desarrollo, y la justificacion es el
+tamaño del arbol, no un bug: un solo `node_modules` ronda entre 50.000 y
+200.000 archivos chicos, y cada `npm install`, checkout grande, build de
+Xcode a `DerivedData` o extraccion de imagen de Docker dispara una rafaga de
+eventos de FSEvents que Spotlight persigue con varios `mdworker` en paralelo.
+
+Antes esta seccion decia que Sequoia tenia una "regresion documentada" de
+indexado. No la tiene: no hay release note ni radar de Apple, y lo unico
+documentado fue un bug de beta que se cerro en la segunda Developer Beta. Las
+exclusiones valen igual — el volumen de archivos es real — pero se declaran
+por lo que son.
+
+`sudo tmutil disablelocal`, la recomendacion clasica para liberar snapshots
+locales, **no existe desde High Sierra (10.13)**; esto es el reemplazo real.
 
 El script excluye de Spotlight (`.metadata_never_index`) y de Time Machine
 (`tmutil addexclusion -p`) las rutas que existan de:
@@ -508,9 +773,13 @@ Es la parte que importa mas que la lista de arriba: separar lo que un
 - **`mediaanalysisd` y `photoanalysisd`** (analisis de fotos/video en
   background, Visual Look Up, Live Text) no se pueden desactivar sin apagar
   SIP y editar plists del sistema — no soportado, no reversible con
-  confianza. Hay reportes de consumo alto (>600% CPU) en Tahoe 26 combinado
-  con Xcode. La unica mitigacion soportada es reducir que se indexa (tier 3
-  de este script), no desactivar el daemon.
+  confianza. El consumo alto esta reportado desde 15.1 y sigue en 26.x sin
+  fix oficial de Apple; las cifras que se ven en los reportes rondan un core
+  saturado de forma sostenida, no el ">600%" que este README afirmaba sin
+  fuente. Hay un hilo de Apple Developer que lo ata al **Simulator de iOS**:
+  los runtimes traen fototecas de muestra y el host las indexa, asi que
+  aparece justo trabajando con Xcode. La unica mitigacion soportada es
+  reducir que se indexa (tier 3 de este script), no desactivar el daemon.
 - **`launchctl limit maxfiles` a nivel de sistema** esta bloqueado por SIP
   desde macOS 13.5 — Apple lo confirmo como bug conocido sin fix. El camino
   real para herramientas como Vite que abren muchos file descriptors es

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # macOS — defaults write optimizations
-# Verificado en Sequoia 15.7.9 y en Tahoe 26.6.2 (arm64). Corre en las dos: lo
-# que cambio entre versiones esta detras de guards por version, no removido.
+# Verificado en Sequoia 15.7.9, Tahoe 26.6.2 y Golden Gate 27.0 (arm64). Corre
+# en las tres: lo que cambio entre versiones esta detras de guards por version,
+# no removido.
 # Las keys springboard-* de Launchpad se escriben solo hasta Sequoia (Tahoe lo
-# saco del sistema) y Reduce Transparency se salta solo en 26.0-26.2, la
-# ventana donde Apple la tuvo rota.
+# saco del sistema y 27 no lo trajo de vuelta) y Reduce Transparency se salta
+# hasta 26.2, la ventana donde Apple la tuvo rota.
+# En 27 no se agregaron keys nuevas a proposito: el slider de Liquid Glass que
+# trae Ajustes > Apariencia no tiene key publica documentada, y reduceTransparency
+# sigue existiendo y aplanando mas que el slider (verificado leyendo
+# com.apple.universalaccess en 27.0).
 # El inventario ejecutable se puede revisar sin escrituras con --dry-run.
 #
 # Apply: chmod +x defaults.sh && ./defaults.sh
@@ -56,12 +61,12 @@ fi
 ARCH="$(uname -m)"
 echo "=== macOS $MACOS_VERSION ($ARCH) ==="
 if [ "$MACOS_MAJOR" -ge 26 ]; then
-  echo "[--] Tahoe 26.x: Launchpad ya no existe (lo absorbio Spotlight), asi" \
-    "que las keys springboard-* se saltan en esta version."
+  echo "[--] macOS ${MACOS_MAJOR}: Launchpad ya no existe (lo absorbio Spotlight" \
+    "en Tahoe y no volvio), asi que las keys springboard-* se saltan."
 fi
 if [ "$MACOS_MAJOR" -eq 26 ] && [ "$MACOS_MINOR" -lt 3 ]; then
-  echo "[!!] 26.0-26.2 tienen Reduce Transparency roto: se salta en esta" \
-    "version. Actualizar a 26.3 o superior lo habilita."
+  echo "[!!] Reduce Transparency roto hasta 26.2: se salta en esta version." \
+    "Actualizar a 26.3 o superior lo habilita."
 fi
 if [ "$ARCH" != "arm64" ]; then
   echo "[!!] Script verificado solo en Apple Silicon (arm64)."
@@ -169,7 +174,7 @@ if [ "$MACOS_MAJOR" -lt 26 ]; then
 
   apply_default "Launchpad page scroll instant" com.apple.dock springboard-page-duration -float 0
 else
-  echo "[SKIP] Launchpad springboard-* (removido en Tahoe 26.x)"
+  echo "[SKIP] Launchpad springboard-* (removido desde Tahoe 26)"
 fi
 
 # ── Dock ───────────────────────────────────────────────────────────
@@ -526,9 +531,13 @@ else
   record_failure "Unidades metricas y Celsius"
 fi
 
-apply_default "La semana empieza el lunes" NSGlobalDomain AppleFirstWeekday -dict gregorian -int 2
+# -dict-add y no -dict: `man defaults` dice que "the specified dictionary
+# overwrites the value of the key", asi que -dict borraria cualquier otra
+# entrada del diccionario en cada corrida (otros calendarios, o los otros
+# estilos de fecha 0/2/3 si alguna vez se configuran en Ajustes).
+apply_default "La semana empieza el lunes" NSGlobalDomain AppleFirstWeekday -dict-add gregorian -int 2
 
-apply_default "Fecha corta en ISO (y-MM-dd)" NSGlobalDomain AppleICUDateFormatStrings -dict 1 -string "y-MM-dd"
+apply_default "Fecha corta en ISO (y-MM-dd)" NSGlobalDomain AppleICUDateFormatStrings -dict-add 1 -string "y-MM-dd"
 
 # ── Ventanas ───────────────────────────────────────────────────────
 # Doble clic en la barra de titulo llena la pantalla en vez de minimizar.
@@ -1154,12 +1163,14 @@ fi
 # Reduce Transparency: alivio de CPU de WindowServer observado en Sequoia, sin
 # medicion propia en este repo — no se cita un porcentaje que nadie midio. En
 # Tahoe la key quedo rota en 26.1 y 26.2 (dejaba sidebars, headers y titlebars
-# translucidos, con texto superpuesto) y se arreglo en 26.3. Solo esa ventana
-# se salta; de 26.3 en adelante vuelve a ser el alivio de siempre con Liquid
+# translucidos, con texto superpuesto) y se arreglo en 26.3. El guard corta en
+# `-lt 3`, asi que tambien cubre 26.0: nadie publico una prueba de que ahi
+# funcionara, y saltar de mas una preferencia visual no cuesta nada. De 26.3
+# en adelante vuelve a ser el alivio de siempre con Liquid
 # Glass. Notar que activarla deshabilita el selector Clear/Tinted de Ajustes >
 # Apariencia: son mutuamente excluyentes.
 if [ "$MACOS_MAJOR" -eq 26 ] && [ "$MACOS_MINOR" -lt 3 ]; then
-  echo "[SKIP] Reduce Transparency (roto en 26.0-26.2, arreglado en 26.3)"
+  echo "[SKIP] Reduce Transparency (roto en 26.1-26.2, arreglado en 26.3)"
 else
   apply_default "Reduce Transparency (alivio de WindowServer)" com.apple.universalaccess reduceTransparency -bool true
 fi
@@ -1239,6 +1250,7 @@ elif [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] sudo defaults write ...mDNSResponder NoMulticastAdvertisements (solo con --bonjour-off)"
   echo "[DRY] sudo chflags nohidden /Volumes (si esta oculto)"
   echo "[DRY] sudo defaults write ...loginwindow AdminHostInfo HostName (si no es HostName)"
+  echo "[DRY] sudo defaults write ...loginwindow RetriesUntilHint -int 0 (si las pistas de password siguen activas)"
   echo "[DRY] Touch ID para sudo via /etc/pam.d/sudo_local (si hay template y no hay config)"
   echo "[DRY] sudo socketfilterfw --setglobalstate on + --setstealthmode on (si estan apagados)"
   echo "[DRY] sudo socketfilterfw --add /usr/libexec/rapportd + --unblockapp (si falta en --listapps)"
@@ -1380,13 +1392,15 @@ tier_apply() {
   # acepta el write igual.
   tier_apply "Wake por proximidad de dispositivo Apple" pmset -a proximitywake 1
 
-  # Auto-restart tras freeze o corte de luz. Verificado con el cargador
-  # puesto: `pmset -g cap` no lista "autorestart" entre las capacidades de
-  # este M3 Air (si aparece en un iMac). El write de abajo devuelve exito
-  # igual — probable no-op de hardware, mismo patron que askForPassword en
-  # screensaver. Se deja (es inocuo, sudo -a autorestart 1 no rompe nada) pero
-  # no asumas que hizo algo solo porque no fallo.
-  if pmset -g | grep -Eq "^ autorestart[[:space:]]+1$"; then
+  # Auto-restart tras freeze o corte de luz. Solo existe en hardware que lo
+  # soporta: `pmset -g` no lista "autorestart" en un M3 Air (si en un iMac).
+  # Antes el guard solo miraba si el valor era 1, asi que en hardware sin la
+  # capacidad nunca coincidia y el tier reescribia y reportaba [SET] en cada
+  # corrida sobre algo que el write acepta pero no aplica. Ahora se distingue
+  # "no existe la capacidad" de "existe y esta apagada".
+  if ! pmset -g | grep -Eq "^[[:space:]]*autorestart[[:space:]]"; then
+    echo "[--] Auto-restart: este hardware no expone la capacidad, no se escribe"
+  elif pmset -g | grep -Eq "^[[:space:]]*autorestart[[:space:]]+1$"; then
     echo "[SKIP] Auto-restart ya configurado"
   else
     tier_apply "Auto-restart en freeze/corte de luz (pmset)" pmset -a autorestart 1
@@ -1454,6 +1468,18 @@ tier_apply() {
   else
     tier_apply "Login Window muestra HostName" \
       defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+  fi
+
+  # Pistas de password apagadas (CIS Tahoe 2.11.5). La pista la elige el
+  # usuario y termina siendo la password misma o algo que la regala; queda
+  # visible en la pantalla de login sin autenticarse. Es aditivo y no toca
+  # nada del ecosistema. Revertir: sudo defaults delete
+  # /Library/Preferences/com.apple.loginwindow RetriesUntilHint
+  if [ "$(defaults read /Library/Preferences/com.apple.loginwindow RetriesUntilHint 2>/dev/null || echo unset)" = "0" ]; then
+    echo "[SKIP] Pistas de password ya desactivadas"
+  else
+    tier_apply "Pistas de password desactivadas (CIS 2.11.5)" \
+      defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0
   fi
 
   # Touch ID para sudo — mecanismo oficial sudo_local de Apple (Sonoma+),
@@ -1608,6 +1634,17 @@ if csrutil status 2>/dev/null | grep -qi "enabled"; then
 else
   echo "[WARN] SIP disabled — solo se reactiva desde Recovery OS"
 fi
+# Sealed System Volume: el volumen de sistema esta sellado criptograficamente y
+# cada archivo hashea hacia un hash raiz que el arranque verifica. Es lo que
+# vuelve inviable el rootkit clasico que reemplaza binarios del sistema. Va
+# junto a SIP y Gatekeeper porque son la misma familia de control; sin esta
+# linea el sello era lo unico de los tres que nadie miraba.
+if csrutil authenticated-root status 2>/dev/null | grep -qi "enabled"; then
+  echo "[OK] Sealed System Volume (authenticated-root) enabled"
+else
+  echo "[WARN] Sealed System Volume desactivado — el volumen de sistema ya no" \
+    "esta sellado. Solo se re-arma desde Recovery OS."
+fi
 if spctl --status 2>/dev/null | grep -qi "assessments enabled"; then
   echo "[OK] Gatekeeper enabled"
 else
@@ -1648,6 +1685,53 @@ if cupsctl 2>/dev/null | grep -q "_share_printers=0"; then
   echo "[OK] Printer sharing apagado"
 else
   echo "[WARN] Printer sharing: revisar en Ajustes > General > Compartir"
+fi
+# Internet Sharing (CIS Tahoe 2.3.3.7). Sin el dominio, el NAT nunca se
+# habilito. Encenderlo convierte la Mac en router y expone su stack de red al
+# lado no confiable, asi que vale auditarlo aunque casi nunca este puesto.
+if defaults read /Library/Preferences/SystemConfiguration/com.apple.nat NAT 2>/dev/null | grep -q "Enabled = 1"; then
+  echo "[WARN] Internet Sharing activo: apagar en Ajustes > General > Compartir"
+else
+  echo "[OK] Internet Sharing apagado"
+fi
+# Bluetooth Sharing (CIS Tahoe 2.3.3.10). Vive en el dominio por-host; ausente
+# equivale a apagado.
+if [ "$(defaults -currentHost read com.apple.Bluetooth PrefKeyServicesEnabled 2>/dev/null || echo 0)" = "0" ]; then
+  echo "[OK] Bluetooth Sharing apagado"
+else
+  echo "[WARN] Bluetooth Sharing activo: apagar en Ajustes > General > Compartir"
+fi
+# AirPlay Receiver (CIS Tahoe 2.3.1.2). CIS pide apagarlo; aca se usa, asi que
+# se audita en vez de apagarlo. La key existe con el typo de Apple
+# ("Reciever") y vive en el dominio por-host: ausente = encendido.
+#
+# El modo del receptor es lo que decide el riesgo real, no el on/off. Oligo
+# Security documento que la cadena zero-click de AirBorne (CVE-2025-24252 +
+# CVE-2025-24206) solo aplica con el receptor en "Cualquier persona en la
+# misma red" o "Todos"; con "Usuario actual" no aplica y AirPlay desde el
+# propio iPhone sigue andando. El dropdown tiene key legible
+# (AirplayReceiverAdvertising: 1=Usuario actual, 2=Cualquiera en la misma red,
+# 3=Todos, mismo dominio por-host), pero no esta documentada por Apple ni
+# cubierta por CIS: sale de hilos de Jamf Nation. Se lee para reportar el modo
+# y no se escribe, porque una key no soportada puede cambiar de nombre o de
+# semantica en cualquier update y dejarte creyendo que aplicaste algo.
+if [ "$(defaults -currentHost read com.apple.controlcenter AirplayRecieverEnabled 2>/dev/null || echo 1)" = "0" ]; then
+  echo "[OK] AirPlay Receiver apagado"
+else
+  # Ausente = 1 (Usuario actual), que es el default de Apple y el modo seguro.
+  _AIRPLAY_MODE="$(defaults -currentHost read com.apple.controlcenter AirplayReceiverAdvertising 2>/dev/null || echo 1)"
+  case "$_AIRPLAY_MODE" in
+    1) echo "[OK] AirPlay Receiver encendido en 'Usuario actual': la cadena" \
+         "zero-click de AirBorne no aplica en ese modo." ;;
+    2 | 3) echo "[WARN] AirPlay Receiver encendido en modo abierto" \
+         "(AirplayReceiverAdvertising=$_AIRPLAY_MODE): asi queda expuesta la" \
+         "cadena zero-click de AirBorne. Pasar a 'Usuario actual' en Ajustes >" \
+         "General > AirDrop y Handoff." ;;
+    *) echo "[--] AirPlay Receiver encendido, modo desconocido" \
+         "(AirplayReceiverAdvertising=$_AIRPLAY_MODE). Revisar que diga" \
+         "'Usuario actual' en Ajustes > General > AirDrop y Handoff." ;;
+  esac
+  unset _AIRPLAY_MODE
 fi
 _SMB_SHARES="$(sharing -l 2>/dev/null | grep -c "shared:" || true)"
 if [ -n "$_SMB_SHARES" ] && [ "$_SMB_SHARES" -gt 0 ]; then
@@ -1697,6 +1781,33 @@ else
     "una password olvidada = datos perdidos. Ajustes > General > Time Machine."
 fi
 
+# Directorios world-writable en /Library (CIS Tahoe L2 5.1.7). Un `0777` sin
+# sticky bit deja que cualquier proceso escriba o reemplace archivos ahi. El
+# vector no es remoto: es escalada local. Codigo que ya corre como el usuario
+# —un postinstall de npm, una app troyanizada— deja un archivo que despues
+# consume un proceso privilegiado. En una maquina de desarrollo que instala
+# paquetes a diario ese es el camino realista, y es una capa que FileVault, SIP
+# y el firewall no cubren.
+#
+# Los culpables tipicos son instaladores de terceros (impresoras, periféricos),
+# no macOS. Se reporta y no se remedia: bajarle los permisos a un directorio de
+# un vendor puede romper su software, asi que la decision es del usuario.
+#
+# maxdepth 4 acota el costo (medido en 23 ms) y alcanza para los directorios
+# que crean los instaladores. `! -perm -1000` excluye los que tienen sticky
+# bit, donde solo el dueño puede borrar y el riesgo es otro.
+WW_DIRS="$(find /Library -maxdepth 4 -type d -perm -0002 ! -perm -1000 2>/dev/null || true)"
+if [ -z "$WW_DIRS" ]; then
+  echo "[OK] Sin directorios world-writable en /Library"
+else
+  echo "[WARN] $(printf '%s\n' "$WW_DIRS" | wc -l | tr -d ' ') directorio(s)" \
+    "world-writable en /Library (vector de escalada local):"
+  printf '%s\n' "$WW_DIRS" | sed 's/^/         /'
+  echo "         Revisar el dueño de cada uno antes de tocarlo; se endurece con" \
+    "'sudo chmod o-w <dir>', que puede romper el software del vendor."
+fi
+unset WW_DIRS
+
 # Espacio libre. Se lee de `diskutil apfs list` y no de `df`: df reporta contra
 # el snapshot sellado del sistema y da un numero que no es el que el kernel le
 # entrega a una app. El umbral de 20% es heuristica de comunidad para dejar
@@ -1705,10 +1816,17 @@ fi
 # Se extrae el que tiene el signo de porcentaje, no una posicion fija. Se usa
 # grep -oE y no awk con match(s,r,arr): esa forma de match es de gawk y macOS
 # trae BSD awk, donde falla.
+#
+# El `|| true` no es decorativo: sin el, cualquier maquina donde `diskutil apfs
+# list` no imprima "Capacity Not Allocated" hacia que el grep fallara y, con
+# `set -euo pipefail`, la asignacion mataba el script entero justo aca. Eso se
+# llevaba puesto el Tier 3 completo y los killall finales, en silencio, y
+# ademas volvia inalcanzable la rama [-] de mas abajo que existe precisamente
+# para ese caso.
 FREE_PCT="$(diskutil apfs list 2>/dev/null |
   grep -m1 "Capacity Not Allocated" |
   grep -oE '[0-9]+\.?[0-9]*% free' |
-  grep -oE '^[0-9]+')"
+  grep -oE '^[0-9]+' || true)"
 if [ -z "$FREE_PCT" ]; then
   echo "[--] Espacio libre: no se pudo leer de diskutil"
 elif [ "$FREE_PCT" -lt 20 ]; then
@@ -1722,9 +1840,10 @@ fi
 # firewall importa en esta maquina o no: con cero listeners el exposure es
 # teorico, con listeners reales el firewall y el stealth mode hacen trabajo.
 # Se mide en vez de asumirse. ControlCenter en 5000/7000 = AirPlay Receiver,
-# que es la superficie de AirBorne (17 CVEs, CVE-2025-24252 es RCE zero-click
-# en la misma red) y ademas se come el puerto 5000 que usa medio mundo para
-# desarrollo. Es solo lectura: apagarlo es decision del usuario.
+# que es la superficie de AirBorne (23 fallas reportadas por Oligo Security;
+# el RCE zero-click en la misma red sale de encadenar CVE-2025-24252 con
+# CVE-2025-24206, el bypass del click de aceptacion) y ademas se come el
+# puerto 5000 que usa medio mundo para desarrollo. Es solo lectura.
 # `+c 0` desactiva el truncado de nombres a 9 caracteres, que convertia
 # ControlCenter en "ControlCe". Se invoca lsof UNA vez y se reusa: con dos
 # llamadas, el resumen y el test de AirPlay pueden discrepar si un proceso
@@ -1740,21 +1859,27 @@ if [ -z "$LISTENERS" ]; then
   echo "[OK] Sin servicios escuchando en todas las interfaces"
 else
   echo "[--] Escuchando en todas las interfaces: ${LISTENERS}"
-  # No se avisa por AirPlay Receiver (ControlCenter en 5000/7000): es parte del
-  # ecosistema y aca se usa. Vale saber que existio AirBorne (17 CVEs, con
-  # CVE-2025-24252 como RCE zero-click en la misma red), parchado desde 15.4 —
-  # por eso el firewall con stealth mode importa en esta maquina y no es
-  # decorativo. Si alguna vez choca el puerto 5000 con un server local, la
-  # causa es esta y se apaga en Ajustes > General > AirDrop y Handoff.
+  # AirPlay Receiver (ControlCenter en 5000/7000) ya tiene su propio chequeo
+  # mas arriba, con la recomendacion de modo. Aca solo vale el contexto:
+  # AirBorne fueron 23 fallas reportadas por Oligo Security y el RCE zero-click
+  # en la misma red salia de encadenar CVE-2025-24252 con CVE-2025-24206;
+  # parchado desde 15.4 — por eso el firewall con stealth mode importa en esta
+  # maquina y no es decorativo. Si alguna vez choca el puerto 5000 con un
+  # server local, la causa es esta y se apaga en Ajustes > General > AirDrop y
+  # Handoff.
 fi
 
 # ══════════════════════════════════════════════════════════════════
 # TIER 3 — exclusiones de indexado sobre el arbol de desarrollo
 # ══════════════════════════════════════════════════════════════════
-# La ganancia real y medible en una maquina de desarrollo: Sequoia tiene una
-# regresion documentada de indexado de Spotlight con CPU/IO altos, y el arbol
-# de desarrollo (node_modules, builds, DerivedData) es lo que peor se
-# comporta. `tmutil disablelocal` ya no existe desde High Sierra — esto es
+# La ganancia real en una maquina de desarrollo, justificada por el tamaño del
+# arbol y no por un bug: un solo node_modules ronda 50.000-200.000 archivos
+# chicos, y cada npm install, checkout grande, build a DerivedData o extraccion
+# de imagen de Docker dispara una rafaga de FSEvents que Spotlight persigue con
+# varios mdworker en paralelo. (Este comentario afirmaba una "regresion
+# documentada" de Spotlight en Sequoia: no hay release note ni radar de Apple
+# que la respalde, asi que se declara por lo que es.)
+# `tmutil disablelocal` ya no existe desde High Sierra — esto es
 # el reemplazo real. La parte de Spotlight (.metadata_never_index) no
 # requiere sudo; la de Time Machine si — `tmutil addexclusion` sale con
 # "requires root privileges" sin el (verificado, exit 80), asi que se salta
@@ -1772,9 +1897,21 @@ DEV_EXCLUDE_PATHS=(
   "$HOME/Library/Containers/com.docker.docker"
 )
 
+# Las exclusiones de Time Machine que falten se juntan aca y se aplican en UNA
+# sola invocacion de sudo al final del loop. Antes cada ruta llamaba a `sudo
+# tmutil` por su cuenta y, con timestamp_timeout=0 instalado, eso son N
+# prompts de password en la primera corrida. El guard `tmutil isexcluded` no
+# necesita privilegios, asi que decidir que falta sigue siendo gratis.
+TM_PENDING=()
+# Rutas que todavia no existen. En una Mac recien formateada son casi todas, y
+# saltarlas en silencio deja al script sin su unica ganancia de rendimiento
+# medible. Se cuentan para avisar al final que hay que volver a correrlo.
+MISSING_DEV_PATHS=0
+
 for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   if [ ! -e "$p" ]; then
     echo "[SKIP] $p no existe"
+    MISSING_DEV_PATHS=$((MISSING_DEV_PATHS + 1))
     continue
   fi
 
@@ -1793,17 +1930,48 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   if [ "$NO_SUDO" -eq 1 ]; then
     echo "[SKIP] Time Machine excluye $p (--no-sudo)"
   elif [ "$DRY_RUN" -eq 1 ]; then
-    echo "[DRY] sudo tmutil addexclusion -p $p"
+    echo "[DRY] sudo tmutil addexclusion -p $p (agrupado en una sola sesion sudo)"
   elif tmutil isexcluded "$p" 2>/dev/null | grep -q "\[Excluded\]"; then
     echo "[SKIP] Time Machine ya excluye $p"
   else
-    if sudo tmutil addexclusion -p "$p" >/dev/null 2>&1; then
-      echo "[SET] Time Machine excluye $p"
-    else
-      record_failure "Time Machine excluye $p"
-    fi
+    TM_PENDING+=("$p")
   fi
 done
+
+# Bash 3.2 con `set -u` revienta al expandir un array vacio, de ahi el guard
+# por cantidad. La sesion root sale con la cantidad de fallos, igual que el
+# tier 2, para que el padre los sume en vez de perderlos.
+if [ "${#TM_PENDING[@]}" -gt 0 ]; then
+  echo "=== Time Machine: ${#TM_PENDING[@]} exclusion(es) por aplicar (un solo sudo) ==="
+  set +e
+  sudo bash -s -- "${TM_PENDING[@]}" <<'TM_EOF'
+set -u
+TM_FAILURES=0
+for tm_path in "$@"; do
+  if tmutil addexclusion -p "$tm_path" >/dev/null 2>&1; then
+    echo "[SET] Time Machine excluye $tm_path"
+  else
+    TM_FAILURES=$((TM_FAILURES + 1))
+    echo "[FAIL] Time Machine excluye $tm_path"
+  fi
+done
+exit "$TM_FAILURES"
+TM_EOF
+  _tm_rc=$?
+  set -e
+  if [ "$_tm_rc" -gt 100 ]; then
+    record_failure "Exclusiones de Time Machine (sesion root termino con rc=$_tm_rc)"
+  else
+    DEFAULTS_FAILURES=$((DEFAULTS_FAILURES + _tm_rc))
+  fi
+  unset _tm_rc
+fi
+
+if [ "$MISSING_DEV_PATHS" -gt 0 ]; then
+  echo "[!!] ${MISSING_DEV_PATHS} ruta(s) de desarrollo todavia no existen, asi" \
+    "que quedaron sin excluir de Spotlight y Time Machine. Volve a correr" \
+    "este script despues de clonar los repos y correr los toolchains."
+fi
 
 # Snapshots locales huerfanos: solo se reportan, no se borra nada. El
 # reemplazo real de `tmutil disablelocal` (removido en High Sierra) es
