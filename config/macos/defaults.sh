@@ -1281,7 +1281,7 @@ else
     printf 'BONJOUR_OFF=%q\n' "$BONJOUR_OFF"
     printf 'TIER_USER=%q\n' "$(id -un)"
     printf 'FIREWALL_CLI=%q\n' "$FIREWALL_CLI"
-  } > "$_TIER_ENV"
+  } >"$_TIER_ENV"
   # set +e: el exit code de la sesion root se procesa a mano abajo; con
   # set -e activo un tier con fallos abortaria el script en vez de sumar.
   set +e
@@ -1722,14 +1722,14 @@ else
   _AIRPLAY_MODE="$(defaults -currentHost read com.apple.controlcenter AirplayReceiverAdvertising 2>/dev/null || echo 1)"
   case "$_AIRPLAY_MODE" in
     1) echo "[OK] AirPlay Receiver encendido en 'Usuario actual': la cadena" \
-         "zero-click de AirBorne no aplica en ese modo." ;;
+      "zero-click de AirBorne no aplica en ese modo." ;;
     2 | 3) echo "[WARN] AirPlay Receiver encendido en modo abierto" \
-         "(AirplayReceiverAdvertising=$_AIRPLAY_MODE): asi queda expuesta la" \
-         "cadena zero-click de AirBorne. Pasar a 'Usuario actual' en Ajustes >" \
-         "General > AirDrop y Handoff." ;;
+      "(AirplayReceiverAdvertising=$_AIRPLAY_MODE): asi queda expuesta la" \
+      "cadena zero-click de AirBorne. Pasar a 'Usuario actual' en Ajustes >" \
+      "General > AirDrop y Handoff." ;;
     *) echo "[--] AirPlay Receiver encendido, modo desconocido" \
-         "(AirplayReceiverAdvertising=$_AIRPLAY_MODE). Revisar que diga" \
-         "'Usuario actual' en Ajustes > General > AirDrop y Handoff." ;;
+      "(AirplayReceiverAdvertising=$_AIRPLAY_MODE). Revisar que diga" \
+      "'Usuario actual' en Ajustes > General > AirDrop y Handoff." ;;
   esac
   unset _AIRPLAY_MODE
 fi

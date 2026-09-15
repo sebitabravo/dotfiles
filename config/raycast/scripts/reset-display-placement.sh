@@ -12,15 +12,15 @@ sleep 1 # Give displays time to settle after resolution change
 
 # Monitor IDs (from `displayplacer list`)
 MAIN="2E42F9AB-6187-497A-9D75-4646E97966C3" # 24" main display at origin (0,0)
-MSI="A7D2E202-010B-4530-9455-F164350EDA38" # 27" secondary, right of MAIN
+MSI="A7D2E202-010B-4530-9455-F164350EDA38"  # 27" secondary, right of MAIN
 
 # Expected dual layouts
 EXPECTED_1440P_ORIGIN="(1920,-180)"
 EXPECTED_1440P_HZ="72" # MSI hz in 1440p mode
 EXPECTED_1080P_ORIGIN="(1920,0)"
-EXPECTED_1080P_HZ="60" # MSI hz in 1080p mode
+EXPECTED_1080P_HZ="60"       # MSI hz in 1080p mode
 EXPECTED_1440P_MAIN_HZ="120" # MAIN hz in 1440p mode
-EXPECTED_1080P_MAIN_HZ="60" # MAIN hz in 1080p mode
+EXPECTED_1080P_MAIN_HZ="60"  # MAIN hz in 1080p mode
 
 apply_dual_1440p() {
   /opt/homebrew/bin/displayplacer \
