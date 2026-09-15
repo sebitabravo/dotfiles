@@ -18,7 +18,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  install-and-macos-checks:
+  # La matriz reporta sus checks como '<job> (macos-15)' y '<job>
+  # (macos-latest)', nunca con el nombre pelado. La proteccion de main exige
+  # el contexto 'install-and-macos-checks', asi que la matriz corre con otro
+  # nombre y este gate publica el nombre que la proteccion espera. Sin el
+  # gate, el contexto requerido queda en "Expected" para siempre y ningun PR
+  # se puede mergear.
+  macos-matrix:
     # defaults.sh promete correr en Sequoia y en Tahoe, con ramas distintas por
     # version (springboard-* y Reduce Transparency). Un solo runner no prueba
     # esa promesa: la matriz cubre las dos majors soportadas. macos-latest
@@ -46,3 +52,15 @@ jobs:
 
       - name: shellcheck config/macos
         run: shellcheck config/macos/defaults.sh .github/verify.sh
+
+  install-and-macos-checks:
+    needs: [macos-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: fail unless the whole matrix passed
+        run: |
+          if [ "${{ needs.macos-matrix.result }}" != "success" ]; then
+            echo "macos-matrix result: ${{ needs.macos-matrix.result }}"
+            exit 1
+          fi
