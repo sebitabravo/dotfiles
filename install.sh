@@ -522,6 +522,28 @@ install_macos_prerequisites() {
     return 1
   fi
 
+  # El git de los CLT/Xcode no corre (ni siquiera --version) sin aceptar la
+  # licencia, y sin git fallan Homebrew y el clone de Powerlevel10k a mitad
+  # del bootstrap con un error criptico. Se detecta probando git en vez de
+  # leer plists internos de Apple, que cambian entre versiones de macOS.
+  # En dry-run no se toca git: el contrato del modo plan es cero subprocesos
+  # con efectos (lo exige el test 'avoid real installers'), solo se anuncia.
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '%s\n' '  DRY  sudo xcodebuild -license accept  # licencia Xcode (git no corre)'
+  elif git --version >/dev/null 2>&1; then
+    printf '%s\n' '  SKIP   licencia Xcode (git ya corre)'
+  else
+    printf '%s\n' '  licencia Xcode pendiente: se pide sudo para aceptarla'
+    if ! sudo xcodebuild -license accept; then
+      printf '%s\n' '  ERROR  no se pudo aceptar la licencia de Xcode; ejecuta sudo xcodebuild -license a mano y volve a ejecutar ./install.sh' >&2
+      return 1
+    fi
+    git --version >/dev/null 2>&1 || {
+      printf '%s\n' '  ERROR  git sigue sin correr tras aceptar la licencia; completa el flujo pendiente y volve a ejecutar ./install.sh' >&2
+      return 1
+    }
+  fi
+
   prepare_homebrew_path
   if brew_exists; then
     printf '%s\n' '  SKIP   Homebrew (ya existe brew)'
