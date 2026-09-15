@@ -41,7 +41,6 @@ brew "exiftool"
 brew "c2patool"
 brew "poppler"
 brew "shellcheck"
-brew "wabt"
 brew "wget"
 brew "btop"
 brew "fastfetch"
@@ -55,7 +54,6 @@ brew "git-filter-repo"
 
 brew "ffuf"
 brew "nuclei"
-brew "nikto"
 brew "gitleaks"
 # semgrep se instala en el Python administrado por pyenv; la formula Homebrew
 # arrastra python@3.14 y duplicaria el runtime del usuario.
