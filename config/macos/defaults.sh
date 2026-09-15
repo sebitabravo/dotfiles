@@ -1849,7 +1849,12 @@ fi
 # llamadas, el resumen y el test de AirPlay pueden discrepar si un proceso
 # aparece o muere entre medio. La cantidad nunca se fija en el codigo, varia
 # con lo que este corriendo.
-LISTEN_RAW="$(lsof +c 0 -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk '$9 ~ /^\*:/')"
+# El estado de salida de lsof depende de los datos: devuelve distinto de cero
+# cuando ningun socket coincide (runners de CI pelados) o la tabla no se puede
+# leer. Sin esta guarda, ese estado dispara 'set -euo pipefail' y aborta la
+# auditoria antes de imprimir el resumen agrupado de fallos, lo que rompe el
+# contrato de defaults-failure-propagation. La salida vacia ya audita limpio.
+LISTEN_RAW="$(lsof +c 0 -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk '$9 ~ /^\*:/' || true)"
 # lsof escapa los espacios del nombre como \x20 ("Stream\x20Deck"). Se
 # desescapan y la lista va separada por comas, porque con nombres que tienen
 # espacios una lista separada por espacios es ambigua.
