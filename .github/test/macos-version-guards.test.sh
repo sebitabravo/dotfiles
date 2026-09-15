@@ -72,18 +72,18 @@ assert_branch() {
 }
 
 #              version   springboard  reduceTransparency
-assert_branch  15.7.9    written      written
-assert_branch  26        skipped      skipped
-assert_branch  26.0      skipped      skipped
-assert_branch  26.2      skipped      skipped
-assert_branch  26.3      skipped      written
-assert_branch  26.6.2    skipped      written
+assert_branch 15.7.9 written written
+assert_branch 26 skipped skipped
+assert_branch 26.0 skipped skipped
+assert_branch 26.2 skipped skipped
+assert_branch 26.3 skipped written
+assert_branch 26.6.2 skipped written
 # macOS 27 Golden Gate. The broken-transparency window was a 26.x-only bug, so
 # 27 must write the key again; a guard written as ">= 26" instead of "== 26"
 # would silently keep skipping it forever.
-assert_branch  27        skipped      written
-assert_branch  27.0      skipped      written
-assert_branch  27.2.1    skipped      written
+assert_branch 27 skipped written
+assert_branch 27.0 skipped written
+assert_branch 27.2.1 skipped written
 
 if [ "$FAILURES" -gt 0 ]; then
   printf 'FAIL: %s macOS version guard assertion(s) failed\n' "$FAILURES" >&2
