@@ -129,10 +129,6 @@ php artisan sail:install
 
 ### Gentle-AI
 
-Pi is intentionally excluded from `--agents`: gentle-ai's own docs state
-"Pi remains owned by `gentle-pi`" (gentle-shell), which configures it
-separately.
-
 ```bash
 gentle-ai install \
   --scope global \
@@ -141,6 +137,34 @@ gentle-ai install \
   --sdd-mode multi \
   --agents opencode,gemini-cli,cursor,codex,antigravity,hermes,vscode-copilot,kilocode,kiro-ide,claude-code
 ```
+
+### Gentle-Shell (gentle-pi)
+
+```bash
+pi install npm:gentle-pi@latest
+pi install npm:pi-intercom@latest
+pi install npm:gentle-engram@latest
+pi install npm:pi-web-access@latest
+pi install npm:pi-lens@latest
+pi install npm:@juicesharp/rpiv-ask-user-question@latest
+```
+
+Dentro de una sesión `pi`, una sola vez:
+
+```text
+/gentle:status
+/gentle:sdd-preflight
+/gentle:review-mode enable
+/gentle:background-subagents enable
+/gentle:models
+/gentle:profiles
+/gentle:persona
+/gentle:banner
+/skill-registry:refresh
+```
+
+No instalar `npm:pi-subagents-j0k3r` ni `npm:@juicesharp/rpiv-todo`: deprecados,
+reemplazados por `subagent_*` y `todo` nativos de gentle-pi.
 
 ### Settings Apps
 
