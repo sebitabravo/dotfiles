@@ -129,13 +129,17 @@ php artisan sail:install
 
 ### Gentle-AI
 
+Pi is intentionally excluded from `--agents`: gentle-ai's own docs state
+"Pi remains owned by `gentle-pi`" (gentle-shell), which configures it
+separately.
+
 ```bash
 gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
   --sdd-mode multi \
-  --agents opencode,gemini-cli,cursor,codex,antigravity,hermes,vscode-copilot,kilocode,kiro-ide,claude-code,pi
+  --agents opencode,gemini-cli,cursor,codex,antigravity,hermes,vscode-copilot,kilocode,kiro-ide,claude-code
 ```
 
 ### Settings Apps
