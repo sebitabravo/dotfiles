@@ -885,7 +885,6 @@ REQUIRED_FILES=(
   config/git/.gitignore_global
   config/herdr/config.toml
   config/btop/btop.conf
-  config/atuin/config.toml
   config/vscode/settings.json
   config/vscode/keybindings.json
   config/vscode/mcp.json
@@ -895,7 +894,6 @@ REQUIRED_DIRS=(
   git-hooks
   config/ghostty
   config/fastfetch
-  config/atuin/themes
   config/raycast/scripts
   config/claude/skills
   config/claude/hooks
@@ -1131,8 +1129,6 @@ echo "terminal"
 copy_dir config/ghostty "$HOME/.config/ghostty"
 copy config/herdr/config.toml "$HOME/.config/herdr/config.toml"
 copy config/btop/btop.conf "$HOME/.config/btop/btop.conf"
-copy config/atuin/config.toml "$HOME/.config/atuin/config.toml"
-copy_dir config/atuin/themes "$HOME/.config/atuin/themes"
 
 echo "raycast"
 copy_dir config/raycast/scripts "$HOME/.raycast/scripts"
