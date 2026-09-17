@@ -130,17 +130,14 @@ php artisan sail:install
 ### Gentle-AI
 
 ```bash
+# --persona neutral: registro neutro, sin voseo rioplatense (gentleman es
+# la variante voseo; "gentleman-neutral-artifacts" se remapea a neutral).
 # Runtimes sin config propia en este repo:
 gentle-ai install \
   --scope global \
   --preset full-gentleman \
-  --persona gentleman \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
-
-# Claude Code: correr DESPUÉS de ./install.sh, para que la capa de gentle-ai
-# quede sobre la base versionada por este repo. El instalador la re-sincroniza
-# en cada corrida con `gentle-ai sync --agent claude-code`.
-gentle-ai install --agent claude-code
+  --persona neutral \
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
 ```
 
 ### Settings Apps
@@ -148,7 +145,7 @@ gentle-ai install --agent claude-code
 ```bash
 vercel login
 gh auth login
-engram cloud status   # verificar la sincronización de la memoria cloud
+engram cloud status
 ```
 
 ---
