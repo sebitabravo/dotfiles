@@ -130,14 +130,12 @@ php artisan sail:install
 ### Gentle-AI
 
 ```bash
-# --persona neutral: registro neutro, sin voseo rioplatense (gentleman es
-# la variante voseo; "gentleman-neutral-artifacts" se remapea a neutral).
-# Runtimes sin config propia en este repo:
 gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
+  --sdd-mode multi \
+  --agents opencode,gemini-cli,cursor,codex,antigravity,hermes,vscode-copilot,kilocode,kiro-ide,claude-code,pi
 ```
 
 ### Settings Apps
