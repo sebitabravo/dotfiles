@@ -119,6 +119,7 @@ npm install --global --ignore-scripts @playwright/cli@latest
 ```bash
 pyenv install 3.11.16
 pyenv global 3.11.16
+pyenv exec python -m pip install -r config/claude/agent-tools/requirements.txt
 ```
 
 ### instalar Sail
@@ -135,7 +136,7 @@ gentle-ai install \
   --preset full-gentleman \
   --persona neutral \
   --sdd-mode multi \
-  --agents opencode,gemini-cli,cursor,codex,antigravity,hermes,vscode-copilot,kilocode,kiro-ide,claude-code
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
 ```
 
 ### Gentle-Shell (gentle-pi)
@@ -163,8 +164,20 @@ Dentro de una sesión `pi`, una sola vez:
 /skill-registry:refresh
 ```
 
-No instalar `npm:pi-subagents-j0k3r` ni `npm:@juicesharp/rpiv-todo`: deprecados,
-reemplazados por `subagent_*` y `todo` nativos de gentle-pi.
+### Herdr
+
+```bash
+herdr plugin install smarzban/herdr-file-viewer --yes
+herdr plugin install persiyanov/herdr-reviewr --yes
+herdr integration install codex
+herdr integration install claude
+herdr integration install opencode
+herdr integration install cursor
+herdr integration install antigravity-cli
+herdr integration install copilot
+herdr integration install kilo
+herdr integration install pi
+```
 
 ### Settings Apps
 
@@ -172,6 +185,9 @@ reemplazados por `subagent_*` y `todo` nativos de gentle-pi.
 vercel login
 gh auth login
 engram cloud status
+agy
+kilo auth login
+pi auth check
 ```
 
 ---
