@@ -39,18 +39,10 @@ for relative in \
   hooks/handoff-session-start.py \
   hooks/compact-resume.py \
   hooks/lib/test-runner.sh \
-  scripts/openrouter-api-key.sh \
   skills/handoff/SKILL.md \
   settings.json; do
   mkdir -p "$RUNTIME/$(dirname "$relative")"
   cp -p "$ROOT/config/claude/$relative" "$RUNTIME/$relative"
-done
-
-for overlay in \
-  deepseek.settings.json \
-  ollama.settings.json \
-  openrouter.settings.json; do
-  cp -p "$ROOT/config/claude/$overlay" "$RUNTIME/$overlay"
 done
 
 cp -p "$ROOT/config/herdr/config.toml" "$REPO/config/herdr/config.toml"
@@ -127,7 +119,6 @@ grep -q 'DOCTOR PASS' "$OUTPUT" || fail 'doctor did not report PASS'
 grep -q 'Herdr config parity' "$OUTPUT" || fail 'doctor omitted Herdr parity'
 grep -q 'Engram' "$OUTPUT" || fail 'doctor omitted Engram'
 grep -q 'Claude harness parity' "$OUTPUT" || fail 'doctor omitted Claude parity'
-grep -q 'Claude provider parity' "$OUTPUT" || fail 'doctor omitted provider parity'
 grep -q 'Engram cloud health' "$OUTPUT" || fail 'doctor omitted structured Engram health'
 
 [ "$before_user" = "$(shasum -a 256 "$HOME_DIR/.claude.json" | awk '{print $1}')" ] ||

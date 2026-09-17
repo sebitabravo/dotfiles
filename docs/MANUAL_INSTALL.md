@@ -68,7 +68,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### IA & Coding Agents
 
-- [ ] **Ollama** - <https://ollama.com/download/mac>
+- [ ] **LM Studio** - <https://lmstudio.ai>
 
 ### Browsers
 

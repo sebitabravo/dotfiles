@@ -15,13 +15,13 @@ fail() {
 mkdir -p "$RUNTIME"
 
 initial_json=$(CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --json)
-printf '%s' "$initial_json" | jq -e '.parity == false and .failures == 18' >/dev/null || fail 'un runtime vacío debe reportar dieciocho diferencias'
+printf '%s' "$initial_json" | jq -e '.parity == false and .failures == 17' >/dev/null || fail 'un runtime vacío debe reportar diecisiete diferencias'
 
 if CLAUDE_RUNTIME_DIR="$RUNTIME" "$SCRIPT" --strict >/dev/null 2>&1; then
   fail '--strict debe fallar con runtime incompleto'
 fi
 
-for relative in hooks/secret-detect.sh hooks/user-prompt-dispatcher.sh hooks/validate-safe-ops.sh hooks/quality-gate.sh hooks/protect-tests.sh hooks/protect-codegraph-tracking.sh hooks/privacy-review.sh hooks/detect-debug.sh hooks/handoff-stop.sh hooks/check-auto-save-stash.sh hooks/handoff-session-start.py hooks/compact-resume.py hooks/lib/test-runner.sh scripts/openrouter-api-key.sh skills/handoff/SKILL.md settings.json; do
+for relative in hooks/secret-detect.sh hooks/user-prompt-dispatcher.sh hooks/validate-safe-ops.sh hooks/quality-gate.sh hooks/protect-tests.sh hooks/protect-codegraph-tracking.sh hooks/privacy-review.sh hooks/detect-debug.sh hooks/handoff-stop.sh hooks/check-auto-save-stash.sh hooks/handoff-session-start.py hooks/compact-resume.py hooks/lib/test-runner.sh skills/handoff/SKILL.md settings.json; do
   mkdir -p "$RUNTIME/$(dirname "$relative")"
   cp "$ROOT/config/claude/$relative" "$RUNTIME/$relative"
 done

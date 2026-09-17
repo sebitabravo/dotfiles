@@ -115,7 +115,6 @@ check_file hooks/check-auto-save-stash.sh
 check_file hooks/handoff-session-start.py
 check_file hooks/compact-resume.py
 check_file hooks/lib/test-runner.sh
-check_file scripts/openrouter-api-key.sh
 check_content_file skills/handoff/SKILL.md
 
 hook_projection() {

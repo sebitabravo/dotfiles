@@ -34,7 +34,6 @@ fi
 # Claude deba cargar desde ~/.claude. Mantener la lista explícita evita que una
 # futura suite vuelva a contaminar el árbol de runtime por accidente.
 TEST_ONLY_SCRIPTS=(
-  check-provider-runtime-parity.sh
   check-runtime-parity.sh
   check-skill-deps.sh
   doctor.sh
@@ -70,7 +69,6 @@ SUITES=(
   .github/test/defaults-failure-propagation.test.sh
   .github/test/macos-version-guards.test.sh
   .github/test/check-runtime-parity.test.sh
-  .github/test/check-provider-runtime-parity.test.sh
   .github/test/test-runner.test.sh
   .github/test/hooks-edge-cases.test.sh
   .github/test/smoke-claude-hook-engine.sh
@@ -90,25 +88,15 @@ printf '== JSON manifests\n'
 jq empty "$CLAUDE_DIR/settings.json"
 jq empty "$CLAUDE_DIR/skills-lock.json"
 
-printf '== provider overlays\n'
-for overlay in \
-  deepseek.settings.json \
-  ollama.settings.json \
-  openrouter.settings.json; do
-  # Upper bound is a sanity check against typos (an extra digit), not a
-  # policy cap. 2000000 leaves headroom for real long-context values without
-  # disabling the check.
-  jq -e '
-    (.apiKeyHelper | type == "string" and length > 0)
-    and (.env.ANTHROPIC_BASE_URL | type == "string" and length > 0)
-    and (.env.ANTHROPIC_DEFAULT_FABLE_MODEL | type == "string" and length > 0)
-    and (.env.ANTHROPIC_DEFAULT_OPUS_MODEL | type == "string" and length > 0)
-    and (.env.ANTHROPIC_DEFAULT_SONNET_MODEL | type == "string" and length > 0)
-    and (.env.ANTHROPIC_DEFAULT_HAIKU_MODEL | type == "string" and length > 0)
-    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) >= 100000)
-    and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 2000000)
-  ' "$CLAUDE_DIR/$overlay" >/dev/null
-done
+# El settings base fija deliberadamente estos límites globales; el gate verifica
+# presencia y rangos sanos (typos), no una política de valores.
+jq -e '
+  (.env.CLAUDE_CODE_MAX_OUTPUT_TOKENS | tonumber) > 0
+  and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) >= 100000)
+  and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 2000000)
+  and (.env.CLAUDE_CODE_EFFORT_LEVEL | type == "string" and length > 0)
+  and ((.env.MAX_THINKING_TOKENS | tonumber) > 0)
+' "$CLAUDE_DIR/settings.json" >/dev/null
 
 printf '== skill dependencies\n'
 bash "$TEST_DIR/check-skill-deps.sh" >/dev/null

@@ -38,7 +38,6 @@ trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/.github/test" "$TMP/config"
 ln -s -- "$ROOT/config/claude" "$TMP/config/claude"
 for tool in \
-  check-provider-runtime-parity.sh \
   check-runtime-parity.sh \
   check-skill-deps.sh \
   doctor.sh \

@@ -868,9 +868,6 @@ CLAUDE_FILES=(
   config/claude/tweakcc-theme.json
   config/claude/skill-registry.md
   config/claude/settings.json
-  config/claude/deepseek.settings.json
-  config/claude/ollama.settings.json
-  config/claude/openrouter.settings.json
   # settings.json consolidates UserPromptSubmit into this dispatcher. Keep it
   # in the preflight so a clean clone cannot deploy a settings file that
   # references missing code.
@@ -1159,7 +1156,7 @@ copy_dir_additive config/claude/skills "$HOME/.claude/skills"
 # Esta config dejo de versionar subagentes propios: los built-in (Explore, Plan,
 # general-purpose) cubren la delegacion. ~/.claude/agents/ queda para gentle-ai,
 # que instala ahi sus subagentes de SDD y review; este instalador no lo toca.
-# Claude Code y los overlays de proveedores leen estos archivos desde runtime.
+# Claude Code lee estos archivos desde runtime.
 # Se copian (no se enlazan) porque Claude Code puede reescribir settings.json y
 # las credenciales se resuelven por helper externo, nunca desde estos archivos.
 for source_path in "${CLAUDE_FILES[@]}"; do
