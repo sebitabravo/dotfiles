@@ -43,7 +43,7 @@ carpeta (`CLAUDE_DIR="$PWD/config/claude"`):
 
 ```bash
 mkdir -p "$HOME/.claude"
-for dir in hooks rules templates scripts agent-tools; do
+for dir in hooks rules templates agent-tools; do
   rsync -a --delete --exclude='__pycache__' --exclude='.DS_Store' \
     --exclude='node_modules' --exclude='*.test.sh' --exclude='*.backup.*' \
     "$CLAUDE_DIR/$dir/" "$HOME/.claude/$dir/"

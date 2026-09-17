@@ -137,7 +137,6 @@ alias mkdir="mkdir -p"
 alias cat='bat --paging=never'
 alias less='bat'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
-alias rdd="$HOME/.claude/scripts/rdd.sh"
 # zoxide provee 'z' (jump por frecency) y 'zi' (seleccion interactiva) via init.
 # NO redefinir 'z' como alias: la expansion de alias gana sobre la funcion y rompe el jump.
 

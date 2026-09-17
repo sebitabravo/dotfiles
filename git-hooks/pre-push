@@ -43,7 +43,6 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
         echo "   NO deben subirse al remote. Para limpiar:" >&2
         echo "" >&2
         echo "   git rebase -i HEAD~N  # squash o drop los auto-save" >&2
-        echo "   # o usa: ~/.claude/scripts/squash-auto-saves.sh" >&2
         echo "" >&2
         BLOCKED=1
     fi

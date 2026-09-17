@@ -899,7 +899,6 @@ REQUIRED_DIRS=(
   config/claude/hooks
   config/claude/rules
   config/claude/templates
-  config/claude/scripts
   config/claude/agent-tools
 )
 
@@ -1144,7 +1143,7 @@ copy config/vscode/mcp.json "$VSCODE/mcp.json"
 
 echo "claude"
 # Directorios de los que este repo es dueño exclusivo: --delete completo.
-for d in hooks rules templates scripts agent-tools; do
+for d in hooks rules templates agent-tools; do
   copy_dir "config/claude/$d" "$HOME/.claude/$d"
 done
 # Directorios compartidos con gentle-ai: sincronizacion aditiva por entrada.
