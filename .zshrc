@@ -137,7 +137,6 @@ alias mkdir="mkdir -p"
 alias cat='bat --paging=never'
 alias less='bat'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
-alias rdd="$HOME/.claude/scripts/rdd.sh"
 # zoxide provee 'z' (jump por frecency) y 'zi' (seleccion interactiva) via init.
 # NO redefinir 'z' como alias: la expansion de alias gana sobre la funcion y rompe el jump.
 
@@ -149,7 +148,7 @@ pyenv() {
 }
 
 # Profiling (opt-in): descomenta `zmodload zsh/zprof` arriba y `zprof` al final para medir startup
-# Recursos: zoxide/fzf/atuin son los 3 evals pesados; ya estan guardados con command -v
+# Recursos: zoxide/fzf son los 2 evals pesados; ya estan guardados con command -v
 # y brew shellenv se deduplica via path_promote/setup_user_path (no doble eval).
 
 # Zoxide — guarded (~5ms)
@@ -157,20 +156,13 @@ if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init zsh)"
 fi
 
-# fzf — fuzzy finder (Ctrl+T files, Alt+C dirs)
-# fd as backend: faster, gitignore-aware. Ctrl-R queda para Atuin (mas abajo).
+# fzf — fuzzy finder (Ctrl+T files, Alt+C dirs, Ctrl-R history)
+# fd as backend: faster, gitignore-aware.
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 if command -v fzf >/dev/null 2>&1; then
   source <(fzf --zsh) 2>/dev/null
-fi
-
-# Atuin — historial de shell buscable (Ctrl-R). Se inicializa despues de fzf
-# a proposito: los dos bindean Ctrl-R y el ultimo init gana. fzf conserva
-# Ctrl-T/Alt-C sin cambios.
-if command -v atuin >/dev/null 2>&1; then
-  eval "$(atuin init zsh)"
 fi
 
 # Alias Tunnel pinggy

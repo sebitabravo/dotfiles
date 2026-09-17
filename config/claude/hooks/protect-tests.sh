@@ -62,7 +62,7 @@ allow() {
 # El deny NO vuelve a ser incondicional. Este hook ya bloqueaba siempre una vez
 # y se cambio a `ask` justamente porque impedia autorizaciones legitimas; en los
 # modos sin prompt no hay canal de aprobacion, asi que el escape es el mismo que
-# usan quality-gate y gauntlet-stop: `.claude-relaxed`, una decision explicita
+# usa quality-gate: `.claude-relaxed`, una decision explicita
 # por repo. Un guardarrail sin salida se termina esquivando por caminos peores.
 gate() {
   local decision=ask

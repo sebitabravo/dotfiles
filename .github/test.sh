@@ -54,12 +54,9 @@ assert_equal() {
 }
 
 TEST_ONLY_CLAUDE_SCRIPTS=(
-  check-provider-runtime-parity.sh
   check-runtime-parity.sh
   check-skill-deps.sh
-  compare-task-roadmaps.sh
   doctor.sh
-  smoke-automatic-workflow.sh
   smoke-claude-hook-engine.sh
   validate.sh
 )
@@ -618,7 +615,19 @@ chmod 600 "$TEST_HOME/.claude.json"
 
 # Symlinks managed by an earlier installer version must migrate to copies.
 ln -s -- "$ROOT/.zshrc" "$TEST_HOME/.zshrc"
-ln -s -- "$ROOT/config/claude/agents" "$TEST_HOME/.claude/agents"
+ln -s -- "$ROOT/config/claude/hooks" "$TEST_HOME/.claude/hooks"
+
+# ~/.claude/skills, ~/.claude/output-styles y ~/.claude/agents los escribe otro
+# instalador (gentle-ai). Lo que este repo no versiona ahi debe sobrevivir a
+# ./install.sh; lo que si versiona sigue sujeto a --delete dentro de su entrada.
+mkdir -p "$TEST_HOME/.claude/skills/gentle-sdd-apply" \
+  "$TEST_HOME/.claude/skills/handoff" \
+  "$TEST_HOME/.claude/output-styles" \
+  "$TEST_HOME/.claude/agents"
+printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
+printf '%s\n' 'stale own-skill file' >"$TEST_HOME/.claude/skills/handoff/stale.md"
+printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Gentleman.md"
+printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/sdd-verify.md"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
@@ -730,14 +739,21 @@ assert_directory "$TEST_HOME/.git-hooks"
 assert_file "$TEST_HOME/.git-hooks/pre-push"
 
 # Claude configuration
-assert_directory "$TEST_HOME/.claude/agents"
-assert_not_symlink "$TEST_HOME/.claude/agents"
-assert_file "$TEST_HOME/.claude/agents/backend-architect.md"
+assert_directory "$TEST_HOME/.claude/hooks"
+assert_not_symlink "$TEST_HOME/.claude/hooks"
+assert_directory "$TEST_HOME/.claude/skills"
+assert_file "$TEST_HOME/.claude/skills/handoff/SKILL.md"
+
+# Coexistencia con gentle-ai: sus entradas sobreviven, las de este repo siguen
+# bajo --delete, y ~/.claude/agents no se toca porque este repo ya no lo usa.
+assert_file "$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
+assert_file "$TEST_HOME/.claude/output-styles/Gentleman.md"
+assert_file "$TEST_HOME/.claude/agents/sdd-verify.md"
+assert_not_exists "$TEST_HOME/.claude/skills/handoff/stale.md"
 assert_file "$TEST_HOME/.claude/CLAUDE.md"
 assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
-assert_file "$TEST_HOME/.claude/scripts/validate-task-roadmap.py"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
 for script in "${TEST_ONLY_CLAUDE_SCRIPTS[@]}"; do
   assert_not_exists "$TEST_HOME/.claude/scripts/$script"
@@ -824,49 +840,6 @@ printf '%s\n' 'PASS: install.sh syntax, shellcheck, deterministic bootstrap, sym
 printf '%s\n' '== install.sh backup failure regressions =='
 bash "$ROOT/.github/test/install-backups.test.sh"
 
-printf '%s\n' '== Claude provider wrapper =='
-WRAPPER_HOME="$TMP_HOME/wrapper-home"
-WRAPPER_BIN="$TMP_HOME/wrapper-bin"
-mkdir -p "$WRAPPER_HOME/.claude" "$WRAPPER_BIN"
-for overlay in deepseek openrouter ollama; do
-  printf '{}\n' >"$WRAPPER_HOME/.claude/$overlay.settings.json"
-done
-cat >"$WRAPPER_BIN/claude" <<'EOF'
-#!/usr/bin/env bash
-printf 'base_url=%s\n' "${ANTHROPIC_BASE_URL-unset}"
-printf 'args='; printf '<%s>' "$@"; printf '\n'
-EOF
-chmod +x "$WRAPPER_BIN/claude"
-
-WRAPPER_FUNCTION="$TMP_HOME/claude-wrapper.zsh"
-# El wrapper vive como receta documentada en config/claude/README.md entre los
-# marcadores claude-wrapper:start/end; se extrae el bloque cercado ```zsh.
-sed -n '/<!-- claude-wrapper:start -->/,/<!-- claude-wrapper:end -->/p' "$ROOT/config/claude/README.md" |
-  sed '/^```/d; /claude-wrapper:/d' >"$WRAPPER_FUNCTION"
-[ -s "$WRAPPER_FUNCTION" ] || fail 'claude-wrapper block missing/empty in config/claude/README.md'
-zsh -n "$WRAPPER_FUNCTION" || fail 'claude-wrapper block has zsh syntax errors'
-
-wrapper_output=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" ANTHROPIC_BASE_URL='https://stale.invalid' \
-  zsh -f -c 'source "$1"; claude --deepseek -p hola' zsh "$WRAPPER_FUNCTION")
-printf '%s' "$wrapper_output" | grep -qxF 'base_url=unset'
-printf '%s' "$wrapper_output" | grep -qxF "args=<--settings><$WRAPPER_HOME/.claude/deepseek.settings.json><-p><hola>"
-
-set +e
-wrapper_error=$(HOME="$WRAPPER_HOME" PATH="$WRAPPER_BIN:$PATH" \
-  zsh -f -c 'source "$1"; claude --deepseek --openrouter -p hola' zsh "$WRAPPER_FUNCTION" 2>&1)
-wrapper_rc=$?
-set -e
-[ "$wrapper_rc" -eq 2 ] || fail "multiple providers returned $wrapper_rc instead of 2"
-printf '%s' "$wrapper_error" | grep -qxF 'claude: selecciona un solo provider por invocacion'
-
-printf '%s\n' 'PASS: Claude wrapper isolates provider env, routes one overlay, and rejects ambiguous provider flags'
-
-printf '%s\n' '== AGENTS.md/CLAUDE.md scope-detection hook =='
-bash "$ROOT/.github/test/project-integrations-check.test.sh"
-
-printf '%s\n' '== gauntlet-stop.sh timeout and coverage regressions =='
-bash "$ROOT/.github/test/gauntlet-stop.test.sh"
-
 printf '%s\n' '== quality-gate.sh timeout regressions =='
 bash "$ROOT/.github/test/quality-gate.test.sh"
 
@@ -884,51 +857,17 @@ jq -e '
   and (has("bypassPermissions") | not)
 ' "$SETTINGS" >/dev/null ||
   fail 'Claude permissive Auto Mode contract drifted'
-jq -e '.permissions.allow | index("Skill") != null' "$SETTINGS" >/dev/null ||
-  fail 'automatic workflow cannot load its required versioned skill'
-jq -e '.permissions.ask == [
-  "Bash(npm install:*)",
-  "Bash(npm i:*)",
-  "Bash(npm exec:*)",
-  "Bash(npm publish:*)",
-  "Bash(pip install:*)",
-  "Bash(git push:*)",
-  "Bash(git rebase:*)",
-  "Bash(brew:*)",
-  "Bash(docker:*)",
-  "Bash(gh:*)"
-]' "$SETTINGS" >/dev/null ||
-  fail 'Claude ask rules drifted from the code-execution/token-leak boundary'
+jq -e '
+  (.permissions | has("allow") | not)
+  and (.permissions | has("ask") | not)
+' "$SETTINGS" >/dev/null ||
+  fail 'permissions allow/ask were dropped with the slim purge; do not reintroduce them without updating this suite'
 for pattern in \
-  'Bash(git fetch:*)' 'Bash(git add:*)' 'Bash(git pull:*)' \
-  'Bash(pnpm:*)' 'Bash(bun:*)' 'Bash(yarn:*)' \
-  'Bash(fd:*)' 'Bash(sd:*)' 'Bash(pip:*)' \
-  'Bash(uv:*)' 'Bash(rustc:*)' \
-  'Bash(code:*)' 'Bash(touch:*)' \
-  'Bash(ng:*)' 'Bash(nx:*)' 'Bash(turbo:*)' \
-  'WebFetch' 'mcp__codegraph__*' 'mcp__context7__*' 'mcp__playwright__*'; do
-  jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
-    fail "missing intentional permissive allow rule: $pattern"
-done
-for pattern in \
-  'Bash(brew:*)' 'Bash(docker:*)' 'Bash(gh:*)' 'Bash(npm:*)' \
-  'Bash(source:*)' 'Bash(uvx:*)' 'Bash(nvim:*)' \
-  'Bash(make:*)' 'Bash(go:*)' 'Bash(cargo:*)'; do
-  if jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null; then
-    fail "code-execution/token-leak risk remains auto-allowed: $pattern"
-  fi
-done
-for pattern in \
-  'Bash(npm test:*)' 'Bash(npm run test:*)' 'Bash(npm run lint:*)' \
-  'Bash(pnpm test:*)' 'Bash(pnpm run test:*)' \
-  'Bash(bun test:*)' 'Bash(bun run test:*)' \
-  'Bash(yarn test:*)' 'Bash(yarn run test:*)' \
-  'Bash(uv run pytest:*)' 'Bash(cargo test:*)' 'Bash(go test:*)' 'Bash(make test:*)'; do
-  jq -e --arg pattern "$pattern" '.permissions.allow | index($pattern) != null' "$SETTINGS" >/dev/null ||
-    fail "missing automatic verification permission: $pattern"
-done
-for pattern in \
-  'Edit(**/.env)' 'Read(**/.env)' 'Read(~/.ssh/**)' 'Bash(rm -rf /)'; do
+  'Read(**/.env)' 'Read(**/.env.*)' 'Read(**/secrets/**)' 'Read(**/credentials.json)' \
+  'Edit(**/.env)' 'Edit(**/.env.*)' 'Edit(**/secrets/**)' \
+  'Read(~/.ssh/**)' 'Read(**/*.pem)' 'Read(**/*.key)' \
+  'Read(~/.aws/credentials)' 'Read(~/.netrc)' 'Read(~/.docker/config.json)' \
+  'Bash(npm install -g:*)' 'Bash(rm -rf /)' 'Bash(rm -rf ~)'; do
   jq -e --arg pattern "$pattern" '.permissions.deny | index($pattern) != null' "$SETTINGS" >/dev/null ||
     fail "missing deterministic secret/destructive deny rule: $pattern"
 done

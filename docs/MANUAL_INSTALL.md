@@ -68,7 +68,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### IA & Coding Agents
 
-- [ ] **Ollama** - <https://ollama.com/download/mac>
+- [ ] **LM Studio** - <https://lmstudio.ai>
 
 ### Browsers
 
@@ -119,6 +119,7 @@ npm install --global --ignore-scripts @playwright/cli@latest
 ```bash
 pyenv install 3.11.16
 pyenv global 3.11.16
+pyenv exec python -m pip install -r config/claude/agent-tools/requirements.txt
 ```
 
 ### instalar Sail
@@ -133,8 +134,49 @@ php artisan sail:install
 gentle-ai install \
   --scope global \
   --preset full-gentleman \
-  --persona gentleman \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode
+  --persona neutral \
+  --sdd-mode multi \
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
+```
+
+### Gentle-Shell (gentle-pi)
+
+```bash
+pi install npm:gentle-pi@latest
+pi install npm:pi-intercom@latest
+pi install npm:gentle-engram@latest
+pi install npm:pi-web-access@latest
+pi install npm:pi-lens@latest
+pi install npm:@juicesharp/rpiv-ask-user-question@latest
+```
+
+Dentro de una sesión `pi`, una sola vez:
+
+```text
+/gentle:status
+/gentle:sdd-preflight
+/gentle:review-mode enable
+/gentle:background-subagents enable
+/gentle:models
+/gentle:profiles
+/gentle:persona
+/gentle:banner
+/skill-registry:refresh
+```
+
+### Herdr
+
+```bash
+herdr plugin install smarzban/herdr-file-viewer --yes
+herdr plugin install persiyanov/herdr-reviewr --yes
+herdr integration install codex
+herdr integration install claude
+herdr integration install opencode
+herdr integration install cursor
+herdr integration install antigravity-cli
+herdr integration install copilot
+herdr integration install kilo
+herdr integration install pi
 ```
 
 ### Settings Apps
@@ -142,6 +184,10 @@ gentle-ai install \
 ```bash
 vercel login
 gh auth login
+engram cloud status
+agy
+kilo auth login
+pi auth check
 ```
 
 ---

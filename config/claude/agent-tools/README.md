@@ -30,7 +30,6 @@ Las skills que tienen `package.json` usan el Node de Herd y sus propias carpetas
 
 ```bash
 npm ci --ignore-scripts --prefix "$HOME/.claude/skills/pptx"
-npm ci --ignore-scripts --prefix "$HOME/.claude/skills/stitch-react-components"
 ```
 
 Los lockfiles deben permanecer versionados. `@swc/core` se valida después de la
@@ -62,5 +61,4 @@ Homebrew.
 ## Fuera del host
 
 No se agregan automáticamente herramientas de explotación, ataques de
-credenciales o post-explotación. Esas capacidades siguen delegadas al plano VM
-según `config/claude/agents/vulnerability-hunter.md`.
+credenciales o post-explotación. Esas capacidades siguen delegadas al plano VM.

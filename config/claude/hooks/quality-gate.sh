@@ -294,57 +294,17 @@ block() {
   exit 2
 }
 
-RDD="$HOME/.claude/scripts/rdd.sh"
-
-# Auto-encendido de RDD por zona de riesgo.
+# Receipt Driven Development ya NO vive aca.
 #
-# POR QUE: RDD funcionaba, pero encenderlo dependia de que el usuario se
-# acordara de correr `rdd on` en el repo correcto. Un guardarrail que hay que
-# recordar activar no se activa nunca — el resto del flujo (freeze/receipt) ya
-# no depende de la memoria de nadie porque el bloqueo del gate lo fuerza.
+# Este gate tenia su propia implementacion minima (scripts/rdd.sh), escrita
+# cuando gentle-ai no configuraba Claude Code. Su propio encabezado admitia que
+# era una version reducida: sin contratos versionados, sin lineages, sin CAS.
+# Ahora que gentle-ai gestiona este agente, `gentle-ai review` provee el sistema
+# completo — cuatro lentes, refuter, validator y un Stop hook que avisa cuando
+# hay un candidato sin revisar — y mantener dos mecanismos de recibos compitiendo
+# por el mismo commit solo produce bloqueos que nadie sabe destrabar.
 #
-# Se mira el PATH, no el contenido: es predecible y explicable. Un falso
-# positivo cuesta dos comandos que igual corre el agente; un falso negativo
-# deja pasar sin recibo justo el commit que mas lo necesitaba.
-if [ -x "$RDD" ] && [ ! -f "$ROOT/.claude-rdd/enabled" ] && [ "$RELAXED" = false ]; then
-  RISKY=$(git diff --cached --name-only 2>/dev/null |
-    grep -iE '(auth|login|session|token|jwt|oauth|passwd|password|credential)|(pay|billing|checkout|stripe|invoice|refund|charge)|(migration|migrate|schema|seed)|(crypt|secret|signing|sanitiz)' |
-    grep -vE '\.(md|txt|rst|adoc|lock|svg|png|jpe?g)$' || true)
-
-  if [ -n "$RISKY" ]; then
-    bash "$RDD" on >/dev/null 2>&1 || true
-    {
-      echo "[quality-gate] RDD TURNED ON AUTOMATICALLY in this repo."
-      echo "[quality-gate] The diff touches a risk zone:"
-      printf '%s\n' "$RISKY" | sed 's/^/[quality-gate]   - /'
-      echo "[quality-gate] From now on this repo requires a receipt to commit."
-      echo "[quality-gate] Turn it off with 'rdd off' if this was a false positive."
-    } >&2
-  fi
-fi
-
-# RDD — Receipt Driven Development.
-# Si el repo lo tiene encendido, un commit necesita un recibo atado al hash de
-# los bytes staged. La opinion del agente ("esto funciona") no autoriza nada;
-# el recibo si, porque deja de valer solo apenas el contenido cambia.
-# Apagado (default): no bloquea nada, ni siquiera avisa.
-if [ -x "$RDD" ] && [ -f "$ROOT/.claude-rdd/enabled" ]; then
-  bash "$RDD" verify
-  RDD_RC=$?
-  RDD_MSG=""
-  case $RDD_RC in
-    1) RDD_MSG="RDD is on and there is no receipt.
-[quality-gate]   1) rdd freeze          freezes the staged bytes
-[quality-gate]   2) review those bytes
-[quality-gate]   3) rdd receipt '<test cmd>'
-[quality-gate] Turn it off with 'rdd off' if this repo does not need it." ;;
-    2) RDD_MSG="the receipt is for OTHER bytes. The code changed after the review.
-[quality-gate] Freeze again and review once more. 'rdd status' shows the detail." ;;
-  esac
-  # Via block() y no exit 2 directo, para que el kill switch y el modo autonomo
-  # lo degraden igual que al resto del gate.
-  [ -n "$RDD_MSG" ] && block "$RDD_MSG"
-fi
+# Este gate se queda con lo suyo: tests, lint y deteccion de basura en el diff.
 
 # Detect test runner and lint.
 #

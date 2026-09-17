@@ -9,7 +9,7 @@ trap 'rm -rf "$TMP"' EXIT
 # quality-gate.sh sources "$HOME/.claude/hooks/lib/test-runner.sh" -- give it
 # a real copy of THIS repo's source so the test is self-contained and does not
 # depend on whatever happens to be deployed at ~/.claude on the dev machine.
-# No ~/.claude/scripts/rdd.sh is provided on purpose: RDD is off by default
+# RDD ya no vive en este gate: gentle-ai review es el sistema de recibos.
 # ([ -x "$RDD" ] fails cleanly), keeping these fixtures focused on the
 # lint/test/coverage timeout behavior this test exists to cover.
 FAKE_HOME="$TMP/home"

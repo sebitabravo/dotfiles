@@ -44,7 +44,6 @@ brew "shellcheck"
 brew "wget"
 brew "btop"
 brew "fastfetch"
-brew "atuin", restart_service: true
 brew "rust"
 brew "herdr"
 brew "displayplacer"

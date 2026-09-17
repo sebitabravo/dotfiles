@@ -38,12 +38,9 @@ trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/.github/test" "$TMP/config"
 ln -s -- "$ROOT/config/claude" "$TMP/config/claude"
 for tool in \
-  check-provider-runtime-parity.sh \
   check-runtime-parity.sh \
   check-skill-deps.sh \
-  compare-task-roadmaps.sh \
   doctor.sh \
-  smoke-automatic-workflow.sh \
   smoke-claude-hook-engine.sh; do
   cp "$ROOT/.github/test/$tool" "$TMP/.github/test/$tool"
 done

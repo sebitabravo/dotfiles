@@ -380,7 +380,6 @@ check_command 'Herdr server status' herdr status
 check_mcp_health
 check_engram
 run_parity 'Claude harness parity' check-runtime-parity.sh
-run_parity 'Claude provider parity' check-provider-runtime-parity.sh
 
 # Brewfile drift — liviano, no bloqueante (brew bundle check sin instalar)
 if [ -f "$REPO_ROOT/Brewfile" ] && command -v brew >/dev/null 2>&1; then
