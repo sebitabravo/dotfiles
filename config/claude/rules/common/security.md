@@ -7,14 +7,14 @@
 - **Certificados**: `.pem`, `.key`, `.ppk`, `.p12`, `.pfx`, `.pvk`.
 - **Ruido** (no gastes tokens): `node_modules/`, `.git/objects/`, `.DS_Store`.
 
-`permissions.deny` en `settings.json` bloquea `Read`/`Edit` sobre el núcleo de
-secretos (`.env*`, `secrets/`, credenciales, llaves SSH, certificados,
-`~/.gnupg`, configs de CLI cloud) y también `npm install -g`;
-`validate-safe-ops.sh` niega la misma clase de objetivos por Bash, así que
-`cat .env` se detiene por ambos caminos. **Ninguno de los dos es el límite.**
-Los dos hacen match por patrón, y una regla que solo existe como patrón está a
-una ruta no listada, un nombre nuevo o un `base64 -d` de volverse silenciosa.
-El límite es esta regla.
+`validate-safe-ops.sh` niega por Bash el acceso a este mismo núcleo de secretos
+(`.env*`, `secrets/`, credenciales, llaves SSH, certificados, `~/.gnupg`,
+configs de CLI cloud) y a `npm install -g`, así que `cat .env` se detiene por
+ese camino. **No hay un `permissions.deny` en `settings.json` que replique esto
+para el tool nativo `Read`/`Edit`** — un `Read(.env)` directo no tiene barrera
+estructural. El límite es esta regla: una que solo existe como patrón está a
+una ruta no listada, un nombre nuevo o un `base64 -d` de volverse silenciosa;
+acá no hay ni siquiera el patrón.
 
 ## Al generar código
 

@@ -27,6 +27,9 @@
     "pr": ""
   },
   "includeCoAuthoredBy": false,
+  "permissions": {
+    "defaultMode": "auto"
+  },
   "model": "opusplan",
   "hooks": {
     "PreToolUse": [

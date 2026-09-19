@@ -860,17 +860,9 @@ jq -e '
 jq -e '
   (.permissions | has("allow") | not)
   and (.permissions | has("ask") | not)
+  and (.permissions | has("deny") | not)
 ' "$SETTINGS" >/dev/null ||
-  fail 'permissions allow/ask were dropped with the slim purge; do not reintroduce them without updating this suite'
-for pattern in \
-  'Read(**/.env)' 'Read(**/.env.*)' 'Read(**/secrets/**)' 'Read(**/credentials.json)' \
-  'Edit(**/.env)' 'Edit(**/.env.*)' 'Edit(**/secrets/**)' \
-  'Read(~/.ssh/**)' 'Read(**/*.pem)' 'Read(**/*.key)' \
-  'Read(~/.aws/credentials)' 'Read(~/.netrc)' 'Read(~/.docker/config.json)' \
-  'Bash(npm install -g:*)' 'Bash(rm -rf /)' 'Bash(rm -rf ~)'; do
-  jq -e --arg pattern "$pattern" '.permissions.deny | index($pattern) != null' "$SETTINGS" >/dev/null ||
-    fail "missing deterministic secret/destructive deny rule: $pattern"
-done
+  fail 'permissions allow/ask/deny were dropped with the slim purge; do not reintroduce them without updating this suite'
 
 printf '%s\n' '== hook edge cases =='
 bash "$ROOT/.github/test/hooks-edge-cases.test.sh"
