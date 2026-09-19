@@ -28,6 +28,13 @@ fi
 
 [[ -z "$cmd_str" ]] && exit 0
 
+# Salida barata antes de levantar python3: si el comando ni siquiera menciona
+# "gh", no puede ser una publicacion de GitHub. Sin esto, cada comando Bash
+# disparaba un interprete python entero solo para terminar imprimiendo NONE.
+if ! printf '%s' "$cmd_str" | grep -qE '\bgh\b'; then
+  exit 0
+fi
+
 # NOTA: tokenizer intencionalmente distinto de quality-gate:split_shell_segments
 # y validate-safe-ops:resolve_command_prefix. Este usa shlex para argv de gh
 # (clasificacion de publicaciones); los otros separan segmentos shell o
