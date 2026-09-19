@@ -1,6 +1,6 @@
 ---
 name: chile
-description: Marco legal, tributario y laboral chileno para decisiones de negocio. Cubre SII (IVA, F29, F22, Pro-Pyme, boletas de honorarios), Dirección del Trabajo (Ley 40 Horas, reforma de pensiones, finiquitos, Ley Karin), estructuras societarias (SpA, EIRL, SRL, S.A.), contratos bajo ley chilena y la transición Ley 19.628 a Ley 21.719. Usar cuando la tarea involucre impuestos chilenos, sueldos, cotizaciones, despidos, contratos, constitución de sociedad, o cifras en UF/UTM/CLP. Para generar documentación de cumplimiento (RAT, DPA, EIPD, política de privacidad, Modelo de Prevención de Delitos), usar `compliance-cl`.
+description: Marco legal, tributario y laboral chileno para decisiones de negocio. Cubre SII (IVA, F29, F22, Pro-Pyme, boletas de honorarios), Dirección del Trabajo (Ley 40 Horas, reforma de pensiones, finiquitos, Ley Karin), estructuras societarias (SpA, EIRL, SRL, S.A.), contratos bajo ley chilena, costo real de contratación y flujo de caja con IVA, y la transición Ley 19.628 a Ley 21.719. Usar cuando la tarea involucre impuestos chilenos, sueldos, cotizaciones, despidos, contratos, constitución de sociedad, costo de nómina, pricing con retención, o cifras en UF/UTM/CLP. Para generar documentación de cumplimiento (RAT, DPA, EIPD, política de privacidad, Modelo de Prevención de Delitos), usar `compliance-cl`.
 ---
 
 # Chile — contexto legal, tributario y laboral
@@ -122,6 +122,52 @@ mayo 2026: para cualquier cálculo real, busca el valor del día.
 - **Ley 19.496 (consumidor)**: garantía legal 6 meses, retracto de 10 días en e-commerce, SERNAC.
 - **Ley 20.720 (insolvencia)**: reorganización y liquidación judicial.
 - **Ley 20.393 (responsabilidad penal de la persona jurídica)**: exige programa de cumplimiento. Delitos base: lavado de activos, cohecho, tributarios, ambientales.
+
+## Financiero
+
+Decisiones de pricing, flujo de caja y costo de contratación con las reglas
+chilenas de arriba. No reemplaza modelado financiero general (runway, CAC/LTV,
+cap table): eso no depende del país y no es contenido de esta skill.
+
+### Costo real de contratar
+
+El sueldo bruto no es el costo empresa. AFP (10,58% + comisión) y salud (7%)
+las descuenta el empleador del bruto pero las paga el trabajador — no suman al
+costo empresa. Lo que sí aporta el empleador, encima del bruto:
+
+- Reforma de pensiones (Ley 21.735): 3,5% en 2026, gradual a 8,5% en 9 años.
+- Seguro de cesantía (Ley 19.728): contrato indefinido y contrato a plazo fijo
+  tienen tasas de aporte patronal distintas — confírmalo en <https://www.afc.cl>
+  antes de cotizar un costo de contratación.
+- Ley 16.744 (mutual): 0,95% base + tasa adicional según riesgo del cargo.
+- Ley Sanna: 0,03%.
+- Gratificación legal si aplica: 25% de lo devengado, tope 4,75 ingresos
+  mínimos mensuales al año.
+- Tope imponible 87,8 UF: sobre ese monto las cotizaciones no siguen subiendo.
+
+### Flujo de caja e IVA
+
+- El débito fiscal (IVA de tus ventas) se declara y paga en el F29 del día 12,
+  hayas cobrado la factura o no. Si tus clientes pagan a 30-60 días, ese
+  desfase te descala caja.
+- El crédito fiscal (IVA de tus compras) se resta en el mismo F29 — alinear
+  fechas de facturación de proveedores (no de pago) con tu ciclo de cobro
+  suaviza el desfase.
+- Pro-Pyme (12,5% en 2026, PPM a la mitad) libera caja mensual frente al 27%
+  general, pero el escalonamiento converge a ~23% en 2029: no lo trates como
+  tasa fija de largo plazo al proyectar.
+
+### Pricing con retención
+
+Boletas de honorarios retienen 15,25% en 2026: quien emite recibe ~84,75% del
+bruto. Si estás cotizando "en limpio" (el número que el proveedor necesita
+recibir), grossea el bruto en vez de aplicar la retención sobre el neto.
+
+### Límites
+
+Esto no reemplaza un CFO ni un contador. Para pricing complejo (SaaS
+multi-mercado, ronda de inversión, estructura de cap table), usa modelado
+financiero general — fuera del alcance de esta skill.
 
 ## Datos personales — transición en curso
 
