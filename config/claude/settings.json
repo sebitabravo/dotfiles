@@ -27,44 +27,6 @@
     "pr": ""
   },
   "includeCoAuthoredBy": false,
-  "permissions": {
-    "defaultMode": "auto",
-    "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Read(**/secrets/**)",
-      "Read(**/credentials.json)",
-      "Edit(**/.env)",
-      "Edit(**/.env.*)",
-      "Edit(**/secrets/**)",
-      "Edit(**/credentials.json)",
-      "Read(~/.ssh/**)",
-      "Edit(~/.ssh/**)",
-      "Read(**/id_rsa)",
-      "Read(**/id_ed25519)",
-      "Read(**/id_ecdsa)",
-      "Read(**/*.pem)",
-      "Read(**/*.key)",
-      "Read(**/*.p12)",
-      "Read(**/*.pfx)",
-      "Read(**/*.ppk)",
-      "Read(**/*.pvk)",
-      "Read(~/.aws/credentials)",
-      "Read(~/.netrc)",
-      "Read(~/.npmrc)",
-      "Read(~/.pypirc)",
-      "Read(~/.docker/config.json)",
-      "Read(~/.kube/config)",
-      "Read(~/.gnupg/**)",
-      "Bash(npm install -g:*)",
-      "Bash(rm -rf /)",
-      "Bash(sudo rm -rf /)",
-      "Bash(rm -rf ~)",
-      "Bash(sudo rm -rf ~)"
-    ]
-  },
   "model": "opusplan",
   "hooks": {
     "PreToolUse": [
@@ -122,10 +84,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/check-auto-save-stash.sh"
-          },
-          {
-            "type": "command",
             "command": "~/.claude/hooks/handoff-session-start.py"
           },
           {
@@ -154,16 +112,6 @@
             "command": "~/.claude/hooks/detect-debug.sh",
             "timeout": 10,
             "async": true
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/handoff-stop.sh"
           }
         ]
       }

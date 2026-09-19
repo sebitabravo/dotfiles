@@ -52,26 +52,20 @@ WARN_PATTERNS=(
   'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}' # JWT largo
 )
 
+# Un grep por categoria en vez de uno por patron: 14 pares echo|grep (hasta 28
+# forks) por cada prompt bajaban a 2. Los patrones se unen con '|' en una sola
+# ERE — es join de alternativas, no cambia que matchea cada patron individual;
+# '(pk|rk|sk)_live_...' ya trae su propio grupo, asi que el '|' de afuera no le
+# pisa el alcance. El '--' sigue siendo obligatorio por el patron de clave
+# privada que empieza con '-----'.
+BLOCK_REGEX="$(IFS='|'; printf '%s' "${BLOCK_PATTERNS[*]}")"
+WARN_REGEX="$(IFS='|'; printf '%s' "${WARN_PATTERNS[*]}")"
+
 blocked=0
 warned=0
 
-for pattern in "${BLOCK_PATTERNS[@]}"; do
-  # El '--' es obligatorio: el patron de clave privada empieza con '-----' y sin
-  # el separador grep lo parsea como flags y falla con exit 2 (que se lee como
-  # "no matcheo"). La deteccion de claves privadas nunca disparo por esto.
-  if echo "$PROMPT" | grep -qE -- "$pattern" 2>/dev/null; then
-    blocked=$((blocked + 1))
-  fi
-done
-
-for pattern in "${WARN_PATTERNS[@]}"; do
-  # El '--' es obligatorio: el patron de clave privada empieza con '-----' y sin
-  # el separador grep lo parsea como flags y falla con exit 2 (que se lee como
-  # "no matcheo"). La deteccion de claves privadas nunca disparo por esto.
-  if echo "$PROMPT" | grep -qE -- "$pattern" 2>/dev/null; then
-    warned=$((warned + 1))
-  fi
-done
+printf '%s' "$PROMPT" | grep -qE -- "$BLOCK_REGEX" 2>/dev/null && blocked=1
+printf '%s' "$PROMPT" | grep -qE -- "$WARN_REGEX" 2>/dev/null && warned=1
 
 if [ "$blocked" -gt 0 ]; then
   {
@@ -79,7 +73,7 @@ if [ "$blocked" -gt 0 ]; then
     echo "========================================"
     echo "  PROMPT BLOCKED: secret detected"
     echo "========================================"
-    echo "Detected $blocked pattern(s) of API key, token or private key."
+    echo "Detected a pattern shaped like an API key, token or private key."
     echo "The prompt was NOT sent to the model."
     echo ""
     echo "Remove the credential and replace it with a placeholder (\$API_KEY, <token>)."

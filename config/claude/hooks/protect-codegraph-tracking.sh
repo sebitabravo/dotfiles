@@ -45,6 +45,14 @@ printf '%s' "$UNQUOTED" | grep -qE '(^|[[:space:];|])git[[:space:]]+add([[:space
 ONLY_GITIGNORE_ADD=false
 printf '%s' "$UNQUOTED" | grep -qE 'git[[:space:]]+add([[:space:]]+--)?[[:space:]]+\.gitignore([[:space:]]*|[;&|])' && ONLY_GITIGNORE_ADD=true
 
+# Nada en el loop de abajo puede denegar sin IS_COMMIT o IS_ADD: ambos guards
+# de deny() los exigen. Salir aca evita hasta 3 subprocesos git por artifact
+# (ls-files, diff --cached, check-ignore) en cualquier comando que no sea un
+# commit ni un add.
+if [ "$IS_COMMIT" = false ] && [ "$IS_ADD" = false ]; then
+  exit 0
+fi
+
 for artifact in ".codegraph:CodeGraph" "openspec:OpenSpec"; do
   RELATIVE_PATH=${artifact%%:*}
   LABEL=${artifact#*:}

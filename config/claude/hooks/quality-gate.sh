@@ -32,6 +32,14 @@ COMMAND=$(echo "$input" | jq -r '.tool_input.command // ""')
 # Only act on Bash
 [ "$TOOL_NAME" != "Bash" ] && exit 0
 
+# Salida barata antes del parser: si el comando ni siquiera menciona "commit",
+# no puede haber un git commit adentro. Sin esto, el parser de mas abajo corria
+# en CADA comando Bash y bloqueaba con "unable to parse" cualquier comando con
+# comillas/sustituciones que no supiera segmentar, aunque no fuera un commit.
+if ! printf '%s' "$COMMAND" | grep -qE '\bcommit\b'; then
+  exit 0
+fi
+
 # Only act on git commit.
 # El patron anterior ('git commit ' literal) exigia el espacio final y no veia
 # 'git -C /ruta commit -m x', asi que el gate se saltaba entero.
