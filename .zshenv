@@ -11,6 +11,10 @@ export GOPATH="$HOME/go"
 export PNPM_HOME="$HOME/Library/pnpm"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 
+# El SDK de .NET no lo desactiva solo; hay que exportarla antes de cada
+# instalacion/uso para que no mande telemetria a Microsoft.
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
 # Autosync de Engram Cloud para cualquier CLI que lance `engram mcp` (Codex, Pi,
 # Gemini/Antigravity), no solo Claude Code (que ya lo trae en su settings.json).
 export ENGRAM_CLOUD_AUTOSYNC=1
