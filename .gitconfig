@@ -17,6 +17,13 @@
 	navigate = true
 	side-by-side = true
 	line-numbers = true
+	hyperlinks = true
+	true-color = always
+	dark = true
+	max-line-length = 1024
+	# Marca el caracter exacto que cambio dentro de la linea, no solo la linea.
+	keep-plus-minus-markers = false
+	file-style = bold yellow ul
 
 [init]
 	defaultBranch = main
@@ -64,6 +71,52 @@
 [rerere]
 	enabled = true
 	autoupdate = true
+
+[fetch]
+	# Borra local las ramas que ya no existen en el remoto. Sin esto el listado
+	# de ramas acumula referencias muertas de cada PR mergeado.
+	prune = true
+	pruneTags = true
+	# Verifica los objetos recibidos: detecta un repo corrupto o manipulado en el
+	# fetch en vez de despues, cuando ya esta en el historial.
+	fsckobjects = true
+
+[transfer]
+	fsckobjects = true
+
+[receive]
+	fsckObjects = true
+
+[merge]
+	# zdiff3 muestra el ancestro comun ademas de los dos lados del conflicto.
+	# Sin el no se distingue que cambio cada rama y cual es la base.
+	conflictstyle = zdiff3
+
+[rebase]
+	# Guarda y restaura los cambios sin commitear en vez de abortar el rebase.
+	autoStash = true
+	autosquash = true
+	# Reescribe las ramas apiladas sobre la que se rebasa (stacked PRs).
+	updateRefs = true
+
+[help]
+	# Propone el comando correcto y pide confirmacion, en vez de ejecutarlo solo.
+	autocorrect = prompt
+
+[submodule]
+	recurse = true
+
+[status]
+	submoduleSummary = true
+	showUntrackedFiles = all
+
+[log]
+	date = iso
+
+[core]
+	# Cachea el estado de los archivos sin trackear. En repos grandes convierte
+	# un `git status` de segundos en uno de milisegundos.
+	untrackedCache = true
 
 # Identidad (nombre/email/signingkey) en ~/.gitconfig.local, fuera del repo.
 # Crearlo al instalar en una maquina nueva — ver README.md.
