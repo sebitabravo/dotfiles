@@ -22,7 +22,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Utilities
 
-- [ ] **CleanMyMac** - Limpieza del sistema
+- [ ] **CleanMyMac** - Limpieza del sistema (reemplaza a AppCleaner)
 - [ ] **DaVinci Resolve** - Edición de video profesional
 - [ ] **The Unarchiver** - Descompresor de archivos
 - [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
@@ -46,7 +46,6 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **AlDente** - <https://apphousekitchen.com/aldente-overview>
 - [ ] **Parsec** - <https://parsecgaming.com/downloads>
-- [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner>
 - [ ] **Bartender** - <https://www.macbartender.com>
 - [ ] **CodexBar** - <https://codexbar.app>
 - [ ] **Handy** - <https://handy.computer>
@@ -80,7 +79,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Raycast** - <https://www.raycast.com>
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
-- [ ] **Discord** - <https://discord.com/download>
+- [ ] **Vesktop** - <https://github.com/Vencord/Vesktop> (cliente Discord alternativo)
 - [ ] **Teams** - <https://www.microsoft.com/en-us/microsoft-teams/download-app>
 
 ### Media & Content
