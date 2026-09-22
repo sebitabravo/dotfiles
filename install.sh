@@ -834,11 +834,11 @@ resync_gentle_ai_claude_layer() {
   fi
 
   if [ "$DRY_RUN" -ne 0 ]; then
-    printf '  DRYRUN gentle-ai sync --agent claude-code\n'
+    printf '  DRYRUN gentle-ai sync --agent claude-code --include-permissions --include-theme\n'
     return 0
   fi
 
-  if ! "$gentle_bin" sync --agent claude-code; then
+  if ! "$gentle_bin" sync --agent claude-code --include-permissions --include-theme; then
     printf '  WARN   gentle-ai sync fallo; la capa de gentle-ai puede estar incompleta\n' >&2
     return 0
   fi
