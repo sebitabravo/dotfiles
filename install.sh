@@ -879,6 +879,7 @@ REQUIRED_FILES=(
   .p10k.zsh
   .gitconfig
   config/git/.gitignore_global
+  config/ripgrep/.ripgreprc
   config/herdr/config.toml
   config/btop/btop.conf
   config/vscode/settings.json
@@ -1114,6 +1115,7 @@ copy .zshrc "$HOME/.zshrc"
 copy .zshenv "$HOME/.zshenv"
 copy .zprofile "$HOME/.zprofile"
 copy .p10k.zsh "$HOME/.p10k.zsh"
+copy config/ripgrep/.ripgreprc "$HOME/.ripgreprc"
 
 echo "git"
 copy .gitconfig "$HOME/.gitconfig"
