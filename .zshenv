@@ -19,6 +19,10 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 # Gemini/Antigravity), no solo Claude Code (que ya lo trae en su settings.json).
 export ENGRAM_CLOUD_AUTOSYNC=1
 
+# Keep inherited and installer-managed search paths stable across nested shells.
+# The special zsh arrays remain tied to PATH/FPATH while enforcing uniqueness.
+typeset -gU path fpath
+
 # Mueve el directorio al frente del PATH aunque ya este presente. Un prepend que
 # solo agrega si falta no serviria: path_helper deja las entradas presentes pero
 # en el orden equivocado, y hay que poder reordenarlas.
@@ -54,6 +58,12 @@ unset _nvm_default
 # Unica definicion del orden de prioridad del PATH. El ultimo path_promote gana,
 # así el Node de Herd queda por delante de cualquier Node alternativo en el PATH.
 setup_user_path() {
+  # Microsoft's /etc/paths.d entry uses a literal tilde, which path_helper does
+  # not expand. Drop that invalid entry and add the real directory only if it
+  # exists; this machine currently has no installed global .NET tools.
+  path=("${(@)path:#\~/.dotnet/tools}")
+  path_promote "$HOME/.dotnet/tools"
+
   # Red de seguridad: en shells de login esto ya lo pone brew shellenv desde
   # .zprofile, pero un shell interactivo no-login nunca lo ejecuta y se quedaria
   # sin fzf, zoxide ni el resto de Homebrew.
@@ -66,6 +76,7 @@ setup_user_path() {
   path_promote "$PNPM_HOME/bin"
   path_promote "$HOME/Library/Application Support/Herd/bin"
   path_promote "$HOME/.local/bin"
+  path_promote "$HOME/.cargo/bin"
   path_promote "$NVM_DEFAULT_BIN"
   # Homebrew mantiene binutils keg-only para no pisar las herramientas nativas;
   # exponer sus nombres prefijados (greadelf/gobjdump) deja el analisis ELF
@@ -83,6 +94,8 @@ setup_user_path() {
   fi
 
   path_append "$GOPATH/bin"
+  path_append "$HOME/.unity/bin"
+  path_append "$HOME/.lmstudio/bin"
   path_append "$HOME/.spicetify"
   path_append "$ANDROID_HOME/tools"
   path_append "$ANDROID_HOME/platform-tools"

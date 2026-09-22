@@ -75,15 +75,9 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(gitfast docker)
 
-# Compinit caching — evita doble inicializacion (oh-my-zsh skip global)
-skip_global_compinit=1
+# Oh My Zsh is the single owner of compinit and its cache lifecycle. Running
+# compinit here as well doubles startup work and can force repeated compdumps.
 ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${ZSH_VERSION}"
-autoload -Uz compinit
-if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(find "$ZSH_COMPDUMP" -mtime -1 2>/dev/null) ]]; then
-  compinit -C -d "$ZSH_COMPDUMP"
-else
-  compinit -d "$ZSH_COMPDUMP"
-fi
 
 source $ZSH/oh-my-zsh.sh
 
