@@ -29,5 +29,12 @@ Initial Git worktree clean on main. Exhaustive read-only Python comparison of co
 - No installers executed, no active HOME changes, no commits. End-to-end installation not tested.
 - Native assessment unavailable (missing package-local binary); independent verifier completed under fail-closed plan. RDD off.
 
+## Tasks (continued)
+- [x] T5 (done): Read-only audit comparing repo vs live machine (not the Downloads reference). Found real drift both directions.
+- [x] T6 (done): Removed Kilo Code entirely (user confirmed no longer used) — install.sh, .github/test.sh, sha256 pins, MANUAL_INSTALL.md, .zshenv.
+- [x] T7 (done): Verified via `gentle-ai sync --dry-run` which settings.json keys gentle-ai actually manages (persona/sdd/engram/context7/gga/skills by default; permissions/theme need --include-permissions/--include-theme). Wired those two flags into install.sh's resync call instead of hand-copying JSON.
+- [x] T8 (done): Ported real, never-tracked config found only on the live machine: .gitconfig hardening, config/git/.gitignore_global, new config/ripgrep/.ripgreprc, .zshrc env block, .zshenv DOTNET_CLI_TELEMETRY_OPTOUT. Verified each against WebSearch that no installer auto-writes these (git-delta, .NET SDK don't self-configure shell/gitconfig).
+- [x] T9 (done): Self-corrected two mistakes from T1's port: dead `.lmstudio/bin` path_promote (LM Studio self-injects PATH via .zshrc append) and a redundant guarded Unity CLI line (Unity's installer already self-appends unguarded, confirmed via websearch).
+
 ## Next step
-Port and both authorized fixes are complete on `fix/macos-dotfiles-port`. `.github/validate.sh` is green end to end. Ready to commit; end-to-end installation still not tested (no installer executed, no HOME changes).
+All authorized work is complete on `fix/macos-dotfiles-port` (18 commits total). `bash .github/validate.sh` and `bash .github/test.sh` both green. Not tested: end-to-end real installation (no installer executed, no HOME changes). Remaining known asymmetry, not fixed (harmless): live `.zshenv` still has a dead `path_promote "$HOME/.cargo/bin"` line the repo no longer carries — machine-only cleanup, not a repo concern.
