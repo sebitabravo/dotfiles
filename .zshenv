@@ -64,7 +64,6 @@ setup_user_path() {
   path_promote "$HOME/Library/Application Support/Herd/bin"
   path_promote "$HOME/.local/bin"
   path_promote "$NVM_DEFAULT_BIN"
-  path_promote "$HOME/.lmstudio/bin"
   # Homebrew mantiene binutils keg-only para no pisar las herramientas nativas;
   # exponer sus nombres prefijados (greadelf/gobjdump) deja el analisis ELF
   # disponible sin reemplazar los binarios del sistema.
