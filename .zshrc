@@ -89,6 +89,42 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
+# Historial — oh-my-zsh deja SAVEHIST=10000 contra HISTSIZE=50000, asi que al
+# cerrar la sesion se descarta el 80% de lo que la memoria si tenia. Igualarlos.
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+
+# Editor por defecto: lo leen git, fzf, gh, crontab y cualquier tool que abra $EDITOR.
+if command -v code >/dev/null 2>&1; then
+  export EDITOR='code --wait'
+  export VISUAL='code --wait'
+else
+  export EDITOR='vi'
+  export VISUAL='vi'
+fi
+
+# bat como pager de man y de --help, con colores.
+export MANPAGER="sh -c 'col -bx | bat --language=man --plain'"
+export MANROFFOPT='-c'
+
+# ripgrep no lee ningun archivo de config salvo que esta variable lo apunte.
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+
+# less: -R colores, -F no pagina si entra en pantalla, -i busqueda case-insensitive,
+# -M barra de estado larga. --mouse habilita scroll con rueda.
+export LESS='-R -F -i -M --mouse'
+export LESSHISTFILE='-'
+
+# Homebrew: sin analitica, sin autoupdate en cada install (lento e impredecible),
+# y limpieza automatica de versiones viejas a los 30 dias.
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_CLEANUP_MAX_AGE_DAYS=30
+export HOMEBREW_BAT=1
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
