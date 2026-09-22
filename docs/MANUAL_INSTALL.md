@@ -135,7 +135,7 @@ gentle-ai install \
   --preset full-gentleman \
   --persona neutral \
   --sdd-mode multi \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code
 ```
 
 ### Gentle-Shell (gentle-pi)
@@ -174,7 +174,6 @@ herdr integration install opencode
 herdr integration install cursor
 herdr integration install antigravity-cli
 herdr integration install copilot
-herdr integration install kilo
 herdr integration install pi
 ```
 
@@ -185,7 +184,6 @@ vercel login
 gh auth login
 engram cloud status
 agy
-kilo auth login
 pi auth check
 ```
 

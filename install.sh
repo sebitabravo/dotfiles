@@ -91,7 +91,6 @@ REMOTE_INSTALLER_LABELS=(
   'Antigravity CLI'
   'Claude Code'
   'GitHub Copilot CLI'
-  'Kilo Code'
   'Pi'
   'Spicetify'
   'Spicetify Marketplace'
@@ -106,7 +105,6 @@ REMOTE_INSTALLER_URLS=(
   'https://antigravity.google/cli/install.sh'
   'https://claude.ai/install.sh'
   'https://gh.io/copilot-install'
-  'https://kilo.ai/cli/install'
   'https://pi.dev/install.sh'
   'https://raw.githubusercontent.com/spicetify/cli/main/install.sh'
   'https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.sh'
@@ -197,7 +195,6 @@ tool_exists() {
     "$HOME/.npm-global/bin/$command_name" \
     "$HOME/.local/share/pnpm/$command_name" \
     "$HOME/.opencode/bin/$command_name" \
-    "$HOME/.kilo/bin/$command_name" \
     "$HOME/.spicetify/$command_name"; do
     [ -x "$candidate" ] && return 0
   done
@@ -646,7 +643,6 @@ install_bootstrap_tools() {
   install_remote_tool 'Antigravity CLI' agy bash
   install_remote_tool 'Claude Code' claude bash
   install_remote_tool 'GitHub Copilot CLI' copilot bash
-  install_remote_tool 'Kilo Code' kilo bash --no-modify-path
   install_remote_tool 'Pi' pi sh
 
   # El instalador de Spicetify pregunta interactivamente (lee de /dev/tty) si
