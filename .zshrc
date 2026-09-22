@@ -187,6 +187,9 @@ nvm()   { _nvm_lazy_load; nvm "$@"; }
 # [[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && \
 #   builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
 
+# Unity CLI
+[[ -f "$HOME/.unity/env" ]] && . "$HOME/.unity/env"
+
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 

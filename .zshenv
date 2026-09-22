@@ -11,6 +11,10 @@ export GOPATH="$HOME/go"
 export PNPM_HOME="$HOME/Library/pnpm"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 
+# Autosync de Engram Cloud para cualquier CLI que lance `engram mcp` (Codex, Pi,
+# Gemini/Antigravity), no solo Claude Code (que ya lo trae en su settings.json).
+export ENGRAM_CLOUD_AUTOSYNC=1
+
 # Mueve el directorio al frente del PATH aunque ya este presente. Un prepend que
 # solo agrega si falta no serviria: path_helper deja las entradas presentes pero
 # en el orden equivocado, y hay que poder reordenarlas.
@@ -60,7 +64,7 @@ setup_user_path() {
   path_promote "$HOME/Library/Application Support/Herd/bin"
   path_promote "$HOME/.local/bin"
   path_promote "$NVM_DEFAULT_BIN"
-  path_promote "$HOME/.cargo/bin"
+  path_promote "$HOME/.lmstudio/bin"
   # Homebrew mantiene binutils keg-only para no pisar las herramientas nativas;
   # exponer sus nombres prefijados (greadelf/gobjdump) deja el analisis ELF
   # disponible sin reemplazar los binarios del sistema.
