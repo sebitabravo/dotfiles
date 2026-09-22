@@ -656,13 +656,13 @@ install_bootstrap_tools() {
   if [ "$DRY_RUN" -eq 0 ]; then
     printf '%s\n' '  NOTE   si Spicetify pregunta por Marketplace, responde "n" (se instala aparte, verificado)'
   fi
-  install_remote_tool 'Spicetify' spicetify sh
+  install_remote_tool 'Spicetify' spicetify sh || true
   prepare_spicetify_path
 
   if [ -d "$HOME/.config/spicetify/CustomApps/marketplace" ]; then
     printf '%s\n' '  SKIP   Spicetify Marketplace (ya existe ~/.config/spicetify/CustomApps/marketplace)'
   else
-    run_remote_installer 'Spicetify Marketplace' sh
+    run_remote_installer 'Spicetify Marketplace' sh || true
   fi
 }
 
