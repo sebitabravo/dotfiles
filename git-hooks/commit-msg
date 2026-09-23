@@ -11,14 +11,14 @@ if grep -qiE "Co-Authored-By:|co-authored-by:" "$COMMIT_MSG_FILE"; then
     echo "" >&2
     echo "❌ COMMIT BLOCKED: AI footprint detectado en el mensaje" >&2
     echo "   Patrón: Co-Authored-By" >&2
-    echo "   Regla:  CLAUDE.md → 'No AI footprint' + 'Conventional Commits only'" >&2
+    echo "   Regla:  rules/common/git-workflow.md → 'No AI attribution'" >&2
     echo "   Fix:    Eliminá la línea Co-Authored-By y volvé a commitear" >&2
     echo "" >&2
     exit 1
 fi
 
 # --- Block direct commits to main/master ---
-# CLAUDE.md "Git Hygiene" #3 pide esto y era la unica de esas reglas que se
+# rules/common/git-workflow.md ("Trabaja en rama") pide esto y era la unica de esas reglas que se
 # podia hacer cumplir por hook y no lo estaba: el footprint lo frena el bloque
 # de arriba, los auto-save los frena pre-push, y esta quedaba solo escrita.
 #
@@ -35,7 +35,7 @@ if { [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; } && [ -n "$(git remote
        [ ! -f "$REPO_ROOT/.claude-relaxed" ]; then
         echo "" >&2
         echo "❌ COMMIT BLOCKED: commit directo a '$BRANCH'" >&2
-        echo "   Regla:  CLAUDE.md → Git Hygiene #3 'Always on a branch'" >&2
+        echo "   Regla:  rules/common/git-workflow.md → 'Trabaja en rama'" >&2
         echo "   Fix:    git switch -c feature/<slug> && git commit ..." >&2
         echo "   Si este repo se trabaja en $BRANCH a proposito:" >&2
         echo "           touch \"\$(git rev-parse --show-toplevel)/.claude-relaxed\"" >&2

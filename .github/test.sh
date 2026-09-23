@@ -624,10 +624,10 @@ printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL
 printf '%s\n' 'stale own-skill file' >"$TEST_HOME/.claude/skills/handoff/stale.md"
 printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Gentleman.md"
 printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/sdd-verify.md"
+printf '%s\n' 'gentle-ai instructions' >"$TEST_HOME/.claude/CLAUDE.md"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
-printf '%s\n' 'local Claude instructions' >"$TEST_HOME/.claude/CLAUDE.md"
 printf '%s\n' 'local VS Code settings' >"$VSCODE_HOME/settings.json"
 
 # A stale file under a managed directory must be removed by rsync --delete.
@@ -746,8 +746,7 @@ assert_file "$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
 assert_file "$TEST_HOME/.claude/output-styles/Gentleman.md"
 assert_file "$TEST_HOME/.claude/agents/sdd-verify.md"
 assert_not_exists "$TEST_HOME/.claude/skills/handoff/stale.md"
-assert_file "$TEST_HOME/.claude/CLAUDE.md"
-assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
+grep -qxF 'gentle-ai instructions' "$TEST_HOME/.claude/CLAUDE.md" || fail 'installer touched gentle-ai CLAUDE.md'
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
@@ -781,17 +780,13 @@ printf '%s\n' '== symlink migration and backups =='
 assert_file "$TEST_HOME/.zprofile"
 assert_not_symlink "$TEST_HOME/.zprofile"
 assert_equal "$ROOT/.zprofile" "$TEST_HOME/.zprofile"
-assert_file "$TEST_HOME/.claude/CLAUDE.md"
-assert_not_symlink "$TEST_HOME/.claude/CLAUDE.md"
-assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
 
 zprofile_backup=$(find "$TEST_HOME" -maxdepth 1 -name '.zprofile.backup.*' -type f -print -quit)
 [ -n "$zprofile_backup" ] || fail 'missing .zprofile backup'
 grep -qxF 'local zprofile' "$zprofile_backup" || fail 'wrong .zprofile backup content'
 
 claude_backup=$(find "$TEST_HOME/.claude" -maxdepth 1 -name 'CLAUDE.md.backup.*' -type f -print -quit)
-[ -n "$claude_backup" ] || fail 'missing Claude instructions backup'
-grep -qxF 'local Claude instructions' "$claude_backup" || fail 'wrong Claude backup content'
+[ -z "$claude_backup" ] || fail 'installer backed up gentle-ai CLAUDE.md'
 
 vscode_backup=$(find "$VSCODE_HOME" -maxdepth 1 -name 'settings.json.backup.*' -type f -print -quit)
 [ -n "$vscode_backup" ] || fail 'missing VS Code settings backup'

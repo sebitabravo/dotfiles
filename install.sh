@@ -810,11 +810,11 @@ register_claude_mcp_servers() {
 
 # Reaplica la capa de gentle-ai sobre ~/.claude despues de copiar la de este repo.
 #
-# ORDEN, Y POR QUE IMPORTA: gentle-ai fusiona en vez de reemplazar. Escribe en
-# CLAUDE.md dentro de bloques `<!-- gentle-ai:... -->` y hace deep merge sobre
-# settings.json, asi que respeta todo lo que este instalador ya puso. Lo inverso
-# no es cierto: este instalador copia CLAUDE.md y settings.json enteros, asi que
-# borra los bloques y las claves de gentle-ai. Por eso gentle-ai corre DESPUES.
+# ORDEN, Y POR QUE IMPORTA: gentle-ai fusiona en vez de reemplazar. Hace deep
+# merge sobre settings.json, asi que respeta todo lo que este instalador ya puso.
+# Lo inverso no es cierto: este instalador copia settings.json entero, asi que
+# borra las claves de gentle-ai. Por eso gentle-ai corre DESPUES. ~/.claude/CLAUDE.md
+# es solo de gentle-ai: este repo no lo versiona y el instalador no lo toca.
 #
 # No se instala nada: si gentle-ai no esta, o no tiene claude-code entre sus
 # agentes, la funcion no hace nada y lo dice. Elegir configurar Claude Code con
@@ -857,7 +857,6 @@ RSYNC_EXCLUDES=(
 # copiado queda incluido en el preflight y no puede empezar un bootstrap con un
 # checkout incompleto.
 CLAUDE_FILES=(
-  config/claude/CLAUDE.md
   config/claude/statusline.sh
   config/claude/mcp-servers.json
   config/claude/skills-lock.json

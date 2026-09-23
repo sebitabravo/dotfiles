@@ -105,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '{\"systemMessage\":\"Contexto compactado. Las reglas de CLAUDE.md siguen vigentes; el protocolo de reanudacion se reinyecta en SessionStart (compact-resume.py).\"}'"
+            "command": "printf '{\"systemMessage\":\"Contexto compactado. Las reglas de rules/common siguen vigentes; el protocolo de reanudacion se reinyecta en SessionStart (compact-resume.py).\"}'"
           }
         ]
       }
