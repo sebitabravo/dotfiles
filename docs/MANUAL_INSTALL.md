@@ -179,9 +179,6 @@ herdr integration install pi
 ```bash
 vercel login
 gh auth login
-engram cloud status
-agy
-pi auth check
 ```
 
 ---
