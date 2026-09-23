@@ -107,7 +107,6 @@ corepack enable pnpm
 pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
-npm config set min-release-age 3
 npm install --global --ignore-scripts @fission-ai/openspec@1.13.1
 npm install --global --ignore-scripts vercel@59.25.4
 npm install --global --ignore-scripts @playwright/cli@0.1.21
