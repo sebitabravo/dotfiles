@@ -134,7 +134,6 @@ gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
-  --sdd-mode multi \
   --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code
 ```
 
@@ -153,7 +152,6 @@ Dentro de una sesión `pi`, una sola vez:
 
 ```text
 /gentle:status
-/gentle:sdd-preflight
 /gentle:review-mode enable
 /gentle:background-subagents enable
 /gentle:models
