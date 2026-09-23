@@ -108,9 +108,9 @@ pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
 npm config set min-release-age 3
-npm install --global --ignore-scripts @fission-ai/openspec@latest
-npm install --global --ignore-scripts vercel@latest
-npm install --global --ignore-scripts @playwright/cli@latest
+npm install --global --ignore-scripts @fission-ai/openspec@1.13.1
+npm install --global --ignore-scripts vercel@59.25.4
+npm install --global --ignore-scripts @playwright/cli@0.1.21
 ```
 
 ### Python (con pyenv)
@@ -140,12 +140,12 @@ gentle-ai install \
 ### Gentle-Shell (gentle-pi)
 
 ```bash
-pi install npm:gentle-pi@latest
-pi install npm:pi-intercom@latest
-pi install npm:gentle-engram@latest
-pi install npm:pi-web-access@latest
-pi install npm:pi-lens@latest
-pi install npm:@juicesharp/rpiv-ask-user-question@latest
+pi install npm:gentle-pi@3.6.0
+pi install npm:pi-intercom@0.13.0
+pi install npm:gentle-engram@0.1.14
+pi install npm:pi-web-access@0.31.0
+pi install npm:pi-lens@4.2.1
+pi install npm:@juicesharp/rpiv-ask-user-question@2.11.0
 ```
 
 Dentro de una sesión `pi`, una sola vez:
