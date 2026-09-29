@@ -599,7 +599,7 @@ resolve_home_target() {
   case "$p" in
     "" ) printf '%s' "${HOOK_CWD%/}" ;;
     "~" | "\$HOME" | "\${HOME}") printf '%s' "$home_noslash" ;;
-    "~/"*) printf '%s' "$home_noslash/${p#\~/}" ;;
+    \~/*) printf '%s' "$home_noslash/${p#\~/}" ;;
     "\$HOME/"*) printf '%s' "$home_noslash/${p#\$HOME/}" ;;
     "\${HOME}/"*) printf '%s' "$home_noslash/${p#\$\{HOME\}/}" ;;
     *) printf '%s' "${p%/}" ;;
