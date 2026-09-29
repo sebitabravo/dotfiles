@@ -65,10 +65,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Arduino IDE** - <https://www.arduino.cc/en/software>
 - [ ] **Unity Hub** - <https://unity.com/download>
 
-### IA & Coding Agents
-
-- [ ] **LM Studio** - <https://lmstudio.ai>
-
 ### Browsers
 
 - [ ] **Google Chrome** - <https://www.google.com/chrome>
@@ -88,7 +84,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Affinity** - <https://www.affinity.studio>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
-- [ ] **Audacity** - <https://www.audacityteam.org/download/mac>
+- [ ] **Audacity 3.7.9** - <https://www.audacityteam.org/download/older-versions/>
 - [ ] **OBS Studio** - <https://obsproject.com/download>
 - [ ] **Blender** - <https://www.blender.org/download>
 
@@ -133,7 +129,7 @@ gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code,pi
 ```
 
 ### Gentle-Shell (gentle-pi)
@@ -144,7 +140,6 @@ pi install npm:pi-intercom@0.13.0
 pi install npm:gentle-engram@0.1.14
 pi install npm:pi-web-access@0.31.0
 pi install npm:pi-lens@4.2.1
-pi install npm:@juicesharp/rpiv-ask-user-question@2.11.0
 ```
 
 Dentro de una sesión `pi`, una sola vez:

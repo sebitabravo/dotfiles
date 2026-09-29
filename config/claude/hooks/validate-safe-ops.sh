@@ -20,6 +20,7 @@ fi
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
+HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
 
 [ -z "$COMMAND" ] && exit 0
 
@@ -586,6 +587,47 @@ fi
 # awk en vez de sed porque BSD sed (macOS) no interpreta \n en el reemplazo.
 SEGMENTS=$(printf '%s' "$NO_QUOTES_FULL" | awk '{gsub(/&&|\|\||\||;/, "\n"); print}')
 
+# `git init` en $HOME ya paso dos veces (22-sep y 25-sep) sin poder atribuir
+# que proceso lo corrio. Engram fue descartado: internal/project/detect.go
+# jamas ejecuta `git init`, cae a dir_basename cuando no hay repo cerca. El
+# root real quedo sin firma en ambos casos, asi que la unica defensa posible
+# es cerrar el efecto, no la causa: ningun `git init` puede aterrizar
+# exactamente en el home. Un init dentro de un subdirectorio del home
+# (~/Developer/proyecto-nuevo) sigue siendo trabajo normal y no se toca.
+resolve_home_target() {
+  local p="$1" home_noslash="${HOME%/}"
+  case "$p" in
+    "" ) printf '%s' "${HOOK_CWD%/}" ;;
+    "~" | "\$HOME" | "\${HOME}") printf '%s' "$home_noslash" ;;
+    "~/"*) printf '%s' "$home_noslash/${p#\~/}" ;;
+    "\$HOME/"*) printf '%s' "$home_noslash/${p#\$HOME/}" ;;
+    "\${HOME}/"*) printf '%s' "$home_noslash/${p#\$\{HOME\}/}" ;;
+    *) printf '%s' "${p%/}" ;;
+  esac
+}
+
+check_git_init_target() {
+  local segment="$1" init_target=""
+  echo "$segment" | grep -qE '(^|[[:space:]])init([[:space:]]|$)' || return 0
+  # `-C <dir> init` fija el directorio explicitamente y gana sobre cualquier
+  # otra lectura.
+  # pipefail + grep sin match aborta el script entero bajo set -e; `|| true`
+  # neutraliza el exit 1 de un grep vacio (git init sin -C es el caso comun).
+  init_target=$(echo "$segment" | grep -oE '\-C[[:space:]]+[^[:space:]]+' | awk '{print $2}' | tail -n1 || true)
+  if [ -z "$init_target" ]; then
+    # Sin -C, el primer argumento posicional despues de `init` que no sea un
+    # flag es el directorio destino (`git init nombre-proyecto`); si no hay
+    # ninguno, el destino es el cwd real de la ejecucion.
+    init_target=$(echo "$segment" | sed -E 's/^git[[:space:]]+init[[:space:]]*//' |
+      awk '{for(i=1;i<=NF;i++){if($i !~ /^-/){print $i; exit}}}')
+  fi
+  local resolved
+  resolved=$(resolve_home_target "$init_target")
+  if [ -n "$resolved" ] && [ "$resolved" = "${HOME%/}" ]; then
+    deny "git init targeting \$HOME is blocked. A repo rooted at the home directory has broken the git-aware shell prompt twice already (2026-09-22, 2026-09-25) by scanning the whole home tree. Run 'git init' inside the actual project directory instead."
+  fi
+}
+
 check_segment() {
   local segment="$1" normalized head binary
   normalized=$(resolve_command_prefix "$segment")
@@ -603,6 +645,7 @@ check_segment() {
       deny "Privilege escalation through sudo/doas/su is blocked. Run without elevated privileges."
       ;;
     git)
+      check_git_init_target "$segment"
       # --force($|[^-]) = --force al final o seguido de espacio (no --force-with-lease)
       if echo "$segment" | grep -qE '\bpush\b.*--force($|[^-])'; then
         deny "git push --force blocked. Use --force-with-lease if it is necessary."
