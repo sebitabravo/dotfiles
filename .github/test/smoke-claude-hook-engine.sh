@@ -35,9 +35,8 @@ PROJECT_REAL=$(cd -- "$PROJECT" && pwd -P)
 # Puebla el runtime aislado directamente desde la fuente versionada. Antes esto
 # lo hacia sync-convergence-runtime.sh; ese script desaparecio junto con el
 # motor de convergencia y la copia explicita deja ver que entra al runtime.
-mkdir -p "$RUNTIME/hooks/lib" "$RUNTIME/scripts" "$RUNTIME/skills"
+mkdir -p "$RUNTIME/hooks/lib" "$RUNTIME/skills"
 cp -Rp -- "$SOURCE_ROOT/hooks/." "$RUNTIME/hooks/"
-cp -Rp -- "$SOURCE_ROOT/scripts/." "$RUNTIME/scripts/"
 cp -Rp -- "$SOURCE_ROOT/skills/." "$RUNTIME/skills/"
 cp -p -- "$SOURCE_ROOT/settings.json" "$RUNTIME/settings.json"
 

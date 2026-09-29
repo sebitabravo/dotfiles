@@ -75,19 +75,49 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(gitfast docker)
 
-# Compinit caching — evita doble inicializacion (oh-my-zsh skip global)
-skip_global_compinit=1
+# Oh My Zsh is the single owner of compinit and its cache lifecycle. Running
+# compinit here as well doubles startup work and can force repeated compdumps.
 ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${ZSH_VERSION}"
-autoload -Uz compinit
-if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(find "$ZSH_COMPDUMP" -mtime -1 2>/dev/null) ]]; then
-  compinit -C -d "$ZSH_COMPDUMP"
-else
-  compinit -d "$ZSH_COMPDUMP"
-fi
 
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
+
+# Historial — oh-my-zsh deja SAVEHIST=10000 contra HISTSIZE=50000, asi que al
+# cerrar la sesion se descarta el 80% de lo que la memoria si tenia. Igualarlos.
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+
+# Editor por defecto: lo leen git, fzf, gh, crontab y cualquier tool que abra $EDITOR.
+if command -v code >/dev/null 2>&1; then
+  export EDITOR='code --wait'
+  export VISUAL='code --wait'
+else
+  export EDITOR='vi'
+  export VISUAL='vi'
+fi
+
+# bat como pager de man y de --help, con colores.
+export MANPAGER="sh -c 'col -bx | bat --language=man --plain'"
+export MANROFFOPT='-c'
+
+# ripgrep no lee ningun archivo de config salvo que esta variable lo apunte.
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+
+# less: -R colores, -F no pagina si entra en pantalla, -i busqueda case-insensitive,
+# -M barra de estado larga. --mouse habilita scroll con rueda.
+export LESS='-R -F -i -M --mouse'
+export LESSHISTFILE='-'
+
+# Homebrew: sin analitica, sin autoupdate en cada install (lento e impredecible),
+# y limpieza automatica de versiones viejas a los 30 dias.
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_CLEANUP_MAX_AGE_DAYS=30
+export HOMEBREW_BAT=1
 
 # export MANPATH="/usr/local/man:$MANPATH"
 

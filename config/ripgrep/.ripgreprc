@@ -1,0 +1,58 @@
+# ripgrep — leido solo si RIPGREP_CONFIG_PATH apunta aca (ver .zshrc).
+# Una opcion por linea. No se permiten comentarios al final de una linea.
+
+# Busca dentro de archivos ocultos pero nunca dentro de .git.
+--hidden
+--glob=!.git/*
+
+# Smart case: minusculas buscan sin distinguir, una mayuscula activa case-sensitive.
+--smart-case
+
+# Contexto de una linea arriba y abajo; suficiente para leer el match sin abrir el archivo.
+--context=1
+
+# Agrupa por archivo en vez de repetir la ruta en cada linea.
+--heading
+
+# Sigue symlinks: los monorepos con node_modules enlazados quedan invisibles sin esto.
+--follow
+
+# Tipos propios para los stacks que se usan en esta maquina.
+--type-add=web:*.{html,css,scss,js,jsx,ts,tsx,vue,svelte}
+--type-add=blade:*.blade.php
+--type-add=laravel:include:php,blade
+--type-add=config:*.{json,yaml,yml,toml,ini,conf,env,plist}
+--type-add=docs:*.{md,mdx,txt,rst,adoc}
+
+# Ruido que nunca aporta a una busqueda de codigo.
+--glob=!node_modules/*
+--glob=!vendor/*
+--glob=!.next/*
+--glob=!dist/*
+--glob=!build/*
+--glob=!target/*
+--glob=!.venv/*
+--glob=!__pycache__/*
+--glob=!*.min.js
+--glob=!*.min.css
+--glob=!*.map
+--glob=!package-lock.json
+--glob=!pnpm-lock.yaml
+--glob=!bun.lock
+--glob=!composer.lock
+--glob=!Pods/*
+--glob=!DerivedData/*
+--glob=!.gradle/*
+--glob=!Library/*
+
+# Limite de tamano: un binario o un dump no deberia frenar la busqueda.
+--max-filesize=2M
+
+# Colores alineados con el tema del terminal.
+--colors=line:fg:yellow
+--colors=line:style:bold
+--colors=path:fg:green
+--colors=path:style:bold
+--colors=match:fg:black
+--colors=match:bg:yellow
+--colors=match:style:nobold

@@ -8,20 +8,19 @@ Configuración personal de Claude Code: `opusplan`, skills, reglas, hooks y MCP.
 | Ruta | Propósito |
 | --- | --- |
 | `settings.json` | Config principal: env, permisos, hooks, statusline. |
-| `CLAUDE.md` | Instrucciones globales. |
 | `skills/` + `skills-lock.json` + `skill-registry.md` | Skills bajo demanda; índice humano no cargado en sesión. |
-| `rules/`, `hooks/`, `templates/`, `agent-tools/` | Reglas, validaciones, plantilla de proyecto, manifest de toolchains. |
+| `rules/`, `hooks/`, `templates/`, `agent-tools/` | Instrucciones globales (reglas), validaciones, plantilla de proyecto, manifest de toolchains. |
 | `statusline.sh`, `mcp-servers.json`, `tweakcc-theme.json` | Statusline, MCP, tema. |
 
 Las suites y auditorías viven en `.github/test/`, fuera de esta carpeta.
 
 ## Convivencia con gentle-ai
 
-- **gentle-ai fusiona:** bloques `<!-- gentle-ai:... -->` en `CLAUDE.md` y deep
-  merge sobre `settings.json` (no afloja un `deny`).
-- **Este repo reemplaza:** `CLAUDE.md` y `settings.json` enteros. `install.sh`
-  corre primero y llama `gentle-ai sync --agent claude-code` al final. Invertir
-  el orden borra la capa de gentle-ai.
+- **gentle-ai fusiona:** deep merge sobre `settings.json` (no afloja un `deny`).
+  `~/.claude/CLAUDE.md` es solo suyo: este repo no lo versiona ni lo toca.
+- **Este repo reemplaza:** `settings.json` entero. `install.sh` corre primero y
+  llama `gentle-ai sync --agent claude-code` al final. Invertir el orden borra
+  la capa de gentle-ai.
 - gentle-ai ganó donde duplicaba: RDD (`gentle-ai review`), conducta del agente
   (persona/output style), `skill-creator`, `agents/` y `commands/`.
 - Este repo conserva: hooks de seguridad, gate de commit, `rules/`, permisos,
@@ -31,8 +30,8 @@ Las suites y auditorías viven en `.github/test/`, fuera de esta carpeta.
 | --- | --- | --- |
 | `hooks/`, `rules/`, `templates/`, `scripts/`, `agent-tools/` | este repo | `rsync --delete` |
 | `skills/` | compartido | aditivo, `--delete` por entrada |
-| `agents/`, `commands/`, `mcp/`, `output-styles/` | gentle-ai | no se tocan |
-| `CLAUDE.md`, `settings.json` | repo + capa gentle-ai | copia + `gentle-ai sync` |
+| `CLAUDE.md`, `agents/`, `commands/`, `mcp/`, `output-styles/` | gentle-ai | no se tocan |
+| `settings.json` | repo + capa gentle-ai | copia + `gentle-ai sync` |
 
 Gate de commit: runners del repo solo con el root Git listado en `~/.claude/trusted-repositories`.
 
@@ -52,7 +51,7 @@ for skill in "$CLAUDE_DIR"/skills/*/; do
   rsync -a --delete --exclude='__pycache__' --exclude='.DS_Store' \
     --exclude='node_modules' "$skill" "$HOME/.claude/skills/$(basename "$skill")/"
 done
-for file in CLAUDE.md statusline.sh mcp-servers.json skills-lock.json \
+for file in statusline.sh mcp-servers.json skills-lock.json \
   tweakcc-theme.json skill-registry.md settings.json; do
   cp -p "$CLAUDE_DIR/$file" "$HOME/.claude/$file"
 done

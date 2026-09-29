@@ -45,3 +45,17 @@ exploración agotada. No esperes a que la ventana se llene.
 Delega la exploración pesada de archivos a subagentes (20 lecturas cuestan un
 resumen), acota las investigaciones, y prefiere `codegraph explore` o un `rg`
 dirigido antes que leer un archivo entero para encontrar un símbolo.
+
+Delega cuando la tarea lee muchos archivos, corre en paralelo con otra cosa, o
+necesita contexto aislado (revisión, auditoría, barrido de investigación).
+Trabaja directo — sin agente — en un typo, un fix de una línea, una edición de un
+solo archivo, pasos secuenciales donde necesitas el resultado anterior, o algo
+que responde un `rg`.
+
+Máximo 4 agentes en paralelo. Todo reporte largo se escribe en un archivo y el
+subagente devuelve solo la ruta y un resumen de una línea; los resultados grandes
+pasados por chat se degradan en cada salto.
+
+## Cierre de sesión
+
+Sin artefactos temporales. Con Engram: `mem_session_summary`.
