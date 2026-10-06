@@ -55,6 +55,12 @@ brew "git-filter-repo"
 brew "ffuf"
 brew "nuclei"
 brew "gitleaks"
+brew "age"
+brew "gga"
+brew "whisper.cpp"
+brew "postgresql@17", link: true
+brew "libpq"
+brew "cocoapods"
 # semgrep se instala en el Python administrado por pyenv; la formula Homebrew
 # arrastra python@3.14 y duplicaria el runtime del usuario.
 
