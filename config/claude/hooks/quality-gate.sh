@@ -603,7 +603,7 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
     TEST_OUTPUT=$(run_with_timeout "$TEST_BOUND" "$RUN_CMD")
     TEST_RC=$?
     if [ "$TEST_RC" = 124 ]; then
-      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
+      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD. Que hacer: corre ese comando tu mismo (con run_in_background si es lento), confirma que pasa y reintenta el commit. Si siempre tarda mas que el limite, hay un test lento o no hermetico (p. ej. que lance brew o descargas reales); arreglalo o sube QG_TEST_TIMEOUT_SECONDS." "$TEST_OUTPUT"
     elif [ "$TEST_RC" != 0 ]; then
       block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
     fi

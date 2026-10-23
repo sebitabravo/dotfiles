@@ -64,6 +64,7 @@ SUITES=(
   .github/test/secret-detect.test.sh
   .github/test/quality-gate.test.sh
   .github/test/validate-safe-ops.test.sh
+  .github/test/validate-safe-ops-prose.test.sh
   .github/test/compact-resume.test.sh
   .github/test/doctor.test.sh
   .github/test/defaults-failure-propagation.test.sh
