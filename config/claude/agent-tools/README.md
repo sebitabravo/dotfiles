@@ -7,8 +7,9 @@
   `semgrep` y varias herramientas de análisis arrastran un Python separado.
 - **Node.js**: usar el Node default de Herd. Las dependencias JavaScript son
   locales a cada skill y no instalan otro runtime Node.
-- **Rust**: usar `rustup` en `~/.cargo`; no usar la formula Homebrew `rust`, cuya
-  grafía de dependencias agrega `python@3.14` en este host.
+- **Rust**: usar la formula Homebrew `rust` (ya instalada, `brew "rust"` en el
+  Brewfile); no instalar `rustup` aparte. Un segundo toolchain de Rust no aporta
+  nada acá, y `brew deps rust` no arrastra ningún Python separado en este host.
 
 ## Python
 
@@ -54,9 +55,9 @@ neonctl --version
 
 ## Rust
 
-Rust se instala con el instalador oficial `rustup` y queda en `~/.cargo/bin`.
-El `.zshenv` versionado agrega ese directorio al `PATH`; no se instala Rust por
-Homebrew.
+Rust se instala con `brew "rust"` (ver `Brewfile`). No se usa `rustup`; el
+`.zshenv` versionado no promueve `~/.cargo/bin` porque ese directorio no existe
+en este setup.
 
 ## Fuera del host
 

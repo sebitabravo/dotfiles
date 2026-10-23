@@ -112,7 +112,7 @@ if roadmap_block:
 
 context = f"""CONTEXT COMPACTED. The rules are NOT relaxed after compaction.
 
-ALL of CLAUDE.md and rules/common/*.md remain in force — NO AI FOOTPRINT,
+ALL of rules/common/*.md remain in force — NO AI FOOTPRINT,
 VERIFY FIRST (no "should work"), EVIDENCE BEFORE CLAIMS, LEVERAGE != RELY
 (full ownership, CI != guarantee), PRE-COMMIT LITMUS (3 questions), GOAL-DRIVEN
 (loop until verified), STOP & WAIT on ambiguity.

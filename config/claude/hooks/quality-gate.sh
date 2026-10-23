@@ -267,7 +267,7 @@ RELAXED=false
 # Para relajar este gate esta `.claude-relaxed`, que es una decision explicita
 # por repo y no un efecto lateral del modo de permisos.
 
-# Pisos. Los mismos que declara CLAUDE.md; viven aca para que el numero que
+# Pisos. Los mismos que declara rules/common/testing.md; viven aca para que el numero que
 # bloquea y el numero que esta escrito no puedan divergir en silencio.
 MIN_LINE=80
 MIN_BRANCH=70
@@ -402,7 +402,7 @@ detect_project_at() {
         TEST_CMD="${prefix}uv run pytest"
       fi
       # --cov-branch: sin el, pytest-cov no reporta branch coverage y el piso de
-      # 70% declarado en CLAUDE.md no se puede evaluar.
+      # 70% declarado en rules/common/testing.md no se puede evaluar.
       COVERAGE_CMD="${prefix}uv run pytest --cov --cov-branch --cov-report=term-missing"
       COVERAGE_KIND="pycov"
     fi
@@ -641,7 +641,7 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
   # La version anterior hacia `grep -oE '[0-9]+%' | head -1`: agarraba el PRIMER
   # porcentaje del output, que con suerte era line coverage y podia ser cualquier
   # otro numero. Branch y function no se miraban nunca, asi que dos de los tres
-  # pisos declarados en CLAUDE.md no existian.
+  # pisos declarados en rules/common/testing.md no existian.
   #
   # Cuando una metrica no se puede medir se dice, en vez de darla por buena: un
   # gate que finge medir es peor que no tener gate, porque compra confianza falsa.
@@ -704,7 +704,7 @@ ${COV_FAIL}[quality-gate] Add tests. Kill switch for this repo: touch $RELAX_FIL
 
   # 4. Complejidad ciclomatica.
   #
-  # CLAUDE.md declara un techo de 10 por funcion y hasta ahora NADA lo medía: era
+  # El techo es 10 por funcion y hasta ahora NADA lo medía: era
   # la unica de las cuatro metricas sin ningun mecanismo detras. Se usa la
   # herramienta del lenguaje si esta instalada; si no esta, se dice, en vez de
   # dejar pasar el commit como si el techo se hubiera verificado.

@@ -108,7 +108,6 @@ assert_not_exists "$TOOL_DRY_HOME/.zshrc"
 assert_not_exists "$TOOL_DRY_HOME/.oh-my-zsh"
 grep -qF 'https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh' "$tool_dry_output" || fail 'Oh My Zsh plan missing'
 grep -qF 'https://github.com/romkatv/powerlevel10k.git' "$tool_dry_output" || fail 'Powerlevel10k plan missing'
-grep -qF 'https://kilo.ai/cli/install' "$tool_dry_output" || fail 'Kilo plan missing'
 grep -qF 'https://cursor.com/install' "$tool_dry_output" || fail 'Cursor Agent plan missing'
 grep -qF 'https://antigravity.google/cli/install.sh' "$tool_dry_output" || fail 'Antigravity plan missing'
 grep -qF 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh' "$tool_dry_output" || fail 'Homebrew plan missing'
@@ -210,18 +209,15 @@ grep -qF 'git sigue sin correr tras aceptar la licencia' "$TMP_HOME/license-inst
 grep -qF 'dependencias Brewfile' "$TMP_HOME/license-install.log" && fail 'unsatisfied Xcode license reached Homebrew'
 
 printf '%s\n' '== install.sh skips known user-local CLI locations =='
-mkdir -p "$TOOL_DRY_HOME/.opencode/bin" "$TOOL_DRY_HOME/.kilo/bin"
-for command_name in opencode kilo; do
-  printf '%s\n' '#!/usr/bin/env bash' >"$TOOL_DRY_HOME/.${command_name}/bin/$command_name"
-  chmod +x "$TOOL_DRY_HOME/.${command_name}/bin/$command_name"
-done
+mkdir -p "$TOOL_DRY_HOME/.opencode/bin"
+printf '%s\n' '#!/usr/bin/env bash' >"$TOOL_DRY_HOME/.opencode/bin/opencode"
+chmod +x "$TOOL_DRY_HOME/.opencode/bin/opencode"
 : >"$TOOL_DRY_LOG"
 TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TOOL_DRY_HOME" \
   PATH="$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
   bash "$INSTALL" --dry-run >"$TMP_HOME/tool-local-cli.log"
 [ ! -s "$TOOL_DRY_LOG" ] || fail 'known local CLI check invoked a network or clone command'
 grep -qF 'SKIP   OpenCode (ya existe opencode)' "$TMP_HOME/tool-local-cli.log" || fail 'OpenCode local binary was not skipped'
-grep -qF 'SKIP   Kilo Code (ya existe kilo)' "$TMP_HOME/tool-local-cli.log" || fail 'Kilo local binary was not skipped'
 
 printf '%s\n' '== install.sh rejects altered remote bytes before shell execution =='
 HASH_MISMATCH_HOME="$TMP_HOME/hash-mismatch-home"
@@ -269,7 +265,7 @@ EOF
 # tiene que faltar para forzar el path real de descarga y ejercitar el
 # checksum fail-closed. CodeGraph es el primer remote tool que install.sh
 # intenta tras Homebrew/Oh My Zsh (que se saltan por fixture aparte).
-for command_name in gentle-ai opencode codex agent agy claude copilot kilo pi spicetify; do
+for command_name in gentle-ai opencode codex agent agy claude copilot pi spicetify; do
   cat >"$HASH_MISMATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -350,7 +346,7 @@ EOF
 # codegraph queda fuera del loop de stubs por el mismo motivo que en el bloque
 # de hash mismatch: es el primer remote tool real tras Homebrew/Oh My Zsh, y
 # el shasum de arriba esta fijado a su checksum real para simular un match.
-for command_name in gentle-ai opencode codex agent agy claude copilot kilo pi spicetify; do
+for command_name in gentle-ai opencode codex agent agy claude copilot pi spicetify; do
   cat >"$MATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -466,7 +462,7 @@ VSCODE_HOME="$TEST_HOME/Library/Application Support/Code/User"
 MCP_JQ_BIN="$(command -v jq || true)"
 [ -x "$MCP_JQ_BIN" ] || fail 'jq is required for the isolated MCP fixture'
 mkdir -p "$BOOTSTRAP_BIN" "$TEST_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot kilo pi spicetify; do
+for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot pi spicetify; do
   cat >"$BOOTSTRAP_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -628,10 +624,10 @@ printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL
 printf '%s\n' 'stale own-skill file' >"$TEST_HOME/.claude/skills/handoff/stale.md"
 printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Gentleman.md"
 printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/sdd-verify.md"
+printf '%s\n' 'gentle-ai instructions' >"$TEST_HOME/.claude/CLAUDE.md"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
-printf '%s\n' 'local Claude instructions' >"$TEST_HOME/.claude/CLAUDE.md"
 printf '%s\n' 'local VS Code settings' >"$VSCODE_HOME/settings.json"
 
 # A stale file under a managed directory must be removed by rsync --delete.
@@ -750,8 +746,7 @@ assert_file "$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
 assert_file "$TEST_HOME/.claude/output-styles/Gentleman.md"
 assert_file "$TEST_HOME/.claude/agents/sdd-verify.md"
 assert_not_exists "$TEST_HOME/.claude/skills/handoff/stale.md"
-assert_file "$TEST_HOME/.claude/CLAUDE.md"
-assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
+grep -qxF 'gentle-ai instructions' "$TEST_HOME/.claude/CLAUDE.md" || fail 'installer touched gentle-ai CLAUDE.md'
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
@@ -785,17 +780,13 @@ printf '%s\n' '== symlink migration and backups =='
 assert_file "$TEST_HOME/.zprofile"
 assert_not_symlink "$TEST_HOME/.zprofile"
 assert_equal "$ROOT/.zprofile" "$TEST_HOME/.zprofile"
-assert_file "$TEST_HOME/.claude/CLAUDE.md"
-assert_not_symlink "$TEST_HOME/.claude/CLAUDE.md"
-assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
 
 zprofile_backup=$(find "$TEST_HOME" -maxdepth 1 -name '.zprofile.backup.*' -type f -print -quit)
 [ -n "$zprofile_backup" ] || fail 'missing .zprofile backup'
 grep -qxF 'local zprofile' "$zprofile_backup" || fail 'wrong .zprofile backup content'
 
 claude_backup=$(find "$TEST_HOME/.claude" -maxdepth 1 -name 'CLAUDE.md.backup.*' -type f -print -quit)
-[ -n "$claude_backup" ] || fail 'missing Claude instructions backup'
-grep -qxF 'local Claude instructions' "$claude_backup" || fail 'wrong Claude backup content'
+[ -z "$claude_backup" ] || fail 'installer backed up gentle-ai CLAUDE.md'
 
 vscode_backup=$(find "$VSCODE_HOME" -maxdepth 1 -name 'settings.json.backup.*' -type f -print -quit)
 [ -n "$vscode_backup" ] || fail 'missing VS Code settings backup'

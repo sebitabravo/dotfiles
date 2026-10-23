@@ -1,8 +1,8 @@
 ---
 name: npm-security
 description:
-  NPM supply chain hardening — 17 practices covering postinstall blocking, git
-  dependency bans, version cooldown, lockfile integrity, dependency confusion,
+  NPM supply chain hardening — 16 practices covering postinstall blocking, git
+  dependency bans, lockfile integrity, dependency confusion,
   provenance, and 2FA. Use when installing packages, auditing dependencies,
   configuring a package manager, reviewing a lockfile, or responding to a supply
   chain advisory.
@@ -12,7 +12,7 @@ description:
 
 Based on
 [lirantal/npm-security-best-practices](https://github.com/lirantal/npm-security-best-practices).
-17 practices. Each one: what it protects, how it is exploited, how to mitigate.
+16 practices. Each one: what it protects, how it is exploited, how to mitigate.
 
 ---
 
@@ -65,46 +65,7 @@ blockExoticSubdeps: true
 
 ---
 
-## 3. Cooldown on new versions
-
-**Vector**: malicious package published, installed within <3 hours.
-LiteLLM/Telnyx (March 2026): 119k+ malicious downloads in <3h. TanStack:
-propagation in hours.
-
-**Mitigation**:
-
-```bash
-# npm — 3 days minimum
-npm config set min-release-age 3
-
-# pnpm 10.16+ — 14 days (20160 minutes)
-# pnpm-workspace.yaml
-minimumReleaseAge: 20160
-
-# Bun 1.3+ — 3 days (259200 seconds)
-# bunfig.toml
-minimumReleaseAge = 259200
-
-# Yarn 4.10+
-# .yarnrc.yml
-npmMinimalAgeGate: "3d"
-```
-
-**Dependabot** (`.github/dependabot.yml`):
-
-```yaml
-cooldown:
-  default-days: 7
-  semver-major-days: 7
-  semver-minor-days: 7
-  semver-patch-days: 7
-```
-
-**Renovate**: `minimumReleaseAge` option.
-
----
-
-## 4. Lockfile integrity
+## 3. Lockfile integrity
 
 **Vector**: malicious PR modifies the `resolved` URL and `integrity` hash in the
 lockfile. Package installed from the attacker's server with a hash that matches
@@ -127,7 +88,7 @@ npx lockfile-lint --path package-lock.json --type npm --allowed-hosts npm yarn -
 
 ---
 
-## 5. Deterministic installation
+## 4. Deterministic installation
 
 ```bash
 npm ci                        # respects lockfile, does not run postinstall
@@ -143,7 +104,7 @@ bun install --frozen-lockfile
 
 ---
 
-## 6. Pre-audit packages before installing
+## 5. Pre-audit packages before installing
 
 ### npq — pre-install firewall
 
@@ -175,7 +136,7 @@ by Socket's deep analysis.
 
 ---
 
-## 7. No blind upgrades
+## 6. No blind upgrades
 
 **Vector**: mass `npm update`. Attacks: colors.js (2022), node-ipc (2022) —
 legitimate maintainers inserted malware in new versions.
@@ -186,11 +147,11 @@ legitimate maintainers inserted malware in new versions.
 npx npm-check-updates --interactive
 ```
 
-Dependabot/Snyk/Renovate with cooldown configured.
+Dependabot/Snyk/Renovate with each update PR reviewed.
 
 ---
 
-## 8. npx hardening
+## 7. npx hardening
 
 **Vector**: `npx` downloads and runs packages without verification. If the
 package is compromised, immediate execution.
@@ -222,7 +183,7 @@ npx --include-workspace-root --workspace $HOME/mcp --no --offline @modelcontextp
 
 ---
 
-## 9. No secrets in .env
+## 8. No secrets in .env
 
 **Vector**: `.env` with plaintext secrets. Accidental commit = exposed secret.
 Manual rotation.
@@ -243,7 +204,7 @@ Use 1Password CLI, Infisical, Doppler, HashiCorp Vault.
 
 ---
 
-## 10. Shrink the dependency tree
+## 9. Shrink the dependency tree
 
 **Vector**: every dependency = attack surface. An average `node_modules`
 has >1000 packages.
@@ -266,7 +227,7 @@ const padded = str.padStart(10);
 
 ---
 
-## 11. Verify the package before installing
+## 10. Verify the package before installing
 
 **Vector**: the npmjs.com page omits git/HTTPS dependencies. The displayed code
 may differ from the installed tarball.
@@ -278,7 +239,7 @@ npm pack <pkg> && tar -tzf <pkg>-<version>.tgz  # review actual content
 
 ---
 
-## 12. Prevent dependency confusion
+## 11. Prevent dependency confusion
 
 **Vector**: attacker publishes to the public registry a package with the same
 name as your internal package, with a higher version. The resolver picks it.
@@ -300,7 +261,7 @@ name as your internal package, with a higher version. The resolver picks it.
 
 ---
 
-## 13. 2FA on the npm account
+## 12. 2FA on the npm account
 
 ```bash
 npm profile enable-2fa auth-and-writes   # publishing
@@ -309,7 +270,7 @@ npm profile enable-2fa auth-only         # login only
 
 ---
 
-## 14. Publish with provenance
+## 13. Publish with provenance
 
 ```yaml
 # GitHub Actions
@@ -323,14 +284,14 @@ Cryptographic proof of build origin. Requires npm CLI 9.5.0+.
 
 ---
 
-## 15. Publish with OIDC
+## 14. Publish with OIDC
 
 Eliminates long-lived tokens. Trusted publishing with short-lived tokens scoped
 to specific workflows. Configure at npmjs.com → Trusted Publishers.
 
 ---
 
-## 16. Consult the Snyk Security Database
+## 15. Consult the Snyk Security Database
 
 Before adopting a package: `https://security.snyk.io/package/npm/<name>`
 
@@ -338,7 +299,7 @@ Evaluate: health score, security, popularity, maintenance, community.
 
 ---
 
-## 17. pnpm trust policy
+## 16. pnpm trust policy
 
 **Vector**: a package published with OIDC/provenance is suddenly published
 without it. Signal of takeover.
@@ -365,4 +326,3 @@ trustPolicyIgnoreAfter: 43200 # minutes (pnpm 10.27+)
 6. **Never commit secrets.** Use vault references.
 7. **Lockfile always committed.**
 8. **Audit before installing:** `npq --dry-run` for new packages.
-9. **3-day cooldown** for new packages.

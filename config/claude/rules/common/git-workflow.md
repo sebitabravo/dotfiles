@@ -35,6 +35,8 @@ statements, TODOs colgando, y archivos generados que se stagearon sin querer.
 
 ## Branches
 
+Trabaja en rama; nunca commitees directo en `main`.
+
 - `feat/<slug>` — new features
 - `fix/<slug>` — bug fixes
 - `refactor/<slug>` — refactors without functional change
@@ -46,3 +48,8 @@ statements, TODOs colgando, y archivos generados que se stagearon sin querer.
 - Description: what + why + test plan.
 - Reviewers assigned. No self-merge without review.
 - Squash merge to main. Keep history clean.
+
+## Push
+
+- Nunca `--no-verify`: si un hook bloquea, arréglalo.
+- Antes de pushear, revisa `git log origin/main..HEAD --oneline`.

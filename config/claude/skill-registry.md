@@ -39,7 +39,7 @@ pisarlas. Si necesitas una de esas, se administra con `gentle-ai`, no acá.
 | Skill | Para qué |
 |---|---|
 | `mutation-testing` | Medir calidad de tests con mutantes (Stryker, PIT, Infection). |
-| `npm-security` | Endurecimiento de la cadena de suministro npm: 17 prácticas. |
+| `npm-security` | Endurecimiento de la cadena de suministro npm: 16 prácticas. |
 
 ## Chile y documentos
 

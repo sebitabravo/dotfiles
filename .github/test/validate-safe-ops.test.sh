@@ -5,15 +5,15 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 HOOK="$ROOT/config/claude/hooks/validate-safe-ops.sh"
 
 run_hook() {
-  local command=$1 mode=${2:-default}
-  jq -nc --arg command "$command" --arg mode "$mode" \
-    '{tool_name:"Bash",tool_input:{command:$command},permission_mode:$mode}' |
+  local command=$1 mode=${2:-default} cwd=${3:-/tmp/some-project}
+  jq -nc --arg command "$command" --arg mode "$mode" --arg cwd "$cwd" \
+    '{tool_name:"Bash",tool_input:{command:$command},permission_mode:$mode,cwd:$cwd}' |
     bash "$HOOK"
 }
 
 assert_decision() {
-  local expected=$1 command=$2 mode=${3:-default} output
-  output=$(run_hook "$command" "$mode" 2>/dev/null)
+  local expected=$1 command=$2 mode=${3:-default} cwd=${4:-/tmp/some-project} output
+  output=$(run_hook "$command" "$mode" "$cwd" 2>/dev/null)
   printf '%s' "$output" | jq -e --arg expected "$expected" \
     '.hookSpecificOutput.permissionDecision == $expected' >/dev/null || {
     printf 'expected %s for %s, got: %s\n' "$expected" "$command" "$output" >&2
@@ -22,8 +22,8 @@ assert_decision() {
 }
 
 assert_silent() {
-  local command=$1 mode=${2:-default} output
-  output=$(run_hook "$command" "$mode" 2>/dev/null)
+  local command=$1 mode=${2:-default} cwd=${3:-/tmp/some-project} output
+  output=$(run_hook "$command" "$mode" "$cwd" 2>/dev/null)
   [[ -z "$output" ]] || {
     printf 'expected silence for %s, got: %s\n' "$command" "$output" >&2
     return 1
@@ -114,5 +114,16 @@ assert_silent 'git status'
 assert_silent 'git push origin main --force-with-lease'
 assert_silent 'cat .env.example'
 assert_silent 'echo "git push origin main --force"'
+
+# `git init` en $HOME rompio el prompt del shell dos veces sin proceso
+# atribuible (2026-09-22, 2026-09-25). El destino, no el verbo, es lo que
+# decide: un init en un subdirectorio del home es trabajo normal.
+assert_decision deny 'git init' default "$HOME"
+assert_decision deny "git -C $HOME init" default /tmp/some-project
+assert_decision deny 'git init ~' default /tmp/some-project
+assert_decision deny 'git init $HOME' default /tmp/some-project
+assert_silent 'git init' default "$HOME/Developer/new-project"
+assert_silent "git init new-project" default "$HOME"
+assert_silent "git -C $HOME/Developer/new-project init" default /tmp/some-project
 
 printf 'validate-safe-ops tests: PASS\n'

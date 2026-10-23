@@ -91,7 +91,6 @@ REMOTE_INSTALLER_LABELS=(
   'Antigravity CLI'
   'Claude Code'
   'GitHub Copilot CLI'
-  'Kilo Code'
   'Pi'
   'Spicetify'
   'Spicetify Marketplace'
@@ -106,7 +105,6 @@ REMOTE_INSTALLER_URLS=(
   'https://antigravity.google/cli/install.sh'
   'https://claude.ai/install.sh'
   'https://gh.io/copilot-install'
-  'https://kilo.ai/cli/install'
   'https://pi.dev/install.sh'
   'https://raw.githubusercontent.com/spicetify/cli/main/install.sh'
   'https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.sh'
@@ -197,7 +195,6 @@ tool_exists() {
     "$HOME/.npm-global/bin/$command_name" \
     "$HOME/.local/share/pnpm/$command_name" \
     "$HOME/.opencode/bin/$command_name" \
-    "$HOME/.kilo/bin/$command_name" \
     "$HOME/.spicetify/$command_name"; do
     [ -x "$candidate" ] && return 0
   done
@@ -646,7 +643,6 @@ install_bootstrap_tools() {
   install_remote_tool 'Antigravity CLI' agy bash
   install_remote_tool 'Claude Code' claude bash
   install_remote_tool 'GitHub Copilot CLI' copilot bash
-  install_remote_tool 'Kilo Code' kilo bash --no-modify-path
   install_remote_tool 'Pi' pi sh
 
   # El instalador de Spicetify pregunta interactivamente (lee de /dev/tty) si
@@ -656,13 +652,13 @@ install_bootstrap_tools() {
   if [ "$DRY_RUN" -eq 0 ]; then
     printf '%s\n' '  NOTE   si Spicetify pregunta por Marketplace, responde "n" (se instala aparte, verificado)'
   fi
-  install_remote_tool 'Spicetify' spicetify sh
+  install_remote_tool 'Spicetify' spicetify sh || true
   prepare_spicetify_path
 
   if [ -d "$HOME/.config/spicetify/CustomApps/marketplace" ]; then
     printf '%s\n' '  SKIP   Spicetify Marketplace (ya existe ~/.config/spicetify/CustomApps/marketplace)'
   else
-    run_remote_installer 'Spicetify Marketplace' sh
+    run_remote_installer 'Spicetify Marketplace' sh || true
   fi
 }
 
@@ -814,11 +810,11 @@ register_claude_mcp_servers() {
 
 # Reaplica la capa de gentle-ai sobre ~/.claude despues de copiar la de este repo.
 #
-# ORDEN, Y POR QUE IMPORTA: gentle-ai fusiona en vez de reemplazar. Escribe en
-# CLAUDE.md dentro de bloques `<!-- gentle-ai:... -->` y hace deep merge sobre
-# settings.json, asi que respeta todo lo que este instalador ya puso. Lo inverso
-# no es cierto: este instalador copia CLAUDE.md y settings.json enteros, asi que
-# borra los bloques y las claves de gentle-ai. Por eso gentle-ai corre DESPUES.
+# ORDEN, Y POR QUE IMPORTA: gentle-ai fusiona en vez de reemplazar. Hace deep
+# merge sobre settings.json, asi que respeta todo lo que este instalador ya puso.
+# Lo inverso no es cierto: este instalador copia settings.json entero, asi que
+# borra las claves de gentle-ai. Por eso gentle-ai corre DESPUES. ~/.claude/CLAUDE.md
+# es solo de gentle-ai: este repo no lo versiona y el instalador no lo toca.
 #
 # No se instala nada: si gentle-ai no esta, o no tiene claude-code entre sus
 # agentes, la funcion no hace nada y lo dice. Elegir configurar Claude Code con
@@ -838,11 +834,11 @@ resync_gentle_ai_claude_layer() {
   fi
 
   if [ "$DRY_RUN" -ne 0 ]; then
-    printf '  DRYRUN gentle-ai sync --agent claude-code\n'
+    printf '  DRYRUN gentle-ai sync --agent claude-code --include-permissions --include-theme\n'
     return 0
   fi
 
-  if ! "$gentle_bin" sync --agent claude-code; then
+  if ! "$gentle_bin" sync --agent claude-code --include-permissions --include-theme; then
     printf '  WARN   gentle-ai sync fallo; la capa de gentle-ai puede estar incompleta\n' >&2
     return 0
   fi
@@ -861,7 +857,6 @@ RSYNC_EXCLUDES=(
 # copiado queda incluido en el preflight y no puede empezar un bootstrap con un
 # checkout incompleto.
 CLAUDE_FILES=(
-  config/claude/CLAUDE.md
   config/claude/statusline.sh
   config/claude/mcp-servers.json
   config/claude/skills-lock.json
@@ -883,6 +878,7 @@ REQUIRED_FILES=(
   .p10k.zsh
   .gitconfig
   config/git/.gitignore_global
+  config/ripgrep/.ripgreprc
   config/herdr/config.toml
   config/btop/btop.conf
   config/vscode/settings.json
@@ -1118,6 +1114,7 @@ copy .zshrc "$HOME/.zshrc"
 copy .zshenv "$HOME/.zshenv"
 copy .zprofile "$HOME/.zprofile"
 copy .p10k.zsh "$HOME/.p10k.zsh"
+copy config/ripgrep/.ripgreprc "$HOME/.ripgreprc"
 
 echo "git"
 copy .gitconfig "$HOME/.gitconfig"

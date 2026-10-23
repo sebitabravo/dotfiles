@@ -1,7 +1,66 @@
-# Global gitignore — aplica a TODOS los repos
+# Global gitignore — aplica a TODOS los repos.
+#
+# Solo va acá lo que NINGÚN repo deberia trackear nunca: basura del sistema
+# operativo, archivos temporales del editor y overrides locales de la máquina.
+# Los artefactos de build (node_modules, dist, vendor) van en el .gitignore del
+# repo: ahí son una decisión del proyecto, no de esta máquina.
 
 # Handoff — traspaso entre sesiones (NUNCA commitear)
 HANDOFF.md
 HANDOFF.md.archived
 
 **/.claude/settings.local.json
+
+# macOS
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Icon?
+
+# Windows y Linux (repos compartidos)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.directory
+.Trash-*
+
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+*~
+.netrwhist
+Session.vim
+
+# Editores e IDEs — solo los archivos de estado por usuario. Los settings
+# compartidos del proyecto (.vscode/settings.json) los decide cada repo.
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+*.iml.local
+.vscode/.ropeproject
+.history/
+
+# Overrides locales de la máquina
+.env.local
+.env.*.local
+*.local.json
+.direnv/
+.envrc.local
+
+# Herramientas
+.tool-versions.local
+.eslintcache
+.stylelintcache
+*.pid
+*.pid.lock

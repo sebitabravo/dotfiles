@@ -37,13 +37,11 @@ acá no hay ni siquiera el patrón.
 ## Dependencias y cadena de suministro
 
 - Antes de instalar, verifica que el paquete sea legítimo (typo-squatting).
-- Cooldown de 3 días antes de adoptar una versión recién publicada.
 - Auditoría antes de instalar algo nuevo: `npq --dry-run`. Para auditar el árbol
   existente usa el script del proyecto, o `npm audit` / `bun audit` /
   `cargo audit` / `pip-audit`.
 - **Preferencia de package manager: `bun` > `pnpm` > `npm`.** Bun y pnpm 10+
-  bloquean lifecycle scripts por defecto y soportan cooldown por antigüedad de
-  publicación; por eso van primero.
+  bloquean lifecycle scripts por defecto; por eso van primero.
 - **El lockfile de un proyecto existente gana sobre esa preferencia y no es tuyo
   para cambiarlo.** `bun.lock` significa bun, `pnpm-lock.yaml` pnpm,
   `package-lock.json` npm, `uv.lock` uv. Cambiar re-resuelve el árbol de
@@ -52,8 +50,8 @@ acá no hay ni siquiera el patrón.
 - `npm install` / `npm i` requiere confirmación explícita. Prefiere `npm ci`.
 - `npm install -g` está BLOQUEADO. Usa `npx`, `pnpm dlx`, `bunx` o `npm exec` local.
 - Cuando un proyecto obliga a npm, el endurecimiento de `~/.npmrc` es lo que
-  reemplaza lo que bun y pnpm dan gratis: `ignore-scripts=true`,
-  `allow-git=none`, `min-release-age=3`. Nunca los sobreescribas por proyecto.
+  reemplaza lo que bun y pnpm dan gratis: `ignore-scripts=true` y
+  `allow-git=none`. Nunca los sobreescribas por proyecto.
 - Guía completa de endurecimiento: skill `npm-security`.
 
 ## Sesgo de autonomía

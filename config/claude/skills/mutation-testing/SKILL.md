@@ -104,7 +104,7 @@ vendor/bin/infection
 ### Go — go-mutesting
 
 ```bash
-go install github.com/zimmski/go-mutesting/cmd/go-mutesting@latest
+go install github.com/zimmski/go-mutesting/cmd/go-mutesting@v0.0.0-20210610104036-6d9217011a00
 go-mutesting ./...
 ```
 

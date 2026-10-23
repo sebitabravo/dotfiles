@@ -22,7 +22,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Utilities
 
-- [ ] **CleanMyMac** - Limpieza del sistema
+- [ ] **CleanMyMac** - Limpieza del sistema (reemplaza a AppCleaner)
 - [ ] **DaVinci Resolve** - Edición de video profesional
 - [ ] **The Unarchiver** - Descompresor de archivos
 - [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
@@ -46,7 +46,6 @@ Estas apps se instalan desde la App Store de macOS:
 
 - [ ] **AlDente** - <https://apphousekitchen.com/aldente-overview>
 - [ ] **Parsec** - <https://parsecgaming.com/downloads>
-- [ ] **AppCleaner** - <https://freemacsoft.net/appcleaner>
 - [ ] **Bartender** - <https://www.macbartender.com>
 - [ ] **CodexBar** - <https://codexbar.app>
 - [ ] **Handy** - <https://handy.computer>
@@ -66,10 +65,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Arduino IDE** - <https://www.arduino.cc/en/software>
 - [ ] **Unity Hub** - <https://unity.com/download>
 
-### IA & Coding Agents
-
-- [ ] **LM Studio** - <https://lmstudio.ai>
-
 ### Browsers
 
 - [ ] **Google Chrome** - <https://www.google.com/chrome>
@@ -80,7 +75,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Raycast** - <https://www.raycast.com>
 - [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
-- [ ] **Discord** - <https://discord.com/download>
+- [ ] **Vesktop** - <https://github.com/Vencord/Vesktop> (cliente Discord alternativo)
 - [ ] **Teams** - <https://www.microsoft.com/en-us/microsoft-teams/download-app>
 
 ### Media & Content
@@ -89,7 +84,7 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Affinity** - <https://www.affinity.studio>
 - [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
 - [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
-- [ ] **Audacity** - <https://www.audacityteam.org/download/mac>
+- [ ] **Audacity 3.7.9** - <https://www.audacityteam.org/download/older-versions/>
 - [ ] **OBS Studio** - <https://obsproject.com/download>
 - [ ] **Blender** - <https://www.blender.org/download>
 
@@ -108,10 +103,9 @@ corepack enable pnpm
 pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
-npm config set min-release-age 3
-npm install --global --ignore-scripts @fission-ai/openspec@latest
-npm install --global --ignore-scripts vercel@latest
-npm install --global --ignore-scripts @playwright/cli@latest
+npm install --global --ignore-scripts @fission-ai/openspec@1.13.1
+npm install --global --ignore-scripts vercel@59.25.4
+npm install --global --ignore-scripts @playwright/cli@0.1.21
 ```
 
 ### Python (con pyenv)
@@ -135,26 +129,23 @@ gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
-  --sdd-mode multi \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,kilocode,claude-code
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code,pi
 ```
 
 ### Gentle-Shell (gentle-pi)
 
 ```bash
-pi install npm:gentle-pi@latest
-pi install npm:pi-intercom@latest
-pi install npm:gentle-engram@latest
-pi install npm:pi-web-access@latest
-pi install npm:pi-lens@latest
-pi install npm:@juicesharp/rpiv-ask-user-question@latest
+pi install npm:gentle-pi@3.6.0
+pi install npm:pi-intercom@0.13.0
+pi install npm:gentle-engram@0.1.14
+pi install npm:pi-web-access@0.31.0
+pi install npm:pi-lens@4.2.1
 ```
 
 Dentro de una sesión `pi`, una sola vez:
 
 ```text
 /gentle:status
-/gentle:sdd-preflight
 /gentle:review-mode enable
 /gentle:background-subagents enable
 /gentle:models
@@ -175,7 +166,6 @@ herdr integration install opencode
 herdr integration install cursor
 herdr integration install antigravity-cli
 herdr integration install copilot
-herdr integration install kilo
 herdr integration install pi
 ```
 
@@ -184,10 +174,6 @@ herdr integration install pi
 ```bash
 vercel login
 gh auth login
-engram cloud status
-agy
-kilo auth login
-pi auth check
 ```
 
 ---
