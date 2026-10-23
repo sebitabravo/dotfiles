@@ -597,7 +597,7 @@ SEGMENTS=$(printf '%s' "$NO_QUOTES_FULL" | awk '{gsub(/&&|\|\||\||;/, "\n"); pri
 resolve_home_target() {
   local p="$1" home_noslash="${HOME%/}"
   case "$p" in
-    "" ) printf '%s' "${HOOK_CWD%/}" ;;
+    "") printf '%s' "${HOOK_CWD%/}" ;;
     "~" | "\$HOME" | "\${HOME}") printf '%s' "$home_noslash" ;;
     \~/*) printf '%s' "$home_noslash/${p#\~/}" ;;
     "\$HOME/"*) printf '%s' "$home_noslash/${p#\$HOME/}" ;;
