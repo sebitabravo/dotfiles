@@ -20,7 +20,10 @@ hook_output() {
 decision() {
   local out
   out=$(hook_output "$1")
-  [ -n "$out" ] || { printf 'allow'; return 0; }
+  [ -n "$out" ] || {
+    printf 'allow'
+    return 0
+  }
   printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // "allow"'
 }
 
