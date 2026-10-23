@@ -462,13 +462,22 @@ VSCODE_HOME="$TEST_HOME/Library/Application Support/Code/User"
 MCP_JQ_BIN="$(command -v jq || true)"
 [ -x "$MCP_JQ_BIN" ] || fail 'jq is required for the isolated MCP fixture'
 mkdir -p "$BOOTSTRAP_BIN" "$TEST_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-for command_name in herdr codegraph gentle-ai opencode codex agent agy copilot pi spicetify; do
+for command_name in herdr codegraph opencode codex agent agy copilot pi spicetify; do
   cat >"$BOOTSTRAP_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
   chmod +x "$BOOTSTRAP_BIN/$command_name"
 done
+# gentle-ai ya no gestiona Claude Code: el stub registra cualquier invocacion
+# para afirmar que install.sh no lo llama.
+GENTLE_AI_LOG="$TMP_HOME/gentle-ai.log"
+: >"$GENTLE_AI_LOG"
+cat >"$BOOTSTRAP_BIN/gentle-ai" <<EOF
+#!/usr/bin/env bash
+printf '%s\\n' "\$*" >>'$GENTLE_AI_LOG'
+EOF
+chmod +x "$BOOTSTRAP_BIN/gentle-ai"
 cat >"$BOOTSTRAP_BIN/claude" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -613,18 +622,19 @@ chmod 600 "$TEST_HOME/.claude.json"
 ln -s -- "$ROOT/.zshrc" "$TEST_HOME/.zshrc"
 ln -s -- "$ROOT/config/claude/hooks" "$TEST_HOME/.claude/hooks"
 
-# ~/.claude/skills, ~/.claude/output-styles y ~/.claude/agents los escribe otro
-# instalador (gentle-ai). Lo que este repo no versiona ahi debe sobrevivir a
-# ./install.sh; lo que si versiona sigue sujeto a --delete dentro de su entrada.
-mkdir -p "$TEST_HOME/.claude/skills/gentle-sdd-apply" \
+# ~/.claude/skills, ~/.claude/output-styles y ~/.claude/agents pueden tener
+# entradas ajenas (p. ej. skills/synced). Lo que este repo no versiona ahi debe
+# sobrevivir a ./install.sh; lo que si versiona sigue sujeto a --delete dentro
+# de su entrada.
+mkdir -p "$TEST_HOME/.claude/skills/synced" \
   "$TEST_HOME/.claude/skills/handoff" \
   "$TEST_HOME/.claude/output-styles" \
   "$TEST_HOME/.claude/agents"
-printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
+printf '%s\n' 'foreign skill' >"$TEST_HOME/.claude/skills/synced/SKILL.md"
 printf '%s\n' 'stale own-skill file' >"$TEST_HOME/.claude/skills/handoff/stale.md"
-printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Gentleman.md"
-printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/sdd-verify.md"
-printf '%s\n' 'gentle-ai instructions' >"$TEST_HOME/.claude/CLAUDE.md"
+printf '%s\n' 'foreign output style' >"$TEST_HOME/.claude/output-styles/Foreign.md"
+printf '%s\n' 'foreign subagent' >"$TEST_HOME/.claude/agents/foreign.md"
+printf '%s\n' 'local claude instructions' >"$TEST_HOME/.claude/CLAUDE.md"
 
 # Conflicting local files must be backed up before replacement.
 printf '%s\n' 'local zprofile' >"$TEST_HOME/.zprofile"
@@ -740,13 +750,19 @@ assert_not_symlink "$TEST_HOME/.claude/hooks"
 assert_directory "$TEST_HOME/.claude/skills"
 assert_file "$TEST_HOME/.claude/skills/handoff/SKILL.md"
 
-# Coexistencia con gentle-ai: sus entradas sobreviven, las de este repo siguen
-# bajo --delete, y ~/.claude/agents no se toca porque este repo ya no lo usa.
-assert_file "$TEST_HOME/.claude/skills/gentle-sdd-apply/SKILL.md"
-assert_file "$TEST_HOME/.claude/output-styles/Gentleman.md"
-assert_file "$TEST_HOME/.claude/agents/sdd-verify.md"
+# CLAUDE.md y output-styles/sebita.md los versiona este repo. Las entradas ajenas
+# sobreviven, las de este repo siguen bajo --delete, ~/.claude/agents no se toca
+# y gentle-ai ya no se invoca para Claude Code.
+assert_file "$TEST_HOME/.claude/CLAUDE.md"
+assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
+assert_file "$TEST_HOME/.claude/output-styles/sebita.md"
+assert_equal "$ROOT/config/claude/output-styles/sebita.md" "$TEST_HOME/.claude/output-styles/sebita.md"
+assert_file "$TEST_HOME/.claude/output-styles/Foreign.md"
+assert_file "$TEST_HOME/.claude/skills/synced/SKILL.md"
+assert_file "$TEST_HOME/.claude/agents/foreign.md"
+assert_file "$TEST_HOME/.claude/skills/security-auditor/SKILL.md"
 assert_not_exists "$TEST_HOME/.claude/skills/handoff/stale.md"
-grep -qxF 'gentle-ai instructions' "$TEST_HOME/.claude/CLAUDE.md" || fail 'installer touched gentle-ai CLAUDE.md'
+[ ! -s "$GENTLE_AI_LOG" ] || fail 'install.sh invoked gentle-ai'
 assert_file "$TEST_HOME/.claude/mcp-servers.json"
 assert_equal "$ROOT/config/claude/mcp-servers.json" "$TEST_HOME/.claude/mcp-servers.json"
 assert_file "$TEST_HOME/.claude/hooks/lib/test-runner.sh"
@@ -786,7 +802,8 @@ zprofile_backup=$(find "$TEST_HOME" -maxdepth 1 -name '.zprofile.backup.*' -type
 grep -qxF 'local zprofile' "$zprofile_backup" || fail 'wrong .zprofile backup content'
 
 claude_backup=$(find "$TEST_HOME/.claude" -maxdepth 1 -name 'CLAUDE.md.backup.*' -type f -print -quit)
-[ -z "$claude_backup" ] || fail 'installer backed up gentle-ai CLAUDE.md'
+[ -n "$claude_backup" ] || fail 'missing CLAUDE.md backup'
+grep -qxF 'local claude instructions' "$claude_backup" || fail 'wrong CLAUDE.md backup content'
 
 vscode_backup=$(find "$VSCODE_HOME" -maxdepth 1 -name 'settings.json.backup.*' -type f -print -quit)
 [ -n "$vscode_backup" ] || fail 'missing VS Code settings backup'

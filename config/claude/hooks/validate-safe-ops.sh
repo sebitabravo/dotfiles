@@ -116,7 +116,10 @@ resolve_command_prefix() {
   # read -a cannot preserve argv boundaries for quoted whitespace. For
   # recognized wrappers, fail closed rather than guessing whether the next
   # logical word is an option value or the real executable.
-  if printf '%s' "$segment" | grep -qE '(^|[[:space:]])([^[:space:]]*/)?(env|time|xargs)([[:space:]]|$)' &&
+  # Solo cuenta el wrapper que aparece ANTES de la primera comilla: un `env`
+  # dentro de un string (`printf '#!/usr/bin/env bash'`) es texto, no un wrapper.
+  local before_quote="${segment%%[\"\']*}"
+  if printf '%s' "$before_quote" | grep -qE '(^|[[:space:]])([^[:space:]]*/)?(env|time|xargs)([[:space:]]|$)' &&
     printf '%s' "$segment" | grep -qE "[\"'][^\"']*[[:space:]][^\"']*[\"']"; then
     printf '%s' "$AMBIGUOUS_PREFIX_MARKER"
     return 0
@@ -269,7 +272,7 @@ check_raw_segment() {
   local segment="$1" normalized head binary nested
   normalized=$(resolve_command_prefix "$segment")
   if [ "$normalized" = "$AMBIGUOUS_PREFIX_MARKER" ]; then
-    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command."
+    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command. Si env/time/xargs es solo texto dentro de un string, el hook ya lo ignora: revisa que el wrapper no lleve un argumento con espacios entre comillas antes del comando real."
   fi
   [ -z "$normalized" ] && return 0
   head=$(printf '%s' "$normalized" | awk '{print $1}')
@@ -289,8 +292,16 @@ check_raw_segment() {
         deny "awk system() execution is blocked. It can execute arbitrary commands from a quoted program."
       fi
       ;;
-    sudo | doas | su | mkfs | mkfs.* | newfs | newfs_msdos)
-      deny "Dangerous command execution through a quoted or nested payload is blocked."
+    sudo | doas | mkfs | mkfs.* | newfs | newfs_msdos)
+      deny "Dangerous command execution through a quoted or nested payload is blocked. Si el segmento es solo texto (heredoc, string, prosa), evita que una linea parta con ese comando despues de ; o &&, o escribe el archivo con la tool Write en vez de un heredoc."
+      ;;
+    su)
+      # "su" tambien es una palabra comun en español ("; su persona"): dentro
+      # de texto citado solo se trata como comando si va sola o con flags.
+      if [ "$(printf '%s' "$normalized" | wc -w | tr -d ' ')" -le 2 ] ||
+        printf '%s' "$normalized" | grep -qE '[[:space:]]-'; then
+        deny "Dangerous command execution through a quoted or nested payload is blocked. Si 'su' es prosa en español, reformula para que la frase no empiece con 'su' despues de ; o &&, o escribe el archivo con la tool Write."
+      fi
       ;;
     bash | sh | zsh | dash | fish | python | python3 | perl | ruby | node | nodejs)
       if printf '%s' "$segment" | grep -qE '(os\.system|os\.popen|subprocess\.(run|call|Popen)|child_process\.)'; then
@@ -597,13 +608,14 @@ SEGMENTS=$(printf '%s' "$NO_QUOTES_FULL" | awk '{gsub(/&&|\|\||\||;/, "\n"); pri
 resolve_home_target() {
   local p="$1" home_noslash="${HOME%/}"
   case "$p" in
-    "") printf '%s' "${HOOK_CWD%/}" ;;
-    "~" | "\$HOME" | "\${HOME}") printf '%s' "$home_noslash" ;;
-    \~/*) printf '%s' "$home_noslash/${p#\~/}" ;;
-    "\$HOME/"*) printf '%s' "$home_noslash/${p#\$HOME/}" ;;
-    "\${HOME}/"*) printf '%s' "$home_noslash/${p#\$\{HOME\}/}" ;;
-    *) printf '%s' "${p%/}" ;;
+    "") p="$HOOK_CWD" ;;
+    "~" | "\$HOME" | "\${HOME}") p="$home_noslash" ;;
+    \~/*) p="$home_noslash/${p#\~/}" ;;
+    "\$HOME/"*) p="$home_noslash/${p#\$HOME/}" ;;
+    "\${HOME}/"*) p="$home_noslash/${p#\$\{HOME\}/}" ;;
   esac
+  # La barra final se quita en todas las ramas: `~/` y `$HOME/` son el home.
+  printf '%s' "${p%/}"
 }
 
 check_git_init_target() {
@@ -632,7 +644,7 @@ check_segment() {
   local segment="$1" normalized head binary
   normalized=$(resolve_command_prefix "$segment")
   if [ "$normalized" = "$AMBIGUOUS_PREFIX_MARKER" ]; then
-    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command."
+    deny "Ambiguous quoted whitespace after a command wrapper is blocked. Use unquoted wrapper options and a separately named command. Si env/time/xargs es solo texto dentro de un string, el hook ya lo ignora: revisa que el wrapper no lleve un argumento con espacios entre comillas antes del comando real."
   fi
   [ -z "$normalized" ] && return 0
   segment="$normalized"
@@ -641,8 +653,15 @@ check_segment() {
   binary="${head##*/}"
 
   case "$binary" in
-    sudo | doas | su)
+    sudo | doas)
       deny "Privilege escalation through sudo/doas/su is blocked. Run without elevated privileges."
+      ;;
+    su)
+      # Ver check_raw_segment: "su" suelto o con flags es escalada; "su persona..." es prosa.
+      if [ "$(printf '%s' "$segment" | wc -w | tr -d ' ')" -le 2 ] ||
+        printf '%s' "$segment" | grep -qE '[[:space:]]-'; then
+        deny "Privilege escalation through sudo/doas/su is blocked. Run without elevated privileges. Si 'su' es prosa en español dentro de un heredoc o string, reformula la frase o escribe el archivo con la tool Write."
+      fi
       ;;
     git)
       check_git_init_target "$segment"

@@ -304,13 +304,11 @@ block() {
 
 # Receipt Driven Development ya NO vive aca.
 #
-# Este gate tenia su propia implementacion minima (scripts/rdd.sh), escrita
-# cuando gentle-ai no configuraba Claude Code. Su propio encabezado admitia que
-# era una version reducida: sin contratos versionados, sin lineages, sin CAS.
-# Ahora que gentle-ai gestiona este agente, `gentle-ai review` provee el sistema
-# completo — cuatro lentes, refuter, validator y un Stop hook que avisa cuando
-# hay un candidato sin revisar — y mantener dos mecanismos de recibos compitiendo
-# por el mismo commit solo produce bloqueos que nadie sabe destrabar.
+# Este gate tuvo una implementacion minima propia (scripts/rdd.sh), ya retirada:
+# era una version reducida sin contratos versionados, sin lineages, sin CAS.
+# Mantener dos mecanismos de recibos compitiendo por el mismo commit solo
+# produce bloqueos que nadie sabe destrabar, asi que la revision de recibos
+# vive fuera de este gate.
 #
 # Este gate se queda con lo suyo: tests, lint y deteccion de basura en el diff.
 
@@ -377,14 +375,17 @@ detect_project_at() {
     # quedaba vacio si el runner no era vitest/jest (ej. "test": "node --test"),
     # asi que el gate no corria nada y dejaba pasar el commit como si fuera verde.
     if jq -e '.scripts.test' "$dir/package.json" >/dev/null 2>&1; then
+      # Repos pnpm: `pnpm test` sin cobertura. El gate no exige un proveedor de coverage que el repo no declara.
+      pkg_manager=npm
+      if [ -f "$dir/pnpm-lock.yaml" ]; then pkg_manager=pnpm; fi
       if [ "$HAS_TESTS" = false ]; then
         HAS_TESTS=true
-        TEST_CMD="${prefix}npm test"
+        TEST_CMD="${prefix}$pkg_manager test"
       fi
       # --coverage.reporter=text fuerza la tabla de istanbul aunque el proyecto
       # tenga configurado otro reporter (lcov/html no traen porcentajes al stdout,
       # y sin ellos el parseo de abajo no ve nada y el piso no se aplica).
-      if jq -r '.scripts.test' "$dir/package.json" | grep -qE 'vitest|jest'; then
+      if [ "$pkg_manager" = npm ] && jq -r '.scripts.test' "$dir/package.json" | grep -qE 'vitest|jest'; then
         COVERAGE_CMD="${prefix}npm test -- --coverage --coverage.reporter=text"
         COVERAGE_KIND="istanbul"
       fi
@@ -603,7 +604,7 @@ for PROJECT_DIR in "${PROJECT_DIRS[@]}"; do
     TEST_OUTPUT=$(run_with_timeout "$TEST_BOUND" "$RUN_CMD")
     TEST_RC=$?
     if [ "$TEST_RC" = 124 ]; then
-      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD" "$TEST_OUTPUT"
+      block "[$LABEL] tests did not finish in ${TEST_BOUND}s. It could NOT be verified. Run: $RUN_CMD. Que hacer: corre ese comando tu mismo (con run_in_background si es lento), confirma que pasa y reintenta el commit. Si siempre tarda mas que el limite, hay un test lento o no hermetico (p. ej. que lance brew o descargas reales); arreglalo o sube QG_TEST_TIMEOUT_SECONDS." "$TEST_OUTPUT"
     elif [ "$TEST_RC" != 0 ]; then
       block "[$LABEL] tests failed. Run: $RUN_CMD" "$TEST_OUTPUT"
     fi

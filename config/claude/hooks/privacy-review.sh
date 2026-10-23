@@ -2,7 +2,7 @@
 # privacy-review.sh — Pre-submission privacy scan for GitHub writes.
 # Blocks private identifier categories without echoing the matched value back
 # into Claude's transcript.
-# Gentle-ai pattern: replace with explicit placeholders, never redact into nothingness.
+# Pattern: replace with explicit placeholders, never redact into nothingness.
 
 set -euo pipefail
 

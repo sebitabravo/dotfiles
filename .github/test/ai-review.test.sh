@@ -517,7 +517,7 @@ cat >"$TMP/gh" <<'PY'
 import json, os, sys
 args=sys.argv[1:]
 endpoint=next((x for x in args if not x.startswith('-') and x != 'api'), '')
-payload=sys.stdin.read(); data=json.loads(payload) if payload else {}
+payload=sys.stdin.read() if '--input' in args else ''; data=json.loads(payload) if payload else {}
 with open(os.environ['FAKE_GH_LOG'],'a') as f: f.write(json.dumps({'args':args,'payload':data})+'\n')
 if '/pulls/9' in endpoint and '/check-runs' not in endpoint:
     print(json.dumps({'base':{'sha':os.environ['FAKE_BASE']},'head':{'sha':os.environ['FAKE_HEAD']}}))

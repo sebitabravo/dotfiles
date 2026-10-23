@@ -100,6 +100,7 @@ setup_user_path() {
   path_append "$ANDROID_HOME/tools"
   path_append "$ANDROID_HOME/platform-tools"
   path_append "$ANDROID_HOME/emulator"
+  path_append "$ANDROID_HOME/cmdline-tools/latest/bin"
 }
 
 setup_user_path
