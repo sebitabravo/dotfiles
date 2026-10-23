@@ -7,31 +7,34 @@ Configuración personal de Claude Code: `opusplan`, skills, reglas, hooks y MCP.
 
 | Ruta | Propósito |
 | --- | --- |
-| `settings.json` | Config principal: env, permisos, hooks, statusline. |
-| `skills/` + `skills-lock.json` + `skill-registry.md` | Skills bajo demanda; índice humano no cargado en sesión. |
+| `settings.json` | Config principal: env, permisos, hooks, statusline, `outputStyle`. |
+| `CLAUDE.md` + `output-styles/sebita.md` | Instrucciones globales (routing de skills, persona, contrato de respuesta) y voseo chileno. |
+| `skills/` + `skills-lock.json` + `skill-registry.md` | Skills bajo demanda (incluye los roles que antes eran subagentes); índice humano no cargado en sesión. |
 | `rules/`, `hooks/`, `templates/`, `agent-tools/` | Instrucciones globales (reglas), validaciones, plantilla de proyecto, manifest de toolchains. |
 | `statusline.sh`, `mcp-servers.json`, `tweakcc-theme.json` | Statusline, MCP, tema. |
 
 Las suites y auditorías viven en `.github/test/`, fuera de esta carpeta.
 
-## Convivencia con gentle-ai
+## Modelo de roles: skills, sin subagentes ni gentle-ai
 
-- **gentle-ai fusiona:** deep merge sobre `settings.json` (no afloja un `deny`).
-  `~/.claude/CLAUDE.md` es solo suyo: este repo no lo versiona ni lo toca.
-- **Este repo reemplaza:** `settings.json` entero. `install.sh` corre primero y
-  llama `gentle-ai sync --agent claude-code` al final. Invertir el orden borra
-  la capa de gentle-ai.
-- gentle-ai ganó donde duplicaba: RDD (`gentle-ai review`), conducta del agente
-  (persona/output style), `skill-creator`, `agents/` y `commands/`.
-- Este repo conserva: hooks de seguridad, gate de commit, `rules/`, permisos,
-  skills de dominio, statusline, manifest MCP.
+- **Sin `agents/`:** los roles (`code-reviewer`, `debugger`, `security-auditor`,
+  `qa-engineer`, `ui-ux-designer`, `business-strategy`, etc.) son skills con
+  trigger "Use PROACTIVELY when…" en su `description`, así que se cargan solas en
+  el hilo principal. Para trabajo en paralelo se delega a `general-purpose`.
+- **Sin gentle-ai en Claude Code:** `install.sh` ya no llama
+  `gentle-ai sync --agent claude-code`. gentle-ai sigue sirviendo para otros
+  runtimes; su persona (verificar antes de dar la razón, mentor senior) quedó
+  integrada en `CLAUDE.md` y `output-styles/sebita.md`.
+- Fuera de esta config a propósito: la maquinaria automatic-workflow
+  (OpenSpec, receipts, hooks de Stop de convergencia) y las skills que dependen
+  del MCP de Stitch.
 
 | Ruta | Dueño | `install.sh` |
 | --- | --- | --- |
 | `hooks/`, `rules/`, `templates/`, `scripts/`, `agent-tools/` | este repo | `rsync --delete` |
-| `skills/` | compartido | aditivo, `--delete` por entrada |
-| `CLAUDE.md`, `agents/`, `commands/`, `mcp/`, `output-styles/` | gentle-ai | no se tocan |
-| `settings.json` | repo + capa gentle-ai | copia + `gentle-ai sync` |
+| `skills/`, `output-styles/` | este repo + entradas ajenas | aditivo, `--delete` por entrada |
+| `CLAUDE.md`, `settings.json` | este repo | copia con backup |
+| `agents/`, `commands/` | nadie | no se tocan |
 
 Gate de commit: runners del repo solo con el root Git listado en `~/.claude/trusted-repositories`.
 
@@ -47,11 +50,17 @@ for dir in hooks rules templates agent-tools; do
     --exclude='node_modules' --exclude='*.test.sh' --exclude='*.backup.*' \
     "$CLAUDE_DIR/$dir/" "$HOME/.claude/$dir/"
 done
-for skill in "$CLAUDE_DIR"/skills/*/; do
-  rsync -a --delete --exclude='__pycache__' --exclude='.DS_Store' \
-    --exclude='node_modules' "$skill" "$HOME/.claude/skills/$(basename "$skill")/"
+for group in skills output-styles; do
+  for entry in "$CLAUDE_DIR/$group"/*; do
+    if [ -d "$entry" ]; then
+      rsync -a --delete --exclude='__pycache__' --exclude='.DS_Store' \
+        --exclude='node_modules' "$entry/" "$HOME/.claude/$group/$(basename "$entry")/"
+    else
+      cp -p "$entry" "$HOME/.claude/$group/"
+    fi
+  done
 done
-for file in statusline.sh mcp-servers.json skills-lock.json \
+for file in CLAUDE.md statusline.sh mcp-servers.json skills-lock.json \
   tweakcc-theme.json skill-registry.md settings.json; do
   cp -p "$CLAUDE_DIR/$file" "$HOME/.claude/$file"
 done

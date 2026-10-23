@@ -129,7 +129,7 @@ gentle-ai install \
   --scope global \
   --preset full-gentleman \
   --persona neutral \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,claude-code,pi
+  --agents opencode,cursor,codex,antigravity,vscode-copilot,pi
 ```
 
 ### Gentle-Shell (gentle-pi)
