@@ -169,6 +169,7 @@
     }
   },
   "language": "spanish",
+  "outputStyle": "Sebita",
   "spinnerTipsEnabled": true,
   "alwaysThinkingEnabled": true,
   "advisorModel": "opus",
