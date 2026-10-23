@@ -808,43 +808,6 @@ register_claude_mcp_servers() {
   CLAUDE_JSON_TRANSACTION_ACTIVE=0
 }
 
-# Reaplica la capa de gentle-ai sobre ~/.claude despues de copiar la de este repo.
-#
-# ORDEN, Y POR QUE IMPORTA: gentle-ai fusiona en vez de reemplazar. Hace deep
-# merge sobre settings.json, asi que respeta todo lo que este instalador ya puso.
-# Lo inverso no es cierto: este instalador copia settings.json entero, asi que
-# borra las claves de gentle-ai. Por eso gentle-ai corre DESPUES. ~/.claude/CLAUDE.md
-# es solo de gentle-ai: este repo no lo versiona y el instalador no lo toca.
-#
-# No se instala nada: si gentle-ai no esta, o no tiene claude-code entre sus
-# agentes, la funcion no hace nada y lo dice. Elegir configurar Claude Code con
-# gentle-ai es una decision del usuario, no de este script.
-resync_gentle_ai_claude_layer() {
-  local gentle_bin jq_bin
-  gentle_bin="$(command -v gentle-ai 2>/dev/null || true)"
-  [ -n "$gentle_bin" ] || return 0
-  jq_bin="$(command -v jq 2>/dev/null || true)"
-
-  if [ -n "$jq_bin" ] && [ -f "$HOME/.gentle-ai/state.json" ]; then
-    if ! "$jq_bin" -e '.installed_agents | index("claude-code")' \
-      "$HOME/.gentle-ai/state.json" >/dev/null 2>&1; then
-      printf '  SKIP   gentle-ai no gestiona claude-code (gentle-ai install --agent claude-code)\n'
-      return 0
-    fi
-  fi
-
-  if [ "$DRY_RUN" -ne 0 ]; then
-    printf '  DRYRUN gentle-ai sync --agent claude-code --include-permissions --include-theme\n'
-    return 0
-  fi
-
-  if ! "$gentle_bin" sync --agent claude-code --include-permissions --include-theme; then
-    printf '  WARN   gentle-ai sync fallo; la capa de gentle-ai puede estar incompleta\n' >&2
-    return 0
-  fi
-  printf '  SYNC   capa gentle-ai reaplicada sobre ~/.claude\n'
-}
-
 RSYNC_EXCLUDES=(
   --exclude='__pycache__'
   --exclude='.DS_Store'
@@ -857,6 +820,7 @@ RSYNC_EXCLUDES=(
 # copiado queda incluido en el preflight y no puede empezar un bootstrap con un
 # checkout incompleto.
 CLAUDE_FILES=(
+  config/claude/CLAUDE.md
   config/claude/statusline.sh
   config/claude/mcp-servers.json
   config/claude/skills-lock.json
@@ -896,6 +860,7 @@ REQUIRED_DIRS=(
   config/claude/rules
   config/claude/templates
   config/claude/agent-tools
+  config/claude/output-styles
 )
 
 validate_sources() {
@@ -1047,13 +1012,13 @@ copy_dir() {
   printf '  COPY   %s/\n' "$dst"
 }
 
-# Variante aditiva para los directorios que este repo COMPARTE con otro
-# instalador (gentle-ai escribe sus propias skills en ~/.claude/skills).
+# Variante aditiva para los directorios que este repo COMPARTE con otras fuentes
+# (skills/synced, plugins u otros instaladores escriben en ~/.claude/skills).
 #
 # POR QUE: copy_dir usa `rsync --delete` sobre el directorio completo, asi que
-# todo lo que el repo no versiona desaparece. Para skills/ eso borraria las 26
-# skills que instala gentle-ai en cada ./install.sh, y el usuario descubriria la
-# perdida recien cuando una skill no aparece.
+# todo lo que el repo no versiona desaparece. Para skills/ eso borraria las
+# skills ajenas en cada ./install.sh, y el usuario descubriria la perdida recien
+# cuando una skill no aparece.
 #
 # En vez de eso, se sincroniza entrada por entrada: cada carpeta o archivo que
 # ESTE repo versiona se copia con --delete (asi un archivo borrado del repo
@@ -1143,11 +1108,11 @@ echo "claude"
 for d in hooks rules templates agent-tools; do
   copy_dir "config/claude/$d" "$HOME/.claude/$d"
 done
-# Directorios compartidos con gentle-ai: sincronizacion aditiva por entrada.
+# Directorios que pueden tener entradas ajenas (skills sincronizadas, estilos
+# propios): sincronizacion aditiva por entrada, sin borrar lo que el repo no conoce.
 copy_dir_additive config/claude/skills "$HOME/.claude/skills"
-# Esta config dejo de versionar subagentes propios: los built-in (Explore, Plan,
-# general-purpose) cubren la delegacion. ~/.claude/agents/ queda para gentle-ai,
-# que instala ahi sus subagentes de SDD y review; este instalador no lo toca.
+copy_dir_additive config/claude/output-styles "$HOME/.claude/output-styles"
+# Los roles que eran subagentes viven ahora como skills; ~/.claude/agents/ no se toca.
 # Claude Code lee estos archivos desde runtime.
 # Se copian (no se enlazan) porque Claude Code puede reescribir settings.json y
 # las credenciales se resuelven por helper externo, nunca desde estos archivos.
@@ -1156,7 +1121,6 @@ for source_path in "${CLAUDE_FILES[@]}"; do
 done
 
 register_claude_mcp_servers
-resync_gentle_ai_claude_layer
 
 # core.hooksPath no se fija con `git config --global`: la copia instalada debe
 # conservar la configuracion portable versionada sin escribir rutas locales del

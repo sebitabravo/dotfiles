@@ -62,14 +62,37 @@ EOF
 
 chmod +x "$TMP/bin/cp" "$TMP/bin/rsync"
 
+# Entorno hermetico: install.sh llega al paso de copia solo despues de Homebrew,
+# herramientas de bootstrap y fuentes. El PATH queda limitado a stubs para que
+# ningun brew, instalador remoto ni descarga real corra durante el test.
+TOOL_BIN="$TMP/tools"
+mkdir -p -- "$TOOL_BIN"
+for tool in herdr codegraph opencode codex agent agy claude copilot pi spicetify; do
+  printf '%s\n' '#!/bin/bash' 'exit 0' >"$TOOL_BIN/$tool"
+done
+printf '%s\n' '#!/bin/bash' 'printf "unexpected download: %s\n" "$*" >&2' 'exit 99' >"$TOOL_BIN/curl"
+chmod +x "$TOOL_BIN"/*
+JQ_BIN="$(command -v jq || true)"
+[ -x "$JQ_BIN" ] || fail 'jq is required for the isolated bootstrap fixture'
+ISOLATED_PATH="$TMP/bin:$TOOL_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
+
+prepare_home() {
+  mkdir -p -- "$1/.oh-my-zsh/custom/themes/powerlevel10k" \
+    "$1/.config/spicetify/CustomApps/marketplace"
+  printf '%s\n' '#!/bin/bash' 'exit 0' >"$1/brew"
+  chmod +x "$1/brew"
+}
+
 printf '%s\n' '== failed file copy preserves the original and creates no backup =='
 FILE_HOME="$TMP/file-home"
 mkdir -p -- "$FILE_HOME"
+prepare_home "$FILE_HOME"
 printf '%s\n' 'original zprofile' >"$FILE_HOME/.zprofile"
 printf '%s\n' 'original zprofile' >"$TMP/expected-zprofile"
 
 set +e
-HOME="$FILE_HOME" PATH="$TMP/bin:$PATH" \
+HOME="$FILE_HOME" PATH="$ISOLATED_PATH" \
+  DOTFILES_HOMEBREW_BREW_CANDIDATES="$FILE_HOME/brew" DOTFILES_JQ_BIN="$JQ_BIN" \
   DOTFILES_TEST_REAL_CP="$REAL_CP" \
   DOTFILES_TEST_FAIL_SOURCE="$ROOT/.zprofile" \
   bash "$INSTALL" >"$TMP/file-copy.log" 2>&1
@@ -87,13 +110,15 @@ fi
 printf '%s\n' '== failed directory backup preserves the original and removes partial state =='
 DIR_HOME="$TMP/directory-home"
 mkdir -p -- "$DIR_HOME/.config/ghostty"
+prepare_home "$DIR_HOME"
 printf '%s\n' 'original ghostty config' >"$DIR_HOME/.config/ghostty/config.ghostty"
 printf '%s\n' 'local-only state' >"$DIR_HOME/.config/ghostty/local-only.conf"
 printf '%s\n' 'original ghostty config' >"$TMP/expected-ghostty"
 printf '%s\n' 'local-only state' >"$TMP/expected-ghostty-local"
 
 set +e
-HOME="$DIR_HOME" PATH="$TMP/bin:$PATH" \
+HOME="$DIR_HOME" PATH="$ISOLATED_PATH" \
+  DOTFILES_HOMEBREW_BREW_CANDIDATES="$DIR_HOME/brew" DOTFILES_JQ_BIN="$JQ_BIN" \
   DOTFILES_TEST_REAL_CP="$REAL_CP" \
   DOTFILES_TEST_REAL_RSYNC="$REAL_RSYNC" \
   DOTFILES_TEST_FAIL_BACKUP_RSYNC=1 \
