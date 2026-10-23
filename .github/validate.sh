@@ -94,7 +94,7 @@ jq empty "$CLAUDE_DIR/skills-lock.json"
 jq -e '
   (.env.CLAUDE_CODE_MAX_OUTPUT_TOKENS | tonumber) > 0
   and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) >= 100000)
-  and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 2000000)
+  and ((.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW | tonumber) <= 1000000)
   and (.effortLevel | type == "string" and length > 0)
   and ((.env.MAX_THINKING_TOKENS | tonumber) > 0)
 ' "$CLAUDE_DIR/settings.json" >/dev/null

@@ -71,7 +71,7 @@ No borra `settings.local.json` ni autenticación; sí reemplaza `settings.json` 
 ## Configuración actual
 
 - `model: "opusplan"`: Opus planifica, Sonnet ejecuta, Haiku para background.
-- Límites deliberados: salida `64000`, autocompact `1024000`, esfuerzo `high`,
+- Límites deliberados: salida `64000`, autocompact `1000000` (máximo que acepta Claude Code), esfuerzo `high`,
   `MAX_THINKING_TOKENS` `10000`. Rangos en la [doc oficial de env
   vars](https://code.claude.com/docs/en/env-vars.md).
 - Permisos: Auto Mode sin `allow`/`ask`; `deny` mínimo para secretos y
