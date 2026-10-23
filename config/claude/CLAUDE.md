@@ -28,7 +28,6 @@ aplicar más de una. Cárgala con `Skill` sin esperar a que el usuario la nombre
 |---|---|
 | Instalar un paquete, auditar dependencias, lockfile, advisory de supply chain | `npm-security` |
 | Medir calidad de tests, correr mutantes, matar mutantes sobrevivientes | `mutation-testing` |
-| Diagramas (arquitectura, flujo, UML, gráficos) como HTML/SVG | `diagram-design` |
 | PRs de más de 400 líneas, PRs encadenados, slices de review | `chained-pr` |
 | Planificar commits como unidades de trabajo revisables | `work-unit-commits` |
 | Review adversarial doble / "judgment day" explícito | `judgment-day` |

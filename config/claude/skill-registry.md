@@ -77,7 +77,6 @@ Se cargan solas por el trigger "Use PROACTIVELY when…" de su `description`.
 
 | Skill | Para qué |
 |---|---|
-| `diagram-design` | Diagramas HTML/SVG (arquitectura, flujo, UML, gráficos) con auto-chequeo. |
 
 ## Meta
 
