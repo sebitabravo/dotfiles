@@ -608,13 +608,14 @@ SEGMENTS=$(printf '%s' "$NO_QUOTES_FULL" | awk '{gsub(/&&|\|\||\||;/, "\n"); pri
 resolve_home_target() {
   local p="$1" home_noslash="${HOME%/}"
   case "$p" in
-    "" ) printf '%s' "${HOOK_CWD%/}" ;;
-    "~" | "\$HOME" | "\${HOME}") printf '%s' "$home_noslash" ;;
-    \~/*) printf '%s' "$home_noslash/${p#\~/}" ;;
-    "\$HOME/"*) printf '%s' "$home_noslash/${p#\$HOME/}" ;;
-    "\${HOME}/"*) printf '%s' "$home_noslash/${p#\$\{HOME\}/}" ;;
-    *) printf '%s' "${p%/}" ;;
+    "" ) p="$HOOK_CWD" ;;
+    "~" | "\$HOME" | "\${HOME}") p="$home_noslash" ;;
+    \~/*) p="$home_noslash/${p#\~/}" ;;
+    "\$HOME/"*) p="$home_noslash/${p#\$HOME/}" ;;
+    "\${HOME}/"*) p="$home_noslash/${p#\$\{HOME\}/}" ;;
   esac
+  # La barra final se quita en todas las ramas: `~/` y `$HOME/` son el home.
+  printf '%s' "${p%/}"
 }
 
 check_git_init_target() {

@@ -122,6 +122,10 @@ assert_decision deny 'git init' default "$HOME"
 assert_decision deny "git -C $HOME init" default /tmp/some-project
 assert_decision deny 'git init ~' default /tmp/some-project
 assert_decision deny 'git init $HOME' default /tmp/some-project
+# Con barra final el destino sigue siendo el home; antes se escapaba del bloqueo.
+assert_decision deny 'git init ~/' default /tmp/some-project
+assert_decision deny 'git init $HOME/' default /tmp/some-project
+assert_decision deny 'git init ${HOME}/' default /tmp/some-project
 assert_silent 'git init' default "$HOME/Developer/new-project"
 assert_silent "git init new-project" default "$HOME"
 assert_silent "git -C $HOME/Developer/new-project init" default /tmp/some-project
