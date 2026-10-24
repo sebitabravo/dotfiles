@@ -716,7 +716,7 @@ for font_url in \
 done
 grep -qF 'prerrequisitos macOS' "$TMP_HOME/install.log" || fail 'default bootstrap did not check macOS prerequisites'
 grep -qF 'herramientas de shell y agentes' "$TMP_HOME/install.log" || fail 'default bootstrap did not check shell and agent tools'
-for mcp_name in context7 codegraph playwright; do
+for mcp_name in context7 codegraph chrome-devtools; do
   jq -e --arg name "$mcp_name" \
     '.mcpServers[$name] == (input.mcpServers[$name])' \
     "$TEST_HOME/.claude.json" "$ROOT/config/claude/mcp-servers.json" >/dev/null ||
