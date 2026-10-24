@@ -44,7 +44,8 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/validate-safe-ops.sh",
-            "timeout": 15
+            "timeout": 15,
+            "onFailure": "block"
           },
           {
             "type": "command",
@@ -55,7 +56,8 @@
             "type": "command",
             "command": "~/.claude/hooks/privacy-review.sh",
             "timeout": 5,
-            "if": "Bash(gh *)"
+            "if": "Bash(gh *)",
+            "onFailure": "block"
           },
           {
             "type": "command",
@@ -71,7 +73,8 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/protect-tests.sh",
-            "timeout": 5
+            "timeout": 5,
+            "onFailure": "block"
           }
         ]
       }
