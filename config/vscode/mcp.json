@@ -19,11 +19,14 @@
         "--mcp"
       ]
     },
-    "playwright": {
+    "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
       "args": [
-      "@playwright/mcp@0.0.79"
+        "-y",
+        "chrome-devtools-mcp@1.12.0",
+        "--no-usage-statistics",
+        "--no-performance-crux"
       ]
     }
   },

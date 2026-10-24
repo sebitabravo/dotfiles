@@ -22,7 +22,7 @@ config/vscode/
 | `context7` | Documentacion actualizada de librerias (MCP HTTP hospedado) |
 | `engram` | Memoria persistente entre sesiones (requiere instalacion: `brew install engram`) |
 | `codegraph` | Exploracion del codigo local mediante el servidor MCP de CodeGraph |
-| `playwright` | Automatizacion y pruebas de navegador mediante Playwright MCP |
+| `chrome-devtools` | Control y depuracion de Chrome (trazas de rendimiento, red, consola) mediante Chrome DevTools MCP |
 
 ## Keybindings
 

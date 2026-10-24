@@ -51,7 +51,7 @@ cp -p "$ROOT/config/claude/mcp-servers.json" "$RUNTIME/mcp-servers.json"
 
 # Claude's user-scope config may contain runtime-only fields such as env; the
 # doctor must compare managed MCP fields without requiring byte-for-byte JSON.
-jq '.mcpServers.playwright.env = {}' \
+jq '.mcpServers["chrome-devtools"].env = {}' \
   "$ROOT/config/claude/mcp-servers.json" >"$HOME_DIR/.claude.json"
 chmod 600 "$HOME_DIR/.claude.json"
 
@@ -61,9 +61,9 @@ case "$1 ${2:-}" in
   "--version ") printf '%s\n' '2.1.234 (Claude Code)' ;;
   "mcp list")
     cat <<'MCP'
+chrome-devtools: npx -y chrome-devtools-mcp@1.12.0 --no-usage-statistics --no-performance-crux - ✔ Connected
 codegraph: codegraph serve --mcp - ✔ Connected
 context7: https://mcp.context7.com/mcp (HTTP) - ✔ Connected
-playwright: npx @playwright/mcp@0.0.79 - ✔ Connected
 plugin:engram:engram: engram mcp --tools=agent - ✔ Connected
 MCP
     ;;
