@@ -157,7 +157,8 @@
   },
   "enabledPlugins": {
     "caveman@caveman": true,
-    "engram@engram": true
+    "engram@engram": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
@@ -170,6 +171,12 @@
       "source": {
         "source": "github",
         "repo": "Gentleman-Programming/engram"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
       }
     }
   },
