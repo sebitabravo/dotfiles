@@ -292,4 +292,3 @@ claude() {
     command claude "$@"
   fi
 }
-
