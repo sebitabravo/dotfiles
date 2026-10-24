@@ -32,6 +32,18 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "Organization: none, solo developer on the personal GitHub account sebitabravo. Primary use of Claude Code: software development and personal dotfiles management on macOS across several projects",
+      "Source control: additionally trusted are repos owned by github.com/sebitabravo. Forks and clones of third-party repos are not trusted, even when they sit under this account",
+      "Normal workflow: pushing feature branches and opening pull requests in own repos, importing shell, editor, terminal and tool configs from $HOME into the dotfiles repo, and running the repo installer (install.sh) to apply dotfiles into $HOME",
+      "Sensitive data locations: SSH private keys (id_rsa, id_ed25519 and similar), ~/.aws, ~/.netrc, ~/.config/gh/hosts.yml, shell history, ~/.claude session transcripts, auth and token files that tools keep under ~/.config or ~/.<tool>, plus .env* and credentials.json. Never print, commit or send these anywhere",
+      "CI secrets GITHUB_TOKEN and ZAI_CODING_PLAN_KEY must never be echoed, written to files, or passed to any workflow step or destination other than their current use. Workflow edits that touch secrets are not routine",
+      "Security hooks and their tests (config/claude/hooks, secret-detect): edits that disable, loosen or skip them need the user to ask for that explicitly. Test fixtures with fake secrets are fine",
+      "Other agent CLIs on this machine (codex, opencode, kilo, copilot, cursor) are personal tools and are not trusted to bypass any rule"
+    ]
+  },
   "model": "opusplan",
   "fallbackModel": ["sonnet", "haiku"],
   "showClearContextOnPlanAccept": true,
