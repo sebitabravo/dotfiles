@@ -29,11 +29,9 @@ case "$#:${1:-}" in
     exit 2
     ;;
 esac
-STAMP="$(date +%Y%m%d%H%M%S)-$$"
-# Pruning (retención manual): find ~/.dotfiles-backups -type d -mtime +30 -print | xargs rm -rf  (o programar via cron/launchd)
-BACKUP_ROOT="$HOME/.dotfiles-backups/$STAMP"
 REMOTE_INSTALLER_MANIFEST="$DOTFILES/.github/install/remote-installers.sha256"
 P10K_URL='https://github.com/romkatv/powerlevel10k.git'
+GENTLE_PI_VERSION='4.7.0'
 P10K_COMMIT='3308262dfbd743b6e1d3956a2b5572f7a049d692'
 FONT_DESTINATION="$HOME/Library/Fonts"
 # Fuentes versionadas que usa la configuracion. Se mantienen aqui, en vez del
@@ -87,13 +85,9 @@ REMOTE_INSTALLER_LABELS=(
   'CodeGraph'
   'OpenCode'
   'Codex'
-  'Cursor Agent'
   'Antigravity CLI'
   'Claude Code'
   'GitHub Copilot CLI'
-  'Pi'
-  'Spicetify'
-  'Spicetify Marketplace'
 )
 REMOTE_INSTALLER_URLS=(
   'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
@@ -101,13 +95,9 @@ REMOTE_INSTALLER_URLS=(
   'https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh'
   'https://opencode.ai/install'
   'https://chatgpt.com/codex/install.sh'
-  'https://cursor.com/install'
   'https://antigravity.google/cli/install.sh'
   'https://claude.ai/install.sh'
   'https://gh.io/copilot-install'
-  'https://pi.dev/install.sh'
-  'https://raw.githubusercontent.com/spicetify/cli/main/install.sh'
-  'https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.sh'
 )
 # Set only while a verified remote installer is present. The trap removes this
 # exact mktemp path and never recursively removes a caller-controlled directory.
@@ -194,8 +184,7 @@ tool_exists() {
     "$HOME/.cargo/bin/$command_name" \
     "$HOME/.npm-global/bin/$command_name" \
     "$HOME/.local/share/pnpm/$command_name" \
-    "$HOME/.opencode/bin/$command_name" \
-    "$HOME/.spicetify/$command_name"; do
+    "$HOME/.opencode/bin/$command_name"; do
     [ -x "$candidate" ] && return 0
   done
   return 1
@@ -231,16 +220,6 @@ prepare_homebrew_path() {
     return 0
   done
   return 0
-}
-
-prepare_spicetify_path() {
-  case ":$PATH:" in
-    *":$HOME/.spicetify:"*) ;;
-    *)
-      PATH="$HOME/.spicetify:$PATH"
-      export PATH
-      ;;
-  esac
 }
 
 expected_remote_installer_index() {
@@ -584,6 +563,43 @@ install_remote_tool() {
   run_remote_installer "$label" "$shell" "$@"
 }
 
+# Gentle Shell no publica un instalador desatendido: el oficial es un asistente
+# en el navegador. El camino automatizable es el paquete global de pnpm, que
+# `gentle-shell upgrade` migra al install bundled (~/.gentle-shell, con su
+# propio Node, pnpm y Pi); por eso Pi no se instala aparte. La version fijada
+# solo aplica al bootstrap: despues .zshrc sigue los releases con `upgrade`.
+install_gentle_shell() {
+  local bundled="$HOME/.gentle-shell/bin/gentle-shell" pnpm_bin
+
+  if [ -x "$bundled" ] || tool_exists gentle-shell; then
+    printf '%s\n' '  SKIP   Gentle Shell (ya existe gentle-shell)'
+    return 0
+  fi
+  if ! command_exists pnpm || ! command_exists node; then
+    printf '%s\n' '  PEND   Gentle Shell (faltan node y pnpm: instala Node y vuelve a ejecutar ./install.sh)'
+    return 0
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '  DRY  pnpm add --global gentle-pi@%s --allow-build=gentle-pi' "$GENTLE_PI_VERSION"
+    printf '%s\n' ' + gentle-shell upgrade  # Gentle Shell bundled'
+    return 0
+  fi
+
+  pnpm add --global "gentle-pi@$GENTLE_PI_VERSION" --allow-build=gentle-pi
+  pnpm_bin="$(pnpm bin --global)"
+  # Con ~/.local/bin en el PATH el upgrade publica un symlink ahi; sin eso
+  # agregaria una linea a ~/.zshrc, que este instalador sobreescribe.
+  mkdir -p -- "$HOME/.local/bin"
+  if ! PATH="$HOME/.local/bin:$PATH" "$pnpm_bin/gentle-shell" upgrade </dev/null; then
+    printf '%s\n' '  WARN   Gentle Shell quedo como paquete global de pnpm; reintenta con: gentle-shell upgrade' >&2
+    return 0
+  fi
+  if [ -x "$bundled" ]; then
+    pnpm remove --global gentle-pi
+  fi
+  printf '%s\n' '  OK     Gentle Shell'
+}
+
 install_bootstrap_tools() {
   local zsh_custom p10k_dir p10k_parent p10k_actual
   zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
@@ -639,27 +655,10 @@ install_bootstrap_tools() {
   install_remote_tool 'CodeGraph' codegraph sh
   install_remote_tool 'OpenCode' opencode bash --no-modify-path
   install_remote_tool 'Codex' codex sh
-  install_remote_tool 'Cursor Agent' agent bash
   install_remote_tool 'Antigravity CLI' agy bash
   install_remote_tool 'Claude Code' claude bash
   install_remote_tool 'GitHub Copilot CLI' copilot bash
-  install_remote_tool 'Pi' pi sh
-
-  # El instalador de Spicetify pregunta interactivamente (lee de /dev/tty) si
-  # instalar Marketplace y, de aceptar, ejecuta su propio curl|sh sin pin de
-  # checksum. Este script instala Marketplace aparte con su propio SHA-256
-  # verificado, así que ante esa pregunta corresponde responder "n".
-  if [ "$DRY_RUN" -eq 0 ]; then
-    printf '%s\n' '  NOTE   si Spicetify pregunta por Marketplace, responde "n" (se instala aparte, verificado)'
-  fi
-  install_remote_tool 'Spicetify' spicetify sh || true
-  prepare_spicetify_path
-
-  if [ -d "$HOME/.config/spicetify/CustomApps/marketplace" ]; then
-    printf '%s\n' '  SKIP   Spicetify Marketplace (ya existe ~/.config/spicetify/CustomApps/marketplace)'
-  else
-    run_remote_installer 'Spicetify Marketplace' sh || true
-  fi
+  install_gentle_shell
 }
 
 # El Brewfile provee las CLI que el resto del bootstrap asume (jq para el
@@ -863,6 +862,71 @@ REQUIRED_DIRS=(
   config/claude/output-styles
 )
 
+install_vscode_extensions() {
+  local manifest="$DOTFILES/config/vscode/extensions.json"
+  local app_code="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+  local code_bin='' ext
+
+  printf '%s\n' 'extensiones VS Code'
+
+  [ -f "$manifest" ] || {
+    printf '  FALTA  %s (instalacion abortada)\n' "$manifest" >&2
+    return 1
+  }
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '  DRY  code --install-extension <cada id de %s>\n' "$manifest"
+    return 0
+  fi
+  code_bin="$(command -v code 2>/dev/null || true)"
+  if [ -z "$code_bin" ] && [ -x "$app_code" ]; then
+    code_bin="$app_code"
+  fi
+  if [ -z "$code_bin" ]; then
+    printf '%s\n' '  WARN   CLI de VS Code no encontrada; abri VS Code, ejecuta "Shell Command: Install code command in PATH" y volve a ejecutar ./install.sh' >&2
+    return 0
+  fi
+  # Un id que falla (red, marketplace) no aborta el despliegue: solo avisa.
+  while IFS= read -r ext; do
+    run "$code_bin" --install-extension "$ext" --force >/dev/null 2>&1 ||
+      printf '  WARN   no se pudo instalar la extension %s\n' "$ext" >&2
+  done < <(jq -r '[.[] | arrays[]] | unique[]' "$manifest")
+}
+
+# Herd (Node y PHP) y OrbStack (Docker) son apps de escritorio: el instalador no
+# las instala, solo avisa si faltan.
+warn_desktop_prereqs() {
+  [ "$DRY_RUN" -eq 0 ] || return 0
+  [ -d "$HOME/Library/Application Support/Herd/config/nvm" ] ||
+    printf '%s\n' '  WARN   Laravel Herd no encontrado: Node y PHP salen de Herd; instalalo antes de usar node' >&2
+  [ -d "${DOTFILES_ORBSTACK_APP:-/Applications/OrbStack.app}" ] ||
+    printf '%s\n' '  WARN   OrbStack no encontrado: sin el no hay Docker' >&2
+}
+
+# defaults.sh escribe en el dominio de usuario real y reinicia Dock y Finder. Por
+# eso solo corre si HOME es el home real de la cuenta: los fixtures de test.sh usan
+# un HOME temporal y quedan en SKIP. DOTFILES_SKIP_MACOS_DEFAULTS=1 lo desactiva
+# explicitamente. Sin --no-sudo no corre el tier de sudo (sudoers, Touch ID,
+# firewall), que queda manual.
+install_macos_defaults() {
+  local real_home
+  printf '%s\n' 'macOS defaults'
+  if [ "${DOTFILES_SKIP_MACOS_DEFAULTS:-0}" = 1 ]; then
+    printf '%s\n' '  SKIP   macOS defaults (DOTFILES_SKIP_MACOS_DEFAULTS=1)'
+    return 0
+  fi
+  real_home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  if [ -z "$real_home" ] || [ "$HOME" != "$real_home" ]; then
+    printf '%s\n' '  SKIP   macOS defaults (HOME no es el home real de la cuenta)'
+    return 0
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '%s\n' '  DRY  bash config/macos/defaults.sh --no-sudo'
+    return 0
+  fi
+  bash "$DOTFILES/config/macos/defaults.sh" --no-sudo ||
+    printf '%s\n' '  WARN   macOS defaults con fallas; reintenta bash config/macos/defaults.sh --no-sudo' >&2
+}
+
 validate_sources() {
   local source_path
   for source_path in "${REQUIRED_FILES[@]}"; do
@@ -879,58 +943,10 @@ validate_sources() {
   done
 }
 
-# Aparta lo que ya exista en el destino en vez de pisarlo.
-backup() {
-  [ -e "$1" ] || [ -L "$1" ] || return 0
-  printf '  BACKUP %s.backup.%s\n' "$1" "$STAMP"
-  run mv -- "$1" "$1.backup.$STAMP"
-}
-
-cleanup_backup_stage() {
-  local stage="$1" backup_dst="$2"
-  rm -rf -- "$stage"
-  rmdir "$(dirname -- "$backup_dst")" 2>/dev/null || true
-  rmdir "$BACKUP_ROOT" 2>/dev/null || true
-  rmdir "$(dirname -- "$BACKUP_ROOT")" 2>/dev/null || true
-}
-
-backup_dir() {
-  local src="$1" dst="$2" stage
-  printf '  BACKUP %s/ -> %s/\n' "$src" "$dst"
-
-  if [ "$DRY_RUN" -eq 1 ]; then
-    run mkdir -p -- "$dst"
-    run rsync -rlpt "${RSYNC_EXCLUDES[@]}" "$src/" "$dst/"
-    return 0
-  fi
-
-  mkdir -p -- "$BACKUP_ROOT"
-  if ! stage="$(mktemp -d "$BACKUP_ROOT/.dotfiles-backup-stage.XXXXXX")"; then
-    rmdir "$BACKUP_ROOT" 2>/dev/null || true
-    rmdir "$(dirname -- "$BACKUP_ROOT")" 2>/dev/null || true
-    return 1
-  fi
-
-  if ! rsync -rlpt "${RSYNC_EXCLUDES[@]}" "$src/" "$stage/"; then
-    cleanup_backup_stage "$stage" "$dst"
-    return 1
-  fi
-
-  if ! mkdir -p -- "$(dirname -- "$dst")"; then
-    cleanup_backup_stage "$stage" "$dst"
-    return 1
-  fi
-
-  if ! mv -- "$stage" "$dst"; then
-    cleanup_backup_stage "$stage" "$dst"
-    return 1
-  fi
-}
-
 # El despliegue usa copias independientes. Así el usuario puede editar su
 # configuración instalada aunque mueva o elimine este repositorio.
 copy() {
-  local src="$DOTFILES/$1" dst="$2" parent stage backup_path
+  local src="$DOTFILES/$1" dst="$2" parent stage
   [ -e "$src" ] || {
     printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2
     return 1
@@ -945,7 +961,6 @@ copy() {
   fi
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    backup "$dst"
     run mkdir -p -- "$(dirname -- "$dst")"
     run cp -p -- "$src" "$dst"
     printf '  COPY   %s\n' "$dst"
@@ -965,17 +980,17 @@ copy() {
     return 1
   fi
 
-  backup_path="$dst.backup.$STAMP"
-  if ! backup "$dst"; then
+  # mv no debe seguir un symlink ni meter el archivo dentro de un directorio.
+  if [ -d "$dst" ] && [ ! -L "$dst" ]; then
+    printf '  FALLA  %s es un directorio; no se reemplaza por un archivo\n' "$dst" >&2
     rm -f -- "$stage"
     return 1
   fi
-
+  if [ -L "$dst" ]; then
+    run rm -- "$dst"
+  fi
   if ! mv -- "$stage" "$dst"; then
     rm -f -- "$stage"
-    if [ -e "$backup_path" ] || [ -L "$backup_path" ]; then
-      mv -- "$backup_path" "$dst" || true
-    fi
     return 1
   fi
 
@@ -984,7 +999,6 @@ copy() {
 
 copy_dir() {
   local src="$DOTFILES/$1" dst="$2"
-  local backup_dst changes
   [ -d "$src" ] || {
     printf '  FALTA  %s (instalacion abortada)\n' "$1" >&2
     return 1
@@ -993,18 +1007,7 @@ copy_dir() {
     printf '  REMOVE  symlink %s\n' "$dst"
     run rm -- "$dst"
   elif [ -L "$dst" ] || { [ -e "$dst" ] && [ ! -d "$dst" ]; }; then
-    backup "$dst"
-  fi
-  if [ -d "$dst" ]; then
-    changes=$(rsync -rlptc --dry-run --itemize-changes --delete \
-      "${RSYNC_EXCLUDES[@]}" "$src/" "$dst/")
-    if [ -n "$changes" ]; then
-      case "$dst" in
-        "$HOME"/*) backup_dst="$BACKUP_ROOT/${dst#"$HOME"/}" ;;
-        *) backup_dst="$BACKUP_ROOT/absolute/${dst#/}" ;;
-      esac
-      backup_dir "$dst" "$backup_dst"
-    fi
+    run rm -- "$dst"
   fi
   run mkdir -p -- "$dst"
   # --checksum evita falsos MATCH cuando tamaño y mtime coinciden por azar.
@@ -1033,7 +1036,7 @@ copy_dir_additive() {
     return 1
   }
   if [ -L "$dst" ] || { [ -e "$dst" ] && [ ! -d "$dst" ]; }; then
-    backup "$dst"
+    run rm -- "$dst"
   fi
   run mkdir -p -- "$dst"
   for entry in "$src"/*; do
@@ -1102,6 +1105,7 @@ VSCODE="$HOME/Library/Application Support/Code/User"
 copy config/vscode/settings.json "$VSCODE/settings.json"
 copy config/vscode/keybindings.json "$VSCODE/keybindings.json"
 copy config/vscode/mcp.json "$VSCODE/mcp.json"
+install_vscode_extensions || printf '  WARN   extensiones VS Code no instaladas\n' >&2
 
 echo "claude"
 # Directorios de los que este repo es dueño exclusivo: --delete completo.
@@ -1121,6 +1125,8 @@ for source_path in "${CLAUDE_FILES[@]}"; do
 done
 
 register_claude_mcp_servers
+warn_desktop_prereqs
+install_macos_defaults
 
 # core.hooksPath no se fija con `git config --global`: la copia instalada debe
 # conservar la configuracion portable versionada sin escribir rutas locales del

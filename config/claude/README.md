@@ -33,7 +33,7 @@ Las suites y auditorías viven en `.github/test/`, fuera de esta carpeta.
 | --- | --- | --- |
 | `hooks/`, `rules/`, `templates/`, `scripts/`, `agent-tools/` | este repo | `rsync --delete` |
 | `skills/`, `output-styles/` | este repo + entradas ajenas | aditivo, `--delete` por entrada |
-| `CLAUDE.md`, `settings.json` | este repo | copia con backup |
+| `CLAUDE.md`, `settings.json` | este repo | copia |
 | `agents/`, `commands/` | nadie | no se tocan |
 
 Gate de commit: runners del repo solo con el root Git listado en `~/.claude/trusted-repositories`.
@@ -79,7 +79,7 @@ No borra `settings.local.json` ni autenticación; sí reemplaza `settings.json` 
 
 ## Proveedores retirados (recetas)
 
-Purgados: kimi/minimax/qwen en `56a0b68`; DeepSeek/Ollama Cloud/OpenRouter en
+Purgados: kimi/minimax/qwen en `56a0b68`; Ollama Cloud/OpenRouter en
 `f3b6bcb`. Restaurar: `git show <ref>:config/claude/<prov>.settings.json >
 ~/.claude/<prov>.settings.json` (y el helper de `scripts/` con `chmod +x`),
 crear la clave `0600` en `~/.config/claude/`, activar con `--settings`.
@@ -87,13 +87,13 @@ crear la clave `0600` en `~/.config/claude/`, activar con `--settings`.
 | Proveedor | Ref | Clave |
 | --- | --- | --- |
 | Kimi / MiniMax / QwenCloud | `b0563fa^` | `~/.config/claude/<prov>.key` (`<PROV>_API_KEY_FILE`) |
-| DeepSeek / OpenRouter | `f3b6bcb` | ídem |
+| OpenRouter | `f3b6bcb` | ídem |
 | Ollama Cloud | `f3b6bcb` | ninguna (auth vía sesión local) |
 
 El instalador no retira overlays ya desplegados:
 
 ```bash
-rm -f ~/.claude/{deepseek,ollama,openrouter}.settings.json
+rm -f ~/.claude/{ollama,openrouter}.settings.json
 ```
 
 ## Principios

@@ -16,6 +16,9 @@ cd dotfiles
 `./install.sh` ejecuta el bootstrap completo: Command Line Tools y Homebrew,
 dependencias del `Brewfile`, herramientas de shell/agentes (Oh My Zsh,
 Powerlevel10k, Herdr, CodeGraph, CLIs solicitadas) y despliegue de dotfiles.
+Al final aplica `config/macos/defaults.sh --no-sudo`, que reinicia Dock y
+Finder. Solo corre con el HOME real de la cuenta; `DOTFILES_SKIP_MACOS_DEFAULTS=1`
+lo omite. El tier con sudo (sudoers, Touch ID, firewall) queda manual.
 
 `--dry-run` es el único flag: imprime cada comando sin ejecutar nada. Las
 descargas usan los URLs oficiales y cada payload debe coincidir con el SHA-256
@@ -40,18 +43,19 @@ git config --file ~/.gitconfig.local user.email "tu@email"
 - MCP administrados en `~/.claude.json`: transaccional, conserva entradas no
   administradas, snapshot antes de la primera mutación.
 
-Reemplazos con backup: archivos raíz como `<archivo>.backup.<timestamp>` y
-snapshots de directorios en `~/.dotfiles-backups/<timestamp>/`. No modifica
+Reemplazos sin backup: los archivos gestionados se sobrescriben en cada
+`./install.sh`. Los `*.backup.*` que ya existan no se tocan. No modifica
 `~/.gitconfig.local`, credenciales ni tokens.
 
 ## Qué queda manual
 
-- Apps de [`docs/MANUAL_INSTALL.md`](docs/MANUAL_INSTALL.md), extensiones de
-  VS Code, autenticación de CLIs y fuentes si las instalás aparte.
+- Apps de [`docs/MANUAL_INSTALL.md`](docs/MANUAL_INSTALL.md), autenticación de
+  CLIs y fuentes si las instalás aparte.
+- Extensiones de VS Code: `install.sh` intenta instalarlas si encuentra la CLI
+  `code`; si no, habilitala desde VS Code y volvé a ejecutar el instalador.
 - `config/macos/defaults.sh`: revisalo con `--dry-run --no-sudo` y auditá con
-  `.github/verify.sh`. El instalador no lo aplica.
-- `config/openlogi/config.toml`: plantilla con el identificador del mouse
-  redactado; el real se genera al parear el dispositivo.
+  `.github/verify.sh`. `install.sh` aplica automáticamente el tier de usuario
+  solo al HOME real; el tier con sudo queda manual.
 - API keys y tokens: nunca en el repo.
 
 Detalle de Claude en [`config/claude/README.md`](config/claude/README.md).
