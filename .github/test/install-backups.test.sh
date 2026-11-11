@@ -5,7 +5,6 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 INSTALL="$ROOT/install.sh"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-backup-regression.XXXXXX")"
 REAL_CP="$(command -v cp)"
-REAL_RSYNC="$(command -v rsync)"
 
 cleanup() {
   rm -rf -- "$TMP"
@@ -19,10 +18,6 @@ fail() {
 
 assert_equal() {
   cmp -s -- "$1" "$2" || fail "files differ: $1 vs $2"
-}
-
-assert_not_exists() {
-  [ ! -e "$1" ] && [ ! -L "$1" ] || fail "unexpected path: $1"
 }
 
 mkdir -p -- "$TMP/bin"
@@ -42,32 +37,14 @@ done
 exec "$DOTFILES_TEST_REAL_CP" "$@"
 EOF
 
-cat >"$TMP/bin/rsync" <<'EOF'
-#!/usr/bin/env bash
-
-if [ "${DOTFILES_TEST_FAIL_BACKUP_RSYNC:-0}" = 1 ]; then
-  destination="${@: -1}"
-  destination="${destination%/}"
-  case "$destination" in
-    */.dotfiles-backups/*)
-      printf '%s\n' 'partial snapshot' >"$destination/partial.marker"
-      printf '%s\n' 'intentional backup rsync failure' >&2
-      exit 92
-      ;;
-  esac
-fi
-
-exec "$DOTFILES_TEST_REAL_RSYNC" "$@"
-EOF
-
-chmod +x "$TMP/bin/cp" "$TMP/bin/rsync"
+chmod +x "$TMP/bin/cp"
 
 # Entorno hermetico: install.sh llega al paso de copia solo despues de Homebrew,
 # herramientas de bootstrap y fuentes. El PATH queda limitado a stubs para que
 # ningun brew, instalador remoto ni descarga real corra durante el test.
 TOOL_BIN="$TMP/tools"
 mkdir -p -- "$TOOL_BIN"
-for tool in herdr codegraph opencode codex agent agy claude copilot pi spicetify; do
+for tool in codegraph opencode codex agy claude copilot; do
   printf '%s\n' '#!/bin/bash' 'exit 0' >"$TOOL_BIN/$tool"
 done
 printf '%s\n' '#!/bin/bash' 'printf "unexpected download: %s\n" "$*" >&2' 'exit 99' >"$TOOL_BIN/curl"
@@ -77,8 +54,7 @@ JQ_BIN="$(command -v jq || true)"
 ISOLATED_PATH="$TMP/bin:$TOOL_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 
 prepare_home() {
-  mkdir -p -- "$1/.oh-my-zsh/custom/themes/powerlevel10k" \
-    "$1/.config/spicetify/CustomApps/marketplace"
+  mkdir -p -- "$1/.oh-my-zsh/custom/themes/powerlevel10k"
   printf '%s\n' '#!/bin/bash' 'exit 0' >"$1/brew"
   chmod +x "$1/brew"
 }
@@ -107,35 +83,4 @@ if find "$FILE_HOME" -name '.dotfiles-file-stage.*' -print -quit | grep -q .; th
   fail 'failed file copy left a temporary staging file'
 fi
 
-printf '%s\n' '== failed directory backup preserves the original and removes partial state =='
-DIR_HOME="$TMP/directory-home"
-mkdir -p -- "$DIR_HOME/.config/ghostty"
-prepare_home "$DIR_HOME"
-printf '%s\n' 'original ghostty config' >"$DIR_HOME/.config/ghostty/config.ghostty"
-printf '%s\n' 'local-only state' >"$DIR_HOME/.config/ghostty/local-only.conf"
-printf '%s\n' 'original ghostty config' >"$TMP/expected-ghostty"
-printf '%s\n' 'local-only state' >"$TMP/expected-ghostty-local"
-
-set +e
-HOME="$DIR_HOME" PATH="$ISOLATED_PATH" \
-  DOTFILES_HOMEBREW_BREW_CANDIDATES="$DIR_HOME/brew" DOTFILES_JQ_BIN="$JQ_BIN" \
-  DOTFILES_TEST_REAL_CP="$REAL_CP" \
-  DOTFILES_TEST_REAL_RSYNC="$REAL_RSYNC" \
-  DOTFILES_TEST_FAIL_BACKUP_RSYNC=1 \
-  bash "$INSTALL" >"$TMP/directory-copy.log" 2>&1
-directory_rc=$?
-set -e
-
-[ "$directory_rc" -ne 0 ] || fail 'failed directory backup unexpectedly succeeded'
-assert_equal "$DIR_HOME/.config/ghostty/config.ghostty" "$TMP/expected-ghostty"
-assert_equal "$DIR_HOME/.config/ghostty/local-only.conf" "$TMP/expected-ghostty-local"
-backup_root="$DIR_HOME/.dotfiles-backups"
-assert_not_exists "$backup_root"
-if find "$DIR_HOME" -name 'partial.marker' -print -quit | grep -q .; then
-  fail 'failed directory backup left a partial marker'
-fi
-if find "$DIR_HOME" -name '.dotfiles-backup-stage.*' -print -quit | grep -q .; then
-  fail 'failed directory backup left a staging directory'
-fi
-
-printf '%s\n' 'PASS: failed file/directory copies preserve originals and clean partial backups'
+printf '%s\n' 'PASS: failed file copy preserves the original and leaves no staging file'

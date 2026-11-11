@@ -76,7 +76,6 @@ setup_user_path() {
   path_promote "$PNPM_HOME/bin"
   path_promote "$HOME/Library/Application Support/Herd/bin"
   path_promote "$HOME/.local/bin"
-  path_promote "$HOME/.cargo/bin"
   path_promote "$NVM_DEFAULT_BIN"
   # Homebrew mantiene binutils keg-only para no pisar las herramientas nativas;
   # exponer sus nombres prefijados (greadelf/gobjdump) deja el analisis ELF
@@ -94,9 +93,6 @@ setup_user_path() {
   fi
 
   path_append "$GOPATH/bin"
-  path_append "$HOME/.unity/bin"
-  path_append "$HOME/.lmstudio/bin"
-  path_append "$HOME/.spicetify"
   path_append "$ANDROID_HOME/tools"
   path_append "$ANDROID_HOME/platform-tools"
   path_append "$ANDROID_HOME/emulator"

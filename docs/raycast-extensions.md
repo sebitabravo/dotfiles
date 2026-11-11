@@ -54,7 +54,6 @@ with `diff -rq config/raycast/scripts ~/.raycast/scripts`.
 | `set-1440p.sh` | Applies dual 1440p layout in one atomic `displayplacer` call | Daily driver mode: MSI at full 2560x1440 |
 | `set-1080p.sh` | Applies dual 1080p layout in one atomic call, then `killall WallpaperAgent \|\| true` to clear the stale wallpaper frame | Perf/compat mode or when 1440p causes issues |
 | `reset-display-placement.sh` | Idempotent repair: reads `displayplacer list`, skips when a screen is disconnected, repairs drift, defaults unknown MSI resolutions to dual 1440p | Placement looks wrong after dock/undock or wake |
-| `restart-elgato.sh` | Kills and relaunches the Elgato stack (Stream Deck + Wave Link), relaunching only apps that were running | Stream Deck or Wave Link frozen after sleep |
 
 Expected dual layout (no internal display in snapshot):
 
@@ -68,5 +67,3 @@ open -g raycast://extensions/raycast/raycast/reset-raycast-window-position
 ```
 
 The `-g` flag keeps Raycast in the background instead of stealing focus.
-
-Note: `restart-elgato.sh` covers both `Elgato Stream Deck` and `Elgato Wave Link`.

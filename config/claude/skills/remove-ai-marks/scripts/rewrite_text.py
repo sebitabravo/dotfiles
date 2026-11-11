@@ -592,7 +592,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("none", "low", "medium", "high", "off"),
         default=_env("WATERMARKS_REWRITE_REASONING_EFFORT", "none"),
         help="OpenAI-compatible reasoning_effort; 'none' skips chain-of-thought "
-        "(reasoning models like deepseek-v4-flash otherwise burn minutes on a "
+        "(reasoning models otherwise burn minutes on a "
         "rewrite). 'off' omits the parameter entirely.",
     )
     # NOTE: no --api-key flag on purpose — keys on argv are visible in `ps`

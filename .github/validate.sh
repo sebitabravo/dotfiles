@@ -67,6 +67,7 @@ SUITES=(
   .github/test/validate-safe-ops-prose.test.sh
   .github/test/compact-resume.test.sh
   .github/test/doctor.test.sh
+  .github/test/gentle-shell-upgrade.test.sh
   .github/test/defaults-failure-propagation.test.sh
   .github/test/macos-version-guards.test.sh
   .github/test/check-runtime-parity.test.sh

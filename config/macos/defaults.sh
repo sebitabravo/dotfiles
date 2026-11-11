@@ -6,9 +6,9 @@
 # Las keys springboard-* de Launchpad se escriben solo hasta Sequoia (Tahoe lo
 # saco del sistema y 27 no lo trajo de vuelta) y Reduce Transparency se salta
 # hasta 26.2, la ventana donde Apple la tuvo rota.
-# En 27 no se agregaron keys nuevas a proposito: el slider de Liquid Glass que
-# trae Ajustes > Apariencia no tiene key publica documentada, y reduceTransparency
-# sigue existiendo y aplanando mas que el slider (verificado leyendo
+# En 27 no se agregó ninguna key para el slider de Liquid Glass de Ajustes >
+# Apariencia: no tiene key pública documentada. reduceTransparency sigue
+# existiendo y aplanando mas que el slider (verificado leyendo
 # com.apple.universalaccess en 27.0).
 # El inventario ejecutable se puede revisar sin escrituras con --dry-run.
 #
@@ -24,6 +24,8 @@
 # que la Mac tiene hoy, no los que el script proponia originalmente. Donde el
 # valor vivo baja la privacidad respecto del original hay un comentario
 # "Para revertir:" con el valor endurecido.
+# Las keys agregadas en esta revisión se verificaron, como mucho, en 15.8.2
+# (binarios y dominios); en 26 y 27 no. Cada item lo indica.
 set -euo pipefail
 
 DRY_RUN=0
@@ -128,6 +130,22 @@ delete_default() {
   fi
 }
 
+# Probe de Full Disk Access para apps sandboxed (ver el bloque Safari). En
+# dry-run no escribe nada y asume OK.
+fda_probe() {
+  local domain="$1" container_plist="$2" canary="__dotfiles_fda_probe_$$" found=0
+  if [ "$DRY_RUN" -eq 1 ]; then
+    return 0
+  fi
+  defaults write "$domain" "$canary" -bool true 2>/dev/null || true
+  if defaults read "$container_plist" "$canary" >/dev/null 2>&1; then
+    found=1
+  fi
+  defaults delete "$domain" "$canary" 2>/dev/null || true
+  defaults delete "$container_plist" "$canary" 2>/dev/null || true
+  [ "$found" -eq 1 ]
+}
+
 echo "=== Aplicando defaults de macOS ==="
 
 # ── Animaciones de ventanas ────────────────────────────────────────
@@ -160,8 +178,17 @@ apply_default "Sin cambio automatico de escritorio al activar una app" com.apple
 
 # Agrupa las ventanas por aplicacion en Mission Control (Exposé). No es
 # animacion, es organizacion: menos scroll visual para encontrar una ventana
-# especifica cuando tenes varias apps con multiples ventanas abiertas.
-apply_default "Mission Control agrupa ventanas por app" com.apple.dock expose-group-by-app -bool true
+# especifica cuando tenes varias apps con multiples ventanas abiertas. La clave
+# que lee el Dock es expose-group-apps: su binario la contiene y no contiene
+# expose-group-by-app.
+apply_default "Mission Control agrupa ventanas por app" com.apple.dock expose-group-apps -bool true
+delete_default "Mission Control: borrar expose-group-by-app legacy" com.apple.dock expose-group-by-app
+
+# PREFERENCIA PERSONAL. Cmd+Tab muestra las apps en todas las pantallas, no solo
+# en la activa (dos monitores externos). Clave hallada en el binario del Dock de
+# 15.8.2; no se pudo verificar en 27: si no tiene efecto, quitarla.
+# Revertir: defaults delete com.apple.dock appswitcher-all-displays
+apply_default "Cmd+Tab en todas las pantallas" com.apple.dock appswitcher-all-displays -bool true
 
 # ── Launchpad (existe hasta Sequoia; removido en Tahoe 26) ─────────
 # Apple saco Launchpad del sistema en Tahoe y sus archivos ya no estan, asi
@@ -689,16 +716,25 @@ else
 fi
 
 # ── Mail ───────────────────────────────────────────────────────────
-apply_default "Mail reply animations off" com.apple.mail DisableReplyAnimations -bool true
+# Mail está sandboxed como Safari: sin Full Disk Access los writes caen en
+# ~/Library/Preferences/com.apple.mail.plist, que Mail nunca lee. La sonda también
+# puede fallar si Mail nunca se abrió, porque el container se crea al correr la app.
+MAIL_CONTAINER_PLIST="$HOME/Library/Containers/com.apple.mail/Data/Library/Preferences/com.apple.mail"
+if fda_probe com.apple.mail "$MAIL_CONTAINER_PLIST"; then
+  apply_default "Mail reply animations off" com.apple.mail DisableReplyAnimations -bool true
 
-apply_default "Mail send animations off" com.apple.mail DisableSendAnimations -bool true
+  apply_default "Mail send animations off" com.apple.mail DisableSendAnimations -bool true
 
-# Copy email address without person's name (user@domain.com, not "John Doe <user@domain.com>")
-apply_default "Mail copy email without name" com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+  # Copy email address without person's name (user@domain.com, not "John Doe <user@domain.com>")
+  apply_default "Mail copy email without name" com.apple.mail AddressesIncludeNameOnPasteboard -bool false
 
-apply_default "Mail inline attachments off" com.apple.mail DisableInlineAttachmentViewing -bool true
+  apply_default "Mail inline attachments off" com.apple.mail DisableInlineAttachmentViewing -bool true
 
-apply_default "Mail plain text compose" com.apple.mail PreferPlainText -bool true
+  apply_default "Mail plain text compose" com.apple.mail PreferPlainText -bool true
+else
+  echo "[SKIP] Bloque Mail (5 keys): sin Full Disk Access, o Mail nunca se abrió (sin container)."
+  echo "       Ajustes > Privacidad y Seguridad > Acceso total al disco > agregar tu terminal y reabrirla."
+fi
 
 # Mail spell check: stock macOS (spell checking is useful, no security impact)
 
@@ -788,7 +824,16 @@ apply_default "Feedback Assistant no auto-gather" com.apple.appleseed.FeedbackAs
 # dominio, que ya restringen personalizacion y fuerzan el limite de tracking.
 # No es AutoFill ni ninguna feature que uses: es el identificador publicitario
 # cross-app. Para revertir: -int 1
+# La lectura de vuelta atrapa un write que no quedó en el dominio (ej: un perfil
+# que lo fuerza). Un reset posterior (update, reinstalación) lo detecta verify.sh.
 apply_default "Advertising identifier disabled" com.apple.AdLib allowIdentifierForAdvertising -int 0
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY] leer allowIdentifierForAdvertising de vuelta"
+elif [ "$(defaults read com.apple.AdLib allowIdentifierForAdvertising 2>/dev/null || true)" = "0" ]; then
+  echo "[OK] IDFA persistió en 0"
+else
+  echo "[WARN] IDFA sigue activo tras el write: revisar en Ajustes > Privacidad y Seguridad > Publicidad de Apple"
+fi
 
 apply_default "Apple personalized advertising off" com.apple.AdLib allowApplePersonalizedAdvertising -bool false
 
@@ -843,15 +888,7 @@ apply_default "WebKit developer extras" NSGlobalDomain WebKitDeveloperExtras -bo
 # de mentir. Fuente: lapcatsoftware.com/articles/containers.html
 SAFARI_CONTAINER_PLIST="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
 SAFARI_FDA_OK=1
-if [ "$DRY_RUN" -eq 0 ]; then
-  _safari_canary="__dotfiles_fda_probe_$$"
-  defaults write com.apple.Safari "$_safari_canary" -bool true 2>/dev/null || true
-  if ! defaults read "$SAFARI_CONTAINER_PLIST" "$_safari_canary" >/dev/null 2>&1; then
-    SAFARI_FDA_OK=0
-  fi
-  defaults delete com.apple.Safari "$_safari_canary" 2>/dev/null || true
-  defaults delete "$SAFARI_CONTAINER_PLIST" "$_safari_canary" 2>/dev/null || true
-fi
+fda_probe com.apple.Safari "$SAFARI_CONTAINER_PLIST" || SAFARI_FDA_OK=0
 
 if [ "$SAFARI_FDA_OK" -eq 0 ]; then
   echo "[SKIP] Bloque Safari (30 keys): la terminal no tiene Full Disk Access."
@@ -1077,11 +1114,11 @@ apply_default "Calendar debug menu" com.apple.iCal IncludeDebugMenu -bool true
 # ── Notification Center ────────────────────────────────────────────
 apply_default "Notification banner time = 3s" com.apple.notificationcenterui bannerTime -int 3
 
-# ── Login Window ───────────────────────────────────────────────────
-apply_default "Login window show full name" com.apple.loginwindow SHOWFULLNAME -bool true
-
 # ── Menu Bar ───────────────────────────────────────────────────────
-apply_default "Battery percentage in menu bar" com.apple.menuextra.battery ShowPercent -bool true
+# Clave efectiva en com.apple.controlcenter; menuextra.battery ShowPercent no la
+# lee macOS. La barra mínima de arriba oculta el item de batería, así que esto no
+# se ve hasta que lo muestres.
+apply_default_host "Battery percentage in menu bar" com.apple.controlcenter BatteryShowPercentage -bool true
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] Clock: digital, 24h, minimal"
@@ -1114,39 +1151,17 @@ else
   record_failure "App Store debug menu enabled"
 fi
 
-# Auto-update App Store apps (security: outdated apps = attack surface)
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] App Store auto-update + auto-restart"
-elif (
-  defaults write com.apple.commerce AutoUpdate -bool true &&
-    defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
-) 2>/dev/null; then
-  echo "[SET] App Store auto-update + auto-restart"
-else
-  record_failure "App Store auto-update + auto-restart"
-fi
-
-# ── Software Update ────────────────────────────────────────────────
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[DRY] Software Update: daily check + auto critical installs"
-elif (
-  defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true &&
-    defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1 &&
-    defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1 &&
-    defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1 &&
-    defaults write com.apple.SoftwareUpdate ConfigDataInstall -int 1
-) 2>/dev/null; then
-  echo "[SET] Software Update: daily check + auto critical installs"
-else
-  record_failure "Software Update: daily check + auto critical installs"
-fi
-
 # ── Spotlight ──────────────────────────────────────────────────────
 apply_default "Spotlight suggestions disabled" com.apple.Spotlight SuggestionsEnabled -bool false
 
 apply_default "Spotlight server suggestions disabled" com.apple.Spotlight ServerSuggestionsEnabled -bool false
 
-apply_default "Spotlight menu bar icon hidden" com.apple.Spotlight MenuBarSpotlightIcon -bool false
+# Clave efectiva en 15.8.2 (per-host). La legacy de abajo se deja por si alguna
+# versión todavía la lee.
+apply_default_host "Spotlight menu bar icon hidden" com.apple.Spotlight MenuItemHidden -int 1
+
+# Legacy: MenuBarSpotlightIcon no es la clave efectiva en 15.8.2.
+apply_default "Spotlight menu bar icon hidden (legacy)" com.apple.Spotlight MenuBarSpotlightIcon -bool false
 
 # ── Sound ──────────────────────────────────────────────────────────
 apply_default "Volume change feedback silent" -g com.apple.sound.beep.feedback -int 0
@@ -1217,6 +1232,16 @@ fi
 # Revertir: defaults delete NSGlobalDomain _HIHideMenuBar
 apply_default "Menu bar auto-hide" NSGlobalDomain _HIHideMenuBar -bool true
 
+# PREFERENCIA PERSONAL. Tahoe agregó iconos junto a cada item de los menús. Solo
+# desde 26: en versiones anteriores la key no aplica. No verificada en 15.8.2 ni
+# en 27; fuente: Daring Fireball, marzo 2026.
+# Revertir: defaults delete NSGlobalDomain NSMenuEnableActionImages
+if [ "$MACOS_MAJOR" -ge 26 ]; then
+  apply_default "Menus sin iconos por item (Tahoe+)" NSGlobalDomain NSMenuEnableActionImages -bool false
+else
+  echo "[SKIP] Iconos por item en menús: solo desde macOS 26"
+fi
+
 # ══════════════════════════════════════════════════════════════════
 # TIER 2 — requiere sudo
 # ══════════════════════════════════════════════════════════════════
@@ -1251,6 +1276,10 @@ elif [ "$DRY_RUN" -eq 1 ]; then
   echo "[DRY] sudo chflags nohidden /Volumes (si esta oculto)"
   echo "[DRY] sudo defaults write ...loginwindow AdminHostInfo HostName (si no es HostName)"
   echo "[DRY] sudo defaults write ...loginwindow RetriesUntilHint -int 0 (si las pistas de password siguen activas)"
+  echo "[DRY] sudo defaults write ...loginwindow SHOWFULLNAME -bool true (si no está ya)"
+  echo "[DRY] sudo defaults write ...SoftwareUpdate: AutomaticCheckEnabled, ScheduleFrequency, AutomaticDownload," \
+    "CriticalUpdateInstall, ConfigDataInstall (si falta alguna)"
+  echo "[DRY] sudo defaults write ...com.apple.commerce AutoUpdate + AutoUpdateRestartRequired (si falta alguna)"
   echo "[DRY] Touch ID para sudo via /etc/pam.d/sudo_local (si hay template y no hay config)"
   echo "[DRY] sudo socketfilterfw --setglobalstate on + --setstealthmode on (si estan apagados)"
   echo "[DRY] sudo socketfilterfw --add /usr/libexec/rapportd + --unblockapp (si falta en --listapps)"
@@ -1480,6 +1509,53 @@ tier_apply() {
   else
     tier_apply "Pistas de password desactivadas (CIS 2.11.5)" \
       defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0
+  fi
+
+  # Login window: SHOWFULLNAME es de sistema. En ~/Library/Preferences el login
+  # window no lo lee, y el write anterior reportaba [SET] sin efecto.
+  if defaults read /Library/Preferences/com.apple.loginwindow SHOWFULLNAME 2>/dev/null | grep -qx 1; then
+    echo "[SKIP] Login window muestra nombre completo ya configurado"
+  else
+    tier_apply "Login window muestra nombre completo" \
+      defaults write /Library/Preferences/com.apple.loginwindow SHOWFULLNAME -bool true
+  fi
+
+  # Software Update: el daemon lee /Library/Preferences, no ~/Library/Preferences.
+  # Un guard por grupo: si todas las keys ya valen 1, [SKIP]; si falta una, se
+  # escriben todas. ScheduleFrequency va en el grupo porque no se pudo demostrar
+  # que macOS la ignore.
+  su_write() {
+    defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true &&
+      defaults write /Library/Preferences/com.apple.SoftwareUpdate ScheduleFrequency -int 1 &&
+      defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -int 1 &&
+      defaults write /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall -int 1 &&
+      defaults write /Library/Preferences/com.apple.SoftwareUpdate ConfigDataInstall -int 1
+  }
+  _su_pending=0
+  for _su_key in AutomaticCheckEnabled ScheduleFrequency AutomaticDownload CriticalUpdateInstall ConfigDataInstall; do
+    defaults read /Library/Preferences/com.apple.SoftwareUpdate "$_su_key" 2>/dev/null | grep -qx 1 || _su_pending=1
+  done
+  if [ "$_su_pending" -eq 0 ]; then
+    echo "[SKIP] Software Update ya configurado (chequeo diario + instalaciones críticas)"
+  else
+    tier_apply "Software Update: chequeo diario + instalaciones críticas" su_write
+  fi
+
+  # App Store auto-update: una app desactualizada es superficie de ataque. Vive
+  # en el dominio de sistema, por el mismo motivo que Software Update.
+  # AutoUpdateRestartRequired va en el grupo: no se pudo demostrar que se ignore.
+  commerce_write() {
+    defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool true &&
+      defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool true
+  }
+  _ac_pending=0
+  for _ac_key in AutoUpdate AutoUpdateRestartRequired; do
+    defaults read /Library/Preferences/com.apple.commerce "$_ac_key" 2>/dev/null | grep -qx 1 || _ac_pending=1
+  done
+  if [ "$_ac_pending" -eq 0 ]; then
+    echo "[SKIP] App Store auto-update + auto-restart ya configurados"
+  else
+    tier_apply "App Store auto-update + auto-restart" commerce_write
   fi
 
   # Touch ID para sudo — mecanismo oficial sudo_local de Apple (Sonoma+),
@@ -1877,22 +1953,19 @@ fi
 # ══════════════════════════════════════════════════════════════════
 # TIER 3 — exclusiones de indexado sobre el arbol de desarrollo
 # ══════════════════════════════════════════════════════════════════
-# La ganancia real en una maquina de desarrollo, justificada por el tamaño del
-# arbol y no por un bug: un solo node_modules ronda 50.000-200.000 archivos
-# chicos, y cada npm install, checkout grande, build a DerivedData o extraccion
-# de imagen de Docker dispara una rafaga de FSEvents que Spotlight persigue con
-# varios mdworker en paralelo. (Este comentario afirmaba una "regresion
-# documentada" de Spotlight en Sequoia: no hay release note ni radar de Apple
-# que la respalde, asi que se declara por lo que es.)
-# `tmutil disablelocal` ya no existe desde High Sierra — esto es
-# el reemplazo real. La parte de Spotlight (.metadata_never_index) no
-# requiere sudo; la de Time Machine si — `tmutil addexclusion` sale con
-# "requires root privileges" sin el (verificado, exit 80), asi que se salta
-# con --no-sudo igual que el tier 2. No crea directorios: si la ruta no
-# existe, se saltea. Con timestamp_timeout=0 instalado, cada exclusion que
-# falte pide password una vez (el guard `isexcluded` es sin sudo y no pide
-# nada); si todo ya esta excluido este tier no pide password.
-echo "=== Tier 3: exclusiones de Spotlight (siempre) y Time Machine (requiere sudo) ==="
+# Spotlight: el marcador .metadata_never_index no excluye nada en macOS reciente.
+# Eclectic Light lo reporta a nivel de carpeta, y en 15.8.2 Spotlight sigue
+# indexando archivos nuevos de ~/Library/Caches con el marcador puesto. El script
+# lo sigue escribiendo porque no hace daño, pero no lo declara como exclusión:
+# mide después con mdfind y avisa. La única exclusión que Spotlight respeta es
+# Ajustes > Spotlight > Privacidad de búsqueda, y no hay forma no-GUI de agregarla.
+# Time Machine sí funciona: `tmutil addexclusion` requiere root ("requires root
+# privileges" sin el, exit 80), así que se salta con --no-sudo igual que el tier 2.
+# Reemplaza a `tmutil disablelocal`, que ya no existe desde High Sierra. No crea
+# directorios: si la ruta no existe, se saltea. Con timestamp_timeout=0 instalado,
+# cada exclusión que falte pide password una vez (el guard `isexcluded` es sin
+# sudo y no pide nada); si todo ya está excluido este tier no pide password.
+echo "=== Tier 3: marcadores de Spotlight (medidos) y exclusiones de Time Machine (requiere sudo) ==="
 DEV_EXCLUDE_PATHS=(
   "$HOME/Developer"
   "$HOME/Library/Developer/Xcode/DerivedData"
@@ -1908,9 +1981,9 @@ DEV_EXCLUDE_PATHS=(
 # prompts de password en la primera corrida. El guard `tmutil isexcluded` no
 # necesita privilegios, asi que decidir que falta sigue siendo gratis.
 TM_PENDING=()
-# Rutas que todavia no existen. En una Mac recien formateada son casi todas, y
-# saltarlas en silencio deja al script sin su unica ganancia de rendimiento
-# medible. Se cuentan para avisar al final que hay que volver a correrlo.
+# Rutas que todavía no existen. En una Mac recién formateada son casi todas, y
+# saltarlas en silencio deja sin su exclusión de Time Machine. Se cuentan para
+# avisar al final que hay que volver a correrlo.
 MISSING_DEV_PATHS=0
 
 for p in "${DEV_EXCLUDE_PATHS[@]}"; do
@@ -1921,14 +1994,14 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
   fi
 
   if [ -f "$p/.metadata_never_index" ]; then
-    echo "[SKIP] Spotlight ya excluye $p"
+    echo "[SKIP] marcador .metadata_never_index ya presente en $p"
   elif [ "$DRY_RUN" -eq 1 ]; then
     echo "[DRY] touch $p/.metadata_never_index"
   else
     if touch "$p/.metadata_never_index" 2>/dev/null; then
-      echo "[SET] Spotlight excluye $p"
+      echo "[SET] marcador .metadata_never_index escrito en $p (Spotlight puede ignorarlo, ver medición abajo)"
     else
-      record_failure "Spotlight excluye $p"
+      record_failure "marcador .metadata_never_index en $p"
     fi
   fi
 
@@ -1942,6 +2015,24 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
     TM_PENDING+=("$p")
   fi
 done
+
+# Medición de Spotlight: cuenta archivos creados en los últimos dos días que
+# Spotlight ya indexó dentro de cada ruta. Cero no prueba nada (una carpeta quieta
+# también da cero); distinto de cero prueba que la exclusión no funciona. Solo
+# lectura: corre también en dry-run.
+for p in "${DEV_EXCLUDE_PATHS[@]}"; do
+  [ -e "$p" ] || continue
+  # $time es sintaxis de la query de Spotlight, no una variable de shell.
+  # shellcheck disable=SC2016
+  _recent="$(mdfind -count -onlyin "$p" 'kMDItemFSCreationDate >= $time.today(-2)' 2>/dev/null || true)"
+  case "$_recent" in
+    '' | *[!0-9]*) echo "[--] Spotlight: no se pudo medir el indexado de $p" ;;
+    0) echo "[OK] Spotlight: 0 archivos nuevos indexados en $p (últimos 2 días)" ;;
+    *) echo "[WARN] Spotlight sigue indexando $p: $_recent archivo(s) nuevos en 2 días." \
+      "Agregar la carpeta en Ajustes > Spotlight > Privacidad de búsqueda" ;;
+  esac
+done
+unset _recent
 
 # Bash 3.2 con `set -u` revienta al expandir un array vacio, de ahi el guard
 # por cantidad. La sesion root sale con la cantidad de fallos, igual que el
@@ -1973,9 +2064,9 @@ TM_EOF
 fi
 
 if [ "$MISSING_DEV_PATHS" -gt 0 ]; then
-  echo "[!!] ${MISSING_DEV_PATHS} ruta(s) de desarrollo todavia no existen, asi" \
-    "que quedaron sin excluir de Spotlight y Time Machine. Volve a correr" \
-    "este script despues de clonar los repos y correr los toolchains."
+  echo "[!!] ${MISSING_DEV_PATHS} ruta(s) de desarrollo todavía no existen, así" \
+    "que no tienen exclusión de Time Machine. Volvé a correr este script" \
+    "después de clonar los repos y correr los toolchains."
 fi
 
 # Snapshots locales huerfanos: solo se reportan, no se borra nada. El

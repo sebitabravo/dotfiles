@@ -1,0 +1,43 @@
+name: install-clean-macos
+
+# Corre el instalador real en un runner macOS limpio. Solo manual y semanal:
+# los minutos de macOS son caros y el job tarda bastante (casks pesados).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      # Homebrew y sus instaladores no deben pedir confirmacion en CI.
+      NONINTERACTIVE: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Lo que valida: copias, brew bundle y los instaladores con SHA fijado sobre
+      # un HOME limpio. Lo que NO valida: el bootstrap de CLT y Homebrew (el runner
+      # ya los trae) ni Herd, OrbStack o la CLI de VS Code (son apps de escritorio).
+      - name: install.sh en runner limpio
+        run: bash install.sh
+
+      - name: brew bundle sin pendientes
+        run: brew bundle check --file=Brewfile
+
+      - name: segunda corrida idempotente
+        run: bash install.sh
+
+      - name: archivos gestionados coinciden con el repo
+        run: |
+          cmp -s .zshrc "$HOME/.zshrc"
+          cmp -s .zshenv "$HOME/.zshenv"
+          cmp -s config/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"

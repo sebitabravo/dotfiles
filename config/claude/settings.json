@@ -45,7 +45,10 @@
     ]
   },
   "model": "opusplan",
-  "fallbackModel": ["sonnet", "haiku"],
+  "fallbackModel": [
+    "sonnet",
+    "haiku"
+  ],
   "showClearContextOnPlanAccept": true,
   "promptSuggestionEnabled": false,
   "hooks": {
@@ -200,6 +203,9 @@
   "spinnerTipsEnabled": true,
   "alwaysThinkingEnabled": true,
   "modelSettings": {
+    "claude-fable-5-2": {
+      "effortLevel": "low"
+    },
     "claude-opus-5-5": {
       "effortLevel": "medium"
     },

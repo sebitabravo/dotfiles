@@ -223,6 +223,21 @@ nvm()   { _nvm_lazy_load; nvm "$@"; }
 # p10k transient prompt
 typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
 
+# Gentle Shell: sigue los releases del creador sin daemon. A lo mas una vez al
+# dia y en segundo plano; el install bundled deja la version nueva al lado y
+# conserva rollback, asi que no rompe una sesion abierta. El mtime del log es
+# la marca de la ultima corrida.
+_gs_log="${XDG_CACHE_HOME:-$HOME/.cache}/gentle-shell-upgrade.log"
+if [[ -o interactive ]] && (( $+commands[gentle-shell] )); then
+  _gs_recent=("$_gs_log"(Nmh-24))
+  if (( ! ${#_gs_recent} )); then
+    mkdir -p "${_gs_log:h}"
+    (gentle-shell upgrade </dev/null >|"$_gs_log" 2>&1 &)
+  fi
+  unset _gs_recent
+fi
+unset _gs_log
+
 # Zsh usability plugins — optional at runtime, managed by Brewfile.
 # Syntax highlighting must load after Oh My Zsh and the other widgets.
 if [[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
@@ -237,58 +252,3 @@ if [[ -o interactive ]] &&
    [[ -z "$VSCODE_INJECTION" ]]; then
   fastfetch
 fi
-
-# claude --deepseek -> settings separado con opusplan mapeado a DeepSeek.
-# claude a secas queda igual que siempre (Anthropic).
-claude() {
-  local -a args=()
-  local -a provider_env=(
-    -u ANTHROPIC_API_KEY
-    -u ANTHROPIC_AUTH_TOKEN
-    -u ANTHROPIC_BASE_URL
-    -u ANTHROPIC_MODEL
-    -u ANTHROPIC_DEFAULT_OPUS_MODEL
-    -u ANTHROPIC_DEFAULT_SONNET_MODEL
-    -u ANTHROPIC_DEFAULT_HAIKU_MODEL
-    -u ANTHROPIC_DEFAULT_FABLE_MODEL
-    -u CLAUDE_CODE_SUBAGENT_MODEL
-    -u CLAUDE_CODE_AUTO_COMPACT_WINDOW
-    -u CLAUDE_CODE_MAX_CONTEXT_TOKENS
-    -u CLAUDE_CODE_EFFORT_LEVEL
-    -u CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY
-    -u CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS
-    -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
-    -u ENABLE_TOOL_SEARCH
-    -u API_TIMEOUT_MS
-  )
-  local use_ds=false a deepseek_settings claude_bin
-  local provider_count=0
-  for a in "$@"; do
-    case "$a" in
-      --deepseek)   use_ds=true; provider_count=$((provider_count + 1)) ;;
-      *)            args+=("$a") ;;
-    esac
-  done
-  if (( provider_count > 1 )); then
-    print -u2 'claude: selecciona un solo provider por invocacion'
-    return 2
-  fi
-  if $use_ds; then
-    deepseek_settings="$HOME/.claude/deepseek.settings.json"
-    claude_bin="${commands[claude]:-}"
-    if [[ ! -r "$deepseek_settings" ]]; then
-      print -u2 "claude: no se encontro el settings de DeepSeek: $deepseek_settings"
-      return 1
-    fi
-    if [[ -z "$claude_bin" ]]; then
-      print -u2 "claude: binario de Claude Code no encontrado"
-      return 1
-    fi
-    env "${provider_env[@]}" \
-      "$claude_bin" \
-      --settings "$deepseek_settings" \
-      "${args[@]}"
-  else
-    command claude "$@"
-  fi
-}

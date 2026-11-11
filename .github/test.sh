@@ -108,9 +108,10 @@ assert_not_exists "$TOOL_DRY_HOME/.zshrc"
 assert_not_exists "$TOOL_DRY_HOME/.oh-my-zsh"
 grep -qF 'https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh' "$tool_dry_output" || fail 'Oh My Zsh plan missing'
 grep -qF 'https://github.com/romkatv/powerlevel10k.git' "$tool_dry_output" || fail 'Powerlevel10k plan missing'
-grep -qF 'https://cursor.com/install' "$tool_dry_output" || fail 'Cursor Agent plan missing'
 grep -qF 'https://antigravity.google/cli/install.sh' "$tool_dry_output" || fail 'Antigravity plan missing'
 grep -qF 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh' "$tool_dry_output" || fail 'Homebrew plan missing'
+grep -qF 'code --install-extension' "$tool_dry_output" || fail 'VS Code extensions plan missing'
+grep -qF 'SKIP   macOS defaults' "$tool_dry_output" || fail 'dry-run did not skip macOS defaults'
 grep -qF 'xcode-select --install' "$tool_dry_output" || fail 'Xcode Command Line Tools plan missing'
 grep -qF 'OpenCode' "$tool_dry_output" || fail 'OpenCode plan missing'
 grep -qF -- '--no-modify-path' "$tool_dry_output" || fail 'no-modify-path plan missing'
@@ -265,7 +266,7 @@ EOF
 # tiene que faltar para forzar el path real de descarga y ejercitar el
 # checksum fail-closed. CodeGraph es el primer remote tool que install.sh
 # intenta tras Homebrew/Oh My Zsh (que se saltan por fixture aparte).
-for command_name in gentle-ai opencode codex agent agy claude copilot pi spicetify; do
+for command_name in opencode codex agy claude copilot; do
   cat >"$HASH_MISMATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -346,7 +347,7 @@ EOF
 # codegraph queda fuera del loop de stubs por el mismo motivo que en el bloque
 # de hash mismatch: es el primer remote tool real tras Homebrew/Oh My Zsh, y
 # el shasum de arriba esta fijado a su checksum real para simular un match.
-for command_name in gentle-ai opencode codex agent agy claude copilot pi spicetify; do
+for command_name in opencode codex agy claude copilot; do
   cat >"$MATCH_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -462,7 +463,7 @@ VSCODE_HOME="$TEST_HOME/Library/Application Support/Code/User"
 MCP_JQ_BIN="$(command -v jq || true)"
 [ -x "$MCP_JQ_BIN" ] || fail 'jq is required for the isolated MCP fixture'
 mkdir -p "$BOOTSTRAP_BIN" "$TEST_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-for command_name in herdr codegraph opencode codex agent agy copilot pi spicetify; do
+for command_name in codegraph opencode codex agy copilot; do
   cat >"$BOOTSTRAP_BIN/$command_name" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -478,6 +479,41 @@ cat >"$BOOTSTRAP_BIN/gentle-ai" <<EOF
 printf '%s\\n' "\$*" >>'$GENTLE_AI_LOG'
 EOF
 chmod +x "$BOOTSTRAP_BIN/gentle-ai"
+# Gentle Shell se instala como paquete global de pnpm y su `upgrade` lo migra al
+# install bundled. Los stubs registran cada paso y emulan ambos efectos en disco.
+GENTLE_SHELL_LOG="$TMP_HOME/gentle-shell.log"
+GENTLE_SHELL_PNPM_BIN="$TMP_HOME/pnpm-global-bin"
+: >"$GENTLE_SHELL_LOG"
+cat >"$BOOTSTRAP_BIN/node" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$BOOTSTRAP_BIN/pnpm" <<EOF
+#!/usr/bin/env bash
+printf 'pnpm %s\\n' "\$*" >>'$GENTLE_SHELL_LOG'
+case "\$1" in
+  bin) printf '%s\\n' '$GENTLE_SHELL_PNPM_BIN' ;;
+  add)
+    mkdir -p '$GENTLE_SHELL_PNPM_BIN'
+    cat >'$GENTLE_SHELL_PNPM_BIN/gentle-shell' <<'STUB'
+#!/usr/bin/env bash
+printf 'gentle-shell %s\n' "\$*" >>"\$GENTLE_SHELL_LOG"
+case ":\$PATH:" in
+  *":\$HOME/.local/bin:"*) ;;
+  *) printf '%s\n' 'gentle-shell upgrade ran without ~/.local/bin on PATH' >>"\$GENTLE_SHELL_LOG" ;;
+esac
+mkdir -p "\$HOME/.gentle-shell/bin"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"\$HOME/.gentle-shell/bin/gentle-shell"
+chmod +x "\$HOME/.gentle-shell/bin/gentle-shell"
+ln -s "\$HOME/.gentle-shell/bin/gentle-shell" "\$HOME/.local/bin/gentle-shell"
+STUB
+    chmod +x '$GENTLE_SHELL_PNPM_BIN/gentle-shell'
+    ;;
+  remove) rm -f -- '$GENTLE_SHELL_PNPM_BIN/gentle-shell' ;;
+esac
+EOF
+chmod +x "$BOOTSTRAP_BIN/node" "$BOOTSTRAP_BIN/pnpm"
+export GENTLE_SHELL_LOG
 cat >"$BOOTSTRAP_BIN/claude" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -609,7 +645,6 @@ chmod +x "$TEST_HOME/brew"
 mkdir -p -- \
   "$TEST_HOME/.config/ghostty" \
   "$TEST_HOME/.config/herdr" \
-  "$TEST_HOME/.config/spicetify/CustomApps/marketplace" \
   "$TEST_HOME/.claude" \
   "$TEST_HOME/.claude/hooks" \
   "$TEST_HOME/.claude/skills/pptx/node_modules" \
@@ -662,6 +697,9 @@ MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$MCP_DRY_LOG" HOME="$MCP_DRY_HOME" \
   PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
   bash "$INSTALL" --dry-run >"$TMP_HOME/mcp-dry-install.log"
 [ ! -s "$MCP_DRY_LOG" ] || fail 'dry-run registered a Claude MCP server'
+[ ! -s "$GENTLE_SHELL_LOG" ] || fail 'dry-run invoked pnpm for Gentle Shell'
+grep -qF 'DRY  pnpm add --global gentle-pi@4.7.0 --allow-build=gentle-pi' "$TMP_HOME/mcp-dry-install.log" ||
+  fail 'dry-run did not announce the Gentle Shell install'
 
 printf '%s\n' '== MCP replacement failure restores the previous definition =='
 MCP_ROLLBACK_HOME="$TMP_HOME/mcp-rollback-home"
@@ -670,7 +708,6 @@ MCP_ROLLBACK_LOG="$TMP_HOME/mcp-rollback.log"
 MCP_ROLLBACK_TMPDIR="$TMP_HOME/mcp-rollback-tmp"
 MCP_ROLLBACK_BEFORE="$MCP_ROLLBACK_TMPDIR/claude-before.json"
 mkdir -p "$MCP_ROLLBACK_HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-mkdir -p "$MCP_ROLLBACK_HOME/.config/spicetify/CustomApps/marketplace"
 mkdir -p "$MCP_ROLLBACK_TMPDIR"
 printf '%s\n' '#!/usr/bin/env bash' >"$MCP_ROLLBACK_HOME/brew"
 chmod +x "$MCP_ROLLBACK_HOME/brew"
@@ -697,13 +734,49 @@ grep -qF 'no se pudo registrar el MCP administrado context7' "$TMP_HOME/mcp-roll
 [ "$(grep -c '^mcp add-json --scope user context7 ' "$MCP_ROLLBACK_LOG" || true)" -eq 2 ] ||
   fail 'MCP replacement failure did not attempt managed add and restoration'
 
+printf '%s\n' '== clean Mac without Node or pnpm defers Gentle Shell =='
+MISSING_RUNTIME_HOME="$TMP_HOME/missing-runtime-home"
+MISSING_RUNTIME_BIN="$TMP_HOME/missing-runtime-bin"
+MISSING_RUNTIME_LOG="$TMP_HOME/missing-runtime-install.log"
+MISSING_RUNTIME_GENTLE_LOG="$TMP_HOME/missing-runtime-gentle-shell.log"
+MISSING_RUNTIME_MCP_LOG="$TMP_HOME/missing-runtime-mcp.log"
+cp -Rp "$TEST_HOME" "$MISSING_RUNTIME_HOME"
+mkdir -p "$MISSING_RUNTIME_BIN"
+for stub_dir in "$BOOTSTRAP_BIN" "$TOOL_DRY_BIN"; do
+  for stub in "$stub_dir"/*; do
+    [ -e "$stub" ] || continue
+    stub_name=${stub##*/}
+    case "$stub_name" in node | pnpm | gentle-shell) continue ;; esac
+    [ -e "$MISSING_RUNTIME_BIN/$stub_name" ] || cp -p "$stub" "$MISSING_RUNTIME_BIN/$stub_name"
+  done
+done
+MISSING_RUNTIME_PATH="$MISSING_RUNTIME_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
+if PATH="$MISSING_RUNTIME_PATH" command -v node >/dev/null 2>&1; then
+  fail 'missing-runtime fixture unexpectedly exposes node'
+fi
+if PATH="$MISSING_RUNTIME_PATH" command -v pnpm >/dev/null 2>&1; then
+  fail 'missing-runtime fixture unexpectedly exposes pnpm'
+fi
+: >"$TOOL_DRY_LOG"
+: >"$BOOTSTRAP_CURL_LOG"
+: >"$MISSING_RUNTIME_GENTLE_LOG"
+BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" \
+  MCP_FAKE_LOG="$MISSING_RUNTIME_MCP_LOG" TOOL_DRY_LOG="$TOOL_DRY_LOG" GENTLE_SHELL_LOG="$MISSING_RUNTIME_GENTLE_LOG" \
+  HOME="$MISSING_RUNTIME_HOME" DOTFILES_HOMEBREW_BREW_CANDIDATES="$MISSING_RUNTIME_HOME/brew" \
+  PATH="$MISSING_RUNTIME_PATH" bash "$INSTALL" >"$MISSING_RUNTIME_LOG" 2>&1
+[ ! -s "$TOOL_DRY_LOG" ] || fail 'missing-runtime bootstrap invoked a real installer or download'
+[ ! -s "$MISSING_RUNTIME_GENTLE_LOG" ] || fail 'missing-runtime bootstrap invoked pnpm for Gentle Shell'
+grep -qF 'PEND   Gentle Shell (faltan node y pnpm: instala Node y vuelve a ejecutar ./install.sh)' "$MISSING_RUNTIME_LOG" ||
+  fail 'missing-runtime bootstrap did not report the expected PEND instruction'
+grep -qF 'SKIP   macOS defaults' "$MISSING_RUNTIME_LOG" || fail 'missing-runtime bootstrap stopped instead of completing the remaining install'
+
 printf '%s\n' '== isolated default bootstrap =='
 : >"$TOOL_DRY_LOG"
 : >"$BOOTSTRAP_CURL_LOG"
 BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_LOG="$TMP_HOME/mcp.log" TOOL_DRY_LOG="$TOOL_DRY_LOG" HOME="$TEST_HOME" \
   DOTFILES_HOMEBREW_BREW_CANDIDATES="$TEST_HOME/brew" \
   PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
-  bash "$INSTALL" >"$TMP_HOME/install.log"
+  bash "$INSTALL" >"$TMP_HOME/install.log" 2>&1
 [ ! -s "$TOOL_DRY_LOG" ] || fail 'default bootstrap invoked a real installer or download'
 [ "$(wc -l <"$BOOTSTRAP_CURL_LOG" | tr -d ' ')" -eq 5 ] || fail 'default bootstrap did not simulate exactly five font downloads'
 for font_url in \
@@ -715,7 +788,19 @@ for font_url in \
   grep -qF -- "$font_url" "$BOOTSTRAP_CURL_LOG" || fail "font fixture did not serve $font_url"
 done
 grep -qF 'prerrequisitos macOS' "$TMP_HOME/install.log" || fail 'default bootstrap did not check macOS prerequisites'
+GENTLE_SHELL_STEPS="$(grep -v -e '^pnpm bin ' "$GENTLE_SHELL_LOG" | tail -n 3)"
+GENTLE_SHELL_EXPECTED="$(printf '%s\n' \
+  'pnpm add --global gentle-pi@4.7.0 --allow-build=gentle-pi' \
+  'gentle-shell upgrade' \
+  'pnpm remove --global gentle-pi')"
+[ "$GENTLE_SHELL_STEPS" = "$GENTLE_SHELL_EXPECTED" ] ||
+  fail "default bootstrap did not install Gentle Shell as pnpm add, upgrade, remove: $GENTLE_SHELL_STEPS"
+[ -x "$TEST_HOME/.gentle-shell/bin/gentle-shell" ] || fail 'default bootstrap left no bundled Gentle Shell launcher'
+assert_not_exists "$GENTLE_SHELL_PNPM_BIN/gentle-shell"
+GENTLE_SHELL_LOG_LINES="$(wc -l <"$GENTLE_SHELL_LOG" | tr -d ' ')"
 grep -qF 'herramientas de shell y agentes' "$TMP_HOME/install.log" || fail 'default bootstrap did not check shell and agent tools'
+grep -qF 'SKIP   macOS defaults' "$TMP_HOME/install.log" || fail 'fixture did not skip macOS defaults'
+grep -qF 'Laravel Herd no encontrado' "$TMP_HOME/install.log" || fail 'missing Laravel Herd prerequisite warning'
 for mcp_name in context7 codegraph chrome-devtools; do
   jq -e --arg name "$mcp_name" \
     '.mcpServers[$name] == (input.mcpServers[$name])' \
@@ -792,31 +877,20 @@ assert_equal "$ROOT/config/vscode/keybindings.json" "$VSCODE_HOME/keybindings.js
 assert_equal "$ROOT/config/vscode/mcp.json" "$VSCODE_HOME/mcp.json"
 assert_not_exists "$TEST_HOME/.claude/hooks/$EXCLUDE_FIXTURE_NAME"
 
-printf '%s\n' '== symlink migration and backups =='
+printf '%s\n' '== symlink migration without backups =='
 assert_file "$TEST_HOME/.zprofile"
 assert_not_symlink "$TEST_HOME/.zprofile"
 assert_equal "$ROOT/.zprofile" "$TEST_HOME/.zprofile"
-
-zprofile_backup=$(find "$TEST_HOME" -maxdepth 1 -name '.zprofile.backup.*' -type f -print -quit)
-[ -n "$zprofile_backup" ] || fail 'missing .zprofile backup'
-grep -qxF 'local zprofile' "$zprofile_backup" || fail 'wrong .zprofile backup content'
-
-claude_backup=$(find "$TEST_HOME/.claude" -maxdepth 1 -name 'CLAUDE.md.backup.*' -type f -print -quit)
-[ -n "$claude_backup" ] || fail 'missing CLAUDE.md backup'
-grep -qxF 'local claude instructions' "$claude_backup" || fail 'wrong CLAUDE.md backup content'
-
-vscode_backup=$(find "$VSCODE_HOME" -maxdepth 1 -name 'settings.json.backup.*' -type f -print -quit)
-[ -n "$vscode_backup" ] || fail 'missing VS Code settings backup'
-grep -qxF 'local VS Code settings' "$vscode_backup" || fail 'wrong VS Code settings backup content'
+assert_equal "$ROOT/config/claude/CLAUDE.md" "$TEST_HOME/.claude/CLAUDE.md"
+assert_equal "$ROOT/config/vscode/settings.json" "$VSCODE_HOME/settings.json"
+[ -z "$(find "$TEST_HOME" -maxdepth 1 -name '.zprofile.backup.*' -print -quit)" ] || fail 'install created a .zprofile backup'
+[ -z "$(find "$TEST_HOME/.claude" -maxdepth 1 -name 'CLAUDE.md.backup.*' -print -quit)" ] || fail 'install created a CLAUDE.md backup'
+[ -z "$(find "$VSCODE_HOME" -maxdepth 1 -name 'settings.json.backup.*' -print -quit)" ] || fail 'install created a VS Code settings backup'
+[ ! -e "$TEST_HOME/.dotfiles-backups" ] || fail 'install created ~/.dotfiles-backups'
 
 printf '%s\n' '== managed cleanup and local preservation =='
 [ ! -e "$TEST_HOME/.config/ghostty/stale.conf" ] || fail 'stale managed file survived'
-stale_backup=$(find "$TEST_HOME/.dotfiles-backups" -path '*/.config/ghostty/stale.conf' -type f -print -quit)
-[ -n "$stale_backup" ] || fail 'deleted managed file was not backed up'
-grep -qxF 'stale managed file' "$stale_backup" || fail 'wrong deleted-file backup content'
-ghostty_backup=$(find "$TEST_HOME/.dotfiles-backups" -path '*/.config/ghostty/config.ghostty' -type f -print -quit)
-[ -n "$ghostty_backup" ] || fail 'replaced managed file was not backed up'
-grep -qxF 'local Ghostty config' "$ghostty_backup" || fail 'wrong replaced-file backup content'
+assert_equal "$ROOT/config/ghostty/config.ghostty" "$TEST_HOME/.config/ghostty/config.ghostty"
 assert_file "$TEST_HOME/.gitconfig.local"
 grep -qxF 'local identity' "$TEST_HOME/.gitconfig.local" || fail 'local git identity changed'
 assert_file "$TEST_HOME/local-marker"
@@ -835,17 +909,17 @@ BOOTSTRAP_CURL_LOG="$BOOTSTRAP_CURL_LOG" DOTFILES_JQ_BIN="$MCP_JQ_BIN" MCP_FAKE_
   PATH="$BOOTSTRAP_BIN:$TOOL_DRY_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
   bash "$INSTALL" >"$TMP_HOME/reinstall.log"
 [ ! -s "$TOOL_DRY_LOG" ] || fail 'idempotent bootstrap invoked a real installer or download'
-if grep -q '  BACKUP ' "$TMP_HOME/reinstall.log"; then
-  fail 'idempotent reinstall created a new backup'
-fi
+[ "$(wc -l <"$GENTLE_SHELL_LOG" | tr -d ' ')" -eq "$GENTLE_SHELL_LOG_LINES" ] ||
+  fail 'idempotent reinstall touched an existing Gentle Shell'
+grep -qF 'SKIP   Gentle Shell' "$TMP_HOME/reinstall.log" || fail 'idempotent reinstall did not skip Gentle Shell'
 [ "$(grep -c '^mcp add-json --scope user ' "$TMP_HOME/mcp.log")" -eq "$MCP_ADD_COUNT" ] ||
   fail 'idempotent reinstall added a duplicate MCP server'
 [ "$(grep -c '^mcp remove --scope user ' "$TMP_HOME/mcp.log" || true)" -eq "$MCP_REMOVE_COUNT" ] ||
   fail 'idempotent reinstall removed an unchanged MCP server'
 
-printf '%s\n' 'PASS: install.sh syntax, shellcheck, deterministic bootstrap, symlink migration, backups, cleanup, and local preservation'
+printf '%s\n' 'PASS: install.sh syntax, shellcheck, deterministic bootstrap, symlink migration, replacement without backups, cleanup, and local preservation'
 
-printf '%s\n' '== install.sh backup failure regressions =='
+printf '%s\n' '== install.sh copy failure regressions =='
 bash "$ROOT/.github/test/install-backups.test.sh"
 
 printf '%s\n' '== quality-gate.sh timeout regressions =='
@@ -877,6 +951,9 @@ bash "$ROOT/.github/test/hooks-edge-cases.test.sh"
 
 printf '%s\n' '== statusline model-tier icons =='
 bash "$ROOT/.github/test/statusline.test.sh"
+
+printf '%s\n' '== Gentle Shell daily upgrade =='
+bash "$ROOT/.github/test/gentle-shell-upgrade.test.sh"
 
 printf '%s\n' '== read-only doctor =='
 bash "$ROOT/.github/test/doctor.test.sh"
