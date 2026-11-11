@@ -85,6 +85,41 @@ assert_branch 27 skipped written
 assert_branch 27.0 skipped written
 assert_branch 27.2.1 skipped written
 
+# assert_menu_icons <version> <written|skipped>
+assert_menu_icons() {
+  local version="$1" expected="$2" output got=skipped
+  output="$(run_with_version "$version")"
+  if printf '%s' "$output" | grep -q 'NSMenuEnableActionImages'; then
+    got=written
+  fi
+  if [ "$got" != "$expected" ]; then
+    printf 'FAIL: %s expected NSMenuEnableActionImages %s, got %s\n' \
+      "$version" "$expected" "$got" >&2
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+# Los iconos de menú existen desde Tahoe 26 en adelante, así que el guard es
+# ">= 26" y no "== 26": 27 tiene que escribirla.
+#              version   menu icons
+assert_menu_icons 15.7.9 skipped
+assert_menu_icons 26 written
+assert_menu_icons 27 written
+
+# Las claves de dominio de sistema no deben salir como write de usuario: con
+# `defaults write` de usuario no tienen efecto. Corre sin --no-sudo para que se
+# imprima el listado del tier sudo.
+full_output="$(env HOME="$HOME_FIX" PATH="$BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+  bash "$DEFAULTS_SCRIPT" --dry-run 2>&1)"
+for key in 'defaults write com.apple.loginwindow SHOWFULLNAME' \
+  'defaults write com.apple.SoftwareUpdate' \
+  'defaults write com.apple.commerce'; do
+  if printf '%s' "$full_output" | grep -Fq "$key"; then
+    printf 'FAIL: system-domain key written to the user domain: %s\n' "$key" >&2
+    FAILURES=$((FAILURES + 1))
+  fi
+done
+
 if [ "$FAILURES" -gt 0 ]; then
   printf 'FAIL: %s macOS version guard assertion(s) failed\n' "$FAILURES" >&2
   exit 1

@@ -200,11 +200,15 @@ for p in "${DEV_EXCLUDE_PATHS[@]}"; do
     skip "$p no existe"
     continue
   fi
-  if [ -f "$p/.metadata_never_index" ]; then
-    ok "Spotlight excluye $p"
-  else
-    warn "Spotlight no excluye $p"
-  fi
+  # El marcador .metadata_never_index no prueba nada: macOS reciente lo ignora.
+  # Se mide lo que Spotlight indexó de verdad, igual que defaults.sh.
+  # shellcheck disable=SC2016
+  _recent="$(mdfind -count -onlyin "$p" 'kMDItemFSCreationDate >= $time.today(-2)' 2>/dev/null || true)"
+  case "$_recent" in
+    '' | *[!0-9]*) skip "Spotlight: no se pudo medir el indexado de $p" ;;
+    0) ok "Spotlight: 0 archivos nuevos indexados en $p (últimos 2 días)" ;;
+    *) warn "Spotlight sigue indexando $p ($_recent nuevos en 2 días): agregar en Privacidad de búsqueda" ;;
+  esac
   if tmutil isexcluded "$p" 2>/dev/null | grep -q "\[Excluded\]"; then
     ok "Time Machine excluye $p"
   else
