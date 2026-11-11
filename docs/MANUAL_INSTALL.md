@@ -18,16 +18,12 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Tailscale** - VPN fácil de usar
 - [ ] **PPTControl Desktop** - Control remoto para PowerPoint
 - [ ] **Dark Reader** - Modo oscuro para sitios web
-- [ ] **CrystalFetch** - Descarga de archivos ISO
 
 ### Utilities
 
-- [ ] **CleanMyMac** - Limpieza del sistema (reemplaza a AppCleaner)
-- [ ] **DaVinci Resolve** - Edición de video profesional
+- [ ] **CleanMyMac** - Limpieza del sistema
 - [ ] **The Unarchiver** - Descompresor de archivos
-- [ ] **1Blocker** - Bloqueador de anuncios y rastreadores
-- [ ] **TestFlight** - App para probar nuevas versiones de aplicaciones
-- [ ] **Apple Developer** - App para desarrolladores de Apple
+- [ ] **uBlock Origin Lite** - Bloqueador de anuncios y rastreadores
 
 ---
 
@@ -35,12 +31,7 @@ Estas apps se instalan desde la App Store de macOS:
 
 ### Drivers & Hardware
 
-- [ ] **Epson L3210 Drivers** - <https://epson.com/Support/Printers>
 - [ ] **Logi Options+** - <https://support.logi.com/hc/es-ar/articles/31605553077783-Descargas-MX-Master-3S-BT-Edition>
-- [ ] **Stream Deck** - <https://www.elgato.com/lm/es/s/downloads>
-- [ ] **Nextcloud** - <https://nextcloud.com/install/#desktop-files>
-- [ ] **Drive** - <https://workspace.google.com/products/drive>
-- [ ] **Dropbox** - <https://www.dropbox.com/install>
 
 ### Herramientas Especiales
 
@@ -48,7 +39,6 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Parsec** - <https://parsecgaming.com/downloads>
 - [ ] **Bartender** - <https://www.macbartender.com>
 - [ ] **CodexBar** - <https://codexbar.app>
-- [ ] **Handy** - <https://handy.computer>
 
 ### Terminal & Development
 
@@ -58,22 +48,15 @@ Estas apps se instalan desde la App Store de macOS:
 - [ ] **Android Studio** - <https://developer.android.com/studio>
 - [ ] **TablePlus** - <https://tableplus.com>
 - [ ] **Tiny Shield** - <https://tinyshield.proxyman.com>
-- [ ] **Bruno** - <https://www.usebruno.com/downloads>
 - [ ] **Laravel Herd** - <https://herd.laravel.com>
-- [ ] **Cyberduck** - <https://cyberduck.io/download>
-- [ ] **VMware Fusion** - <https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion>
-- [ ] **Arduino IDE** - <https://www.arduino.cc/en/software>
-- [ ] **Unity Hub** - <https://unity.com/download>
 
 ### Browsers
 
 - [ ] **Google Chrome** - <https://www.google.com/chrome>
-- [ ] **Firefox** - <https://www.mozilla.org/en-US/firefox/new>
 
 ### Productividad
 
 - [ ] **Raycast** - <https://www.raycast.com>
-- [ ] **Obsidian** - <https://obsidian.md/download>
 - [ ] **Spotify** - <https://open.spotify.com/download>
 - [ ] **Vesktop** - <https://github.com/Vencord/Vesktop> (cliente Discord alternativo)
 - [ ] **Teams** - <https://www.microsoft.com/en-us/microsoft-teams/download-app>
@@ -81,12 +64,7 @@ Estas apps se instalan desde la App Store de macOS:
 ### Media & Content
 
 - [ ] **IINA** - <https://iina.io>
-- [ ] **Affinity** - <https://www.affinity.studio>
-- [ ] **qBittorrent** - <https://www.qbittorrent.org/download.php>
-- [ ] **4k Video Downloader+** - <https://www.4kdownload.com/downloads/34>
-- [ ] **Audacity 3.7.9** - <https://www.audacityteam.org/download/older-versions/>
 - [ ] **OBS Studio** - <https://obsproject.com/download>
-- [ ] **Blender** - <https://www.blender.org/download>
 
 ---
 
@@ -103,14 +81,14 @@ corepack enable pnpm
 pnpm --version
 npm config set ignore-scripts true
 npm config set allow-git none
-npm install --global --ignore-scripts @fission-ai/openspec@1.13.1
-npm install --global --ignore-scripts vercel@59.25.4
-npm install --global --ignore-scripts @playwright/cli@0.1.21
+pnpm add --global --ignore-scripts vercel@59.25.4
+pnpm add --global --ignore-scripts @playwright/cli@0.1.21
 ```
 
 ### Python (con pyenv)
 
 ```bash
+pyenv install 3.13.17
 pyenv install 3.11.16
 pyenv global 3.11.16
 pyenv exec python -m pip install -r config/claude/agent-tools/requirements.txt
@@ -122,38 +100,20 @@ pyenv exec python -m pip install -r config/claude/agent-tools/requirements.txt
 php artisan sail:install
 ```
 
-### Gentle-AI
+### Simuladores y emuladores
 
-```bash
-gentle-ai install \
-  --scope global \
-  --preset full-gentleman \
-  --persona neutral \
-  --agents opencode,cursor,codex,antigravity,vscode-copilot,pi
-```
+**iOS, watchOS y tvOS** (Xcode instalado desde App Store):
 
-### Gentle-Shell (gentle-pi)
+- Xcode > Settings > Platforms: instalar el runtime de iOS.
+- Alternativa desde terminal: `xcodebuild -downloadPlatform iOS` (descarga pesada).
+- Verificar: `xcrun simctl list runtimes`.
 
-```bash
-pi install npm:gentle-pi@3.6.0
-pi install npm:pi-intercom@0.13.0
-pi install npm:gentle-engram@0.1.14
-pi install npm:pi-web-access@0.31.0
-pi install npm:pi-lens@4.2.1
-```
+**Android** (Android Studio instalado):
 
-Dentro de una sesión `pi`, una sola vez:
-
-```text
-/gentle:status
-/gentle:review-mode enable
-/gentle:background-subagents enable
-/gentle:models
-/gentle:profiles
-/gentle:persona
-/gentle:banner
-/skill-registry:refresh
-```
+- Android Studio > Settings > Languages & Frameworks > Android SDK: instalar SDK Platform, Build-Tools, Platform-Tools y Emulator.
+- Device Manager: crear un AVD.
+- `ANDROID_HOME` apunta a `~/Library/Android/sdk` (ver `.zshenv`).
+- Verificar: `emulator -list-avds`.
 
 ### Herdr
 
@@ -163,10 +123,8 @@ herdr plugin install persiyanov/herdr-reviewr --yes
 herdr integration install codex
 herdr integration install claude
 herdr integration install opencode
-herdr integration install cursor
 herdr integration install antigravity-cli
 herdr integration install copilot
-herdr integration install pi
 ```
 
 ### Settings Apps
